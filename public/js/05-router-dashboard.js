@@ -5,14 +5,38 @@
    ============================================================ */
 /* ===== ROUTER ===== */
 /* ── Dashboard: Visuals (real charts of the same numbers the cards show) + Cards (stat cards) ── */
-function dashboardTabsPage(){
-  let tab=S.filters.dashTab||'charts';
-  const tabs=`<div class="ui-tabs" style="margin-bottom:14px">
-      <button class="ui-tab${tab==='charts'?' on':''}" onclick="S.filters.dashTab='charts';rr()">${ic('chart','w-3.5 h-3.5')}Visuals</button>
-      <button class="ui-tab${tab==='cards'?' on':''}" onclick="S.filters.dashTab='cards';rr()">${ic('grid','w-3.5 h-3.5')}Cards</button>
-    </div>`;
-  if(tab==='charts')setTimeout(()=>{try{_drawDashCharts();}catch(e){console.warn('[dash charts]',e.message);}},80);
-  return `<div>${tabs}${tab==='charts'?_dashChartsPage():analyticsPage()}</div>`;
+function dashboardPage(){
+  const{subs,tickets}=_dashScope();
+  const okrs=(typeof okrVisible==='function'&&can('okr','view'))?okrVisible():[];
+  const onTime=subs.filter(s=>s.status==='On Time').length;
+  const late=subs.filter(s=>s.status==='Late').length;
+  const rate=(onTime+late)?Math.round(onTime/(onTime+late)*100):null;
+  const openTk=tickets.filter(t=>t.status==='Open').length;
+  const progTk=tickets.filter(t=>t.status==='In Progress').length;
+  const apprN=(typeof _approvalPendingCount==='function')?(()=>{try{return _approvalPendingCount();}catch(e){return 0;}})():0;
+  setTimeout(()=>{try{_drawDashCharts();}catch(e){console.warn('[dash charts]',e.message);}},80);
+  const kpi=(label,val,color,icon,go,sub)=>`<button onclick="${go}" class="stat-card-click" style="text-align:left;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:16px;cursor:pointer;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:30px;height:30px;border-radius:9px;background:${color}18;color:${color};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</span><span style="font-size:11px;font-weight:700;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">${label}</span></div>
+      <div class="fd" style="font-size:30px;font-weight:800;line-height:1;color:${color}">${val}</div>
+      ${sub?`<div style="font-size:11.5px;color:var(--c-text-3);margin-top:7px">${sub}</div>`:''}
+    </button>`;
+  const chartCard=(key,title,sub)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3);margin-top:1px">${sub}</div></div><div style="height:210px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
+  return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
+      ${kpi('On-time rate',rate===null?'—':rate+'%','#0E9F6E','approve',"App.go('allcl')",'last 30 days')}
+      ${kpi('Late',late,'#DC2626','alert',"App.go('allcl')",'submissions (30d)')}
+      ${kpi('Open tickets',openTk+progTk,'#F97316','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
+      ${kpi('Approvals waiting',apprN,'#0284C7','approve',"App.go('approvals')",'in your inbox')}
+      ${okrs.length?kpi('OKRs',okrs.length,'#8B5CF6','chart',"App.go('okr')",'objectives you can see'):''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px">
+      ${chartCard('daily','Daily submissions','On time vs late — last 14 days')}
+      ${chartCard('trend','On-time % trend','Weekly, last 8 weeks')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+      ${chartCard('tickets','Tickets by status','Everything currently open or done')}
+      ${(typeof _dashTicketsPanel==='function')?_dashTicketsPanel(null):''}
+    </div></div>`;
 }
 /* Same scope rules as the Cards (analytics) tab: Super Admin sees everything, others see their team. */
 function _dashScope(){
@@ -22,34 +46,7 @@ function _dashScope(){
          tickets:all?(DB.tickets||[]):(DB.tickets||[]).filter(t=>t.assignedTo===S.uid),
          users:all?DB.users.filter(u=>u.status==='Active'):DB.users.filter(u=>u.status==='Active'&&team.has(u.id))};
 }
-function _dashChartsPage(){
-  const{subs,tickets}=_dashScope();
-  const today=todayISO();
-  const okrs=(typeof okrVisible==='function'&&can('okr','view'))?okrVisible():[];
-  const onTime=subs.filter(s=>s.status==='On Time').length;
-  const late=subs.filter(s=>s.status==='Late').length;
-  const pendA=subs.filter(s=>s.status==='Pending Approval').length;
-  const rate=(onTime+late)?Math.round(onTime/(onTime+late)*100):null;
-  const tkOpen=tickets.filter(t=>t.status==='Open'||t.status==='In Progress').length;
-  const kpi=(label,val,fg,bg,icon,go)=>`<button onclick="${go||''}" ${go?'':'disabled'} style="flex:1;min-width:130px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:${go?'pointer':'default'};text-align:left;transition:box-shadow .15s,border-color .15s" ${go?`onmouseover="this.style.boxShadow='var(--sh-md)';this.style.borderColor='var(--c-border-2)'" onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--c-border)'"`:''}><div style="width:36px;height:36px;border-radius:10px;background:${bg};color:${fg};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</div><div><div class="fd" style="font-size:19px;font-weight:800;line-height:1.1;color:var(--c-text)">${val}</div><div style="font-size:11px;font-weight:600;color:var(--c-text-3)">${label} <span style="color:var(--c-text-3);font-weight:800">›</span></div></div></button>`;
-  const chartCard=(key,title,sub,h)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3)">${sub}</div></div><div style="height:${h||230}px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
-  return `<div class="fade">${hdr('Dashboard','Live picture of submissions, compliance, tickets'+(okrs.length?' & OKRs':''))}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-      ${kpi('On-time rate (30d)',rate===null?'—':rate+'%','#0A6B49','var(--c-brand-soft)','approve',"S.filters.dashTab='cards';S.filters.stats=[];rr()")}
-      ${kpi('On time (30d)',onTime,'#0A6B49','var(--c-brand-soft)','check',"S.filters.dashTab='cards';S.filters.stats=['On Time'];rr()")}
-      ${kpi('Late (30d)',late,'#991B1B','var(--c-danger-soft)','alert',"S.filters.dashTab='cards';S.filters.stats=['Late'];rr()")}
-      ${kpi('Pending approval',pendA,'#92560A','var(--c-warn-soft)','clock',"App.go('approvals')")}
-      ${kpi('Open tickets',tkOpen,'#075985','var(--c-info-soft)','ticket',"App.go('tickets')")}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px">
-      ${chartCard('daily','Daily submissions','On time vs late — last 14 days')}
-      ${chartCard('trend','On-time % trend','Weekly, last 8 weeks')}
-      ${chartCard('status','Submission outcomes','Last 30 days, all statuses')}
-      ${chartCard('dept','Compliance by department','% submitted on time (30d)')}
-      ${chartCard('tickets','Tickets','Current status split')}
-      ${okrs.length?chartCard('okr','OKR health','Status across visible objectives'):''}
-    </div></div>`;
-}
+/* _dashChartsPage removed — its KPIs/charts folded into the single dashboardPage above. */
 function _drawDashCharts(){
   if(typeof Chart==='undefined')return;
   _destroyACharts();
@@ -96,16 +93,4 @@ function _drawDashCharts(){
     }
   }
 }
-/* ── All Checklists ⇄ Team: one sidebar entry, two sub-tabs (Team = the employee summary grid) ── */
-function allClTeamPage(){
-  const canAll=can('allChecklists','view'),canTeam=can('teamview','view');
-  let tab=S.filters.aclTab||(canAll?'all':'team');
-  if(tab==='all'&&!canAll)tab='team';
-  if(tab==='team'&&!canTeam)tab='all';
-  const teamN=(isAdmin()||isSubAdmin())?DB.users.filter(u=>u.status==='Active'&&u.id!==S.uid).length:subTree(S.uid).length;
-  const tabs=(canAll&&canTeam)?`<div class="ui-tabs" style="margin-bottom:14px">
-      <button class="ui-tab${tab==='all'?' on':''}" onclick="S.filters.aclTab='all';rr()">All Checklists</button>
-      <button class="ui-tab${tab==='team'?' on':''}" onclick="S.filters.aclTab='team';rr()">Team <span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;background:var(--c-surface-2);color:var(--c-text-2);margin-left:5px">${teamN}</span></button>
-    </div>`:'';
-  return `<div>${tabs}${tab==='team'?teamViewPage():allClsPage()}</div>`;
-}
+/* allClTeamPage removed — Builder / All results / Team are hub pills now (no inner tab bar). */

@@ -1,4 +1,17 @@
-# Bridge (v3)
+# Bridge (v3.1)
+
+## v3.1 — deployed-feedback fixes + CRM v3
+
+- **Duplicate tab rows fixed**: router fallbacks re-entered the strip wrapper, stacking two identical hub strips (visible on Dashboard and after clicking Analytics/Team). Pages also kept their own older internal tab bars — removed (Visuals/Cards on Dashboard, All Checklists/Team inside All results).
+- **Analytics removed completely** (it duplicated the dashboard): Dashboard hub is now Overview + OKRs; `#analytics` links land on the Dashboard.
+- **One "Team"**: the Team pill in the Checklists hub is the only one; it opens the team board directly.
+- **Dashboard rebuilt**: one clear page — tappable KPI cards (on-time rate, late, open tickets, approvals waiting, OKRs) that jump to the right tab, three focused charts, and the "open tickets by user" panel.
+- **CRM v3 (fully dynamic, ClickUp-style)**:
+  - **Custom statuses per board** — add/rename/recolor statuses and mark which count as "done" (Statuses button on every ticket board). They drive the kanban columns, every status dropdown, the open/overdue counters. Stored per board, no schema change.
+  - **Kanban quick-add** — "+ New" at the top of every column creates a ticket directly in that status.
+  - **Details panel** — open any ticket and everything is editable in one place: status, priority, assignee, due date, customer, all custom fields, plus the activity trail.
+  - Tickets whose status is removed are migrated to the first status automatically (and the table's status cell is now an inline dropdown).
+
 
 Shift checklists, escalation tickets and CRM for Shiftly — previously one 8,400-line `Bridge.html`, now a proper Vite project.
 

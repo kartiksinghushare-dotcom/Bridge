@@ -35,7 +35,6 @@ const HUB_DEF={
     ['approvals','Approvals',()=>can('approvals','view')]]},
   dash:{label:'Dashboard',tabs:[
     ['dashboard','Overview',()=>can('analytics','view')],
-    ['analytics','Analytics',()=>can('analytics','view')],
     ['okr','OKRs',()=>can('okr','view')]]},
   cl:{label:'Checklists',tabs:[
     ['checklists','Builder',()=>can('checklists','create')],
