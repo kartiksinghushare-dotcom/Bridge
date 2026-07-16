@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="description" content="Bridge — shift checklist, tickets and CRM for Shiftly."/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Bridge</title>
+<script>(()=>{const w=console.warn;console.warn=(...a)=>{if(typeof a[0]==='string'&&a[0].includes('cdn.tailwind'))return;w(...a)};window.addEventListener('error',e=>{if(!e.filename||e.filename.includes('cdn.tailwind')||e.filename.includes('fonts.google'))e.stopImmediatePropagation();},true);})();</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Schibsted Grotesk"'],sans:['"Hanken Grotesk"']},colors:{ink:{DEFAULT:'#15171C',50:'#F6F7F8',100:'#ECEDF0',200:'#D6D8DE',300:'#A9ADB8',400:'#6B7280',500:'#3A3E48',600:'#262A33',700:'#1C1F26',800:'#15171C'},brand:{DEFAULT:'#0E9F6E',50:'#ECFDF5',100:'#D1FAE5',400:'#34D399',500:'#10B981',600:'#0E9F6E',700:'#0B7A55'},paper:'#F7F6F2'},boxShadow:{soft:'0 1px 2px rgba(16,24,40,.04),0 4px 16px -6px rgba(16,24,40,.10)',pop:'0 8px 40px -8px rgba(16,24,40,.28)'}}}}</script>
+<link rel="stylesheet" href="/src/styles/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ══ App modules — classic scripts, shared scope, ORDER MATTERS ══ -->
+<script defer src="js/00-helpers.js"></script>
+<script defer src="js/01-supabase-sync.js"></script>
+<script defer src="js/01a-sync-queue.js"></script>
+<script defer src="js/02-state-roles.js"></script>
+<script defer src="js/03-ui-kit.js"></script>
+<script defer src="js/04-nav-shell.js"></script>
+<script defer src="js/05-router-dashboard.js"></script>
+<script defer src="js/06-crm.js"></script>
+<script defer src="js/07-login.js"></script>
+<script defer src="js/08-dashboards.js"></script>
+<script defer src="js/09-users.js"></script>
+<script defer src="js/10-departments-locations.js"></script>
+<script defer src="js/11-checklists-admin.js"></script>
+<script defer src="js/12-my-checklists.js"></script>
+<script defer src="js/13-approvals.js"></script>
+<script defer src="js/14-all-checklists.js"></script>
+<script defer src="js/15-questions-escalation.js"></script>
+<script defer src="js/16-hierarchy-tickets.js"></script>
+<script defer src="js/17-analytics.js"></script>
+<script defer src="js/18-settings-notifications.js"></script>
+<script defer src="js/19-okr-roles-acl.js"></script>
+<script defer src="js/99-boot.js"></script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

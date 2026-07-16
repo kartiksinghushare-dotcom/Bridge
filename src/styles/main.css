@@ -1,0 +1,712 @@
+/* ─ Bridge base ─ */
+html,body{height:100%}
+body{font-family:"Hanken Grotesk",sans-serif;background:#F7F6F2;color:#15171C;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+.fd{font-family:"Schibsted Grotesk",sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#D6D8DE;border-radius:4px}
+.fade{animation:fd .22s ease}@keyframes fd{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+input,select,textarea{outline:none}
+.rf:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15);border-color:#10B981!important}
+/* Toggles */
+.tog{position:relative;width:36px;height:22px;border-radius:11px;transition:background .15s;cursor:pointer;border:none;flex-shrink:0}
+.tog span{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on{background:#10B981}.tog.on span{transform:translateX(14px)}
+/* Calendar strip */
+.cal4{background:#fff;border-radius:18px;border:1px solid #F0EEE9;display:flex;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.cal4-d{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;transition:background .12s;border:none;background:transparent;gap:2px}
+.cal4-d.sel{background:#15171C}.cal4-d:not(.sel):hover{background:#F9F8F5}
+.cal4-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B8B5AC}
+.cal4-d.sel .cal4-lbl{color:rgba(255,255,255,.4)}
+.cal4-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#15171C}
+.cal4-num.tod{background:#15171C;color:#fff}
+.cal4-d.sel .cal4-num{color:#fff}
+/* Checklist card */
+
+/* ─ TASK ROW ─ compact, fresh ─ */
+.tk{border-top:1px solid #F5F4F0;position:relative}
+
+/* Segmented response control */
+
+/* Icon action buttons */
+
+/* Submit btn */
+
+/* Filter dropdown */
+
+/* Day/date picker chips */
+.dchip{cursor:pointer;user-select:none;display:inline-flex;align-items:center;justify-content:center;border-radius:20px;padding:4px 10px;border:1.5px solid #D6D8DE;font-size:12px;font-weight:600;color:#6B7280;transition:all .12s}
+.dchip.on{background:#15171C;color:#fff;border-color:#15171C}
+
+/* iz / issue-zone (legacy, kept for compatibility) */
+.bg-ink-100{background:#ECEDF0!important}.bg-ink-200{background:#D6D8DE!important}
+.fld-card:hover{border-color:#0E9F6E!important;box-shadow:0 2px 12px rgba(14,159,110,.1)}
+.team-card-hover:hover{border-color:#0E9F6E!important;box-shadow:0 4px 16px rgba(14,159,110,.12)!important}
+.dept-card:hover{border-color:#0E9F6E!important;box-shadow:0 4px 16px rgba(14,159,110,.1)}
+.loc-card:hover{border-color:#3B82F6!important;box-shadow:0 4px 16px rgba(59,130,246,.1)}
+.shadow-soft{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04)}
+/* Progress bar — used in admin dashboard department performance */
+.pg{height:6px;background:#ECEDF0;border-radius:3px;overflow:hidden}
+.pgf{height:100%;background:#0E9F6E;border-radius:3px;transition:width .3s}
+
+.text-ink-300{color:#A9ADB8!important}.text-ink-400{color:#6B7280!important}.text-ink-500{color:#3A3E48!important}
+.text-ink-600{color:#262A33!important}
+.border-ink-100{border-color:#ECEDF0!important}.border-ink-200{border-color:#D6D8DE!important}
+.bg-brand-50{background:#ECFDF5!important}
+.text-brand-600{color:#10B981!important}.text-brand-700{color:#059669!important}
+.text-emerald-700{color:#047857!important}
+.text-amber-700{color:#B45309!important}
+.text-rose-700{color:#BE123C!important}
+.text-orange-700{color:#C2410C!important}
+.bg-sky-50{background:#F0F9FF!important}.text-sky-700{color:#0369A1!important}
+
+@media(min-width:768px){#main-wrap{margin-left:224px!important}}
+
+/* ═══ Checklist v6 — Card + Table layout ═══ */
+
+/* Status bar on left edge */
+
+/* Task table row */
+
+/* Pill response buttons */
+
+/* Icon action */
+
+/* Submit strip */
+
+/* Issue panel */
+
+/* ═══ Checklist UI vFinal ═══ */
+/* Calendar */
+.cal-strip{display:flex;background:#fff;border-radius:16px;border:1px solid #EEECE8;overflow:hidden}
+.csd{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;cursor:pointer;border:none;background:transparent;gap:3px;transition:background .1s;min-width:0}
+.csd:hover:not(.act){background:#F9F8F5}
+.csd.act{background:#111110}
+.csd-lbl{font-size:9px;font-weight:800;letter-spacing:.08em;color:#B8B5AC;text-transform:uppercase}
+.csd.act .csd-lbl{color:rgba(255,255,255,.4)}
+.csd-n{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:15px;font-weight:800;color:#111110}
+.csd.act .csd-n{color:#fff}
+.csd-dots{display:flex;gap:2px;height:5px;align-items:center}
+/* Checklist card */
+.clc{border-radius:18px;overflow:hidden;border:1px solid #EEECE8;background:#fff;transition:box-shadow .2s}
+.clc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;border:none;background:transparent;width:100%;gap:10px}
+.clc-hdr:active{background:#FAFAF8}
+/* Status styles */
+.st-on{background:#E8FAF3;color:#0D7A4E}
+.st-late{background:#FFEDED;color:#C92C2C}
+.st-pend{background:#FEF7E6;color:#B36A00}
+.st-sub{background:#E8FAF3;color:#0D7A4E}
+.st-pa{background:#FFF0E6;color:#B85000}
+/* Task row — THE KEY ELEMENT */
+
+ /* positive active */
+ /* negative active */
+/* Small icon button */
+
+/* Footer strip */
+.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F7F6F3;gap:10px;background:#FAFAF8}
+.submit-pill{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
+.submit-pill.go{background:#111110;color:#fff}.submit-pill.go:hover{background:#000;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.submit-pill.no{background:#EEECE8;color:#C8C5BD;cursor:default}
+/* Issue zone */
+
+/* ═══ Task row vFresh ═══ */
+
+/* Orb */
+
+/* Response inline chips */
+
+/* Action icon */
+
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Page transitions ── */
+.fade{animation:fi .18s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* ── Loading btn ── */
+
+/* Button click feedback */
+button:active{opacity:.75;transform:scale(.97);transition:transform .1s}
+/* Clickable stat cards */
+.stat-card-click:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)!important}
+.stat-card-click:active{transform:scale(.98);opacity:.9}
+/* ════════════ UI POLISH LAYER (v2) ════════════ */
+:root{--brand:#0E9F6E;--brand-d:#0B7A55;--ring:rgba(16,185,129,.18)}
+*{ -webkit-tap-highlight-color:transparent }
+button{transition:transform .12s ease,opacity .12s ease,box-shadow .15s ease,background .15s ease,color .15s ease}
+button:active{opacity:.85;transform:scale(.97)}
+a,button,select,input,textarea,label[onclick],[onclick]{transition:all .14s ease}
+/* Inputs — consistent, refined focus */
+input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(16,185,129,.18);border-color:var(--brand)!important}
+/* Cards lift gently on hover */
+.shadow-soft{transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease}
+.bg-white.rounded-2xl:hover, .bg-white.rounded-xl:hover{box-shadow:0 6px 22px -10px rgba(16,24,40,.20)}
+/* Primary button sheen */
+.btn-primary,button[style*="#0E9F6E"],button[style*="#10B981"]{box-shadow:0 1px 2px rgba(11,122,85,.25),0 6px 16px -8px rgba(14,159,110,.45)}
+/* Saving / busy buttons → spinner + disabled look */
+button[disabled]{cursor:not-allowed;opacity:.7}
+button[data-saving]{position:relative;color:transparent!important}
+button[data-saving]::after{content:"";position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Toast — refined pill with entrance */
+@keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.96)}60%{opacity:1;transform:translateY(0) scale(1.01)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.pop{animation:pop .26s cubic-bezier(.2,.8,.2,1)}
+#toast .tt{display:flex;align-items:center;gap:9px;backdrop-filter:saturate(140%) blur(2px)}
+#toast .tt .ic{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:800;flex-shrink:0}
+/* Modal entrance */
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+.modal-card,[class*="max-w-"]>.bg-white{animation:modalIn .22s cubic-bezier(.2,.8,.2,1)}
+/* Frequency / chips smoother */
+.dchip{transition:all .14s ease}.dchip:hover{border-color:var(--brand);color:var(--brand)}
+.dchip.on:hover{color:#fff}
+/* Scrollbar a touch nicer */
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:#D6D8DE;border-radius:8px;border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:#A9ADB8;background-clip:content-box}
+/* Status badges crisper */
+span[style*="border-radius:20px"],span[style*="border-radius:9999px"]{letter-spacing:.01em}
+/* Empty-state helper */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:44px 20px;color:#9CA3AF}
+.empty-state svg{width:40px;height:40px;opacity:.5;margin-bottom:10px}
+/* Focus visible accessibility */
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+button:focus-visible,a:focus-visible{outline-offset:3px;border-radius:8px}
+/* ════════════ VIBRANT THEME (v3) — modern & lively ════════════ */
+:root{
+  --g1:#0E9F6E;--g2:#10B981;--g3:#34D399;
+  --grad-brand:linear-gradient(135deg,#10B981 0%,#0E9F6E 55%,#0B7A55 100%);
+  --grad-dark:linear-gradient(135deg,#23272F 0%,#15171C 100%);
+  --grad-paper:radial-gradient(1200px 600px at 100% -10%,rgba(16,185,129,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(59,130,246,.07),transparent 55%),linear-gradient(180deg,#F8FAF8 0%,#F4F6F4 100%);
+  --card-sh:0 1px 2px rgba(16,24,40,.04),0 10px 28px -14px rgba(16,24,40,.18);
+  --card-sh-hi:0 8px 22px -8px rgba(16,159,110,.22),0 18px 40px -16px rgba(16,24,40,.22);
+}
+/* App backdrop */
+body{background:var(--grad-paper)!important;background-attachment:fixed!important}
+/* Brand logo squares → gradient + glow (sidebar + topbar use .nav-brand) */
+.nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(16,159,110,.55);letter-spacing:-.5px}
+/* Sidebar → deep gradient with subtle inner glow */
+aside.sidebar{background:linear-gradient(180deg,#1B1E25 0%,#15171C 60%,#101216 100%)!important;border-right:1px solid rgba(255,255,255,.05)}
+/* Page titles a touch larger + tighter */
+main#content h1.fd{letter-spacing:-.6px}
+/* ── Cards: more depth, bigger radius, lively hover lift ── */
+main#content .bg-white.rounded-2xl,
+main#content .bg-white.rounded-xl,
+main#content .shadow-soft{
+  border-radius:20px;
+  box-shadow:var(--card-sh);
+  border-color:#EEF0F2;
+  transition:transform .18s ease, box-shadow .22s ease, border-color .18s ease;
+}
+main#content .bg-white.rounded-2xl:hover,
+main#content .shadow-soft:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--card-sh-hi);
+  border-color:#D6F2E6;
+}
+/* Don't lift rows/inner static blocks too aggressively */
+main#content table .bg-white:hover{transform:none}
+/* ── Primary (dark) buttons → gradient + depth ── */
+button[style*="background:#15171C"]{
+  background:var(--grad-dark)!important;
+  box-shadow:0 1px 2px rgba(0,0,0,.18),0 10px 22px -10px rgba(0,0,0,.45)!important;
+  border-radius:12px!important;
+}
+button[style*="background:#15171C"]:hover{filter:brightness(1.12)}
+/* ── Green buttons / pills → brand gradient ── */
+button[style*="background:#0E9F6E"],
+button[style*="background:#10B981"],
+.submit-pill.go,
+button[style*="background:#111110"]{
+  background:var(--grad-brand)!important;
+  box-shadow:0 2px 6px rgba(11,122,85,.30),0 10px 22px -10px rgba(16,159,110,.55)!important;
+}
+.submit-pill.go:hover{filter:brightness(1.08)}
+/* ── Stat cards: vivid accent strip + bigger number ── */
+.stat-card-click,
+main#content [style*="border-radius:20px"][style*="border:1px solid #ECEDF0"]{
+  position:relative;overflow:hidden;border-radius:20px!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .18s ease, box-shadow .22s ease!important;
+}
+.stat-card-click::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--grad-brand);border-radius:4px 0 0 4px;
+}
+.stat-card-click:hover{transform:translateY(-3px);box-shadow:var(--card-sh-hi)!important}
+/* ── Status chips / badges: subtle depth + crisp ── */
+span[style*="border-radius:20px"][style*="font-weight:700"]{
+  box-shadow:0 1px 1px rgba(16,24,40,.04);
+}
+/* ── Progress bars → gradient fill ── */
+.pgf,
+[style*="background:#0E9F6E"][style*="height:100%"]{
+  background:var(--grad-brand)!important;
+}
+/* ── Calendar selected day → gradient pop ── */
+.csd.act{background:var(--grad-dark)!important}
+.cal4-d.sel{background:var(--grad-dark)!important}
+/* ── Inputs: rounder + soft inner ── */
+main#content input,main#content select,main#content textarea{border-radius:12px}
+.rf{border-radius:12px}
+/* Section dividers a hair lighter for airiness */
+.divide-ink-50>*+*{border-color:#F3F5F4}
+/* Topbar glassy */
+header.topbar{background:rgba(248,250,248,.85)!important;backdrop-filter:blur(18px) saturate(140%)!important}
+/* Mobile bottom nav active accent */
+nav.md\:hidden button[style*="#0E9F6E"]{position:relative}
+/* Modal surface a touch warmer shadow */
+#modal>div{box-shadow:0 30px 90px -20px rgba(16,24,40,.45),0 10px 30px -12px rgba(16,24,40,.30)!important}
+/* Empty-state icons get a soft brand tint */
+main#content [style*="background:#F6F7F8"][style*="place-items:center"]{background:linear-gradient(135deg,#ECFDF5,#F0FDF9)!important}
+/* Avatars: subtle ring */
+.rounded-full.grid.place-items-center{box-shadow:inset 0 0 0 1px rgba(0,0,0,.03)}
+/* Login hero panel richer */
+.loginView,.bg-paper{background:var(--grad-paper)}
+/* Buttons feel springy */
+button:active{transform:scale(.96)}
+/* ════════════ UI REFINEMENTS (v4) — from live review ════════════ */
+/* Checklist card action icons (Edit / Duplicate / Delete) — bigger, clearer, grouped feel */
+button[title="Edit"],button[title="Duplicate"],button[title="Delete"]{
+  width:32px!important;height:32px!important;
+  background:#F4F6F5!important;color:#5B6470!important;
+  border-radius:9px!important;
+}
+button[title="Edit"]:hover{background:#EFF6FF!important;color:#1D4ED8!important}
+button[title="Duplicate"]:hover{background:#EFF6FF!important;color:#3B82F6!important}
+button[title="Delete"]:hover{background:#FFF1F2!important;color:#BE123C!important}
+/* Wrap the action-icon row in a subtle container so it reads as a group */
+.flex.gap-1{gap:6px}
+/* Dashboard: stop the left "Department performance" card stretching into empty space */
+main#content .grid.lg\:grid-cols-3>.lg\:col-span-2{align-self:start}
+/* Frequency badge on checklist cards — a touch more present */
+span.bg-brand-50.text-brand-700{background:#E7F9F1!important;color:#0B7A55!important}
+/* Stat-card label text slightly darker for legibility */
+main#content [style*="text-transform:uppercase"][style*="#9CA3AF"]{color:#8A93A0!important}
+/* Empty-state check icon container keeps brand tint already from v3; ensure contrast of helper copy */
+/* ════════════ BEST POLISH (v5) — full pass, consistency & arrangement ════════════ */
+/* --- Layout breathing room --- */
+@media(min-width:768px){ main#content{padding:24px 28px 96px!important} }
+main#content h1.fd + p{ margin-top:3px }
+/* --- Sidebar: brand accent bar on the active item + smoother items --- */
+aside.sidebar nav button[style*="rgba(255,255,255,.12)"]{
+  position:relative; box-shadow:inset 3px 0 0 0 #34D399;
+}
+aside.sidebar nav button{ letter-spacing:.1px }
+/* --- Tables: header tint, row hover, legible action icons --- */
+main#content thead tr{ background:#FBFCFB }
+main#content tbody tr{ transition:background .12s ease }
+main#content tbody tr:hover{ background:#F6FAF8!important }
+main#content table button[style*="color:#9CA3AF"]{ color:#5B6470!important; border-radius:8px!important }
+main#content table button:hover{ background:#EEF2F0!important }
+/* --- Selects & filter dropdowns: unified rounding & borders --- */
+main#content select{ border-radius:11px!important; border-color:#E4E8E6!important }
+main#content select:hover{ border-color:#C7D2CC!important }
+/* --- Inputs: softer placeholders, consistent radius (radius from v3) --- */
+::placeholder{ color:#A7AEB8!important; opacity:1 }
+/* --- Filter / tab pill buttons: consistent rounded hit area --- */
+main#content button[style*="border-radius:20px"]{ transition:all .14s ease }
+/* --- Card section titles: consistent weight & spacing --- */
+main#content .fd.font-semibold{ letter-spacing:-.2px }
+/* --- Dividers a touch lighter for airiness --- */
+.divide-ink-50 > * + *{ border-color:#F2F4F3!important }
+.divide-ink-100 > * + *{ border-color:#EDF0EE!important }
+/* --- Stat numbers: tighter, more confident --- */
+main#content .fd[style*="font-size:30px"], main#content [style*="font-size:28px"][style*="font-weight:800"]{ letter-spacing:-1px }
+/* --- Secondary (white) buttons: subtle depth so they don't read as flat --- */
+button[style*="background:#fff"][style*="border:1.5px solid #ECEDF0"]{ box-shadow:0 1px 2px rgba(16,24,40,.05) }
+button[style*="background:#fff"][style*="border:1.5px solid #ECEDF0"]:hover{ background:#F7F9F8!important }
+/* --- Calendar strip: rounder, lifted --- */
+.cal-strip,.cal4{ box-shadow:0 2px 10px -4px rgba(16,24,40,.12)!important }
+/* --- Mobile bottom nav: cleaner top edge + active brand --- */
+nav.md\:hidden{ box-shadow:0 -6px 20px -10px rgba(16,24,40,.18) }
+/* --- Empty-state cards: gentle brand-tinted backdrop --- */
+main#content [style*="border-radius:18px"][style*="border:1px solid #EEECE8"]{ border-radius:20px!important }
+/* --- Modals: comfortable max-height scroll & crisp header divider --- */
+#modal .border-b.border-ink-100{ border-color:#EEF0EE!important }
+/* --- Login screen hero: deepen the dark panel --- */
+.min-h-screen [style*="background:#15171C"]{ background:linear-gradient(160deg,#1B1E25 0%,#15171C 70%)!important }
+/* --- Focus rings consistent on all controls --- */
+main#content input:focus,main#content select:focus,main#content textarea:focus{ box-shadow:0 0 0 3px rgba(16,185,129,.16)!important }
+
+
+
+/* ── Org chart (hierarchy page) — real top-down tree with connectors ── */
+.oc{display:inline-block;min-width:100%;text-align:center}
+.oc ul{display:flex;justify-content:center;position:relative;padding:22px 0 0;margin:0;list-style:none}
+.oc ul::before{content:'';position:absolute;top:0;left:50%;height:22px;border-left:1.5px solid var(--c-border-2)}
+.oc>ul{padding-top:0}
+.oc>ul::before{display:none}
+.oc li{display:flex;flex-direction:column;align-items:center;position:relative;padding:22px 9px 0}
+.oc>ul>li{padding-top:0}
+.oc li::before,.oc li::after{content:'';position:absolute;top:0;right:50%;width:50%;height:22px;border-top:1.5px solid var(--c-border-2)}
+.oc li::after{right:auto;left:50%;border-left:1.5px solid var(--c-border-2)}
+.oc li:only-child::before,.oc li:only-child::after{border-top:0}
+.oc li:only-child::after{height:22px;border-left:1.5px solid var(--c-border-2)}
+.oc>ul>li:only-child::after{display:none}
+.oc li:first-child::before,.oc li:last-child::after{border-top:0}
+.oc li:last-child::before{border-right:1.5px solid var(--c-border-2);border-radius:0 8px 0 0}
+.oc li:first-child::after{border-radius:8px 0 0 0}
+.oc>ul>li::before,.oc>ul>li::after{display:none}
+
+/* ════════ PORTED: Safe Backup 2026 design tokens + component kit (appended; cascade wins) ════════ */
+
+/* ════════ Bridge DESIGN TOKENS (2026 refresh) ════════
+   Single source of truth. Brand green is ONE token (--c-brand) so it's swappable.
+   Literals elsewhere in the file are legacy; new components reference these vars. */
+:root{
+  /* surfaces / neutrals — clean, airy, faintly cool greys */
+  --c-bg:#F7F8FA;            /* app canvas */
+  --c-surface:#FFFFFF;       /* cards / sheets */
+  --c-surface-2:#F3F5F8;     /* subtle raised / hover fills */
+  --c-paper:#F7F8FA;
+  --c-border:#EBEDF1;        /* hairline borders */
+  --c-border-2:#DBDFE6;      /* stronger borders / inputs */
+  /* ink / text */
+  --c-ink:#161A22;           /* near-black: headings, primary fill */
+  --c-ink-hover:#0C0E14;
+  --c-text:#1B2029;          /* body */
+  --c-text-2:#586273;        /* secondary (AA on white) */
+  --c-text-3:#8A93A3;        /* muted captions */
+  /* brand accent */
+  --c-brand:#0E9F6E; --c-brand-hover:#0C8C61; --c-brand-soft:#E8F8F1; --c-brand-ink:#0A6B49;
+  /* semantic */
+  --c-success:#0E9F6E; --c-success-soft:#E8F8F1; --c-success-ink:#0A6B49;
+  --c-warn:#D97706; --c-warn-soft:#FEF4E5; --c-warn-ink:#92560A;
+  --c-danger:#DC2626; --c-danger-hover:#B91C1C; --c-danger-soft:#FDEDED; --c-danger-ink:#991B1B;
+  --c-info:#0284C7; --c-info-soft:#E7F5FC; --c-info-ink:#075985;
+  --c-approve:#F97316;
+  /* spacing scale */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  /* radius — soft, modern */
+  --r-sm:10px; --r-md:13px; --r-lg:18px; --r-xl:24px; --r-pill:999px;
+  /* shadows — soft, diffuse, layered */
+  --sh-xs:0 1px 2px rgba(20,28,46,.04);
+  --sh-sm:0 1px 2px rgba(20,28,46,.04),0 4px 10px -3px rgba(20,28,46,.06);
+  --sh-md:0 8px 24px -8px rgba(20,28,46,.13),0 3px 8px -3px rgba(20,28,46,.07);
+  --sh-pop:0 28px 72px -18px rgba(20,28,46,.30),0 10px 28px -12px rgba(20,28,46,.16);
+  /* type scale */
+  --fs-h1:27px; --fs-h2:19px; --fs-card:14.5px; --fs-body:14px; --fs-cap:11.5px;
+  --ring:0 0 0 3.5px rgba(14,159,110,.20);
+}
+/* ─ Bridge base ─ */
+html,body{height:100%}
+body{font-family:"Hanken Grotesk",sans-serif;font-size:14px;line-height:1.5;background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior:none}
+.fd{font-family:"Schibsted Grotesk",sans-serif;letter-spacing:-.01em}
+
+/* ════════ Component primitives (token-driven) ════════ */
+/* Buttons */
+.ui-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:14px;line-height:1;padding:10px 17px;min-height:42px;border-radius:var(--r-md);border:1.5px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,opacity .15s,transform .1s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.ui-btn:active{transform:translateY(1px) scale(.985)}
+.ui-btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.ui-btn-md{padding:10px 17px;min-height:42px}
+.ui-btn-sm{padding:7px 13px;min-height:34px;font-size:13px;border-radius:var(--r-sm)}
+.ui-btn-primary{background:var(--c-ink);color:#fff;box-shadow:0 1px 2px rgba(20,28,46,.16),0 2px 8px -2px rgba(20,28,46,.18)}
+.ui-btn-primary:hover{background:var(--c-ink-hover);box-shadow:0 2px 4px rgba(20,28,46,.2),0 6px 16px -4px rgba(20,28,46,.24)}
+.ui-btn-brand{background:var(--c-brand);color:#fff;box-shadow:0 1px 2px rgba(14,159,110,.25),0 4px 12px -3px rgba(14,159,110,.4)}
+.ui-btn-brand:hover{background:var(--c-brand-hover);box-shadow:0 2px 5px rgba(14,159,110,.3),0 8px 20px -4px rgba(14,159,110,.45)}
+.ui-btn-ghost{background:var(--c-surface);color:var(--c-text);border-color:var(--c-border-2)}
+.ui-btn-ghost:hover{background:var(--c-surface-2);border-color:var(--c-text-3)}
+.ui-btn-subtle{background:var(--c-surface-2);color:var(--c-text-2);border-color:transparent}
+.ui-btn-subtle:hover{background:var(--c-border)}
+.ui-btn-danger{background:var(--c-danger);color:#fff;box-shadow:0 2px 10px -3px rgba(220,38,38,.4)}
+.ui-btn-danger:hover{background:var(--c-danger-hover)}
+.ui-btn[disabled],.ui-btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed;pointer-events:none}
+/* Inputs */
+.ui-input,.ui-select{width:100%;box-sizing:border-box;background:var(--c-surface);border:1.5px solid var(--c-border-2);border-radius:var(--r-md);padding:11px 14px;font-size:14px;color:var(--c-text);transition:border-color .15s,box-shadow .15s,background .15s;font-family:inherit;-webkit-appearance:none;appearance:none}
+/* ── Safari normalisation: native <select>/<date>/<time> controls render with heavy off-design chrome
+   in Safari (double-chevron, inset look, odd heights). Reset appearance everywhere and supply our own
+   chevron so selects match the rest of the UI in every browser. ── */
+select{-webkit-appearance:none !important;-moz-appearance:none !important;appearance:none !important;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>") !important;background-repeat:no-repeat !important;background-position:right 11px center !important;padding-right:34px !important}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{opacity:.5}
+.ui-input::placeholder{color:var(--c-text-3)}
+.ui-input:hover,.ui-select:hover{border-color:var(--c-text-3)}
+.ui-input:focus,.ui-select:focus{outline:none;border-color:var(--c-brand);box-shadow:var(--ring)}
+.ui-label{display:block;font-size:12.5px;font-weight:600;color:var(--c-text-2);margin-bottom:7px}
+/* Card */
+.ui-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.ui-card-pad{padding:20px}
+.ui-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 20px;border-bottom:1px solid var(--c-border)}
+.ui-card-title{font-family:"Schibsted Grotesk",sans-serif;font-weight:700;font-size:15px;color:var(--c-text)}
+/* Tab / chip bar */
+.ui-tabs{display:inline-flex;gap:3px;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:var(--r-md);padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.ui-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:8px 15px;min-height:38px;border-radius:9px;border:none;background:transparent;color:var(--c-text-2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ui-tab:hover{color:var(--c-text);background:rgba(20,28,46,.04)}
+.ui-tab.on{background:var(--c-surface);color:var(--c-ink);box-shadow:var(--sh-sm);font-weight:700}
+.ui-tab:focus-visible{outline:none;box-shadow:var(--ring)}
+.ui-tab-pill{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;min-height:38px;border-radius:var(--r-pill);border:1.5px solid var(--c-border-2);background:var(--c-surface);color:var(--c-text-2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ui-tab-pill:hover{border-color:var(--c-text-3);color:var(--c-text)}
+.ui-tab-pill.on{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}
+/* Badge / count */
+.ui-count{display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;line-height:1;border-radius:var(--r-pill);padding:2px 6px;min-width:18px;height:18px;color:#fff}
+/* Table */
+.ui-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.ui-table th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c-text-3);padding:10px 14px;border-bottom:1px solid var(--c-border)}
+.ui-table td{padding:12px 14px;border-bottom:1px solid var(--c-border);color:var(--c-text)}
+.ui-table tbody tr{transition:background .12s}
+.ui-table tbody tr:hover{background:var(--c-surface-2)}
+.ui-table tbody tr:last-child td{border-bottom:none}
+/* Skeleton */
+.ui-skel{background:linear-gradient(90deg,#eceef2 25%,#f5f6f8 37%,#eceef2 63%);background-size:400% 100%;animation:uiskel 1.3s ease infinite;border-radius:8px}
+@keyframes uiskel{0%{background-position:100% 0}100%{background-position:-100% 0}}
+/* Nav (sidebar) */
+.nav-item{position:relative;width:100%;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;border:none;cursor:pointer;transition:background .14s,color .14s;text-align:left;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.62);background:transparent}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.on{background:rgba(255,255,255,.1);color:#fff;font-weight:700}
+.nav-item.on::before{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:3px;background:var(--c-brand)}
+.nav-item.on .nav-ico{color:var(--c-brand)}
+.nav-item:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+.nav-ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(255,255,255,.55)}
+.nav-sec-hdr{width:100%;display:flex;align-items:center;gap:8px;padding:11px 12px 6px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,.42);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;transition:color .14s}
+.nav-sec-hdr:hover{color:rgba(255,255,255,.72)}
+.nav-chev{margin-left:auto;transition:transform .2s ease}
+.nav-sec.collapsed .nav-chev{transform:rotate(-90deg)}
+.nav-sec.collapsed .nav-sec-body{display:none}
+/* Brand mark */
+.nav-brand{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--c-brand),#0BC07E);color:#fff;display:grid;place-items:center;font-family:"Schibsted Grotesk",sans-serif;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px -1px rgba(14,159,110,.5)}
+/* Modal/toast pop-in */
+.pop{animation:uipop .2s cubic-bezier(.16,1,.3,1)}
+@keyframes uipop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+/* focus-visible rings on native inputs */
+.ui-input:focus-visible,.ui-select:focus-visible{outline:none}
+.rf:focus-visible{box-shadow:var(--ring);border-color:var(--c-brand)!important}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#D6D8DE;border-radius:4px}
+html{scrollbar-width:thin;scrollbar-color:#D6D8DE transparent}
+input,select,textarea{outline:none}
+.rf:focus{box-shadow:0 0 0 3px rgba(16,185,129,.15);border-color:#10B981!important}
+/* Toggles */
+.tog{position:relative;width:40px;height:24px;border-radius:12px;background:var(--c-border-2);transition:background .18s;cursor:pointer;border:none;flex-shrink:0}
+.tog span{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s cubic-bezier(.16,1,.3,1);box-shadow:0 1px 3px rgba(0,0,0,.22)}
+.tog.on{background:var(--c-brand)}.tog.on span{transform:translateX(16px)}
+.tog:focus-visible{outline:none;box-shadow:var(--ring)}
+/* Calendar strip */
+.cal4{background:#fff;border-radius:18px;border:1px solid #F0EEE9;display:flex;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.cal4-d{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;transition:background .12s;border:none;background:transparent;gap:2px}
+.cal4-d.sel{background:#15171C}.cal4-d:not(.sel):hover{background:#F9F8F5}
+.cal4-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B8B5AC}
+.cal4-d.sel .cal4-lbl{color:rgba(255,255,255,.4)}
+.cal4-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#15171C}
+.cal4-num.tod{background:#15171C;color:#fff}
+.cal4-d.sel .cal4-num{color:#fff}
+/* Checklist card */
+
+/* ─ TASK ROW ─ compact, fresh ─ */
+.tk{border-top:1px solid #F5F4F0;position:relative}
+
+/* Segmented response control */
+
+/* Icon action buttons */
+
+/* Submit btn */
+
+/* Filter dropdown */
+
+/* Day/date picker chips */
+.dchip{cursor:pointer;user-select:none;display:inline-flex;align-items:center;justify-content:center;border-radius:20px;padding:4px 10px;border:1.5px solid #D6D8DE;font-size:12px;font-weight:600;color:#6B7280;transition:all .12s}
+.dchip.on{background:#15171C;color:#fff;border-color:#15171C}
+
+/* iz / issue-zone (legacy, kept for compatibility) */
+.bg-ink-100{background:#ECEDF0!important}.bg-ink-200{background:#D6D8DE!important}
+.fld-card,.team-card-hover,.dept-card,.loc-card{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.fld-card:hover{border-color:#0E9F6E!important;box-shadow:0 8px 22px -6px rgba(14,159,110,.18);transform:translateY(-2px)}
+.team-card-hover:hover{border-color:#0E9F6E!important;box-shadow:0 10px 24px -8px rgba(14,159,110,.2)!important;transform:translateY(-2px)}
+.dept-card:hover{border-color:#0E9F6E!important;box-shadow:0 10px 24px -8px rgba(14,159,110,.18);transform:translateY(-2px)}
+.loc-card:hover{border-color:#3B82F6!important;box-shadow:0 10px 24px -8px rgba(59,130,246,.18);transform:translateY(-2px)}
+.shadow-soft{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04)}
+/* Progress bar — used in admin dashboard department performance */
+.pg{height:6px;background:#ECEDF0;border-radius:3px;overflow:hidden}
+.pgf{height:100%;background:#0E9F6E;border-radius:3px;transition:width .3s}
+
+.text-ink-300{color:#A9ADB8!important}.text-ink-400{color:#6B7280!important}.text-ink-500{color:#3A3E48!important}
+.text-ink-600{color:#262A33!important}
+.border-ink-100{border-color:#ECEDF0!important}.border-ink-200{border-color:#D6D8DE!important}
+.bg-brand-50{background:#ECFDF5!important}
+.text-brand-600{color:#10B981!important}.text-brand-700{color:#059669!important}
+.text-emerald-700{color:#047857!important}
+.text-amber-700{color:#B45309!important}
+.text-rose-700{color:#BE123C!important}
+.text-orange-700{color:#C2410C!important}
+.bg-sky-50{background:#F0F9FF!important}.text-sky-700{color:#0369A1!important}
+
+@media(min-width:768px){#main-wrap{margin-left:224px!important}}
+
+/* ════════ ROBUST RESPONSIVE SHELL — independent of the Tailwind CDN ════════
+   The app shell's layout + show/hide relied on Tailwind utility classes (hidden,
+   md:hidden, md:flex, fixed, sticky, flex-col, z-*). The codebase already hand-rolls
+   Tailwind COLOR utilities (see .text-ink-*, .bg-brand-* above) because the CDN is
+   often unavailable (offline / file://) — but the STRUCTURAL + responsive classes were
+   never given fallbacks, so when the CDN is dead the sidebar loses its positioning and
+   the mobile chrome (hamburger, bell, mobile profile, bottom nav) leaks onto desktop.
+   These rules make the shell fully self-sufficient at the 768px breakpoint. */
+/* Sidebar — fully positioned here so it does not depend on Tailwind's fixed/inset/w-56. */
+.sidebar{position:fixed;top:0;bottom:0;left:0;width:224px;z-index:30;flex-direction:column;overflow-y:auto}
+/* Sticky topbar (sticky/top-0/z-20). */
+.topbar{position:sticky;top:0;z-index:20}
+/* Main column. */
+#main-wrap{display:flex;flex-direction:column}
+/* Bottom mobile nav (fixed/bottom-0/inset-x-0/z-30). */
+.mob-nav{position:fixed;bottom:0;left:0;right:0;z-index:30}
+@media(min-width:768px){
+  .sidebar{display:flex!important}        /* desktop: show the collapsible sidebar */
+  .md\:hidden,.mob-nav{display:none!important}  /* desktop: hide all mobile-only chrome */
+  .md\:inline{display:inline!important}    /* desktop: show the "Create" button label */
+  .md\:block{display:block!important}
+  .md\:flex{display:flex!important}
+}
+@media(max-width:767px){
+  .sidebar{display:none!important}         /* mobile: hide the sidebar, use bottom nav + More */
+  #main-wrap{margin-left:0!important}
+}
+/* Base utility fallbacks the shell/login rely on (Tailwind defines these; we replicate for
+   the offline/CDN-blocked case). Responsive show-variants above override .hidden where needed. */
+.hidden{display:none}
+.overflow-hidden{overflow:hidden}
+@media(min-width:1024px){
+  .lg\:flex{display:flex!important}        /* login: desktop split panel */
+  .lg\:hidden{display:none!important}      /* login: mobile-only brand */
+}
+
+/* ════════ RESPONSIVE POLISH (Wave 1 — desktop + mobile) ════════
+   Consistent breakpoint: 768px = the sidebar/bottom-nav switch (matches Tailwind md:).
+   These rules harden layout for BOTH viewports without touching markup/handlers. */
+/* No accidental horizontal overflow anywhere. */
+html,body{max-width:100%;overflow-x:hidden}
+#content{min-width:0}
+/* Tables: never blow out the viewport — wrap them in a horizontal scroller on small screens.
+   Any .ui-table / raw <table> inside #content gets a scroll parent via overflow-x on its wrapper. */
+#content table{max-width:100%}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* Mobile: tighten page padding, guarantee ≥44px tap targets on interactive controls, keep content
+   clear of the bottom nav + iOS safe area. */
+@media(max-width:767px){
+  #content{padding-left:16px!important;padding-right:16px!important;padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  .ui-btn-sm{min-height:38px}
+  /* stat/card grids: never narrower than a comfortable tap row */
+  .grid{gap:.6rem}
+  /* native selects/inputs comfortable to tap */
+  select.rf,input.rf,.ui-input,.ui-select{min-height:44px}
+  /* calendar day cells & nav buttons stay tappable */
+  .csd,.cal4-d{min-height:52px}
+  /* modals: full-height bottom sheet that scrolls, never clipped */
+  #modal>[role=dialog]{max-height:92vh}
+}
+/* Desktop: keep forms/content from stretching uncomfortably wide; cap reading width on text pages. */
+@media(min-width:768px){
+  #content{padding-left:28px!important;padding-right:28px!important}
+  /* a single-column form inside a card shouldn't stretch full 1152px — cap inputs' parents */
+  .form-narrow{max-width:560px}
+}
+/* Safe-area aware sticky topbar on notched devices */
+.topbar{padding-top:env(safe-area-inset-top)}
+/* Subtle top sync bar (W1.1) — indeterminate progress shown during a background _lazyLoad. */
+#syncbar{position:fixed;top:0;left:0;right:0;height:2px;z-index:60;background:transparent;pointer-events:none;opacity:0;transition:opacity .2s}
+#syncbar.on{opacity:1}
+#syncbar::before{content:'';position:absolute;left:0;top:0;height:100%;width:40%;background:var(--c-brand);border-radius:2px;animation:syncslide 1.1s ease-in-out infinite}
+@keyframes syncslide{0%{left:-40%}50%{left:30%}100%{left:100%}}
+
+/* ═══ Checklist v6 — Card + Table layout ═══ */
+
+/* Status bar on left edge */
+
+/* Task table row */
+
+/* Pill response buttons */
+
+/* Icon action */
+
+/* Submit strip */
+
+/* Issue panel */
+
+/* ═══ Checklist UI vFinal ═══ */
+/* Calendar */
+.cal-strip{display:flex;background:#fff;border-radius:16px;border:1px solid #EEECE8;overflow:hidden}
+.csd{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;cursor:pointer;border:none;background:transparent;gap:3px;transition:background .1s;min-width:0}
+.csd:hover:not(.act){background:#F9F8F5}
+.csd.act{background:#111110}
+.csd-lbl{font-size:9px;font-weight:800;letter-spacing:.08em;color:#B8B5AC;text-transform:uppercase}
+.csd.act .csd-lbl{color:rgba(255,255,255,.4)}
+.csd-n{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:15px;font-weight:800;color:#111110}
+.csd.act .csd-n{color:#fff}
+.csd-dots{display:flex;gap:2px;height:5px;align-items:center}
+/* Checklist card */
+.clc{border-radius:18px;overflow:hidden;border:1px solid #EEECE8;background:#fff;transition:box-shadow .2s}
+.clc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;border:none;background:transparent;width:100%;gap:10px}
+.clc-hdr:active{background:#FAFAF8}
+/* Status styles */
+.st-on{background:#E8FAF3;color:#0D7A4E}
+.st-late{background:#FFEDED;color:#C92C2C}
+.st-pend{background:#FEF7E6;color:#B36A00}
+.st-sub{background:#E8FAF3;color:#0D7A4E}
+.st-pa{background:#FFF0E6;color:#B85000}
+/* Task row — THE KEY ELEMENT */
+
+ /* positive active */
+ /* negative active */
+/* Small icon button */
+
+/* Footer strip */
+.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F7F6F3;gap:10px;background:#FAFAF8}
+.submit-pill{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
+.submit-pill.go{background:#111110;color:#fff}.submit-pill.go:hover{background:#000;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.submit-pill.no{background:#EEECE8;color:#C8C5BD;cursor:default}
+/* Issue zone */
+
+/* ═══ Task row vFresh ═══ */
+
+/* Orb */
+
+/* Response inline chips */
+
+/* Action icon */
+
+/* ── Page transitions ── */
+.fade{animation:fi .18s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* A2: respect reduced-motion — disable animations/transitions for users who ask for it */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+/* ── Loading btn ── */
+
+/* Button click feedback */
+button:active{opacity:.75;transform:scale(.97);transition:transform .1s}
+/* A1: keyboard focus ring for bespoke inline buttons (the .ui-* primitives set their own). */
+button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
+.ui-btn:focus-visible,.ui-tab:focus-visible,.nav-item:focus-visible,.ui-tab-pill:focus-visible{border-radius:inherit}
+/* R1: analytics stat/chart grids — 2-up (stats) / stacked (charts) on mobile, full on desktop */
+.astat-grid{display:grid;gap:8px;grid-template-columns:repeat(2,1fr)}
+.achart-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:768px){.astat-grid{grid-template-columns:repeat(4,1fr)}.achart-grid{grid-template-columns:1fr 1fr}}
+/* Clickable stat cards */
+.stat-card-click:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)!important}
+.stat-card-click:active{transform:scale(.98);opacity:.9}
+
+/* ── §9 Org-chart tree (pure CSS connector lines, no libraries — classic <ul>/<li> technique) ── */
+.org-tree,.org-tree ul{display:flex;list-style:none;margin:0;padding:0}
+.org-tree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:20px 10px 0 10px}
+/* horizontal connectors: left half + right half meeting at centre-top of each node */
+.org-tree li::before,.org-tree li::after{content:'';position:absolute;top:0;width:50%;height:20px;border-top:2px solid #E2E4EA}
+.org-tree li::before{right:50%;border-right:2px solid #E2E4EA}
+.org-tree li::after{left:50%}
+/* only one child → drop side branches, keep a single straight vertical stem */
+.org-tree li:only-child::after{display:none}
+.org-tree li:only-child::before{right:auto;left:50%;width:2px;border-top:0;border-right:2px solid #E2E4EA}
+/* first/last child trim the dangling horizontal line on the outer edge */
+.org-tree li:first-child::before{border:0}
+.org-tree li:last-child::after{border:0}
+.org-tree li:last-child::before{border-right:2px solid #E2E4EA;border-radius:0 6px 0 0}
+.org-tree li:first-child::after{border-radius:6px 0 0 0;border-left:2px solid #E2E4EA}
+/* roots (only the outermost tree): no incoming line */
+.org-tree-root>li::before,.org-tree-root>li::after{display:none}
+.org-tree-root>li{padding-top:0}
+/* down-stub from a parent card to its children row */
+.org-tree li.org-parent>.org-children{position:relative;padding-top:20px}
+.org-tree li.org-parent>.org-children::before{content:'';position:absolute;top:0;left:50%;width:2px;height:20px;background:#E2E4EA}
+.org-card{position:relative;z-index:1}
+.org-scroll{overflow:auto;-webkit-overflow-scrolling:touch}
+/* Print: hide nav/topbar so only the page body prints. */
+@media print{
+  .sidebar,.topbar,.mobnav,.mob-nav,#bottom-nav{display:none!important}
+  #main-wrap{margin-left:0!important}
+  #content{padding:0!important;max-width:none!important}
+  @page{margin:14mm}
+}
+
