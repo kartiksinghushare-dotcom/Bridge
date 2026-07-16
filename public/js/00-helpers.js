@@ -50,6 +50,16 @@ function toast(msg,type='ok'){
   clearTimeout(_toast);_toast=setTimeout(()=>{if(t)t.innerHTML='';},type==='ok'?2800:4800);
 }
 
+/* toastAction(msg,type,{label,fn,ms}) — a toast with ONE inline action button (Undo / Retry).
+   `fn` is a STRING of JS run on click. Stays up longer (default 6s) so the user can act. */
+window._toastAction=null;
+function toastAction(msg,type='ok',{label='Undo',fn='',ms=6000}={}){
+  let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;z-index:500;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));pointer-events:none';document.body.appendChild(t);}
+  const bg=type==='ok'?'#15171C':type==='warn'?'#D97706':'#DC2626';
+  t.innerHTML=`<div class="pop" style="display:flex;align-items:center;gap:14px;background:${bg};color:#fff;padding:10px 12px 10px 18px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:auto;max-width:calc(100vw - 32px)"><span style="min-width:0;display:inline-flex;align-items:center;gap:7px">${type==='ok'?ic('check','w-3.5 h-3.5'):ic('alert','w-3.5 h-3.5')}<span>${esc(msg)}</span></span>${fn?`<button onclick="(()=>{const t=document.getElementById('toast');if(t)t.innerHTML='';})();${fn}" style="flex-shrink:0;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:800;cursor:pointer;min-height:34px">${esc(label)}</button>`:''}</div>`;
+  clearTimeout(_toast);clearTimeout(window._toastAction);window._toastAction=setTimeout(()=>{if(t)t.innerHTML='';},ms);
+}
+
 /* ===== ICONS ===== */
 const I={
   menu:'<path d="M3 12h18M3 6h18M3 18h18"/>',
@@ -93,6 +103,14 @@ const I={
   download:`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>`,
   upload:`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>`,
   send:`<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`,
+  shield:`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,
+  refresh:`<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>`,
+  calendar:`<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>`,
+  paperclip:`<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>`,
+  image:`<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>`,
+  sheet:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/>`,
+  globe:`<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>`,
+  info:`<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>`,
 };
 const ic=(n,cls='w-5 h-5',sw=2)=>`<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${I[n]||''}</svg>`;
 

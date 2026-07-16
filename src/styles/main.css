@@ -710,3 +710,8 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
   @page{margin:14mm}
 }
 
+
+/* ── v3 (Evarca alignment): missing utility classes ── */
+.hscroll{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+@keyframes uipop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}

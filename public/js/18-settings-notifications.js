@@ -514,24 +514,14 @@ App._testEmail=async()=>{
 };
 
 
+App._setSTab=(k)=>{S.filters.stab=k;rr();};
 function settingsPage(){
-  const stab=S.filters.stab||'workflow';
+  const stab=(S.filters.stab&&S.filters.stab!=='workflow')?S.filters.stab:'inapp';
   if(!_ns){_loadNS().then(()=>rr());return`<div class="fade max-w-2xl">${hdr('Settings','')}<div style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Loading…</div></div>`;}
   const ns=_ns;
-  const TABS=[['workflow','⚙️ Workflow'],['inapp','🔔 In-App'],['email','✉️ Email'],['templates','📝 Templates'],['data','📦 Data']];
-  const tabBar=`<div style="display:flex;gap:3px;margin-bottom:20px;background:#F5F4F0;border-radius:14px;padding:4px">
-    ${TABS.map(([k,l])=>`<button onclick="S.filters.stab='${k}';rr()" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:all .12s;${stab===k?'background:#fff;color:#15171C;box-shadow:0 1px 4px rgba(0,0,0,.08)':'background:transparent;color:#9CA3AF'}">${l}</button>`).join('')}
-  </div>`;
-
-  const workflowTab=`<div class="space-y-4">
-    <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5">
-      <h3 class="fd font-semibold text-sm mb-3">Approval & Submission</h3>
-      ${_nsTogRow('workflow_approval_flow','Enable approval flow','Submissions can require manager approval')}
-      ${_nsTogRow('workflow_late_marking','Mark submissions late after cutoff','Late status applied after schedule time')}
-      ${_nsTogRow('workflow_allow_edit','Allow users to request edits','Users can request to edit a submitted checklist')}
-      ${_nsTogRow('workflow_edit_approval','Require approval for edited submissions','Resubmissions go back for approval')}
-    </div>
-  </div>`;
+  // Workflow tab removed (Evarca-aligned): its 4 toggles were saved but never read by any code.
+  const TABS=[['inapp','In-App'],['email','Email'],['templates','Templates'],['data','Data']];
+  const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
 
   const inappTab=`<div class="space-y-4">
     <div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden">
@@ -687,7 +677,7 @@ function settingsPage(){
     </div>
   </div>`;
 
-  const content=stab==='workflow'?workflowTab:stab==='inapp'?inappTab:stab==='email'?emailTab:stab==='templates'?templatesTab:dataTab;
+  const content=stab==='inapp'?inappTab:stab==='email'?emailTab:stab==='templates'?templatesTab:dataTab;
   return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${content}</div>`;
 }
 

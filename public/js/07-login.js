@@ -11,7 +11,7 @@ function loginView(){return`<div class="min-h-screen flex" style="background:var
     <div class="flex items-center gap-3 relative"><div class="nav-brand" style="width:40px;height:40px;border-radius:12px;font-size:20px">B</div><span class="fd font-bold text-2xl">Bridge</span></div>
     <div class="relative"><h1 class="fd text-4xl font-bold" style="line-height:1.12;letter-spacing:-1px">Every shift,<br>every check,<br><span style="color:var(--c-brand)">accounted for.</span></h1><p style="color:rgba(255,255,255,.65);margin-top:18px;line-height:1.6;font-size:14.5px;max-width:380px">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
       <div style="display:flex;gap:20px;margin-top:32px">
-        <div><div class="fd" style="font-size:22px;font-weight:800">Clock-in</div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">geofenced &amp; on-time</div></div>
+        <div><div class="fd" style="font-size:22px;font-weight:800">Checklists</div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">every shift covered</div></div>
         <div style="width:1px;background:rgba(255,255,255,.12)"></div>
         <div><div class="fd" style="font-size:22px;font-weight:800">Approvals</div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">one unified inbox</div></div>
       </div></div>

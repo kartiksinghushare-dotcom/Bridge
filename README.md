@@ -1,6 +1,24 @@
-# Bridge (v2)
+# Bridge (v3)
 
 Shift checklists, escalation tickets and CRM for Shiftly — previously one 8,400-line `Bridge.html`, now a proper Vite project.
+
+## v3 — Evarca-aligned UI (no Evarca features added)
+
+Evarca is the UI/arrangement reference; only features that exist in Bridge were touched:
+
+- **Navigation hubs** — one sidebar entry with pill sub-tabs on the pages themselves:
+  - **Inbox** = Alerts (notifications) + Approvals
+  - **Dashboard** = Overview + Analytics + OKRs
+  - **Checklists** = Builder + All results + Team
+  - **People** = Directory + Hierarchy
+  - **Administration** = Settings + Access Control + Departments + Locations + Audit
+  - Sidebar sections are now just **Work / People / Manage** + the daily strip.
+- **Routing** — browser Back/Forward now walk in-app history (pushState + hashchange); deep links (`#tickets`) work at any time, not just at boot.
+- **UI kit** — `hdr`, buttons (`btnP/btnG` → `ui-btn` variants), fields, stat cards, empty/loading/error states all use the shared design tokens; every page picks this up automatically. Missing icons (shield, refresh, calendar, info…) added — Access Control/section chevrons used to render blank.
+- **Tickets page** — Evarca-style filter bar: search, assignee, priority (incl. Critical), sort (newest/oldest/priority), Clear, one-line status pill row with result count, and tap-to-filter stat cards.
+- **Settings** — dead "Workflow" tab removed (its toggles were saved but never read anywhere); tabs now use the standard segmented bar (In-App / Email / Templates / Data).
+- **CRM (Bridge-only, improved further)** — quick filters above the conversation list (All / Unread / Mine with counts), plus everything from v2 (kanban, due dates, unread sync, assignment notifications).
+- Login panel copy fixed (referenced clock-in/geofencing — features Bridge doesn't have).
 
 ## Quick start
 

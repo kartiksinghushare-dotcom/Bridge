@@ -1,4 +1,14 @@
-# Bridge v2 — bug report & fixes
+# Bridge — bug report & fixes
+
+## v3 additions (found while aligning UI with Evarca)
+
+- **Blank icons**: the sidebar section chevrons, profile chevron and the Access Control shield used icon names that didn't exist in Bridge's icon map — they rendered as empty SVGs. Added.
+- **⌘K quick search crashed for users with people-access**: it called `scopedUsers()` (an Evarca-only function that doesn't exist in Bridge) and offered screens (Payroll, HR Config…) whose routes don't exist in Bridge. Fixed to use Bridge's own visibility helper and Bridge screens only.
+- **Duplicate `const badge`/`BADGE_TONE` declarations** across two modules — in a browser this throws `SyntaxError: Identifier already declared` and would have killed the whole OKR/Access-Control module. Deduplicated (a full sweep confirms zero top-level const/let collisions remain).
+- **Broken `.pop` animation**: the modal pop-in referenced `@keyframes uipop` which was never defined. Added.
+- **Deep links only worked at boot**: no `hashchange` listener existed, and navigation used `replaceState`, so Back/Forward did nothing. Now pushState + hashchange (Evarca model).
+- **Dead "Workflow" settings tab** removed — its four toggles were written to the DB but no code ever read them.
+
 
 ## 1. "Mohit closes a ticket and it reopens hours later" — ROOT CAUSE FOUND
 

@@ -65,17 +65,22 @@ function ticketsPage(){
   const f=S.filters;
   const statusFilter=f.tkStatus||'';
   const priorityFilter=f.tkPriority||'';
-  const assigneeFilter=f.tkAssignee||'';
-  const _tkAssignees=[...new Set(tickets.map(t=>t.assignedTo).filter(Boolean))].map(id=>uById(id)).filter(Boolean).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
-  if(statusFilter)tickets=tickets.filter(t=>t.status===statusFilter);
+  // R12 (Evarca-aligned filters) — search + assignee + sort on top of status/priority.
+  const base=tickets.slice(); // pre-filter snapshot: drives the assignee options + stat cards
+  const q=(f.tkQ||'').toLowerCase();
+  if(q)tickets=tickets.filter(t=>((t.title||'')+' '+(t.description||'')+' '+(uById(t.assignedTo)?fullName(uById(t.assignedTo)):'')+' '+(uById(t.submitterId)?fullName(uById(t.submitterId)):'')).toLowerCase().includes(q));
+  if(statusFilter)tickets=tickets.filter(t=>statusFilter==='Resolved'?(t.status==='Resolved'||t.status==='Closed'):t.status===statusFilter);
   if(priorityFilter)tickets=tickets.filter(t=>t.priority===priorityFilter);
-  if(assigneeFilter)tickets=tickets.filter(t=>t.assignedTo===assigneeFilter);
-  const _tkQ=(f.tkSearch||'').trim().toLowerCase();
-  if(_tkQ)tickets=tickets.filter(t=>((t.title||'')+' '+(t.description||'')+' '+fullName(uById(t.assignedTo))+' '+fullName(uById(t.submitterId))).toLowerCase().includes(_tkQ));
+  if(f.tkAssignee)tickets=tickets.filter(t=>t.assignedTo===f.tkAssignee);
+  const _priRank={Critical:0,High:1,Medium:2,Low:3};
+  const _tkTime=t=>t.createdAt||t.date||'';
+  if(f.tkSort==='old')tickets.sort((a,b)=>String(_tkTime(a)).localeCompare(String(_tkTime(b))));
+  else if(f.tkSort==='pri')tickets.sort((a,b)=>((_priRank[a.priority]??9)-(_priRank[b.priority]??9))||String(_tkTime(b)).localeCompare(String(_tkTime(a))));
+  else tickets.sort((a,b)=>String(_tkTime(b)).localeCompare(String(_tkTime(a))));
 
-  const open=tickets.filter(t=>t.status==='Open').length;
-  const inprog=tickets.filter(t=>t.status==='In Progress').length;
-  const resolved=tickets.filter(t=>t.status==='Resolved'||t.status==='Closed').length;
+  const open=base.filter(t=>t.status==='Open').length;
+  const inprog=base.filter(t=>t.status==='In Progress').length;
+  const resolved=base.filter(t=>t.status==='Resolved'||t.status==='Closed').length;
 
   const priClr={High:'#DC2626',Medium:'#F59E0B',Low:'#6B7280',Critical:'#7C3AED'};
   const priBg={High:'#FEF2F2',Medium:'#FFFBEB',Low:'#F9FAFB',Critical:'#F5F3FF'};
@@ -86,7 +91,7 @@ function ticketsPage(){
     const cl=clById(t.checklistId);
     const canResolve=can('tickets','resolve')||can('tickets','manage')||(t.assignedTo===S.uid);
     const canDelete=can('tickets','delete');
-    return'<div style="background:#fff;border-radius:16px;border:1.5px solid #ECEDF0;padding:16px;border-left:4px solid '+(priClr[t.priority]||'#9CA3AF')+'">'+
+    return'<div style="background:var(--c-surface);border-radius:var(--r-lg);border:1px solid var(--c-border);box-shadow:var(--sh-sm);padding:16px;border-left:4px solid '+(priClr[t.priority]||'#9CA3AF')+'">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">'+
         '<div style="flex:1;min-width:0">'+
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+
@@ -119,10 +124,10 @@ function ticketsPage(){
         (submitter?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#9CA3AF">From</span><span style="font-size:12px;font-weight:700;color:#374151">'+esc(fullName(submitter))+'</span></div>':'')+
         (cl?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#9CA3AF">Checklist</span><span style="font-size:12px;font-weight:700;color:#374151">'+esc(cl.name)+'</span></div>':'')+
         '<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+
-          (canResolve&&t.status==='Open'?`<button onclick="App._tkSetStatus(this)" data-id="${t.id}" data-st="In Progress" style="padding:5px 12px;border-radius:8px;background:#EFF6FF;color:#1D4ED8;font-size:12px;font-weight:600;border:1.5px solid #BFDBFE;cursor:pointer">Start</button>`:'')+
-          (canResolve&&t.status==='In Progress'?`<button onclick="App._resolveTicket('${t.id}')" style="padding:5px 12px;border-radius:8px;background:#ECFDF5;color:#047857;font-size:12px;font-weight:600;border:1.5px solid #A7F3D0;cursor:pointer">Resolve</button>`:'')+
-          ((canResolve||can('tickets','close'))&&(t.status==='Open'||t.status==='In Progress')?`<button onclick="App._tkSetStatus(this)" data-id="${t.id}" data-st="Closed" style="padding:5px 12px;border-radius:8px;background:#F6F7F8;color:#6B7280;font-size:12px;font-weight:600;border:1.5px solid #E5E7EB;cursor:pointer">Close</button>`:'')+
-          ((can('tickets','reopen')||can('tickets','manage'))&&(t.status==='Resolved'||t.status==='Closed')?`<button onclick="App._tkSetStatus(this)" data-id="${t.id}" data-st="Open" style="padding:5px 12px;border-radius:8px;background:#FFF7ED;color:#C2410C;font-size:12px;font-weight:600;border:1.5px solid #FED7AA;cursor:pointer">Reopen</button>`:'')+
+          (canResolve&&t.status==='Open'?btn('Start','App._tkSetStatus(this)',{variant:'subtle',size:'sm',attrs:`data-id="${t.id}" data-st="In Progress"`}):'')+
+          (canResolve&&t.status==='In Progress'?btn('Resolve',`App._resolveTicket('${t.id}')`,{variant:'brand',size:'sm'}):'')+
+          ((canResolve||can('tickets','close'))&&(t.status==='Open'||t.status==='In Progress')?btn('Close','App._tkSetStatus(this)',{variant:'ghost',size:'sm',attrs:`data-id="${t.id}" data-st="Closed"`}):'')+
+          ((can('tickets','reopen')||can('tickets','manage'))&&(t.status==='Resolved'||t.status==='Closed')?btn('Reopen','App._tkSetStatus(this)',{variant:'ghost',size:'sm',attrs:`data-id="${t.id}" data-st="Open"`}):'')+
         '</div>'+
       '</div>'+
     '</div>';
@@ -130,27 +135,34 @@ function ticketsPage(){
 
   return'<div class="fade">'+
     hdr('Tickets','Escalation tickets from checklist responses')+
-    // Stats row
+    // Stats row — tap a card to filter by that status (Clear resets)
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
-      statCard('Open',open,'#F97316')+
-      statCard('In Progress',inprog,'#3B82F6')+
-      statCard('Resolved',resolved,'#0E9F6E')+
+      statCard('Open',open,'#F97316',"App._tkFilter('status','Open')")+
+      statCard('In Progress',inprog,'#3B82F6',"App._tkFilter('status','In Progress')")+
+      statCard('Resolved',resolved,'#0E9F6E',"App._tkFilter('status','Resolved')")+
     '</div>'+
-    // Search + assignee filter
-    '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">'+
-      '<div style="position:relative;flex:1;min-width:200px;max-width:340px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9CA3AF;display:flex">'+ic('search','w-4 h-4')+'</span><input id="tk-search" value="'+esc(f.tkSearch||'')+'" oninput="App._tkSearch(this.value)" placeholder="Search tickets\u2026" style="width:100%;padding:8px 12px 8px 34px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;outline:none;background:#fff;box-sizing:border-box"/></div>'+
-      ((isAdmin()||isSubAdmin())&&_tkAssignees.length?'<select onchange="App._tkFilter(\'assignee\',this.value)" style="padding:8px 10px;border:1.5px solid '+(assigneeFilter?'#15171C':'#E5E7EB')+';border-radius:10px;font-size:12.5px;font-weight:600;background:#fff;cursor:pointer;color:#374151"><option value="">All assignees</option>'+_tkAssignees.map(u=>'<option value="'+u.id+'" '+(assigneeFilter===u.id?'selected':'')+'>'+esc(fullName(u))+'</option>').join('')+'</select>':'')+
-    '</div>'+
-    // Filters
-    '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'+
-      ['','Open','In Progress','Resolved','Closed'].map(s=>{const on=statusFilter===s;return`<button onclick="App._tkFilter('status','${s}')" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid ${on?'#15171C':'#E5E7EB'};background:${on?'#15171C':'#fff'};color:${on?'#fff':'#6B7280'};cursor:pointer">${s||'All'}</button>`;}).join('')+
-      '<div style="width:1px;background:#E5E7EB;margin:0 2px"></div>'+
-      ['','High','Medium','Low'].map(p=>{const on=priorityFilter===p;return`<button onclick="App._tkFilter('priority','${p}')" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid ${on?'#15171C':'#E5E7EB'};background:${on?'#15171C':'#fff'};color:${on?'#fff':'#6B7280'};cursor:pointer">${p||'All priority'}</button>`;}).join('')+
-    '</div>'+
+    // R12 Filters: search · assignee · priority · sort (+ Clear), status pills below (one-line scroll)
+    (()=>{
+      const _selSt='font-size:12.5px;padding:6px 26px 6px 10px;min-height:0;height:34px;width:auto';
+      const _people=[...new Set(base.map(t=>t.assignedTo).filter(Boolean))].map(id=>uById(id)).filter(Boolean).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
+      const _active=!!(f.tkQ||statusFilter||priorityFilter||f.tkAssignee||f.tkSort);
+      return '<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:10px">'+
+        '<div style="position:relative;flex:1;min-width:170px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--c-text-3);display:flex">'+ic('search','w-4 h-4')+'</span>'+
+        `<input id="tk-q" value="${esc(f.tkQ||'')}" oninput="S.filters.tkQ=this.value;App._searchRR('tk-q')" placeholder="Search title, description, people…" class="ui-input" style="padding:6px 10px 6px 32px;min-height:34px;font-size:12.5px"/></div>`+
+        `<select onchange="S.filters.tkAssignee=this.value;rr()" class="ui-select" style="${_selSt}"><option value="">All assignees</option>${_people.map(p=>`<option value="${p.id}" ${f.tkAssignee===p.id?'selected':''}>${esc(fullName(p))}</option>`).join('')}</select>`+
+        `<select onchange="App._tkFilter('priority',this.value)" class="ui-select" style="${_selSt}"><option value="">Any priority</option>${['Critical','High','Medium','Low'].map(p=>`<option ${priorityFilter===p?'selected':''}>${p}</option>`).join('')}</select>`+
+        `<select onchange="S.filters.tkSort=this.value;rr()" class="ui-select" style="${_selSt}"><option value="">Newest first</option><option value="old" ${f.tkSort==='old'?'selected':''}>Oldest first</option><option value="pri" ${f.tkSort==='pri'?'selected':''}>By priority</option></select>`+
+        (_active?`<button onclick="['tkQ','tkStatus','tkPriority','tkAssignee','tkSort'].forEach(k=>delete S.filters[k]);rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:'')+
+      '</div>'+
+      '<div class="hscroll" style="gap:8px;margin-bottom:16px;align-items:center">'+
+        ['','Open','In Progress','Resolved','Closed'].map(st=>{const on=statusFilter===st;return`<button type="button" class="ui-tab-pill${on?' on':''}" style="flex-shrink:0" onclick="App._tkFilter('status','${st}')">${st||'All'}</button>`;}).join('')+
+        `<span style="flex-shrink:0;font-size:11.5px;color:var(--c-text-3);font-weight:600;margin-left:4px">${tickets.length} ticket${tickets.length===1?'':'s'}</span>`+
+      '</div>';
+    })()+
     // List
     (tickets.length?
       '<div style="display:flex;flex-direction:column;gap:10px">'+tickets.map(tkCard).join('')+'</div>':
-      empty('ticket','No tickets','Tickets are created automatically when an escalation answer is submitted.')
+      (_isLoading('tickets')?loadingState('Loading tickets…'):empty('ticket','No tickets','Tickets are created automatically when an escalation answer is submitted.'))
     )+
   '</div>';
 }
@@ -189,7 +201,6 @@ App._showTeamStat=(uid,type)=>{
 
 App._tkSetStatus=(el)=>{const id=el.dataset.id,status=el.dataset.st;App._ticketStatus(id,status);};
 App._tkFilter=(key,val)=>{if(key==='status')S.filters.tkStatus=val;else if(key==='assignee')S.filters.tkAssignee=val;else S.filters.tkPriority=val;rr();};
-App._tkSearch=(v)=>{S.filters.tkSearch=v;clearTimeout(App.__tkSearchT);App.__tkSearchT=setTimeout(()=>{rr();const el=document.getElementById('tk-search');if(el){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}},230);};
 App._ticketStatus=async(id,status)=>{
   const t=(DB.tickets||[]).find(x=>x.id===id);if(!t)return;
   const _tkOk = status==='Open' ? (can('tickets','reopen')||can('tickets','manage'))

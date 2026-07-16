@@ -10,43 +10,64 @@ const NAV_MGR=[['dashboard','grid','Dashboard'],['mychecklists','check','My Chec
 const MOB_ADM=['dashboard','mychecklists','tickets','notifications','more'];
 const MOB_USR=['mychecklists','tickets','notifications','more'];
 const MOB_MGR=['dashboard','mychecklists','tickets','notifications','more'];
-/* ── PORTED NAV v2 (perms-driven, HRM entries removed; analytics kept from production) ── */
+/* ── NAV v3 (Evarca-aligned): perms-driven master list + HUBS.
+   A hub is ONE sidebar entry whose member pages show a pill sub-tab strip.
+   Routes are unchanged — deep links, notifications and ⌘K keep working. ── */
 const _isMgrRole=()=>{const r=(typeof _roleOf==='function')?_roleOf(me()):null;return !!r&&r.id==='manager';};
 const NAV_ALL=[
-  ['dashboard','grid','Dashboard',()=>can('analytics','view')],
+  ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
+  ['hub:inbox','bell','Inbox',()=>true],
+
+  ['hub:cl','list','Checklists',()=>!!_hubHome('cl')],
+  ['questions','help','Questions',()=>can('questions','view')],
   ['tickets','ticket','Tickets',()=>can('tickets','view')],
   ['crm','msg','CRM',()=>can('crm','view')],
-  ['allcl','list','All Checklists',()=>can('allChecklists','view')||can('teamview','view')],
-  ['users','users','Users',()=>can('employees','view')],
-  ['hierarchy','tree','Hierarchy',()=>can('hierarchy','view')],
-  ['checklists','list','Create Checklist',()=>can('checklists','create')],
-  ['questions','help','Questions',()=>can('questions','view')],
-  ['approvals','approve','Inbox — Approvals',()=>can('approvals','view')],
-  ['notifications','bell','Inbox — Alerts',()=>true],
-  ['okr','chart','OKRs',()=>can('okr','view')],
-  ['locations','pin','Locations',()=>can('locations','view')],
-  ['departments','dept','Departments',()=>can('departments','view')],
-  ['settings','cog','Settings',()=>can('settings','view')],
-  ['audit','audit','Audit',()=>can('audit','view')],
-  ['accesscontrol','shield','Access Control',()=>can('accessControl','view')],
+
+  ['hub:people','users','People',()=>!!_hubHome('people')],
+
+  ['hub:admin','shield','Administration',()=>!!_hubHome('admin')],
 ];
-const navFor=()=>NAV_ALL.filter(n=>{try{return !!n[3]();}catch(e){return false;}}).map(n=>[n[0],n[1],n[2]]);
-const NAV_DAILY=['dashboard','mychecklists','approvals','notifications']; // keep the daily strip tiny — everything else lives in named sections
-const NAV_SECTION_OF={
-  // My time — everything about hours, presence and time off
-  attendance:'Time',leave:'Time',overtime:'Time',shifts:'Time',
-  // Work — tasks and content
-  checklists:'Work',allcl:'Work',questions:'Work',tickets:'Work',crm:'Work',letters:'Work',announcements:'Work',surveys:'Work',
-  // People
-  users:'People',teamview:'People',hierarchy:'People',lifecycle:'People',discipline:'People',
-  // Insights
-  okr:'People',
-  // Setup (admin plumbing — collapsed unless you're in it)
-  hrmconfig:'Setup',payroll:'Setup',locations:'Setup',departments:'Setup',settings:'Setup',audit:'Setup',accesscontrol:'Setup',
+/* ───── HUBS: one sidebar entry, sub-tab strip on every member route ───── */
+const HUB_DEF={
+  inbox:{label:'Inbox',tabs:[
+    ['notifications','Alerts',()=>true],
+    ['approvals','Approvals',()=>can('approvals','view')]]},
+  dash:{label:'Dashboard',tabs:[
+    ['dashboard','Overview',()=>can('analytics','view')],
+    ['analytics','Analytics',()=>can('analytics','view')],
+    ['okr','OKRs',()=>can('okr','view')]]},
+  cl:{label:'Checklists',tabs:[
+    ['checklists','Builder',()=>can('checklists','create')],
+    ['allcl','All results',()=>can('allChecklists','view')||can('teamview','view')],
+    ['teamview','Team',()=>can('teamview','view')]]},
+  people:{label:'People',tabs:[
+    ['users','Directory',()=>can('employees','view')],
+    ['hierarchy','Hierarchy',()=>can('hierarchy','view')]]},
+  admin:{label:'Administration',tabs:[
+    ['settings','Settings',()=>can('settings','view')],
+    ['accesscontrol','Access Control',()=>can('accessControl','view')],
+    ['departments','Departments',()=>can('departments','view')],
+    ['locations','Locations',()=>can('locations','view')],
+    ['audit','Audit',()=>can('audit','view')]]},
 };
-const NAV_SECTION_ORDER=['Work','People','Setup'];
-const NAV_SECTION_ICON={Time:'clock',Work:'list',People:'users',Insights:'chart',Setup:'cog'};
+function _hubOf(route){for(const k in HUB_DEF)if(HUB_DEF[k].tabs.some(t=>t[0]===route))return k;return null;}
+function _hubTabsAllowed(k){return (HUB_DEF[k]?HUB_DEF[k].tabs:[]).filter(t=>{try{return !!t[2]();}catch(e){return false;}});}
+function _hubHome(k){const t=_hubTabsAllowed(k);return t.length?t[0][0]:null;}
+function _hubStrip(k){
+  const tabs=_hubTabsAllowed(k);if(tabs.length<2)return'';
+  return `<div class="hscroll" style="gap:4px;margin-bottom:16px;padding:5px;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:14px;width:fit-content;max-width:100%">${tabs.map(([r,l])=>{const on=S.route===r;
+    return `<button onclick="App.go('${r}')" style="flex-shrink:0;padding:8px 15px;border-radius:10px;border:none;background:${on?'var(--c-surface)':'transparent'};box-shadow:${on?'0 1px 3px rgba(21,23,28,.1)':'none'};color:${on?'var(--c-text)':'var(--c-text-2)'};font-size:13px;font-weight:${on?'800':'600'};cursor:pointer;transition:background .15s,color .15s;white-space:nowrap">${l}${(r==='notifications'||r==='approvals')?_navBadgeFor(r):''}</button>`;}).join('')}</div>`;
+}
+const navFor=()=>NAV_ALL.filter(n=>{try{return !!n[3]();}catch(e){return false;}}).map(n=>[n[0],n[1],n[2]]);
+const NAV_DAILY=['hub:dash','mychecklists','hub:inbox']; // keep the daily strip tiny — everything else lives in named sections
+const NAV_SECTION_OF={
+  'hub:cl':'Work',questions:'Work',tickets:'Work',crm:'Work',
+  'hub:people':'People',
+  'hub:admin':'Manage',
+};
+const NAV_SECTION_ORDER=['Work','People','Manage'];
+const NAV_SECTION_ICON={Time:'clock',Work:'list',People:'users',Manage:'cog'};
 function navSectionsFor(){
   const flat=navFor();
   const daily=[],sections={};
@@ -70,38 +91,55 @@ App.toggleNavSec=(name)=>{
   S._navCollapsed[name]=!cur;
   render();
 };
-App.go=(r)=>{S.route=r;try{history.replaceState(null,'','#'+r);}catch(e){}S.search='';S.expandedCl=null;S.afOpen=null;
+App.go=(r)=>{if(r&&String(r).slice(0,4)==='hub:')r=_hubHome(String(r).slice(4))||'mychecklists';S.route=r;S.search='';S.expandedCl=null;S.afOpen=null;
   // Preserve analytics filters; preserve questions sub-tab state; reset everything else
   if(r==='analytics'){/* keep filters */}
   else if(r==='questions'){const qTab=S.filters.qTab;const eQ=S.filters.expandedQ;const eL=S.filters.expandedL;S.filters={};if(qTab)S.filters.qTab=qTab;if(eQ)S.filters.expandedQ=eQ;if(eL)S.filters.expandedL=eL;}
   else if(r==='notifications'){const ntab=S.filters.ntab;S.filters={};if(ntab)S.filters.ntab=ntab;}
   else if(r==='settings'){const stab=S.filters.stab;const tplKey=S.filters.tplKey;S.filters={};if(stab)S.filters.stab=stab;if(tplKey)S.filters.tplKey=tplKey;}
+  else if(r==='accesscontrol'){const at=S.filters.acTab;const au=S.filters.acUser;const aq=S.filters.acQ;S.filters={};if(at)S.filters.acTab=at;if(au)S.filters.acUser=au;if(aq)S.filters.acQ=aq;}
   else{S.filters={};}
   if(r!=='teamview')S.tvUser=null;
-  // Update URL hash so email deep-links work
-  if(history.replaceState)history.replaceState(null,'','#'+r);
+  // Update URL hash so deep-links work; pushState so browser Back/Forward walk in-app history.
+  if(location.hash!=='#'+r){ if(history.pushState)history.pushState(null,'','#'+r); else if(history.replaceState)history.replaceState(null,'','#'+r); }
   render();window.scrollTo(0,0);
   // Lazy-load only the data this tab needs (nothing loads on a timer anymore).
   _lazyForRoute(r);};
+// ── Deep-link + Back/Forward support: react to hash changes and route to the target
+//    (App.go's guarded pushState prevents loops). ──
+window.addEventListener('hashchange',()=>{
+  if(!S.uid)return;
+  const r=(location.hash||'').replace(/^#/,'').trim();
+  if(r&&r!==S.route&&typeof App.go==='function')App.go(r);
+});
 App._lazyLoad=_lazyLoad;App._lazyLoadDate=_lazyLoadDate;
 
 /* ===== RENDER ===== */
 let _lastUserAction=0; // timestamp of last submit/approve/etc — prevents loadFromSB overwriting fresh state
 function _touchAction(){_lastUserAction=Date.now();}
-function render(){if(!S.uid){$('#app').innerHTML=loginView();return;}$('#app').innerHTML=shell(pageContent());}
+function render(){if(!S.uid){$('#app').innerHTML=loginView();return;}
+  // Preserve the sidebar's own scroll position across a full re-render (clicking a lower nav
+  // item used to jump the sidebar back to the top).
+  const _sb=document.querySelector('.sidebar');const _sy=_sb?_sb.scrollTop:0;
+  $('#app').innerHTML=shell(pageContent());
+  const _sb2=document.querySelector('.sidebar');if(_sb2&&_sy)_sb2.scrollTop=_sy;}
 function rr(){_invalidateNotifCache();const _y=window.scrollY||document.documentElement.scrollTop||0;const c=$('#content');if(c)c.innerHTML=pageContent();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
 App.rr=rr;
+// UI-1: live-search helper — rr() rebuilds #content and destroys the typing <input>, dropping
+// focus/caret. Re-render, then restore focus + selection on the search input by id.
+App._searchRR=(inputId)=>{const a=document.activeElement;const ss=a?a.selectionStart:null,se=a?a.selectionEnd:null;rr();const el=document.getElementById(inputId);if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se);}catch(e){}}};
 
 function _navBadgeFor(r){
+  if(r==='hub:inbox'){let n=0;try{n=_notifCount();}catch(e){}return n?countBadge(n,'danger'):'';}
   if(r==='notifications'){const n=_notifCount();return n?countBadge(n,'danger'):'';}
   if(r==='approvals'){const ab=_approvalPendingCount();return ab?countBadge(ab,'approve'):'';}
   if(r==='tickets'){const tkB=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;return tkB?countBadge(tkB,'rose'):'';}
   if(r==='crm'&&window.CRM&&CRM._loaded){try{const vis=_crmVisibleBoardIds();const cb=CRM.convos.filter(c=>vis[c.boardId]&&_crmUnread(c)).length;return cb?countBadge(cb,'approve'):'';}catch(e){return'';}}
-  if(r==='okr'){const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinFor(o.id,S.uid,_t)).length;return n?countBadge(n,'approve'):'';}
+  if(r==='okr'||r==='hub:dash'){try{const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinFor(o.id,S.uid,_t)).length;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
   return '';
 }
 function _navItemHTML([r,i,l]){
-  const act=S.route===r;
+  const act=String(r).slice(0,4)==='hub:'?_hubOf(S.route)===String(r).slice(4):S.route===r;
   return`<button onclick="App.go('${r}')" class="nav-item${act?' on':''}"><span class="nav-ico">${ic(i,'w-[17px] h-[17px]')}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</span>${_navBadgeFor(r)}</button>`;
 }
 function shell(content){
@@ -183,7 +221,7 @@ App.moreMenu=()=>{
   const {daily,sections}=navSectionsFor();
   const u=me();
   const tile=([r,i,l])=>{
-    const act=S.route===r;const b=_navBadgeFor(r);
+    const act=String(r).slice(0,4)==='hub:'?_hubOf(S.route)===String(r).slice(4):S.route===r;const b=_navBadgeFor(r);
     return`<button onclick="App.closeModal();App.go('${r}')" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:14px 8px;min-height:80px;border-radius:14px;border:1px solid ${act?'var(--c-brand)':'var(--c-border)'};background:${act?'var(--c-brand-soft)':'var(--c-surface)'};color:${act?'var(--c-brand-ink)':'var(--c-text)'};cursor:pointer">${b?`<span style="position:absolute;top:7px;right:7px">${b}</span>`:''}${ic(i,'w-[22px] h-[22px]')}<span style="font-size:11px;font-weight:700;text-align:center;line-height:1.2">${esc(l)}</span></button>`;
   };
   const sectionBlock=(label,items)=>`<div style="margin-top:6px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c-text-3);margin:14px 2px 8px">${esc(label)}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${items.map(tile).join('')}</div></div>`;

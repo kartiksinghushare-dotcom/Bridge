@@ -18,7 +18,6 @@ function _syncErr(label){return (e)=>{
 };}
 // Surface a caught exception from a user-initiated operation (validation already toasts its own message).
 function _opErr(e,ctx){console.warn('[op]',ctx,e?.message||e);toast((ctx?(ctx+' failed'):'Something went wrong')+(_isRlsErr(e)?' — permission denied':''),'err');}
-const badge=(text,tone='neutral')=>{const[bg,fg]=BADGE_TONE[tone]||BADGE_TONE.neutral;return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-pill);font-size:12px;font-weight:700;background:${bg};color:${fg}">${esc(text)}</span>`;};
 /* chipBar(items,activeKey,fnName,opts) — ONE tab/segment bar.
    items: [[key,label,count?],...]  fnName is a STRING like 'App.x' called as fnName('key').
    opts.style: 'segment'(default)|'pill'. Preserves existing onclick strings via fnName. */
@@ -84,7 +83,7 @@ function _approvalPendingCount(){return (DB.approvals||[]).filter(a=>a.status===
 App._cmdk=()=>{
   if(!S.uid)return;
   modalShell({title:'Quick search',sub:'Pages · people · OKRs — type, then Enter',size:'max-w-md',
-    body:`<div><input id="cmdk-in" class="ui-input rf" placeholder="e.g. payroll, Sara, revenue…" oninput="App._cmdkQ(this.value)" onkeydown="if(event.key==='Enter'){const b=document.querySelector('#cmdk-res [data-go]');if(b)b.click();}"/>
+    body:`<div><input id="cmdk-in" class="ui-input rf" placeholder="e.g. tickets, Sara, revenue…" oninput="App._cmdkQ(this.value)" onkeydown="if(event.key==='Enter'){const b=document.querySelector('#cmdk-res [data-go]');if(b)b.click();}"/>
       <div id="cmdk-res" style="margin-top:10px;max-height:320px;overflow-y:auto"></div></div>`,
     footer:btnG('Close','App.closeModal()')});
   setTimeout(()=>{const el=document.getElementById('cmdk-in');if(el){el.focus();App._cmdkQ('');}},60);
@@ -94,9 +93,10 @@ App._cmdkQ=(q)=>{
   q=(q||'').toLowerCase().trim();
   const out=[];
   navFor().forEach(([r,i,l])=>{if(!q||l.toLowerCase().includes(q))out.push({icon:i,label:l,sub:'Page',go:`App.closeModal();App.go('${r}')`});});
-  if(can('employees','view'))scopedUsers('employees').forEach(u=>{if(q&&fullName(u).toLowerCase().includes(q))out.push({icon:'users',label:fullName(u),sub:(u.position||'Person')+' · '+(u.department||''),go:`App.closeModal();S.search='${esc(fullName(u))}';App.go('users')`});});
+  if(typeof HUB_DEF!=='undefined')Object.keys(HUB_DEF).forEach(k=>{_hubTabsAllowed(k).forEach(([r,l])=>{if(q&&!l.toLowerCase().includes(q))return;if(out.some(o=>o.go.includes(`'${r}'`)))return;out.push({icon:'grid',label:l,sub:HUB_DEF[k].label,go:`App.closeModal();App.go('${r}')`});});});
+  if(can('employees','view'))(typeof visU==='function'?visU():DB.users).filter(Boolean).forEach(u=>{if(q&&fullName(u).toLowerCase().includes(q))out.push({icon:'users',label:fullName(u),sub:(u.position||'Person')+' · '+(u.department||''),go:`App.closeModal();S.search='${esc(fullName(u))}';App.go('users')`});});
   if(can('okr','view'))okrVisible().forEach(o=>{if(q&&(o.title||'').toLowerCase().includes(q))out.push({icon:'chart',label:o.title,sub:'OKR · L'+okrLevel(o),go:`App.closeModal();App.go('okr');S.filters.okrQ='${esc(o.title)}';rr()`});});
-  const SUB=[['Alerts & triggers','hrmconfig','cfgtab','alerts','hrSettings'],['Flow templates','hrmconfig','cfgtab','flows','hrSettings'],['Letter templates & letterhead','hrmconfig','cfgtab','lettertpl','hrSettings'],['Surveys (manage & results)','hrmconfig','cfgtab','surveys','hrSettings'],['Leave types','hrmconfig','cfgtab','types','hrSettings'],['Holidays','hrmconfig','cfgtab','holidays','hrSettings'],['Comp-off','hrmconfig','cfgtab','compoff','hrSettings'],['Reports hub','hrmanalytics','hraTab','reports','reports'],['Roles (Access Control)','accesscontrol','acTab','roles','accessControl'],['People (Access Control)','accesscontrol','acTab','people','accessControl'],['Email settings','settings','stab','email','settings'],['Templates (Settings)','settings','stab','templates','settings']];
+  const SUB=[['Email settings','settings','stab','email','settings'],['Templates (Settings)','settings','stab','templates','settings'],['In-app notification rules','settings','stab','inapp','settings'],['Roles (Access Control)','accesscontrol','acTab','roles','accessControl'],['People (Access Control)','accesscontrol','acTab','people','accessControl']];
   SUB.forEach(([label,route,fk,fv,area])=>{if(q&&label.toLowerCase().includes(q)&&can(area,'view'))out.push({icon:'cog',label:label,sub:'Screen',go:`App.closeModal();App.go('${route}');S.filters.${fk}='${fv}';rr()`});});
   box.innerHTML=out.slice(0,12).map(r=>`<button data-go onclick="${r.go}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:none;background:transparent;cursor:pointer;text-align:left" onmouseover="this.style.background='var(--c-surface-2)'" onmouseout="this.style.background='transparent'">
     <span style="width:30px;height:30px;border-radius:9px;background:var(--c-surface-2);display:grid;place-items:center;color:var(--c-text-2);flex-shrink:0">${ic(r.icon,'w-4 h-4')}</span>
@@ -357,7 +357,6 @@ function chipBar(items,activeKey,fnName,opts={}){
 const COUNT_TONE={danger:'#EF4444',approve:'#F97316',rose:'#E11D48',brand:'#0E9F6E'};
 const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style="background:${COUNT_TONE[tone]||tone};${extra}">${n}</span>`;
 /* badge(text,tone) — generic soft pill */
-const BADGE_TONE={brand:['var(--c-brand-soft)','var(--c-brand-ink)'],success:['var(--c-success-soft)','var(--c-success-ink)'],warn:['var(--c-warn-soft)','var(--c-warn-ink)'],danger:['var(--c-danger-soft)','var(--c-danger-ink)'],info:['var(--c-info-soft)','var(--c-info-ink)'],neutral:['var(--c-surface-2)','var(--c-text-2)']};
 
 
 /* ═════════════════ PORTED BLOCK: OKR MODULE (from Safe Backup) ═════════════════ */

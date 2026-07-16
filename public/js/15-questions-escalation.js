@@ -957,7 +957,7 @@ function notificationsPage(){
 
   };
 
-  return '<div class="fade">'+hdr('Notifications','')
+  return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')
     // Tabs
     +'<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'
     +TABS.map(t=>{
