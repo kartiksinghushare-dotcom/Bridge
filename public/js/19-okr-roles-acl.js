@@ -506,6 +506,7 @@ function _okrCanCreate(){return can('okr','create')||_okrCanManage();}
 function _okrCanEditNode(o){return can('okr','edit')||_okrCanManage()||o.createdBy===S.uid;}
 function _okrCanCheckin(o){if(o&&o.rollup)return false;return o.ownerId===S.uid||_okrCanEditNode(o);}
 function _okrLvlChip(lvl){const c=_OKR_LVL_C[lvl%_OKR_LVL_C.length];return`<span style="flex-shrink:0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:${c};color:#fff;letter-spacing:.03em">L${lvl}</span>`;}
+App._okrTogQtr=(q)=>{const a=S.filters.okrQtr||[];S.filters.okrQtr=a.includes(q)?a.filter(x=>x!==q):[...a,q];S.filters.okrQtrOpen=true;rr();};
 App._okrTogExp=(id)=>{_OKR_EXP[id]=!_OKR_EXP[id];rr();};
 App._okrNodeLogs=(id)=>{
   const o=okrById(id);if(!o)return;
@@ -599,26 +600,54 @@ function okrPage(){
     </div>`:'';
   // ── Filters (department / owner / status / level / search) ──
   const F=S.filters;
-  const fActive=!!(F.okrDept||F.okrSub||F.okrOwner||F.okrStatus||F.okrLvl||F.okrQ);
+  const fActive=!!(F.okrDept||F.okrSub||F.okrOwner||F.okrStatus||F.okrLvl||F.okrQ||(F.okrQtr||[]).length);
   const deptIds=[...new Set(vis.map(o=>okrRootOf(o).departmentId).filter(Boolean))];
   const subIds=F.okrDept?[...new Set(vis.map(o=>okrRootOf(o)).filter(r=>r.departmentId===F.okrDept&&r.subDepartmentId).map(r=>r.subDepartmentId))]:[];
   const ownerIds=[...new Set(vis.map(o=>o.ownerId).filter(Boolean))];
   const maxLvl=vis.reduce((m,o)=>Math.max(m,okrLevel(o)),0);
   const selSt='font-size:12px;padding:6px 26px 6px 10px;min-height:0;height:32px;width:auto';
-  const fBar=vis.length?`<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px">
+  const _qy2=Number(F.okrQtrYear)||new Date().getFullYear();
+  const _qsel=F.okrQtr||[];
+  const _QR=_okrQuarterRanges(_qy2);
+  const _qLabel=_qsel.length?_qsel.slice().sort().join(', ')+' · '+_qy2:'All quarters';
+  const _navB='width:26px;height:26px;border-radius:8px;border:1px solid var(--c-border-2);background:var(--c-surface);color:var(--c-text-2);cursor:pointer;font-size:14px;font-weight:800;display:grid;place-items:center';
+  const qtrDrop=`<div style="position:relative">
+      <button onclick="S.filters.okrQtrOpen=!S.filters.okrQtrOpen;rr()" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:9px;border:1.5px solid ${_qsel.length?'var(--c-text)':'var(--c-border-2)'};background:${_qsel.length?'var(--c-ink)':'var(--c-surface)'};color:${_qsel.length?'#fff':'var(--c-text-2)'};font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${ic('calendar','w-3.5 h-3.5')}${esc(_qLabel)}${ic('chevD','w-3 h-3')}</button>
+      ${F.okrQtrOpen?`<div style="position:absolute;top:37px;left:0;z-index:60;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;box-shadow:var(--sh-md);padding:10px;width:238px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <button onclick="S.filters.okrQtrYear=${_qy2-1};rr()" style="${_navB}" aria-label="Previous year">‹</button>
+          <span class="fd" style="font-size:13.5px;font-weight:800">${_qy2}</span>
+          <button onclick="S.filters.okrQtrYear=${_qy2+1};rr()" style="${_navB}" aria-label="Next year">›</button>
+        </div>
+        ${['Q1','Q2','Q3','Q4'].map(q=>{const on=_qsel.includes(q);const r=_QR[q];return`<div role="checkbox" aria-checked="${on}" onclick="App._okrTogQtr('${q}')" style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;${on?'background:var(--c-brand-soft);':''}" onmouseover="if(!${on})this.style.background='var(--c-surface-2)'" onmouseout="this.style.background='${on?'var(--c-brand-soft)':'transparent'}'">
+          <span style="width:16px;height:16px;border-radius:5px;border:1.5px solid ${on?'var(--c-brand)':'var(--c-border-2)'};background:${on?'var(--c-brand)':'#fff'};display:grid;place-items:center;color:#fff;flex-shrink:0">${on?ic('check','w-3 h-3'):''}</span>
+          <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--c-text)">${q}</span>
+          <span style="font-size:10.5px;color:var(--c-text-3)">${fmtS(r[0])} – ${fmtS(r[1])}</span>
+        </div>`;}).join('')}
+        <div style="display:flex;gap:6px;margin-top:9px">
+          ${_qsel.length?`<button onclick="S.filters.okrQtr=[];rr()" class="ui-btn ui-btn-ghost ui-btn-sm" style="flex:1">Clear</button>`:''}
+          <button onclick="S.filters.okrQtrOpen=false;rr()" class="ui-btn ui-btn-primary ui-btn-sm" style="flex:1">Done</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--c-text-3);margin-top:8px;line-height:1.5">Shows every OKR whose period overlaps a selected quarter — a 6-month OKR appears in both. OKRs without dates are hidden while filtering.</div>
+      </div>`:''}
+    </div>`;
+  const fBar=vis.length?`<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px;overflow:visible">
+      ${qtrDrop}
       <input id="okr-q" value="${esc(F.okrQ||'')}" oninput="S.filters.okrQ=this.value;App._searchRR('okr-q')" placeholder="Search objectives…" class="ui-input" style="flex:1;min-width:150px;height:32px;min-height:0;padding:4px 12px;font-size:12.5px"/>
       <select onchange="S.filters.okrDept=this.value;S.filters.okrSub='';rr()" class="ui-select" style="${selSt}"><option value="">All departments</option>${deptIds.map(id=>{const d=(DB.departments||[]).find(x=>x.id===id);return`<option value="${id}" ${F.okrDept===id?'selected':''}>${esc(d?d.name:id)}</option>`;}).join('')}</select>
       ${subIds.length?`<select onchange="S.filters.okrSub=this.value;rr()" class="ui-select" style="${selSt}"><option value="">All sub-departments</option>${subIds.map(id=>{const d=(DB.departments||[]).find(x=>x.id===id);return`<option value="${id}" ${F.okrSub===id?'selected':''}>${esc(d?d.name:id)}</option>`;}).join('')}</select>`:''}
       <select onchange="S.filters.okrOwner=this.value;rr()" class="ui-select" style="${selSt}"><option value="">All owners</option>${ownerIds.map(id=>{const u2=uById(id);return`<option value="${id}" ${F.okrOwner===id?'selected':''}>${esc(u2?fullName(u2):id)}</option>`;}).join('')}</select>
       <select onchange="S.filters.okrStatus=this.value;rr()" class="ui-select" style="${selSt}"><option value="">Any status</option>${['Achieved','On track','Off track','Not achieved','No data'].map(s=>`<option ${F.okrStatus===s?'selected':''}>${s}</option>`).join('')}</select>
       <select onchange="S.filters.okrLvl=this.value;rr()" class="ui-select" style="${selSt}"><option value="">Any level</option>${Array.from({length:maxLvl+1},(_,i)=>`<option value="${i}" ${F.okrLvl===String(i)?'selected':''}>L${i}</option>`).join('')}</select>
-      ${fActive?`<button onclick="S.filters.okrQ='';S.filters.okrDept='';S.filters.okrSub='';S.filters.okrOwner='';S.filters.okrStatus='';S.filters.okrLvl='';rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}
+      ${fActive?`<button onclick="S.filters.okrQ='';S.filters.okrDept='';S.filters.okrSub='';S.filters.okrOwner='';S.filters.okrStatus='';S.filters.okrLvl='';S.filters.okrQtr=[];S.filters.okrQtrOpen=false;rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}
     </div>`:'';
   // ── Tree (or a flat filtered list when any filter is on) ──
   let tree;
   if(fActive){
     const q=(F.okrQ||'').toLowerCase();
+    const _qy=Number(F.okrQtrYear)||new Date().getFullYear();
     const hits=vis.filter(o=>{
+      if((F.okrQtr||[]).length&&!_okrInQuarters(o,F.okrQtr,_qy))return false;
       if(F.okrDept&&okrRootOf(o).departmentId!==F.okrDept)return false;
       if(F.okrSub&&okrRootOf(o).subDepartmentId!==F.okrSub)return false;
       if(F.okrOwner&&o.ownerId!==F.okrOwner)return false;
@@ -1142,6 +1171,18 @@ function _okrHasOwnScale(o){return o.targetValue!==null&&o.targetValue!==undefin
 function _okrOwnCur(o){
   const v=okrCurrentOf(o);
   return(v===null||v===undefined)?Number(o.startValue||0):v;
+}
+/* ── Quarter filter: an OKR belongs to every quarter its period OVERLAPS
+   (a 6-month OKR falls into both quarters). Uses the node's own period,
+   falling back to the span of its descendants (_okrEffPeriod). ── */
+function _okrQuarterRanges(year){return{Q1:[year+'-01-01',year+'-03-31'],Q2:[year+'-04-01',year+'-06-30'],Q3:[year+'-07-01',year+'-09-30'],Q4:[year+'-10-01',year+'-12-31']};}
+function _okrInQuarters(o,quarters,year){
+  if(!quarters||!quarters.length)return true;
+  const eff=_okrEffPeriod(o);
+  const ps=eff.ps||eff.pe,pe=eff.pe||eff.ps;
+  if(!ps||!pe)return false; // no dates → hidden while a quarter filter is on
+  const R=_okrQuarterRanges(year);
+  return quarters.some(q=>{const r=R[q];return r&&ps<=r[1]&&pe>=r[0];});
 }
 function _okrEffPeriod(o){
   let ps=o.periodStart||null,pe=o.periodEnd||null;
