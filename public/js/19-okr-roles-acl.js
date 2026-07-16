@@ -361,10 +361,10 @@ const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style
 
 /* ═════════════════ PORTED BLOCK: OKR MODULE (from Safe Backup) ═════════════════ */
 /* ═══ PORTED: OKR mappers ═══ */
-function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
+function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',revisedTarget:(o.revised_target===null||o.revised_target===undefined)?null:Number(o.revised_target),revisedNote:_unesc(o.revised_note)||'',revisedAt:o.revised_at||null,revisedBy:o.revised_by||null,sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
 function _mOKRCheckin(rows){return(rows||[]).map(c=>({id:c.id,okrId:c.okr_id,userId:c.user_id||null,date:c.date,value:(c.value===null||c.value===undefined)?null:Number(c.value),comment:_unesc(c.comment)||'',photos:Array.isArray(c.photos)?c.photos:[],statusMark:c.status_mark||null,editCount:c.edit_count||0,createdAt:c.created_at,updatedAt:c.updated_at||null}));}
 function _mOKRLog(rows){return(rows||[]).map(l=>({id:l.id,okrId:l.okr_id,actorId:l.actor_id||null,action:l.action||'',details:(l.details&&typeof l.details==='object')?l.details:{},createdAt:l.created_at}));}
-function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,rollup:!!o.rollup,rollup_mode:o.rollupMode||'sum',sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
+function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,rollup:!!o.rollup,rollup_mode:o.rollupMode||'sum',revised_target:(o.revisedTarget===null||o.revisedTarget===undefined||o.revisedTarget==='')?null:o.revisedTarget,revised_note:o.revisedNote||'',revised_at:o.revisedAt||null,revised_by:o.revisedBy||null,sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 function _okrCheckinRow(c){return{id:c.id,okr_id:c.okrId,user_id:c.userId||null,date:c.date,value:(c.value===null||c.value===undefined||c.value==='')?null:c.value,comment:c.comment||'',photos:(c.photos||[]).filter(p=>typeof p==='string'&&p!=='[photo]'),status_mark:c.statusMark||null,edit_count:c.editCount||0,created_at:c.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 /* ═══ PORTED: OKR helpers ═══ */
 const OKR_METRICS=[['number','Number'],['percent','Percentage'],['currency','Currency'],['yesno','Yes / No (done or not)']];
@@ -378,16 +378,23 @@ function okrCheckinsOf(id){return(DB.okrCheckins||[]).filter(c=>c.okrId===id).so
 function okrLatestCheckin(id){const cs=okrCheckinsOf(id);return cs.length?cs[cs.length-1]:null;}
 // Leaf progress %: how far the latest reported value moved from startValue toward targetValue.
 // Works for direction 'down' too (target < start flips the sign naturally). Capped 0–150.
-function _okrLeafPct(o){
+/* ── Revisions: a revised target OVERLAYS the same objective. The original target and every
+   check-in stay untouched — one input stream feeds both numbers, so the two can be compared. ── */
+function okrHasRevision(o){return !!o&&o.revisedTarget!==null&&o.revisedTarget!==undefined&&o.metricType!=='yesno';}
+function _okrTargetEff(o){return okrHasRevision(o)?Number(o.revisedTarget):((o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue));}
+function _okrPctVs(o,t){
   const v0=okrCurrentOf(o);if(v0===null||v0===undefined)return null;
   if(o.metricType==='yesno')return Number(v0)>=1?100:0;
   const s=Number(o.startValue||0),v=Number(v0);
-  const t=(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue);
-  if(t===null||!isFinite(t))return null;
+  if(t===null||t===undefined||!isFinite(t))return null;
   if(t===s)return(o.direction==='down'?(v<=t):(v>=t))?100:0;
   const pct=((v-s)/(t-s))*100;
   return Math.round(Math.max(0,Math.min(150,pct))*10)/10;
 }
+/* When a revision is active, the OPERATIVE progress/status track the revised target;
+   okrProgressOrig() keeps the original number for the side-by-side comparison. */
+function _okrLeafPct(o){return _okrPctVs(o,_okrTargetEff(o));}
+function okrProgressOrig(o){return _okrPctVs(o,(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue));}
 // Node progress %: children average (roll-up) if it has children, else its own check-ins. Cycle-safe.
 function okrProgress(o,_seen){
   // Progress at EVERY level comes from the objective's OWN check-ins against its OWN
@@ -506,6 +513,46 @@ function _okrCanCreate(){return can('okr','create')||_okrCanManage();}
 function _okrCanEditNode(o){return can('okr','edit')||_okrCanManage()||o.createdBy===S.uid;}
 function _okrCanCheckin(o){if(o&&o.rollup)return false;return o.ownerId===S.uid||_okrCanEditNode(o);}
 function _okrLvlChip(lvl){const c=_OKR_LVL_C[lvl%_OKR_LVL_C.length];return`<span style="flex-shrink:0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:${c};color:#fff;letter-spacing:.03em">L${lvl}</span>`;}
+/* ── Revise targets: the node + its DIRECT sub-objectives in one compact screen.
+   Originals are never modified; entering the original value removes that revision. ── */
+App._okrRevise=(id)=>{
+  const o=okrById(id);if(!o)return;
+  if(!_okrCanEditNode(o))return toast('You can\'t revise this OKR','err');
+  const rows=[o,...okrChildren(o.id)].filter(x=>x.metricType!=='yesno');
+  if(!rows.length)return toast('Yes/No objectives can\'t be revised','err');
+  const inp=(x)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--c-border)">
+      ${_okrLvlChip(okrLevel(x))}
+      <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.title||'Untitled')}</div>
+      <div style="font-size:10.5px;color:var(--c-text-3)">Original ${esc(_okrFmtVal(x,x.targetValue))}${okrHasRevision(x)?' · currently revised to '+esc(_okrFmtVal(x,x.revisedTarget)):''}</div></div>
+      <input type="number" step="any" data-rev-id="${x.id}" value="${okrHasRevision(x)?x.revisedTarget:(x.targetValue!==null&&x.targetValue!==undefined?x.targetValue:'')}" class="ui-input" style="width:128px;min-height:36px;padding:6px 9px;font-size:12.5px;flex-shrink:0"/>
+    </div>`;
+  modalShell({title:'Revise targets',sub:'Originals stay untouched — the same updates feed both, so you can compare growth.',size:'max-w-md',key:'okr-rev',
+    body:`<div style="font-size:11.5px;color:var(--c-text-3);margin-bottom:6px">Set the new target per objective. Enter the <b>original</b> value to remove a revision.</div>
+      <div>${rows.map(inp).join('')}</div>
+      <div style="margin-top:14px"><label class="ui-label">Reason / note (stored on every revised objective)</label>
+      <input id="okr-rev-note" class="ui-input rf" value="${esc(o.revisedNote||'')}" placeholder="e.g. Market slowdown — H2 targets adjusted"/></div>`,
+    footer:btnG('Cancel','App.closeModal()')+btnP('Save revision','App._okrReviseSave()')});
+};
+App._okrReviseSave=()=>{
+  const note=($('#okr-rev-note')?.value||'').trim();
+  const at=new Date().toISOString();let changed=0,cleared=0;
+  document.querySelectorAll('[data-rev-id]').forEach(el=>{
+    const o=okrById(el.getAttribute('data-rev-id'));if(!o)return;
+    const raw=String(el.value||'').trim();if(raw==='')return;
+    const v=parseFloat(raw);if(!isFinite(v))return;
+    const orig=(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue);
+    const had=okrHasRevision(o);
+    if(orig!==null&&v===orig){
+      if(had){okrLog(o.id,'Revision removed',{changes:[{field:'Revised target',from:o.revisedTarget,to:'(original '+orig+')'}]});o.revisedTarget=null;o.revisedNote='';o.revisedAt=null;o.revisedBy=null;cleared++;_okrPush(o);}
+      return;
+    }
+    if(had&&Number(o.revisedTarget)===v&&(o.revisedNote||'')===note)return;
+    okrLog(o.id,had?'Revision updated':'Target revised',{changes:[{field:'Revised target',from:had?o.revisedTarget:orig,to:v}]});
+    o.revisedTarget=v;o.revisedNote=note;o.revisedAt=at;o.revisedBy=S.uid;changed++;_okrPush(o);
+  });
+  saveDB();closeModal();rr();
+  toast(changed||cleared?('Revision saved ✓ — '+changed+' target'+(changed===1?'':'s')+' revised'+(cleared?', '+cleared+' restored to original':'')):'No changes','ok');
+};
 App._okrTogQtr=(q)=>{const a=S.filters.okrQtr||[];S.filters.okrQtr=a.includes(q)?a.filter(x=>x!==q):[...a,q];S.filters.okrQtrOpen=true;rr();};
 App._okrTogExp=(id)=>{_OKR_EXP[id]=!_OKR_EXP[id];rr();};
 App._okrNodeLogs=(id)=>{
@@ -695,11 +742,12 @@ function _okrNodeHTML(o,depth){
             <span style="${meta}">${ic('clock','w-3 h-3')}${esc(_okrFreqLabel(o))}</span>
             ${o.periodStart||o.periodEnd?`<span style="${meta}">${ic('doc','w-3 h-3')}${fmtS(o.periodStart)} → ${fmtS(o.periodEnd)}</span>`:''}
             ${kids.length?`<span style="${meta}">${ic('tree','w-3 h-3')}${kids.length} sub-objective${kids.length===1?'':'s'}</span>`:''}
+            ${okrHasRevision(o)?`<span style="${meta};color:#B45309;font-weight:800" title="Target was revised — original kept for comparison">${ic('edit','w-3 h-3')}Revised</span>`:''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
           ${okrStatusChip(st)}
-          <span class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span>${!kids.length?`<span style="font-size:11px;font-weight:600;color:var(--c-text-3);white-space:nowrap">${o.metricType==='yesno'?((okrLatestCheckin(o.id)||{}).value>=1?'Done':'Not done'):`Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${_okrFmtVal(o,o.targetValue)}`}</span>`:`<span style="font-size:11px;font-weight:600;color:var(--c-text-3)">Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${_okrFmtVal(o,o.targetValue)} · ${kids.length} sub</span>`}
+          <span class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span>${!kids.length?`<span style="font-size:11px;font-weight:600;color:var(--c-text-3);white-space:nowrap">${o.metricType==='yesno'?((okrLatestCheckin(o.id)||{}).value>=1?'Done':'Not done'):`Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${okrHasRevision(o)?`<s style="opacity:.55">${_okrFmtVal(o,o.targetValue)}</s> ${_okrFmtVal(o,o.revisedTarget)}`:_okrFmtVal(o,o.targetValue)}`}</span>`:`<span style="font-size:11px;font-weight:600;color:var(--c-text-3)">Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${okrHasRevision(o)?`<s style="opacity:.55">${_okrFmtVal(o,o.targetValue)}</s> ${_okrFmtVal(o,o.revisedTarget)}`:_okrFmtVal(o,o.targetValue)} · ${kids.length} sub</span>`}
         </div>
       </div>
       <div style="height:4px;background:var(--c-border);border-radius:2px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${pct===null?0:Math.max(0,Math.min(100,pct))}%;background:${barC};border-radius:3px;transition:width .3s"></div></div>
@@ -709,7 +757,7 @@ function _okrNodeHTML(o,depth){
         <span style="flex:1"></span>
         ${canCk&&!kids.length?btn('Update',`App._okrCheckin('${o.id}','${todayISO()}')`,{variant:'ghost',size:'sm',icon:'edit'}):''}
         ${canCreate?`<button onclick="App._okrEdit(null,'${o.id}')" title="Add sub-objective (L${lvl+1})" style="${icBtn}">${ic('plus','w-4 h-4')}</button>`:''}
-        ${canEdit?`<button onclick="App._okrEdit('${o.id}')" title="Edit" style="${icBtn}">${ic('edit','w-3.5 h-3.5')}</button><button onclick="App._okrDelete('${o.id}')" title="Delete" style="${icBtn}">${ic('trash','w-3.5 h-3.5')}</button>`:''}
+        ${canEdit&&o.metricType!=='yesno'?`<button onclick="App._okrRevise('${o.id}')" title="Revise targets — the original stays for comparison" style="${icBtn}">${ic('refresh','w-3.5 h-3.5')}</button>`:''}${canEdit?`<button onclick="App._okrEdit('${o.id}')" title="Edit" style="${icBtn}">${ic('edit','w-3.5 h-3.5')}</button><button onclick="App._okrDelete('${o.id}')" title="Delete" style="${icBtn}">${ic('trash','w-3.5 h-3.5')}</button>`:''}
       </div>
     </div>
     ${panel==='rules'?_okrRulesPanel(o):''}
@@ -741,7 +789,7 @@ function _okrRulesPanel(o){
       ${creator?row('Created by',esc(fullName(creator))+(o.createdAt?' · '+fmtS(String(o.createdAt).slice(0,10)):'')):''}
     </div>
     ${(o.frequency||{}).type==='custom'&&((o.frequency||{}).dates||[]).length?`<div style="margin-top:10px;font-size:12px;color:var(--c-text-2)"><b>Check-in dates:</b> ${(o.frequency.dates||[]).map(d=>esc(fmtS(d))).join(', ')}</div>`:''}
-    ${_okrCanEditNode(o)?`<div style="margin-top:12px">${btn('Edit rules & target',`App._okrEdit('${o.id}')`,{variant:'ghost',size:'sm',icon:'edit'})}</div>`:''}
+    ${_okrCanEditNode(o)?`<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${btn('Edit rules & target',`App._okrEdit('${o.id}')`,{variant:'ghost',size:'sm',icon:'edit'})}${o.metricType!=='yesno'?btn(okrHasRevision(o)?'Edit revision':'Revise targets',`App._okrRevise('${o.id}')`,{variant:'ghost',size:'sm',icon:'refresh'}):''}</div>`:''}
   </div>`;
 }
 
@@ -761,6 +809,14 @@ function _okrProgressPanel(o,kids,pct,st){
       ${OKR_STATUSES.map(s=>{const on=o.statusMode==='manual'&&o.statusManual===s;const m=OKR_ST_META[s];return`<button onclick="App._okrMarkStatus('${o.id}','${s}')" style="padding:4px 10px;border-radius:20px;border:1.5px solid ${on?m.dot:'var(--c-border)'};background:${on?m.bg:'var(--c-surface)'};color:${on?m.fg:'var(--c-text-2)'};font-size:11px;font-weight:700;cursor:pointer">${s}</button>`;}).join('')}
       <button onclick="App._okrMarkStatus('${o.id}','auto')" title="Let progress decide the status" style="padding:4px 10px;border-radius:20px;border:1.5px solid ${o.statusMode!=='manual'?'var(--c-text)':'var(--c-border)'};background:${o.statusMode!=='manual'?'var(--c-ink)':'var(--c-surface)'};color:${o.statusMode!=='manual'?'#fff':'var(--c-text-2)'};font-size:11px;font-weight:700;cursor:pointer">Auto</button>
     </div>`:'';
+  const cmpBars=okrHasRevision(o)?(function(){
+    const pr=okrProgress(o),po=okrProgressOrig(o);
+    const bar=(lbl,pct,col)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:88px;font-size:10.5px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.03em">${lbl}</span><div style="flex:1;height:6px;background:var(--c-border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct===null?0:Math.max(0,Math.min(100,pct))}%;background:${col}"></div></div><span style="width:46px;text-align:right;font-size:11.5px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span></div>`;
+    const who=o.revisedBy&&uById(o.revisedBy)?fullName(uById(o.revisedBy)):'';
+    return `<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:11px 13px;margin-top:12px">
+      <div style="display:flex;flex-direction:column;gap:6px">${bar('vs revised',pr,'#F59E0B')}${bar('vs original',po,'#0E9F6E')}</div>
+      <div style="font-size:11px;color:var(--c-text-3);margin-top:8px">Revised${o.revisedAt?' '+fmtS(String(o.revisedAt).slice(0,10)):''}${who?' by '+esc(who):''}${o.revisedNote?' — “'+esc(o.revisedNote)+'”':''} · same updates feed both numbers</div>
+    </div>`;})():'';
   const rollupNote=o.rollup?`<div style="display:flex;gap:8px;align-items:center;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px;color:#1E40AF">${ic('refresh','w-3.5 h-3.5')}This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives.</div>`:'';
   // check-in feed (latest first)
   const feed=okrCheckinsOf(o.id).slice().reverse().slice(0,30).map(c=>{
@@ -799,12 +855,14 @@ function _okrProgressPanel(o,kids,pct,st){
       <div style="display:flex;gap:22px;flex-wrap:wrap">
         <div><div style="${lab}">Start</div><div style="${big}">${strt}</div></div>
         <div><div style="${lab}">Current${o.rollup?' · auto':''}</div><div style="${big}">${cur}</div></div>
-        <div><div style="${lab}">Target</div><div style="${big}">${tgt}</div></div>
+        <div><div style="${lab}">${okrHasRevision(o)?'Original target':'Target'}</div><div style="${big}${okrHasRevision(o)?';text-decoration:line-through;opacity:.6':''}">${tgt}</div></div>
+        ${okrHasRevision(o)?`<div><div style="${lab};color:#B45309">Revised target</div><div style="${big};color:#B45309">${esc(_okrFmtVal(o,o.revisedTarget))}</div></div>`:''}
         <div><div style="${lab}">Status</div><div style="margin-top:3px">${okrStatusChip(st)}</div></div>
       </div>
       ${canCk?btn(kids.length?'Add note / update':'Add update',`App._okrCheckin('${o.id}','${todayISO()}')`,{variant:'primary',size:'sm',icon:'plus'}):''}
     </div>
     ${markRow}
+    ${cmpBars}
     ${rollupNote}
     <div style="height:190px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px;margin-top:12px;position:relative">
       <div style="position:absolute;top:10px;right:12px;z-index:2;display:flex;align-items:baseline;gap:4px;background:var(--c-surface);padding:1px 8px;border-radius:8px;border:1px solid var(--c-border)"><span style="font-size:15px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)">progress</span></div>
@@ -1145,7 +1203,7 @@ function okrCurrentOf(o){
 function _okrLeafPctAt(o,date){
   const v=_okrValueAt(o,date);if(v===null)return null;
   if(o.metricType==='yesno')return v>=1?100:0;
-  const s=Number(o.startValue||0),t=(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue);
+  const s=Number(o.startValue||0),t=_okrTargetEff(o);
   if(t===null||!isFinite(t))return null;
   if(t===s)return(o.direction==='down'?(v<=t):(v>=t))?100:0;
   return Math.round(Math.max(0,Math.min(150,((v-s)/(t-s))*100))*10)/10;
@@ -1154,10 +1212,10 @@ function _okrLeafPctAt(o,date){
 function _okrProgressAt(o,date,_seen){
   return _okrLeafPctAt(o,date); // own inputs only (matches okrProgress)
 }
-function _okrIdealAt(o,date,span,pctMode){
+function _okrIdealAt(o,date,span,pctMode,tOverride){
   const ps=o.periodStart||span[0],pe=o.periodEnd||span[1];
   const lo=pctMode?0:Number(o.startValue||0);
-  const hi=pctMode?100:Number(o.targetValue);
+  const hi=pctMode?100:Number(tOverride!==undefined&&tOverride!==null?tOverride:o.targetValue);
   if(!ps||!pe||!isFinite(hi))return null;
   if(date<=ps)return lo;if(date>=pe)return hi;
   const t0=new Date(ps+'T00:00:00').getTime(),t1=new Date(pe+'T00:00:00').getTime(),tn=new Date(date+'T00:00:00').getTime();
@@ -1207,7 +1265,10 @@ function _drawOKRCharts(){
       const _addBounds=(ds2)=>{const s=new Set(ds2);if(_eff.ps)s.add(_eff.ps);if(_eff.pe)s.add(_eff.pe);if(!s.has(_tnow)&&(!_eff.pe||_tnow<=_eff.pe))s.add(_tnow);let arr=[...s].sort();
         if(arr.length<2){const d0=new Date((arr[0]||_tnow)+'T00:00:00');d0.setDate(d0.getDate()+60);arr.push(d0.toISOString().slice(0,10));arr.sort();}
         return arr;};
-      const cs=okrCheckinsOf(o.id).filter(c=>c.value!==null&&c.value!==undefined);
+      // Roll-up nodes plot their AGGREGATED value on every date a child reported (v3.2 fix)
+      const cs=o.rollup
+        ?(function(){const set=new Set();okrChildren(o.id).forEach(k=>okrCheckinsOf(k.id).forEach(c=>{if(c.value!==null&&c.value!==undefined)set.add(c.date);}));return[...set].sort().map(d=>({date:d,value:_okrValueAt(o,d)})).filter(x=>x.value!==null);})()
+        :okrCheckinsOf(o.id).filter(c=>c.value!==null&&c.value!==undefined);
       const _hasPeriod=!!(_eff.ps&&_eff.pe);
       if(!cs.length&&!_hasPeriod)return fail(kids.length?'No check-ins on this objective yet — use “Add note / update” to record its own numbers.':'No updates yet — set a period (start & end date) or add the first update to see the graph.');
       // Build the X-axis across the WHOLE configured period (e.g. 1st → 31st) so the timeline is
@@ -1236,14 +1297,19 @@ function _drawOKRCharts(){
       labels=dates.map(d=>fmtS(d));
       // Daily granularity (period ≤45 days): show EVERY day on the x-axis (7,8,9…31), not just ~8.
       const _daily=_hasPeriod&&(Math.round((new Date(_eff.pe+'T00:00:00')-new Date(_eff.ps+'T00:00:00'))/86400000)<=45);
-      if(ideal&&ideal.some(v=>v!==null))ds.push({label:'Ideal (planned pace)',data:ideal,borderColor:'#94A3B8',borderDash:[7,5],pointRadius:0,fill:false,tension:0,borderWidth:2});
+      if(ideal&&ideal.some(v=>v!==null))ds.push({label:okrHasRevision(o)?'Original pace':'Ideal (planned pace)',data:ideal,borderColor:'#94A3B8',borderDash:[7,5],pointRadius:0,fill:false,tension:0,borderWidth:2});
+      if(okrHasRevision(o)&&o.metricType!=='yesno'){
+        const idealRev=dates.map(d=>_okrIdealAt(o,d,[dates[0],dates[dates.length-1]],false,Number(o.revisedTarget)));
+        if(idealRev.some(v=>v!==null))ds.push({label:'Revised pace',data:idealRev,borderColor:'#F59E0B',borderDash:[4,4],pointRadius:0,fill:false,tension:0,borderWidth:2});
+      }
       ds.push({label:'Actual',data:actual,spanGaps:true,order:-1,borderColor:'#0E9F6E',backgroundColor:'rgba(14,159,110,.12)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#0E9F6E',borderWidth:2});
       const yOpts={beginAtZero:true,ticks:{color:T.tick,font:{size:10}},grid:{color:T.grid}};
       if(o.metricType!=='yesno'){
         // Y-axis baseline = the Start value; only drop lower if an actual input dips below it.
         const _act=actual.filter(v=>v!==null&&v!==undefined&&isFinite(v));
         const _start=Number(o.startValue||0);
-        const _tgt=(o.targetValue===null||o.targetValue===undefined)?_start:Number(o.targetValue);
+        let _tgt=(o.targetValue===null||o.targetValue===undefined)?_start:Number(o.targetValue);
+        if(okrHasRevision(o))_tgt=Math.abs(Number(o.revisedTarget)-_start)>Math.abs(_tgt-_start)?Number(o.revisedTarget):_tgt;
         // Include target so "reduce" goals (target below start) still show the whole line; for an
         // "increase" goal (target above start) this leaves the baseline sitting exactly on Start.
         const _lo=Math.min(_start,_tgt,...(_act.length?_act:[_start]));

@@ -1,4 +1,16 @@
-# Bridge (v3.2)
+# Bridge (v3.4)
+
+## v3.4 — OKR revisions (original vs revised, side by side)
+
+- **Revise targets without touching the original.** The ↻ button on any OKR card (or "Revise targets" in its progress panel) opens one compact screen listing the objective **and its quarterly sub-objectives** — set new targets for any of them, add one reason note, save. Entering the original value removes that revision.
+- **One input stream feeds both.** Check-ins keep working exactly as before; the same updates fill the original and the revised goal — no double entry.
+- **Compared on the same screen:** cards show `Tgt ~~1M~~ → 750k` with a "Revised" tag; the progress panel shows two bars (**vs revised / vs original**) plus who revised it, when, and why; the graph gains an amber **Revised pace** line next to the original pace and the Actual line.
+- Operative status/pace follow the revised goal; the original stays visible for comparison. Every revision and removal is written to the OKR's activity log.
+- DB: additive `okrs.revised_target / revised_note / revised_at / revised_by` (migration applied). Also fixed: roll-up objectives' graphs now plot their aggregated value historically.
+
+## v3.3 — OKR quarter filter
+
+- Multi-select **Q1–Q4 dropdown** (with year switcher) at the top of the OKR filter bar. An OKR shows if its period **overlaps** a selected quarter — a 6-month OKR (Jan–Jun) appears under both Q1 and Q2. Parents without their own dates use the span of their sub-objectives; OKRs with no dates at all are hidden while the filter is on. Selection is shown on the button (e.g. "Q1, Q3 · 2026").
 
 ## v3.2 — OKR upgrades
 
