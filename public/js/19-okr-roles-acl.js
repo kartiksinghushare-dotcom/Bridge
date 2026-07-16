@@ -361,10 +361,10 @@ const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style
 
 /* ═════════════════ PORTED BLOCK: OKR MODULE (from Safe Backup) ═════════════════ */
 /* ═══ PORTED: OKR mappers ═══ */
-function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
+function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
 function _mOKRCheckin(rows){return(rows||[]).map(c=>({id:c.id,okrId:c.okr_id,userId:c.user_id||null,date:c.date,value:(c.value===null||c.value===undefined)?null:Number(c.value),comment:_unesc(c.comment)||'',photos:Array.isArray(c.photos)?c.photos:[],statusMark:c.status_mark||null,editCount:c.edit_count||0,createdAt:c.created_at,updatedAt:c.updated_at||null}));}
 function _mOKRLog(rows){return(rows||[]).map(l=>({id:l.id,okrId:l.okr_id,actorId:l.actor_id||null,action:l.action||'',details:(l.details&&typeof l.details==='object')?l.details:{},createdAt:l.created_at}));}
-function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
+function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,rollup:!!o.rollup,rollup_mode:o.rollupMode||'sum',sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 function _okrCheckinRow(c){return{id:c.id,okr_id:c.okrId,user_id:c.userId||null,date:c.date,value:(c.value===null||c.value===undefined||c.value==='')?null:c.value,comment:c.comment||'',photos:(c.photos||[]).filter(p=>typeof p==='string'&&p!=='[photo]'),status_mark:c.statusMark||null,edit_count:c.editCount||0,created_at:c.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 /* ═══ PORTED: OKR helpers ═══ */
 const OKR_METRICS=[['number','Number'],['percent','Percentage'],['currency','Currency'],['yesno','Yes / No (done or not)']];
@@ -379,9 +379,9 @@ function okrLatestCheckin(id){const cs=okrCheckinsOf(id);return cs.length?cs[cs.
 // Leaf progress %: how far the latest reported value moved from startValue toward targetValue.
 // Works for direction 'down' too (target < start flips the sign naturally). Capped 0–150.
 function _okrLeafPct(o){
-  const last=okrLatestCheckin(o.id);if(!last||last.value===null||last.value===undefined)return null;
-  if(o.metricType==='yesno')return Number(last.value)>=1?100:0;
-  const s=Number(o.startValue||0),v=Number(last.value);
+  const v0=okrCurrentOf(o);if(v0===null||v0===undefined)return null;
+  if(o.metricType==='yesno')return Number(v0)>=1?100:0;
+  const s=Number(o.startValue||0),v=Number(v0);
   const t=(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue);
   if(t===null||!isFinite(t))return null;
   if(t===s)return(o.direction==='down'?(v<=t):(v>=t))?100:0;
@@ -422,15 +422,28 @@ function okrStatusOf(o){
 const OKR_ST_META={'Achieved':{bg:'#D1FAE5',fg:'#065F46',dot:'#10B981'},'On track':{bg:'#ECFDF5',fg:'#0B7A55',dot:'#22C55E'},'Off track':{bg:'#FFF1F2',fg:'#BE123C',dot:'#EF4444'},'Not achieved':{bg:'#FEF2F2',fg:'#991B1B',dot:'#B91C1C'},'No data':{bg:'#F6F7F8',fg:'#6B7280',dot:'#9CA3AF'}};
 function okrStatusChip(st,sm){const m=OKR_ST_META[st]||OKR_ST_META['No data'];return`<span style="display:inline-flex;align-items:center;gap:5px;padding:${sm?'2px 8px':'3px 10px'};border-radius:20px;font-size:${sm?'10.5':'11.5'}px;font-weight:800;background:${m.bg};color:${m.fg};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${m.dot};flex-shrink:0"></span>${esc(st)}</span>`;}
 function _okrBarColor(st){return(OKR_ST_META[st]||OKR_ST_META['No data']).dot;}
+/* Abbreviate big values: 1000 → 1k · 10000 → 10k · 1000000 → 1M (2 decimals max: 1.25M) */
+function _fmtAbbr(v){
+  const n=Number(v);if(!isFinite(n))return String(v);
+  const neg=n<0,a=Math.abs(n);
+  const r2=x=>String(Math.round(x*100)/100);
+  let out;
+  if(a>=1e9)out=r2(a/1e9)+'B';
+  else if(a>=1e6)out=r2(a/1e6)+'M';
+  else if(a>=1e3)out=r2(a/1e3)+'k';
+  else out=r2(a);
+  return(neg?'-':'')+out;
+}
 function _okrFmtVal(o,v){
   if(v===null||v===undefined||v==='')return '—';
   if(o.metricType==='yesno')return Number(v)>=1?'Yes':'No';
   const n=Math.round(Number(v)*100)/100;
   if(o.metricType==='percent')return n+'%';
-  if(o.metricType==='currency')return(o.unit?o.unit+' ':'')+n;
-  return n+(o.unit?(' '+o.unit):'');
+  if(o.metricType==='currency')return(o.unit?o.unit+' ':'')+_fmtAbbr(n);
+  return _fmtAbbr(n)+(o.unit?(' '+o.unit):'');
 }
 function _okrFreqLabel(o){
+  if(o&&o.rollup)return 'Auto · '+_okrModeLabel(o.rollupMode)+' of level below';
   const f=o.frequency||{};
   if(f.type==='weekly')return 'Weekly · every '+(f.day||'Mon');
   if(f.type==='monthly')return 'Monthly · day '+(f.day||1);
@@ -439,6 +452,7 @@ function _okrFreqLabel(o){
 }
 /* ── Check-in scheduling: is this OKR's update due on `date`? ── */
 function okrDueOn(o,date){
+  if(o.rollup)return false; // auto-updates from the level below — nothing to ask the owner
   const f=o.frequency||{};
   if(!f.type)return false;
   if(o.periodStart&&date<o.periodStart)return false;
@@ -490,7 +504,7 @@ const _OKR_LVL_C=['#1C212B','#0EA5E9','#0E9F6E','#8B5CF6','#F59E0B','#EC4899'];
 function _okrCanManage(){return can('okr','manage');}
 function _okrCanCreate(){return can('okr','create')||_okrCanManage();}
 function _okrCanEditNode(o){return can('okr','edit')||_okrCanManage()||o.createdBy===S.uid;}
-function _okrCanCheckin(o){return o.ownerId===S.uid||_okrCanEditNode(o);}
+function _okrCanCheckin(o){if(o&&o.rollup)return false;return o.ownerId===S.uid||_okrCanEditNode(o);}
 function _okrLvlChip(lvl){const c=_OKR_LVL_C[lvl%_OKR_LVL_C.length];return`<span style="flex-shrink:0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:${c};color:#fff;letter-spacing:.03em">L${lvl}</span>`;}
 App._okrTogExp=(id)=>{_OKR_EXP[id]=!_OKR_EXP[id];rr();};
 App._okrNodeLogs=(id)=>{
@@ -656,7 +670,7 @@ function _okrNodeHTML(o,depth){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
           ${okrStatusChip(st)}
-          <span class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span>${!kids.length?`<span style="font-size:11px;font-weight:600;color:var(--c-text-3);white-space:nowrap">${o.metricType==='yesno'?((okrLatestCheckin(o.id)||{}).value>=1?'Done':'Not done'):`Cur ${_okrFmtVal(o,((okrLatestCheckin(o.id)||{}).value??o.startValue))} · Tgt ${_okrFmtVal(o,o.targetValue)}`}</span>`:`<span style="font-size:11px;font-weight:600;color:var(--c-text-3)">Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${_okrFmtVal(o,o.targetValue)} · ${kids.length} sub</span>`}
+          <span class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span>${!kids.length?`<span style="font-size:11px;font-weight:600;color:var(--c-text-3);white-space:nowrap">${o.metricType==='yesno'?((okrLatestCheckin(o.id)||{}).value>=1?'Done':'Not done'):`Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${_okrFmtVal(o,o.targetValue)}`}</span>`:`<span style="font-size:11px;font-weight:600;color:var(--c-text-3)">Cur ${_okrFmtVal(o,_okrOwnCur(o))} · Tgt ${_okrFmtVal(o,o.targetValue)} · ${kids.length} sub</span>`}
         </div>
       </div>
       <div style="height:4px;background:var(--c-border);border-radius:2px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${pct===null?0:Math.max(0,Math.min(100,pct))}%;background:${barC};border-radius:3px;transition:width .3s"></div></div>
@@ -709,7 +723,7 @@ function _okrProgressPanel(o,kids,pct,st){
   const lab='font-size:10px;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700';
   const big='font-size:20px;font-weight:800;color:var(--c-text)';
   const _ownCur=_okrOwnCur(o);
-  const cur=esc(_okrFmtVal(o,last?last.value:(o.startValue??null)));
+  const cur=esc(_okrFmtVal(o,_okrOwnCur(o)));
   const tgt=o.metricType==='yesno'?'Yes':esc(_okrFmtVal(o,o.targetValue));
   const strt=o.metricType==='yesno'?'No':esc(_okrFmtVal(o,o.startValue));
   // manual status marking (owner / manager) — every mark is logged
@@ -718,6 +732,7 @@ function _okrProgressPanel(o,kids,pct,st){
       ${OKR_STATUSES.map(s=>{const on=o.statusMode==='manual'&&o.statusManual===s;const m=OKR_ST_META[s];return`<button onclick="App._okrMarkStatus('${o.id}','${s}')" style="padding:4px 10px;border-radius:20px;border:1.5px solid ${on?m.dot:'var(--c-border)'};background:${on?m.bg:'var(--c-surface)'};color:${on?m.fg:'var(--c-text-2)'};font-size:11px;font-weight:700;cursor:pointer">${s}</button>`;}).join('')}
       <button onclick="App._okrMarkStatus('${o.id}','auto')" title="Let progress decide the status" style="padding:4px 10px;border-radius:20px;border:1.5px solid ${o.statusMode!=='manual'?'var(--c-text)':'var(--c-border)'};background:${o.statusMode!=='manual'?'var(--c-ink)':'var(--c-surface)'};color:${o.statusMode!=='manual'?'#fff':'var(--c-text-2)'};font-size:11px;font-weight:700;cursor:pointer">Auto</button>
     </div>`:'';
+  const rollupNote=o.rollup?`<div style="display:flex;gap:8px;align-items:center;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px;color:#1E40AF">${ic('refresh','w-3.5 h-3.5')}This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives.</div>`:'';
   // check-in feed (latest first)
   const feed=okrCheckinsOf(o.id).slice().reverse().slice(0,30).map(c=>{
     const u=uById(c.userId);
@@ -740,7 +755,7 @@ function _okrProgressPanel(o,kids,pct,st){
   }).join('')||`<div style="padding:12px 0;color:var(--c-text-3);font-size:12.5px;border-top:1px solid var(--c-border)">No updates yet${canCk?' — add the first one.':'.'}</div>`;
   // children breakdown (roll-up view)
   const kidRows=kids.length?`<div style="margin-top:12px">
-      <div style="${lab};margin-bottom:6px">Sub-objectives (each tracks its own progress)</div>
+      <div style="${lab};margin-bottom:6px">${o.rollup?('Sub-objectives — feeding this objective ('+esc(_okrModeLabel(o.rollupMode))+')'):'Sub-objectives (each tracks its own progress)'}</div>
       ${kids.map(k=>{const kp=okrProgress(k),ks=okrStatusOf(k);return`<div style="display:flex;align-items:center;gap:9px;padding:6px 0">
         ${_okrLvlChip(okrLevel(k))}
         <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.title)}</span>
@@ -754,13 +769,14 @@ function _okrProgressPanel(o,kids,pct,st){
     <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div style="display:flex;gap:22px;flex-wrap:wrap">
         <div><div style="${lab}">Start</div><div style="${big}">${strt}</div></div>
-        <div><div style="${lab}">Current</div><div style="${big}">${cur}</div></div>
+        <div><div style="${lab}">Current${o.rollup?' · auto':''}</div><div style="${big}">${cur}</div></div>
         <div><div style="${lab}">Target</div><div style="${big}">${tgt}</div></div>
         <div><div style="${lab}">Status</div><div style="margin-top:3px">${okrStatusChip(st)}</div></div>
       </div>
       ${canCk?btn(kids.length?'Add note / update':'Add update',`App._okrCheckin('${o.id}','${todayISO()}')`,{variant:'primary',size:'sm',icon:'plus'}):''}
     </div>
     ${markRow}
+    ${rollupNote}
     <div style="height:190px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px;margin-top:12px;position:relative">
       <div style="position:absolute;top:10px;right:12px;z-index:2;display:flex;align-items:baseline;gap:4px;background:var(--c-surface);padding:1px 8px;border-radius:8px;border:1px solid var(--c-border)"><span style="font-size:15px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)">progress</span></div>
       <canvas data-okr-chart="${o.id}"></canvas>
@@ -818,7 +834,22 @@ App._renderOKREdit=()=>{
         <div><label style="${L}">${o.metricType==='currency'?'Currency':'Unit'} ${o.metricType==='percent'?'(auto: %)':''}</label><input type="text" value="${esc(o.unit||'')}" oninput="_OKRED.unit=this.value" placeholder="${o.metricType==='currency'?'e.g. AED / $':'e.g. orders, hrs'}" class="ui-input rf" ${o.metricType==='percent'?'disabled':''}/></div>
         <div><label style="${L}">Better when</label><select class="ui-select rf" onchange="_OKRED.direction=this.value"><option value="up" ${o.direction!=='down'?'selected':''}>Higher is better</option><option value="down" ${o.direction==='down'?'selected':''}>Lower is better</option></select></div>
       </div>`:`<div style="font-size:12px;color:var(--c-text-3);background:var(--c-surface-2);border-radius:9px;padding:9px 12px">Yes / No objective — a check-in of "Yes" counts as 100%, "No" as 0%.</div>`}
-      <div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Check-in frequency — when is the owner asked for an update?</label>
+      ${o.metricType!=='yesno'?`<div style="border-top:1px dashed var(--c-border);padding-top:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="min-width:0"><label style="${L}">Auto-update from the level below</label>
+          <div style="font-size:11px;color:var(--c-text-3);margin-top:2px;line-height:1.5">L${lvl} takes its current value from its <b>direct L${lvl+1} sub-objectives only</b> — the owner never enters it by hand. Progress is still measured against this objective's own start → target.</div></div>
+          <button type="button" role="switch" aria-checked="${o.rollup?'true':'false'}" class="tog ${o.rollup?'on':'off'}" style="margin-top:2px" onclick="_OKRED.rollup=!_OKRED.rollup;App._renderOKREdit()"><span></span></button>
+        </div>
+        ${o.rollup?`<div style="margin-top:10px"><label style="${L}">How to combine the L${lvl+1} values</label>
+          <select class="ui-select rf" onchange="_OKRED.rollupMode=this.value">
+            <option value="sum" ${!o.rollupMode||o.rollupMode==='sum'?'selected':''}>Total (sum of all)</option>
+            <option value="avg" ${o.rollupMode==='avg'?'selected':''}>Average</option>
+            <option value="max" ${o.rollupMode==='max'?'selected':''}>Highest value</option>
+            <option value="min" ${o.rollupMode==='min'?'selected':''}>Lowest value</option>
+          </select>
+          <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">Works best when the L${lvl+1} sub-objectives measure the same thing in the same unit.</div></div>`:''}
+      </div>`:''}
+      ${o.rollup?'':`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Check-in frequency — when is the owner asked for an update?</label>
         <select class="ui-select rf" onchange="App._okrEdSetFreqType(this.value)">
           <option value="weekly" ${fType==='weekly'?'selected':''}>Weekly · on a chosen day</option>
           <option value="monthly" ${fType==='monthly'?'selected':''}>Monthly · on a chosen date</option>
@@ -829,7 +860,7 @@ App._renderOKREdit=()=>{
         ${fType==='monthly'?`<div style="display:flex;align-items:center;gap:8px;margin-top:9px"><span style="font-size:12.5px;color:var(--c-text-2)">Day of month</span><input type="number" min="1" max="31" value="${Number(f.day)||1}" oninput="_OKRED.frequency.day=Math.max(1,Math.min(31,parseInt(this.value)||1))" class="ui-input rf" style="width:80px"/><span style="font-size:11px;color:var(--c-text-3)">shorter months use their last day</span></div>`:''}
         ${fType==='custom'?`<div style="margin-top:9px"><div style="display:flex;gap:8px"><input type="date" id="okrEdCustomDate" class="ui-input rf" style="flex:1"/><button type="button" onclick="App._okrEdAddDate()" class="ui-btn ui-btn-ghost ui-btn-sm">Add</button></div>
           ${(f.dates||[]).length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${(f.dates||[]).map((d,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:20px;padding:3px 6px 3px 10px">${esc(fmtS(d))}<button type="button" onclick="App._okrEdRmDate(${i})" style="width:16px;height:16px;border-radius:50%;border:none;background:var(--c-border);color:var(--c-text-2);cursor:pointer;font-size:10px;line-height:1">×</button></span>`).join('')}</div>`:'<div style="font-size:11px;color:var(--c-text-3);margin-top:6px">No dates added yet.</div>'}</div>`:''}
-      </div>
+      </div>`}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label style="${L}">Period start</label><input type="date" value="${o.periodStart||''}" oninput="_OKRED.periodStart=this.value||null" class="ui-input rf"/></div>
         <div><label style="${L}">Period end</label><input type="date" value="${o.periodEnd||''}" oninput="_OKRED.periodEnd=this.value||null" class="ui-input rf"/></div>
@@ -846,15 +877,18 @@ App._okrSave=()=>{
   if(o.metricType!=='yesno'&&(o.targetValue===null||o.targetValue===undefined||!isFinite(o.targetValue)))return toast('Set a target value','err');
   if(o.metricType==='percent')o.unit='%';
   const f=o.frequency||{};
+  if(o.rollup&&o.metricType==='yesno')o.rollup=false;
+  if(!o.rollup){
   if(f.type==='weekly'&&!WKDAYS.includes(f.day))return toast('Pick the weekday for check-ins','err');
   if(f.type==='monthly'&&!(Number(f.day)>=1&&Number(f.day)<=31))return toast('Pick a day of month (1–31)','err');
   if(f.type==='custom'&&!(f.dates||[]).length)return toast('Add at least one check-in date','err');
+  }
   if(o.periodStart&&o.periodEnd&&o.periodEnd<o.periodStart)return toast('Period end is before its start','err');
   if(o.metricType==='yesno'){o.startValue=0;o.targetValue=1;o.direction='up';}
   const idx=(DB.okrs||[]).findIndex(x=>x.id===o.id);
   if(idx>-1){
     const prev=DB.okrs[idx];
-    const fields=[['title','Title'],['description','Goal'],['departmentId','Department'],['subDepartmentId','Sub-department'],['ownerId','Owner'],['metricType','Metric'],['startValue','Start value'],['targetValue','Target'],['unit','Unit'],['direction','Direction'],['periodStart','Period start'],['periodEnd','Period end']];
+    const fields=[['title','Title'],['description','Goal'],['departmentId','Department'],['subDepartmentId','Sub-department'],['ownerId','Owner'],['metricType','Metric'],['startValue','Start value'],['targetValue','Target'],['unit','Unit'],['direction','Direction'],['rollup','Auto roll-up'],['rollupMode','Roll-up mode'],['periodStart','Period start'],['periodEnd','Period end']];
     const changes=[];
     fields.forEach(([k,label])=>{const a=prev[k],b=o[k];if(String(a===null||a===undefined?'':a)!==String(b===null||b===undefined?'':b)){
       let from=a,to=b;
@@ -899,6 +933,7 @@ App._okrMarkStatus=(id,st)=>{
 
 /* ── Single check-in modal (value + comment + photos + optional status mark) ── */
 App._okrCheckin=(okrId,date)=>{
+  {const _o=okrById(okrId);if(_o&&_o.rollup)return toast('This objective updates automatically from its sub-objectives','warn');}
   const o=okrById(okrId);if(!o)return;
   if(!_okrCanCheckin(o))return toast('Only the owner or a manager can add updates','err');
   const d=date||todayISO();
@@ -1049,10 +1084,34 @@ function _okrClCard(due,date){
 /* ── Per-node charts v2: TWO lines in one graph — “Ideal” (how it should go, a straight pace
    line from start → target across the period) and “Actual” (what the owner really reported).
    Leaves plot metric values; parents plot roll-up progress % over time vs the 0→100% pace. ── */
-function _okrValueAt(o,date){
+const _OKR_MODE_LABEL={sum:'total',avg:'average',max:'highest',min:'lowest'};
+function _okrModeLabel(m){return _OKR_MODE_LABEL[m]||'total';}
+function _okrAgg(vals,mode){
+  if(!vals.length)return null;
+  if(mode==='avg')return Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*100)/100;
+  if(mode==='max')return Math.max(...vals);
+  if(mode==='min')return Math.min(...vals);
+  return Math.round(vals.reduce((a,b)=>a+b,0)*100)/100; // sum (default)
+}
+/* Value as it stood on `date`. Roll-up nodes take it from their DIRECT children
+   (one level below) combined by rollupMode; leaves from their own check-ins. Cycle-safe. */
+function _okrValueAt(o,date,_seen){
+  _seen=_seen||new Set();
+  if(_seen.has(o.id))return null;
+  _seen.add(o.id);
+  if(o.rollup){
+    const vals=okrChildren(o.id).map(k=>_okrValueAt(k,date,_seen)).filter(v=>v!==null&&v!==undefined&&isFinite(v));
+    return _okrAgg(vals,o.rollupMode||'sum');
+  }
   let v=null;
   okrCheckinsOf(o.id).forEach(c=>{if(c.date<=date&&c.value!==null&&c.value!==undefined)v=Number(c.value);});
   return v;
+}
+/* Effective current value: aggregated for roll-up nodes, latest own check-in otherwise. */
+function okrCurrentOf(o){
+  if(o.rollup)return _okrValueAt(o,'9999-12-31');
+  const last=okrLatestCheckin(o.id);
+  return(last&&last.value!==null&&last.value!==undefined)?Number(last.value):null;
 }
 function _okrLeafPctAt(o,date){
   const v=_okrValueAt(o,date);if(v===null)return null;
@@ -1081,8 +1140,8 @@ function _okrIdealAt(o,date,span,pctMode){
    the roll-up % mapped onto that scale — rollup 20% of 98→99 = 98.2. */
 function _okrHasOwnScale(o){return o.targetValue!==null&&o.targetValue!==undefined&&o.metricType!=='yesno';}
 function _okrOwnCur(o){
-  const last=okrLatestCheckin(o.id);
-  return(last&&last.value!==null&&last.value!==undefined)?Number(last.value):Number(o.startValue||0);
+  const v=okrCurrentOf(o);
+  return(v===null||v===undefined)?Number(o.startValue||0):v;
 }
 function _okrEffPeriod(o){
   let ps=o.periodStart||null,pe=o.periodEnd||null;

@@ -1,4 +1,13 @@
-# Bridge (v3.1)
+# Bridge (v3.2)
+
+## v3.2 — OKR upgrades
+
+- **Big numbers abbreviated**: currency and number OKRs now show `1k / 10k / 1.25M / 1B` instead of `10000000` — on cards, the progress panel, and the check-in feed. Percent and Yes/No metrics are untouched; inputs still take exact values.
+- **Auto roll-up from the level below** (per-objective toggle in the editor): an L0 can take its current value from its **direct L1 sub-objectives only** (L1 from L2, and so on — always exactly one level). When enabled you choose how values combine: **Total (sum) / Average / Highest / Lowest**.
+  - The owner no longer does manual check-ins on that objective (no reminders, no Update button — it shows "Auto · total of level below").
+  - Progress, status and the Actual-vs-Ideal graph all use the rolled-up value, including historically (the graph rebuilds what the aggregate was on each date).
+  - Progress is still measured against the objective's own start → target.
+  - DB: additive `okrs.rollup` + `okrs.rollup_mode` columns (migration applied).
 
 ## v3.1 — deployed-feedback fixes + CRM v3
 
