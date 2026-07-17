@@ -1,4 +1,13 @@
-# Bridge (v3.4)
+# Bridge (v3.5)
+
+## v3.5 — OKR: move objectives, annual → quarterly split, view filter
+
+- **Move any objective** (✥ button on every card): pick a new parent — any objective at any level, or top level — and the whole subtree moves with it. Loops are impossible (an objective's own branch is excluded); moving to top level asks for the department. Every move is logged (old parent → new parent, old level → new level).
+- **Annual objectives with quarterly targets** (toggle in the editor, non-Yes/No metrics): flipping it on suggests **4 quarters** (auto-split from the annual period) each with start/end dates, a start value and a target — keep 2, add 6, rename or re-date them freely. Saving creates one linked objective per period: **same owner, same metric/unit/schedule — only dates and targets differ**, shown nested under the annual with a `Q1` tag.
+  - The annual number then updates **automatically from the quarters** — a per-objective field picks how: **Latest update / Total / Average / Highest / Lowest** (the suggested quarterly values re-fill to match the mode). The annual itself never asks for check-ins; the quarters carry the schedule.
+  - Existing quarters are edited from the tree like any objective; more periods can be added from the annual's editor later. Turning the toggle off keeps the children (nothing is deleted).
+  - DB: additive `okrs.is_annual` + `okrs.quarter_label` (migration applied); the annual↔quarters link reuses the roll-up engine with a new `latest` mode.
+- **Quarter filter got a view switch** — **All / Annual / Quarterly** on top of the existing Q1–Q4 · year picker: *Annual* keeps the tree but hides the quarterly splits; *Quarterly* lists only the quarterly objectives (narrowed by the selected quarters); *All* behaves as before.
 
 ## v3.4 — OKR revisions (original vs revised, side by side)
 
