@@ -14,8 +14,13 @@ function _tNode(u,d){
   if(d>9)return'';
   const kids=DB.users.filter(x=>x.managerId===u.id&&x.id!==u.id&&x.status!=='Inactive');
   const col=COLL[u.id];
+  // Tag comes from the ASSIGNED ROLE (Access Control role profiles) — not the legacy base role.
   const rp=(typeof _roleOf==='function')?_roleOf(u):null;
-  const tag=u.role==='Admin'?['SUPER ADMIN','#15171C','#fff']:u.role==='SubAdmin'?['ADMIN','#EEF2FF','#4338CA']:((rp&&rp.id==='manager')||kids.length)?['MANAGER','#E0F2FE','#0369A1']:null;
+  const tag=rp?.id==='superadmin'?['SUPER ADMIN','#15171C','#fff']
+    :rp?.id==='admin'?['ADMIN','#EEF2FF','#4338CA']
+    :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#E0F2FE','#0369A1']
+    :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F5F3FF','#6D28D9']
+    :null;
   const card=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px 14px;box-shadow:var(--sh-xs);min-width:118px;max-width:170px;position:relative">
       ${avatar(u,'w-9 h-9','text-[11px]')}
       <div style="min-width:0;text-align:center">

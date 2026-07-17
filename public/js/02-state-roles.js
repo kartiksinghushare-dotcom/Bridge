@@ -101,7 +101,7 @@ const isSuperAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return
 // Admin"; 'SubAdmin' displays as "Admin" (manager powers + the All Checklists tab).
 const isAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return id?(id==='superadmin'||id==='admin'):(u.role==='Admin'||u.role==='SubAdmin');};
 const isSubAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return id?id==='admin':u.role==='SubAdmin';};
-const roleLabel=r=>r==='Admin'?'Super Admin':r==='SubAdmin'?'Admin':(r||'User');
+// (legacy roleLabel removed — the UI shows Access Control role profiles everywhere now)
 const hasDocAccess=()=>{const u=me();if(!u)return false;if(isAdmin())return true;const da=u.docAccess||{};return Object.values(da.departments||{}).some(p=>p.view)||Object.values(da.locations||{}).some(p=>p.view);};
 function subTree(uid,_seen=new Set()){if(_seen.has(uid))return[];_seen.add(uid);const direct=DB.users.filter(u=>u.managerId===uid&&u.id!==uid);return direct.flatMap(u=>[u,...subTree(u.id,_seen)]);}
 // ── Date-aware manager lookup (uses managerHistory; falls back to current managerId) ──

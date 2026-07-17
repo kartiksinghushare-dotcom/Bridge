@@ -47,7 +47,7 @@ const HOW={
   audit:{t:'Every action anyone takes, filterable by person, department and tab. If you wonder “who changed this?” — the answer is here.',l:[['accesscontrol','Access Control']]},
   profile:{t:'Your own details, documents and preferences.',l:[]},
   accesscontrol:{t:'One rule runs everything: a ROLE is a bundle of switches (which tabs, which buttons) — give each person ONE role, done. “Personal” only holds personal facts: past/future submission rights, HR-approver stage, cities and document folders.',d:['Edit a role → everyone with it changes instantly.','You can never remove the last person holding Access Control.'],l:[['users','Users'],['audit','Audit']]},
-  okr:{t:'Create an objective with a target and a check-in day → the owner gets it as a task on that day → their numbers roll up the tree (L2 → L1 → L0) and the graph shows planned pace vs reality.',d:['Green = on pace, red = off pace, computed against the period; you can also mark status manually.','Turn on “Annual objective” in the editor to split it into quarterly targets — same owner & metric, only dates and targets differ; the quarters\' updates drive the annual number automatically.','Use the ✥ Move action on any objective to give it a new parent or level — its sub-objectives move with it.','The quarter filter has an All / Annual / Quarterly switch, so you can view just the annual picture, just the quarters, or everything.','Every input and edit is kept in the objective\'s activity log.'],l:[['mychecklists','My Checklists'],['dashboard','Dashboard']]},
+  okr:{t:'Create an objective with a target and a check-in day → the owner gets it as a task on that day → their numbers roll up the tree (L2 → L1 → L0) and the graph shows planned pace vs reality.',d:['Who sees what is set in Access Control (OKRs → “sees”): only their own, their team\'s, their department\'s, or everyone\'s. Owners always see their own objectives, and anything below a visible objective is visible too.','Green = on pace, red = off pace, computed against the period; you can also mark status manually.','Turn on “Annual objective” in the editor to split it into quarterly targets — same owner & metric, only dates and targets differ; the quarters\' updates drive the annual number automatically.','Use the ✥ Move action on any objective to give it a new parent or level — its sub-objectives move with it.','The quarter filter has an All / Annual / Quarterly switch, so you can view just the annual picture, just the quarters, or everything.','Every input and edit is kept in the objective\'s activity log.'],l:[['mychecklists','My Checklists'],['dashboard','Dashboard'],['accesscontrol','Access Control']]},
 };
 
 App._howModal=()=>{
@@ -138,7 +138,7 @@ const PERM_AREAS=[
   {key:'documentsOrg',label:'Documents (organization)',desc:'Shared dept/location files',actions:['view','create','edit','delete','upload','download','approve'],scoped:true,group:'Content'},
   {key:'documentsPersonal',label:'Personal documents',desc:'Files on a person\'s profile',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
   {key:'analytics',label:'Analytics',desc:'Operational analytics dashboard (checklists, compliance, tickets)',actions:['view','export'],scoped:false,group:'Insights'},
-  {key:'okr',label:'OKRs',desc:'Hierarchical objectives (L0 → L1 → L2) with owners, targets & scheduled check-ins',actions:['view','create','edit','checkin','manage','delete'],scoped:false,group:'Insights'},
+  {key:'okr',label:'OKRs',desc:'Hierarchical objectives (L0 → L1 → L2). “Sees” decides WHOSE objectives they can view — owners always see their own (they have to update them); sub-objectives of anything visible are included',actions:['view','create','edit','checkin','manage','delete'],scoped:true,group:'Insights'},
   {key:'locations',label:'Locations',desc:'Offices and GPS boundary',actions:['view','create','edit','manage','delete','manageGeofence'],scoped:false,group:'System'},
   {key:'approvals',label:'Approvals inbox',desc:'The unified approvals page (what they can act on is still per-area)',actions:['view','decide'],scoped:false,group:'System'},
   {key:'audit',label:'Audit / Activity log',desc:'History of actions',actions:['view','export'],scoped:false,group:'System'},
@@ -171,7 +171,7 @@ function _seedRoleProfiles(){
       crm:A('everyone','view','create','edit','convert','assign','delete'),
       documentsPersonal:A('self','view','create','download'),
       approvals:A('none','view','decide'),
-      okr:A('none','view','create','edit','manage'),
+      okr:A('team','view','create','edit','manage'),
       analytics:A('none','view'),
     }},
     basic:{id:'basic',name:'Basic Employee',description:'A standard employee — their own checklists, attendance, leave and tickets.',builtin:true,perms:{
@@ -180,11 +180,11 @@ function _seedRoleProfiles(){
       tickets:A('self','view','create'),
       crm:A('everyone','view','create','edit','convert','assign'),
       documentsPersonal:A('self','view','create','download'),
-      okr:A('none','view'),
+      okr:A('self','view'),
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='10'; // v8: full comprehensive action set (tickets reopen/close/comment/export, questions import/export, doc upload, etc.) — re-seed built-ins so Admin/Super Admin auto-hold all new actions
+  const V='11'; // v11: OKRs are a SCOPED area now — built-ins re-seed so Manager sees team OKRs, Basic only their own, Admin/Super Admin everyone
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
@@ -478,15 +478,34 @@ function okrDueOn(o,date){
 // This is the "combined checklist": all of a user's OKR tasks for one day, in one list.
 function okrDueForUser(uid2,date){return(DB.okrs||[]).filter(o=>o.ownerId===uid2&&okrDueOn(o,date));}
 function okrCheckinFor(okrId,uid2,date){return(DB.okrCheckins||[]).find(c=>c.okrId===okrId&&c.userId===uid2&&c.date===date);}
-/* ── Visibility ──
-   Super Admin / Admin → everything. Manager → own + team-owned nodes + everything below those.
-   Everyone else → nodes they own + everything below them ("his level and below him"). */
+/* ── Visibility — fully driven by ACCESS CONTROL (role's OKR scope, or a per-person override) ──
+   The area's "sees" scope decides WHOSE objectives are visible:
+     everyone → all OKRs · team → own + owned by their team · department → own + owned by
+     people in their department + OKRs assigned to their department · location → own + owned
+     at their office · self / none → only their own.
+   Two rules always apply on top:
+     1) OWNERSHIP FLOOR — you always see objectives you own or created (you must update them).
+     2) SUBTREE RULE — everything below a visible node is visible ("their level and below"). */
 function okrVisible(){
   const all=DB.okrs||[];
-  if(isAdmin()||isSubAdmin())return all;
+  if(!S.uid||!can('okr','view'))return[];
+  const sc=scopeOf('okr');
+  if(sc==='everyone')return all;
   const mine=new Set();
-  const team=isMgr()?new Set([S.uid,...subTree(S.uid).map(u=>u.id)]):new Set([S.uid]);
-  all.forEach(o=>{if(team.has(o.ownerId)||o.createdBy===S.uid)mine.add(o.id);});
+  // 1) ownership floor
+  all.forEach(o=>{if(o.ownerId===S.uid||o.createdBy===S.uid)mine.add(o.id);});
+  // 2) scope extension — owner-based, resolved by the same scopeFilter every other area uses
+  if(sc==='team'||sc==='department'||sc==='location'){
+    const f=scopeFilter('okr');
+    all.forEach(o=>{if(o.ownerId&&f(o.ownerId))mine.add(o.id);});
+    if(sc==='department'){
+      // an OKR ASSIGNED to my department is departmental work — visible even if its owner sits elsewhere
+      const myDept=(me()||{}).department;
+      const dRow=myDept?(DB.departments||[]).find(d=>d.name===myDept):null;
+      if(dRow)all.forEach(o=>{const r=okrRootOf(o);if(r&&(r.departmentId===dRow.id||r.subDepartmentId===dRow.id))mine.add(o.id);});
+    }
+  }
+  // 3) subtree rule
   [...mine].forEach(id=>okrDescendants(id).forEach(d=>mine.add(d.id)));
   return all.filter(o=>mine.has(o.id));
 }
@@ -1634,7 +1653,7 @@ function _acPeopleTab(){
     const nOv=Object.keys(u.hrm.perms||{}).length;
     const hrTag=u.hrm.isHR?'<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;background:#FCE7F3;color:#9D174D" title="HR approver stage">HR</span>':'';
     return `<tr id="acu-${u.id}" style="${hi===u.id?'background:var(--c-brand-soft);':''}border-bottom:1px solid var(--c-border)">
-      <td style="padding:11px 16px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${avatar(u,'w-8 h-8','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);display:flex;align-items:center;gap:6px">${esc(fullName(u))} ${hrTag}</div><div style="font-size:11px;color:var(--c-text-3)">${esc(u.department||'—')} · ${esc(roleLabel(u.role))}</div></div></div></td>
+      <td style="padding:11px 16px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${avatar(u,'w-8 h-8','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);display:flex;align-items:center;gap:6px">${esc(fullName(u))} ${hrTag}</div><div style="font-size:11px;color:var(--c-text-3)">${esc(u.department||'—')}${u.position?' · '+esc(u.position):''}</div></div></div></td>
       <td style="padding:11px 8px">${canMng
         ?`<select onchange="App._acAssignRole('${u.id}',this.value)" class="ui-select" style="width:200px;font-size:12.5px;min-height:0;height:36px;padding:4px 26px 4px 12px">${roles.map(r=>`<option value="${r.id}" ${rid===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}${rid&&!DB.roleProfiles[rid]?`<option value="${esc(rid)}" selected>${esc(rid)} (missing)</option>`:''}${!rid?'<option value="" selected>— No role —</option>':''}</select>`
         :`<span style="font-size:12px;font-weight:700;color:var(--c-text-2)">${esc((DB.roleProfiles[rid]||{}).name||'— No role —')}</span>`}</td>
