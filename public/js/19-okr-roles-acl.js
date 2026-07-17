@@ -703,7 +703,7 @@ App._okrProgressModal=(id)=>{
   const o=okrById(id);if(!o)return;
   const kids=okrChildren(o.id);
   const pct=okrProgress(o),st=okrStatusOf(o);
-  modalShell({title:'Progress & Updates',sub:(o.title||'')+' — '+(pct===null?'no data yet':pct+'%'),size:'max-w-2xl',
+  modalShell({title:'Progress & Updates',sub:(o.title||'')+' — '+(pct===null?'no data yet':pct+'%'),size:'max-w-2xl',key:'okr-pm',
     body:`<div id="okr-pm" data-okr="${o.id}" style="margin:-6px -2px 0">${_okrProgressPanel(o,kids,pct,st)}</div>`});
   setTimeout(()=>{try{_drawOKRCharts();}catch(e){}},80);
 };
@@ -1125,7 +1125,7 @@ App._renderOKREdit=()=>{
   const deptOpts=(topDepts()||[]).map(d=>[d.id,d.name]);
   const subOpts=o.departmentId?(subDepts(o.departmentId)||[]).map(s=>[s.id,s.name]):[];
   const dayChip=d=>`<button type="button" onclick="_OKRED.frequency.day='${d}';App._renderOKREdit()" style="padding:6px 11px;border-radius:9px;border:1.5px solid ${f.day===d?'var(--c-text)':'var(--c-border)'};background:${f.day===d?'var(--c-ink)':'var(--c-surface)'};color:${f.day===d?'#fff':'var(--c-text-2)'};font-size:12px;font-weight:700;cursor:pointer">${d}</button>`;
-  modalShell({title:(isExisting?'Edit':'New')+' L'+lvl+' objective',sub:parent?('Under: '+(parent.title||'—')):('Top-level objective — assigned to a department'),size:'max-w-lg',
+  modalShell({title:(isExisting?'Edit':'New')+' L'+lvl+' objective',sub:parent?('Under: '+(parent.title||'—')):('Top-level objective — assigned to a department'),size:'max-w-lg',key:'okr-edit',
     body:`<div style="display:flex;flex-direction:column;gap:14px">
       <div><label style="${L}">Objective title *</label><input type="text" value="${esc(o.title||'')}" oninput="_OKRED.title=this.value" placeholder="e.g. Increase monthly revenue" class="ui-input rf"/></div>
       <div><label style="${L}">Goal / description</label><textarea rows="2" oninput="_OKRED.description=this.value" placeholder="What does success look like? Why does it matter?" class="ui-input rf" style="resize:vertical">${esc(o.description||'')}</textarea></div>
@@ -1301,7 +1301,7 @@ App._renderOKRCheckin=()=>{
   const o=okrById(d.okrId);if(!o)return;
   const L='display:block;font-size:11px;font-weight:700;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px';
   const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCISetVal(${v})" style="flex:1;padding:12px;border-radius:11px;border:2px solid ${Number(d.value)===v?(v===1?'#22C55E':'#EF4444'):'var(--c-border)'};background:${Number(d.value)===v?(v===1?'#ECFDF5':'#FFF1F2'):'var(--c-surface)'};color:${Number(d.value)===v?(v===1?'#047857':'#BE123C'):'var(--c-text-2)'};font-size:14px;font-weight:800;cursor:pointer">${label}</button>`;
-  modalShell({title:(d.existingId?'Edit update':'Add update'),sub:(o.title||'')+' · target '+(o.metricType==='yesno'?'Yes':_okrFmtVal(o,o.targetValue)),size:'max-w-md',
+  modalShell({title:(d.existingId?'Edit update':'Add update'),sub:(o.title||'')+' · target '+(o.metricType==='yesno'?'Yes':_okrFmtVal(o,o.targetValue)),size:'max-w-md',key:'okr-ci',
     body:`<div style="display:flex;flex-direction:column;gap:14px">
       <div><label style="${L}">Date</label><input type="date" value="${d.date}" onchange="App._okrCISetDate(this.value)" class="ui-input rf"/></div>
       ${o.metricType==='yesno'
@@ -1385,7 +1385,7 @@ App._renderOKRCheckinAll=()=>{
       <input type="text" value="${esc(it.comment||'')}" oninput="_OKRCIALL.items[${i}].comment=this.value" placeholder="Comment (optional)" class="ui-input rf"/>
     </div>`;
   }).join('');
-  modalShell({title:'OKR check-ins · '+fmtD(A.date),sub:A.items.length+' scheduled update'+(A.items.length===1?'':'s')+' — fill what you have, save once',size:'max-w-lg',
+  modalShell({title:'OKR check-ins · '+fmtD(A.date),sub:A.items.length+' scheduled update'+(A.items.length===1?'':'s')+' — fill what you have, save once',size:'max-w-lg',key:'okr-ciall',
     body:`<div>${rows}</div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP('Save all','App._okrCheckinAllSave()')});
 };
