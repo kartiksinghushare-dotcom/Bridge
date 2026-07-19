@@ -346,6 +346,7 @@ function _defaultTemplates(){
     crm_ticket:{subject:'🎫 New {{type}} ticket: {{title}}',body:'Hi {{user_name}},\n\nA new {{type}} ticket was created: "{{title}}" ({{customer}}).\n\n{{action_url}}'},
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
+    crm_reminder:{subject:'⏰ Reminder: {{note}}',body:'Hi {{user_name}},\n\nYour reminder is due: {{note}}\n\nConversation: "{{title}}"\n\n{{action_url}}'},
   };
 }
 
@@ -443,7 +444,7 @@ async function sendEmail(eventType, userId, vars){
     submission_late:'mychecklists', submission_approved:'mychecklists',
     submission_rejected:'mychecklists', approval_requested:'approvals',
     approval_decided:'approvals', feedback_received:'notifications',
-    deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',
+    deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
