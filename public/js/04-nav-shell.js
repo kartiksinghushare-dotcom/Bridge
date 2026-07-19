@@ -17,13 +17,13 @@ const _isMgrRole=()=>{const r=(typeof _roleOf==='function')?_roleOf(me()):null;r
 const NAV_ALL=[
   ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
+  ['okr','flag','OKRs',()=>can('okr','view')],
+  ['crm','msg','CRM',()=>can('crm','view')],
   ['hub:inbox','bell','Inbox',()=>true],
 
   ['hub:cl','list','Checklists',()=>!!_hubHome('cl')],
   ['questions','help','Questions',()=>can('questions','view')],
   ['tickets','ticket','Tickets',()=>can('tickets','view')],
-  ['okr','flag','OKRs',()=>can('okr','view')],
-  ['crm','msg','CRM',()=>can('crm','view')],
 
   ['hub:people','users','People',()=>!!_hubHome('people')],
 
@@ -59,9 +59,9 @@ function _hubStrip(k){
     return `<button onclick="App.go('${r}')" style="flex-shrink:0;padding:8px 15px;border-radius:10px;border:none;background:${on?'var(--c-surface)':'transparent'};box-shadow:${on?'0 1px 3px rgba(21,23,28,.1)':'none'};color:${on?'var(--c-text)':'var(--c-text-2)'};font-size:13px;font-weight:${on?'800':'600'};cursor:pointer;transition:background .15s,color .15s;white-space:nowrap">${l}${(r==='notifications'||r==='approvals')?_navBadgeFor(r):''}</button>`;}).join('')}</div>`;
 }
 const navFor=()=>NAV_ALL.filter(n=>{try{return !!n[3]();}catch(e){return false;}}).map(n=>[n[0],n[1],n[2]]);
-const NAV_DAILY=['hub:dash','mychecklists','hub:inbox']; // keep the daily strip tiny — everything else lives in named sections
+const NAV_DAILY=['hub:dash','mychecklists','okr','crm','hub:inbox']; // keep the daily strip tiny — everything else lives in named sections
 const NAV_SECTION_OF={
-  'hub:cl':'Work',questions:'Work',tickets:'Work',okr:'Work',crm:'Work',
+  'hub:cl':'Work',questions:'Work',tickets:'Work',
   'hub:people':'People',
   'hub:admin':'Manage',
 };

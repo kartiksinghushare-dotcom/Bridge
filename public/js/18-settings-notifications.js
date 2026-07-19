@@ -542,6 +542,10 @@ function settingsPage(){
         ${_nsTogRow('inapp_approval_requested','Approval requested','Sent to admin when an approval is pending')}
         ${_nsTogRow('inapp_approval_decided','Approval decided','Sent to the user when their approval is approved/rejected')}
         ${_nsTogRow('inapp_feedback_received','Feedback received','Sent to the user when their manager sends feedback')}
+        <div style="font-size:10px;font-weight:800;color:#B8B5AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">CRM</div>
+        ${_nsTogRow('inapp_crm_mention','Tagged in CRM chat','When someone @mentions you in a conversation')}
+        ${_nsTogRow('inapp_crm_ticket','CRM ticket activity','Created, assigned, moved & automation alerts')}
+        ${_nsTogRow('inapp_crm_reminder','CRM reminders','Your ⏰ date & time reminders on tickets and messages')}
       </div>
     </div>
   </div>`;
@@ -592,6 +596,10 @@ function settingsPage(){
         ${_nsTogRow('email_approval_decided','Approval decided','Email sent to the user')}
         ${_nsTogRow('email_feedback_received','Feedback received','Email sent to the user')}
         ${_nsTogRow('email_escalation','Escalation raised','Email sent to the person it escalates to')}
+        <div style="font-size:10px;font-weight:800;color:#B8B5AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">CRM</div>
+        ${_nsTogRow('email_crm_mention','Tagged in CRM chat','Email when someone @mentions you')}
+        ${_nsTogRow('email_crm_ticket','CRM ticket activity','Email for created / assigned / automation alerts')}
+        ${_nsTogRow('email_crm_reminder','CRM reminders','Email for your ⏰ date & time reminders')}
       </div>
     </div>
   </div>`;

@@ -942,8 +942,9 @@ function okrPage(){
       else qRoots.push(qn);
     });
     const byAnnual=(a,b)=>{const pa=okrById(a.parentId),pb=okrById(b.parentId);return(((pa&&pa.sort)||0)-((pb&&pb.sort)||0))||String(a.periodStart||'').localeCompare(String(b.periodStart||''))||((a.sort||0)-(b.sort||0));};
-    Object.keys(_OKR_QVK).forEach(k=>_OKR_QVK[k].sort(byAnnual));
-    qRoots.sort(byAnnual);
+    const byLvl=(a,b)=>(okrLevel(a)-okrLevel(b))||byAnnual(a,b);
+    Object.keys(_OKR_QVK).forEach(k=>_OKR_QVK[k].sort(byLvl));
+    qRoots.sort(byLvl);
     tree=qRoots.length?`<div style="font-size:11.5px;color:var(--c-text-3);margin-bottom:8px">Quarterly view — quarters keep their annual hierarchy${(F.okrQtr||[]).length?'':' · tick quarters in the filter to focus on one'}</div>`+qRoots.map(o=>_okrNodeHTML(o,0)).join('')
       :empty('chart','No quarterly objectives','Turn on the “Annual objective” toggle on an objective to split it into quarters.');
   }else if(fActive){
@@ -1000,7 +1001,7 @@ function _okrNodeHTML(o,depth){
   /* Compact card: ONE header line (chips · title · slim meta), plain "current / target" numbers,
      a small inline meter next to the % — no full-width bar row — and one tight action strip. */
   const curTgt=o.metricType==='yesno'?((okrLatestCheckin(o.id)||{}).value>=1?'Done':'Not done'):`${_okrFmtVal(o,_okrOwnCur(o))} / ${okrHasRevision(o)?`<s style="opacity:.55">${_okrFmtVal(o,o.targetValue)}</s> ${_okrFmtVal(o,o.revisedTarget)}`:_okrFmtVal(o,o.targetValue)}`;
-  const card=`<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;margin-bottom:4px;${depth?'margin-left:'+Math.min(depth,5)*14+'px;':''}${o.closed?'opacity:.72;':''}overflow:hidden">
+  const _ind=_qv?okrLevel(o):depth;const card=`<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;margin-bottom:4px;${_ind?'margin-left:'+Math.min(_ind,5)*14+'px;':''}${o.closed?'opacity:.72;':''}overflow:hidden">
     <div style="padding:6px 10px 5px">
       <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;row-gap:3px">
         ${kids.length?`<button onclick="App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} sub-objectives" style="${icBtn};transform:${exp?'rotate(90deg)':'none'}">${ic('chevR','w-4 h-4')}</button>`:`<span style="width:22px;flex-shrink:0;display:grid;place-items:center;margin-top:6px"><span style="width:4px;height:4px;border-radius:50%;background:var(--c-border)"></span></span>`}
@@ -1009,7 +1010,7 @@ function _okrNodeHTML(o,depth){
             ${_okrLvlChip(lvl)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}<span class="fd" style="font-size:12.5px;font-weight:800;color:var(--c-text);line-height:1.3;min-width:0">${esc(o.title||'Untitled')}</span>
             ${owner?`<span title="Owner: ${esc(fullName(owner))}" style="flex-shrink:0;display:inline-flex;cursor:default">${avatar(owner,'w-4 h-4','text-[8px]')}</span>`:''}
             ${dept?`<span style="${meta}">${ic('dept','w-3 h-3')}${esc(dept.name)}${subDept?' › '+esc(subDept.name):''}</span>`:''}
-            ${o.periodStart||o.periodEnd?`<span style="${meta}">${ic('doc','w-3 h-3')}${fmtS(o.periodStart)} → ${fmtS(o.periodEnd)}</span>`:''}
+            ${o.periodStart||o.periodEnd?`<span style="${meta}">${ic('doc','w-3 h-3')}${fmtS(o.periodStart)} → ${fmtS(o.periodEnd)}</span>`:''}${(()=>{if(!_qv||!o.quarterLabel)return'';const ann=okrById(o.parentId);const gp=ann?okrById(ann.parentId):null;return(gp&&!gp.isAnnual)?`<span style="${meta};color:#B45309;background:#FEF7E6;border-radius:5px;padding:1px 6px" title="“${esc(gp.title)}” has no quarterly split of its own, so this quarter sits under the nearest split above it">${ic('tree','w-3 h-3')}under ${esc(gp.title)}</span>`:'';})()}
             ${kids.length?`<span style="${meta}">${ic('tree','w-3 h-3')}${kids.length} sub</span>`:''}
             ${okrHasRevision(o)?`<span style="${meta};color:#B45309;font-weight:800" title="Target was revised — original kept for comparison">${ic('edit','w-3 h-3')}Revised</span>`:''}
           </div>
