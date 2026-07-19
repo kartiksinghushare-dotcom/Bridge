@@ -43,8 +43,8 @@ function clOn(c,date){if(c.status&&c.status!=='Active')return false;
 let _toast;
 function toast(msg,type='ok'){
   let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;z-index:500;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));pointer-events:none';document.body.appendChild(t);}
-  const bg=type==='ok'?'#15171C':type==='warn'?'#D97706':'#DC2626';
-  const icbg=type==='ok'?'rgba(16,185,129,.9)':'rgba(255,255,255,.2)';
+  const bg=type==='ok'?'#1C1712':type==='warn'?'#D97706':'#DC2626';
+  const icbg=type==='ok'?'rgba(232,120,92,.9)':'rgba(255,255,255,.2)';
   const glyph=type==='ok'?'✓':type==='warn'?'!':'✕';
   t.innerHTML=`<div class="pop tt" style="background:${bg};color:#fff;padding:11px 16px 11px 12px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 10px 34px -10px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.2)"><span class="ic" style="background:${icbg};color:#fff">${glyph}</span><span>${esc(msg)}</span></div>`;
   clearTimeout(_toast);_toast=setTimeout(()=>{if(t)t.innerHTML='';},type==='ok'?2800:4800);
@@ -55,7 +55,7 @@ function toast(msg,type='ok'){
 window._toastAction=null;
 function toastAction(msg,type='ok',{label='Undo',fn='',ms=6000}={}){
   let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;z-index:500;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));pointer-events:none';document.body.appendChild(t);}
-  const bg=type==='ok'?'#15171C':type==='warn'?'#D97706':'#DC2626';
+  const bg=type==='ok'?'#1C1712':type==='warn'?'#D97706':'#DC2626';
   t.innerHTML=`<div class="pop" style="display:flex;align-items:center;gap:14px;background:${bg};color:#fff;padding:10px 12px 10px 18px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:auto;max-width:calc(100vw - 32px)"><span style="min-width:0;display:inline-flex;align-items:center;gap:7px">${type==='ok'?ic('check','w-3.5 h-3.5'):ic('alert','w-3.5 h-3.5')}<span>${esc(msg)}</span></span>${fn?`<button onclick="(()=>{const t=document.getElementById('toast');if(t)t.innerHTML='';})();${fn}" style="flex-shrink:0;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:800;cursor:pointer;min-height:34px">${esc(label)}</button>`:''}</div>`;
   clearTimeout(_toast);clearTimeout(window._toastAction);window._toastAction=setTimeout(()=>{if(t)t.innerHTML='';},ms);
 }

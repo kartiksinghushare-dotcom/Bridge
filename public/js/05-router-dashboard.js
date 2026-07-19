@@ -23,7 +23,7 @@ function dashboardPage(){
   const chartCard=(key,title,sub)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3);margin-top:1px">${sub}</div></div><div style="height:210px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
   return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
-      ${kpi('On-time rate',rate===null?'—':rate+'%','#0E9F6E','approve',"App.go('allcl')",'last 30 days')}
+      ${kpi('On-time rate',rate===null?'—':rate+'%','#E8785C','approve',"App.go('allcl')",'last 30 days')}
       ${kpi('Late',late,'#DC2626','alert',"App.go('allcl')",'submissions (30d)')}
       ${kpi('Open tickets',openTk+progTk,'#F97316','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
       ${kpi('Approvals waiting',apprN,'#0284C7','approve',"App.go('approvals')",'in your inbox')}
@@ -53,7 +53,7 @@ function _drawDashCharts(){
   const T=_aChartTheme();
   const{subs,tickets}=_dashScope();
   const today=todayISO();
-  const C={green:'#0E9F6E',greenSoft:'rgba(14,159,110,.14)',red:'#EF4444',amber:'#F59E0B',sky:'#0284C7',violet:'#8B5CF6',grey:'#9CA3AF',ink:'#1C212B'};
+  const C={green:'#E8785C',greenSoft:'rgba(232,120,92,.14)',red:'#EF4444',amber:'#F59E0B',sky:'#0284C7',violet:'#8B5CF6',grey:'#9CA3AF',ink:'#221B12'};
   const mk=(key,cfg)=>{const cv=document.querySelector('canvas[data-dash-chart="'+key+'"]');if(!cv)return;cfg.options=cfg.options||{};cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;cfg.options.plugins=cfg.options.plugins||{};cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:T.tick,font:{size:10.5},boxWidth:14,padding:8}};_aCharts.push(new Chart(cv.getContext('2d'),cfg));};
   const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
   const fmtDay=(iso)=>{const d=new Date(iso+'T00:00:00');return d.toLocaleDateString(undefined,{day:'numeric',month:'short'});};
@@ -87,7 +87,7 @@ function _drawDashCharts(){
   if(typeof okrVisible==='function'&&can('okr','view')){
     const okrs=okrVisible();
     if(okrs.length){
-      const oMap=[['Achieved','#10B981'],['On track','#22C55E'],['Off track',C.red],['Not achieved','#B91C1C'],['No data',C.grey]];
+      const oMap=[['Achieved','#ED8368'],['On track','#22C55E'],['Off track',C.red],['Not achieved','#B91C1C'],['No data',C.grey]];
       const oData=oMap.map(([s])=>okrs.filter(o=>okrStatusOf(o)===s).length);
       mk('okr',{type:'doughnut',data:{labels:oMap.map(([s])=>s),datasets:[{data:oData,backgroundColor:oMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
     }

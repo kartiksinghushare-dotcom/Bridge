@@ -15,12 +15,12 @@ function _roResponses(c,sub,date){
     const qr=qResps.find(r=>r.questionId===q.id)||{};
     const resp=qr.response;const hasR=resp!==null&&resp!==undefined&&resp!=='';
     const esc1=_escSetRo.has(q.id);
-    const boxBg=esc1?'#EF4444':(hasR?'#10B981':'#E5E7EB');
-    const ansClr=esc1?'#BE123C':'#0E9F6E';
+    const boxBg=esc1?'#EF4444':(hasR?'#ED8368':'#E5E7EB');
+    const ansClr=esc1?'#BE123C':'#E8785C';
     return`<div style="padding:10px 14px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;${esc1?'background:#FFF5F5':''}">
       <div style="width:18px;height:18px;border-radius:5px;background:${boxBg};display:grid;place-items:center;flex-shrink:0">${esc1?'<span style="color:#fff;font-size:12px;font-weight:800;line-height:1">!</span>':(hasR?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>':'')}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:${hasR?'#15171C':'#9CA3AF'}">${esc(q.text)}${esc1?'<span style="font-size:9px;font-weight:800;color:#BE123C;background:#FFE4E6;padding:1px 6px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em">Flagged</span>':''}</div>
+        <div style="font-size:12px;font-weight:600;color:${hasR?'#1C1712':'#9CA3AF'}">${esc(q.text)}${esc1?'<span style="font-size:9px;font-weight:800;color:#BE123C;background:#FFE4E6;padding:1px 6px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em">Flagged</span>':''}</div>
         ${hasR?`<div style="font-size:11px;font-weight:700;color:${ansClr};margin-top:2px">${esc(String(resp))}</div>`:'<div style="font-size:11px;color:#D1D5DB;font-style:italic;margin-top:2px">Not answered</div>'}
         ${qr.comment?`<div style="font-size:11px;color:#6B7280;margin-top:2px;font-style:italic">"${esc(qr.comment)}"</div>`:''}
         ${(()=>{const pl=_qrPhotoList(qr);return pl.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:100px;max-height:72px;border-radius:8px;object-fit:cover;border:1px solid #E5E7EB;cursor:pointer" title="Click to enlarge"/>').join('')+'</div>':'';})()}
@@ -67,7 +67,7 @@ function allClsPage(){
     return{sub,pend,late:pend&&dd<today};
   };
 
-  const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#10B981','Submitted':'#10B981','Pending':'#F59E0B','Rejected':'#9F1239','Editing':'#0EA5E9'};
+  const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#ED8368','Submitted':'#ED8368','Pending':'#F59E0B','Rejected':'#9F1239','Editing':'#0EA5E9'};
 
   // One read-only expandable card
   const roCard=(c,sub,key,metaExtra)=>{
@@ -157,7 +157,7 @@ function allClsPage(){
   const locList=loc?DB.locations.filter(l=>l.id===loc):DB.locations.slice();
   const locHeader=(label,count,muted)=>`<div style="display:flex;align-items:center;gap:7px;margin:18px 0 10px">
       <span style="color:${muted?'#9CA3AF':'#6366F1'}">${ic('pin','w-4 h-4')}</span>
-      <span style="font-size:15px;font-weight:800;color:${muted?'#6B7280':'#15171C'}">${esc(label)}</span>
+      <span style="font-size:15px;font-weight:800;color:${muted?'#6B7280':'#1C1712'}">${esc(label)}</span>
       <span style="font-size:11px;font-weight:700;color:#9CA3AF;background:#F3F4F6;padding:2px 9px;border-radius:20px">${count}</span>
     </div>`;
   locList.forEach(l=>{
@@ -198,7 +198,7 @@ function allClsPage(){
         <span style="font-size:13px;font-weight:600;color:#B8B5AC">${d===today?'Today · ':''}${fmtD(d)}</span>
         <div style="display:flex;gap:4px;align-items:center">
           <button onclick="S.filters.aclWk--;S.filters.aclExp=null;rr()" style="width:28px;height:28px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('back','w-3.5 h-3.5')}</button>
-          <button onclick="S.filters.aclWk=0;S.filters.aclDate='${today}';S.filters.aclExp=null;rr()" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:${S.filters.aclWk===0&&d===today?'#15171C':'#F6F7F8'};color:${S.filters.aclWk===0&&d===today?'#fff':'#6B7280'}">Today</button>
+          <button onclick="S.filters.aclWk=0;S.filters.aclDate='${today}';S.filters.aclExp=null;rr()" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:${S.filters.aclWk===0&&d===today?'#1C1712':'#F6F7F8'};color:${S.filters.aclWk===0&&d===today?'#fff':'#6B7280'}">Today</button>
           <button onclick="S.filters.aclWk++;S.filters.aclExp=null;rr()" style="width:28px;height:28px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('chevR','w-3.5 h-3.5')}</button>
         </div>
       </div>
@@ -207,11 +207,11 @@ function allClsPage(){
           const dn=DAYS3[new Date(dd+'T00:00:00').getDay()];const num=new Date(dd+'T00:00:00').getDate();
           const isT=dd===today;const isSel=dd===d;
           const dots=dayDots(dd);
-          return`<button onclick="S.filters.aclDate='${dd}';S.filters.aclExp=null;rr();App._lazyLoadDate('allcl')" class="cal4-d ${isSel?'sel':''}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;border:none;background:${isSel?'#15171C':'transparent'};gap:2px">
+          return`<button onclick="S.filters.aclDate='${dd}';S.filters.aclExp=null;rr();App._lazyLoadDate('allcl')" class="cal4-d ${isSel?'sel':''}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;border:none;background:${isSel?'#1C1712':'transparent'};gap:2px">
             <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${isSel?'rgba(255,255,255,.4)':'#B8B5AC'}">${dn.slice(0,3)}</span>
-            <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#15171C'};background:${isT&&!isSel?'#15171C':'transparent'}">${num}</span>
+            <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#1C1712'};background:${isT&&!isSel?'#1C1712':'transparent'}">${num}</span>
             <div style="display:flex;gap:2px;height:6px">
-              ${dots.sub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#10B981'}"></span>`:''}
+              ${dots.sub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#ED8368'}"></span>`:''}
               ${dots.late?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,180,180,.9)':'#F43F5E'}"></span>`:dots.pend?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,220,120,.9)':'#F59E0B'}"></span>`:''}
             </div>
           </button>`;
@@ -251,7 +251,7 @@ function approvalsPage(){
     +TABS.map(t=>{
       const active=tab===t;
       const badge=cnt[t]?(' <span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;background:'+(active?'rgba(255,255,255,0.2)':'#F3F4F6')+';color:'+(active?'#fff':TAB_CLR[t]||'#6B7280')+'">'+cnt[t]+'</span>'):'';
-      return '<button onclick="App._setTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:'+(active?'#15171C':'transparent')+';color:'+(active?'#fff':TAB_CLR[t]||'#6B7280')+'">'+t+badge+'</button>';
+      return '<button onclick="App._setTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:'+(active?'#1C1712':'transparent')+';color:'+(active?'#fff':TAB_CLR[t]||'#6B7280')+'">'+t+badge+'</button>';
     }).join('')
     +'</div>'
     +'<div class="space-y-3">'
@@ -275,13 +275,13 @@ function approvalsPage(){
               +'</div>'
               +(canDecide
                 ?'<div class="flex gap-2 mt-3">'
-                  +'<button onclick="App._decideApprove(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;background:#0E9F6E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Approve</button>'
+                  +'<button onclick="App._decideApprove(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;background:#E8785C;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Approve</button>'
                   +'<button onclick="App._decideReject(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #ECEDF0;background:#fff;color:#262A33;font-weight:600;font-size:14px;cursor:pointer">Reject</button>'
                   +'</div>'
                 :'')
               +((canFeedback||isAdmin())
                 ?'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
-                  +(a.type==='Submission'?'<button onclick="App._viewSubFor(this)" data-cl="'+a.checklistId+'" data-uid="'+a.requesterId+'" data-dt="'+a.date+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#0B7A55;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('eye','w-3.5 h-3.5')+'View</button>':'')
+                  +(a.type==='Submission'?'<button onclick="App._viewSubFor(this)" data-cl="'+a.checklistId+'" data-uid="'+a.requesterId+'" data-dt="'+a.date+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#CE5B41;background:#FBEAE2;border:1px solid #A7F3D0;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('eye','w-3.5 h-3.5')+'View</button>':'')
                   +(canFeedback?'<button onclick="App._addFb(this.dataset.id)" data-id="'+a.id+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#262A33;background:#F6F7F8;border:1px solid #ECEDF0;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('msg','w-3.5 h-3.5')+'Feedback</button>':'')
                   +'</div>'
                 :'')
@@ -292,7 +292,7 @@ function approvalsPage(){
       : ''
     )
     // ── Feedback tab (kept for backwards compat but not shown in TABS) ──
-    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#E5E7EB':'#BFDBFE')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#9CA3AF">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#15171C;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
+    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#E5E7EB':'#BFDBFE')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#9CA3AF">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#1C1712;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
     +'</div></div>';
 }
 
@@ -366,12 +366,12 @@ App.viewSub=(subId)=>{
     const typeBg=Q_TYPE_BG[q.type]||'#F6F7F8';
     const typeClr=Q_TYPE_CLR[q.type]||'#6B7280';
     const typeLabel=TYPE_LABELS[q.type]||q.type;
-    return'<div style="border-radius:10px;border:1px solid '+(hasResp?'#D1FAE5':'#F3F4F6')+';padding:10px 12px;background:'+(hasResp?'#F9FEFB':'#FAFAFA')+'">'
+    return'<div style="border-radius:10px;border:1px solid '+(hasResp?'#FBDCD1':'#F3F4F6')+';padding:10px 12px;background:'+(hasResp?'#F9FEFB':'#FAFAFA')+'">'
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
       +'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:'+typeBg+';color:'+typeClr+'">'+typeLabel+'</span>'
       +'<span style="font-size:13px;font-weight:600">'+esc(q.text)+'</span>'
       +'</div>'
-      +(hasResp?'<div style="font-size:13px;font-weight:700;color:#0E9F6E">'+esc(String(resp))+'</div>':'<div style="font-size:12px;color:#D1D5DB;font-style:italic">Not answered</div>')
+      +(hasResp?'<div style="font-size:13px;font-weight:700;color:#E8785C">'+esc(String(resp))+'</div>':'<div style="font-size:12px;color:#D1D5DB;font-style:italic">Not answered</div>')
       +(qr.comment?'<div style="font-size:12px;color:#6B7280;margin-top:4px;font-style:italic">"'+esc(qr.comment)+'"</div>':'')
       +(()=>{const pl=_qrPhotoList(qr);return pl.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #E5E7EB;cursor:pointer"/>').join('')+'</div>':'';})()
       +'</div>';
@@ -392,7 +392,7 @@ App.viewSub=(subId)=>{
     +(s.editCount?' · Edited '+s.editCount+'×':'')
     +'</div></div>','max-w-lg');
 };
-App._addFb=(aprId)=>{const a=DB.approvals.find(x=>x.id===aprId);if(!a)return;openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Add feedback</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-3">This will be sent to <strong>${esc(fullName(uById(a.requesterId)))}</strong> for acknowledgement.</p><textarea id="fb-t" rows="4" placeholder="Write feedback…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._saveFb('${aprId}')" style="margin-top:16px;width:100%;background:#15171C;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send feedback</button></div>`,'max-w-sm');};
+App._addFb=(aprId)=>{const a=DB.approvals.find(x=>x.id===aprId);if(!a)return;openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Add feedback</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-3">This will be sent to <strong>${esc(fullName(uById(a.requesterId)))}</strong> for acknowledgement.</p><textarea id="fb-t" rows="4" placeholder="Write feedback…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._saveFb('${aprId}')" style="margin-top:16px;width:100%;background:#1C1712;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send feedback</button></div>`,'max-w-sm');};
 App._saveFb=(aprId)=>{const a=DB.approvals.find(x=>x.id===aprId);if(!a)return;const text=$('#fb-t')?.value?.trim();if(!text){toast('Write something first','err');return;}if(!DB.feedback)DB.feedback=[];const cl=clById(a.checklistId);DB.feedback.push({id:uid('fb'),checklistId:a.checklistId,userId:a.requesterId,managerId:S.uid,date:a.date,text,level:'checklist',acknowledged:false,createdAt:new Date().toISOString()});DB.notifications.unshift({id:uid('n'),userId:a.requesterId,text:'Feedback received on '+(cl?.name||'a checklist'),time:new Date().toISOString(),read:false});queueEmail('feedback_received',a.requesterId,null,null,{checklist_name:cl?.name||''});log(fullName(me()),'Feedback sent',fullName(uById(a.requesterId)));_invalidateNotifCache();toast('Feedback sent');closeModal();saveDB();render();};
 App._setTab=(t)=>{S.filters.atab=t;rr();};
 App._decideApprove=(id)=>App._decide(id,'Approved');

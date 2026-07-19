@@ -1,3 +1,41 @@
+# Bridge (v3.9)
+
+## v3.9.2 — Progress panel shows only the feeders · revised target visible in the editor
+
+- **An annual's Progress & Updates panel now lists ONLY its quarters** (the objectives that actually feed it) with their Q tags — regular L1 sub-objectives no longer appear there; they have their own panels. (With the roll-up override on, all feeding children show, as that's what drives the number.)
+- **The edit form now shows the revision**: when a target has been revised, the form shows "Original target" plus an amber **Revised target (drives progress)** field — editable inline, with who/when/why next to it. Changing it updates the revision (logged); clearing it or setting it back to the original removes the revision.
+
+## v3.9.1 — Annual & level-below roll-up: two independent, manual toggles
+
+- **Both toggles are always visible and fully manual** — enabling Annual never touches the roll-up toggle (and vice versa); nothing flips, hides or locks. A one-time data fix cleared the roll-up flag that the old annual toggle had silently set on all 43 existing annuals.
+- **Clear precedence when reading the number**: roll-up ON → level-below aggregation drives it (explicit override, shown with an amber "both toggles are on" note in the editor and panels) · Annual ON with roll-up OFF → the **combined progress of its quarters, nothing else** (regular children and own check-ins can't feed it, even with no quarters at all) · both OFF → own check-ins. Cards, panels, graphs and the "Progress source" row all state which source is active.
+
+## v3.9 — Annual progress from quarters · Close status · quarterly hierarchy view
+
+- **Annual progress = combined progress of its quarters, each counting equally.** L0 Q1 done 10% with the rest untouched → the L0 annual reads **2.5%** ("out of all progress"); its current value maps that % onto its own start → target scale, and the graph follows. Only quarter-tagged children feed an annual — an L1's updates never move the L0 annual (the L1's own quarters move the L1). The per-annual "how quarters combine" dropdown was removed — this rule replaces it.
+- **Close status (with reason, required).** New 🔒 action on every card: closing freezes the objective — no updates, check-ins, reminders or revisions — but keeps it in the list, greyed with a **Closed** chip (reason on hover), full history intact. Reason + who + when show in Rules & Target; reopen anytime with 🔓. Closed shows in the status filter and a summary card appears when any exist. DB: additive `okrs.closed / closed_reason / closed_at / closed_by` (migration applied).
+- **Revision reason is now required** when revising targets, and shows in the **Rules & Target** tab too: `Revised 17 Jul by <name>: 1M → 750k — "reason" · same updates feed both numbers`.
+- **Views: Annual / Quarterly only** (All removed; Annual is the default clean tree). **Quarterly view is now a hierarchy**, not a flat list: every quarter nests under the matching quarter of its nearest ancestor annual — an L1's Q1 sits under the L0's Q1, exactly mirroring the annual tree (expanded by default; label-matched; all other filters still apply).
+
+# Bridge (v3.8)
+
+## v3.8.2 — Compact, cleaner OKR cards
+
+- Each objective card is now one slim line: chips · title · **owner as initials only** (full name on hover) · department · period · sub-count. The check-in schedule text left the card (it lives in Rules & Target), "Cur X · Tgt Y" became plain **`4.6% / 8%`**, and the big full-width progress bar is a **small inline meter** next to the % and status.
+- **Rules & Target / Progress & Updates** buttons shrunk; the per-card **Update button was removed** — updates are added from the Progress & Updates popup (its "Add update" button). Summary cards slimmed too. Nothing functional changed.
+
+## v3.8.1 — OKR list: fixed ordering + chip alignment
+
+- **Quarters always group together**: under an annual, children now render Q1 → Q2 → Q3 → Q4 (by their period dates) first, then the regular sub-objectives — a sub-objective created between two "add period" batches no longer lands in the middle of the quarters. The flat filtered list follows the same tree order too.
+- **Alignment**: the L-level / Q / ANNUAL chips moved into the title line (equal heights, vertically centred, wrap cleanly) and the leading dot/chevron column is one width everywhere — titles line up whether or not a row has chips or children.
+
+## v3.8 — Quarterly OKRs: same level as their annual + editable from the annual
+
+- **Levels**: a quarterly split now sits AT its annual's level — an L0 annual's quarters read **L0 · Q1**, not L1. Children created under a quarter are L1, and deeper nesting stays consistent. The level filter, editor titles and Move preview all follow (a quarter moved under another objective lands at that objective's level).
+- **Edit quarters from the annual**: opening an annual objective's editor now shows its quarterly objectives as **editable rows** (label, dates, start value, target) — change them there and Save writes onto each quarterly objective (logged as "via annual editor"; check-in history untouched). A failed validation keeps everything you typed.
+- **Two-way sync**: shared fields changed on the annual (title pattern, owner, goal, unit, direction, metric, check-in schedule) follow onto quarters that still match the annual's old value — a quarter you customised by hand keeps its own value. Edits made on a quarter directly appear in the annual's editor next time it opens, and its numbers keep feeding the annual as before.
+- No database changes needed.
+
 # Bridge (v3.7)
 
 ## v3.7 — OKR visibility is scope-driven (Access Control) + cache-busting

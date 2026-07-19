@@ -37,7 +37,7 @@ function profilePage(){
         ${fld('Phone','ep-ph',u.phone||'','tel')}
         ${fld('Position','ep-pos',u.position||'')}
       </div>
-      <button id="ep-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App.saveProfile().finally(()=>{const b=document.getElementById('ep-save-btn');if(b){b.disabled=false;b.textContent='Save changes';}})" style="padding:10px 20px;border-radius:12px;background:#15171C;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Save changes</button>
+      <button id="ep-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App.saveProfile().finally(()=>{const b=document.getElementById('ep-save-btn');if(b){b.disabled=false;b.textContent='Save changes';}})" style="padding:10px 20px;border-radius:12px;background:#1C1712;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Save changes</button>
     </div>
   </div>
   <!-- Change password -->
@@ -46,7 +46,7 @@ function profilePage(){
     <div class="space-y-2">
       ${fld('Current password','pw-cur','','password','')}
       ${fld('New password','pw-new','','password','min 6 characters')}
-      <button id="pw-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Updating…';App.changePw().finally(()=>{const b=document.getElementById('pw-save-btn');if(b){b.disabled=false;b.textContent='Update password';}})" style="margin-top:8px;padding:10px 20px;border-radius:12px;background:#15171C;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Update password</button>
+      <button id="pw-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Updating…';App.changePw().finally(()=>{const b=document.getElementById('pw-save-btn');if(b){b.disabled=false;b.textContent='Update password';}})" style="margin-top:8px;padding:10px 20px;border-radius:12px;background:#1C1712;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Update password</button>
     </div>
   </div>
   <!-- Feedback history -->
@@ -56,11 +56,11 @@ function profilePage(){
     return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
       +'<h3 class="fd font-semibold text-sm">Recent Feedback</h3>'
-      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#0E9F6E;background:none;border:none;cursor:pointer">View all</button>'
+      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#E8785C;background:none;border:none;cursor:pointer">View all</button>'
       +'</div>'
       +myFb.map(fb=>{
         const mgr=uById(fb.managerId);
-        const stClr=fb.status==='Responded'?'#059669':fb.status==='Acknowledged'?'#0EA5E9':'#3B82F6';
+        const stClr=fb.status==='Responded'?'#CE5B41':fb.status==='Acknowledged'?'#0EA5E9':'#3B82F6';
         return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #F3F4F6">'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:13px;font-weight:600">'+(fb.title||fb.type+' Feedback')+'</div>'
@@ -111,7 +111,7 @@ App._uploadDoc=()=>{
   openModal(
     '<div class="p-6">'
     +'<div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Upload file</h2><button onclick="App.closeModal()" class="text-ink-400">'+ic('x')+'</button></div>'
-    +'<div id="ud-dropzone" style="border:2px dashed #D1D5DB;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#0E9F6E\';this.style.background=\'#F0FDF4\'" ondragleave="this.style.borderColor=\'#D1D5DB\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
+    +'<div id="ud-dropzone" style="border:2px dashed #D1D5DB;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#E8785C\';this.style.background=\'#F0FDF4\'" ondragleave="this.style.borderColor=\'#D1D5DB\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
     +'<div style="font-size:32px;margin-bottom:8px">📎</div>'
     +'<div style="font-size:14px;font-weight:600;color:#374151">Click to browse or drag & drop</div>'
     +'<div style="font-size:12px;color:#9CA3AF;margin-top:4px">PDF, Word, Excel, PowerPoint, Images — max 50MB</div>'
@@ -120,9 +120,9 @@ App._uploadDoc=()=>{
     +'<div id="ud-preview" style="display:none;margin-bottom:14px"></div>'
     +'<div id="ud-progress" style="display:none;margin-bottom:14px">'
     +'<div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Uploading…</div>'
-    +'<div style="height:6px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#0E9F6E;border-radius:3px;width:0%;transition:width .3s"></div></div>'
+    +'<div style="height:6px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#E8785C;border-radius:3px;width:0%;transition:width .3s"></div></div>'
     +'</div>'
-    +'<button id="ud-btn" onclick="App._doUpload()" style="width:100%;padding:12px;border-radius:12px;background:#15171C;color:#fff;font-weight:700;font-size:15px;border:none;cursor:pointer;display:none">Upload</button>'
+    +'<button id="ud-btn" onclick="App._doUpload()" style="width:100%;padding:12px;border-radius:12px;background:#1C1712;color:#fff;font-weight:700;font-size:15px;border:none;cursor:pointer;display:none">Upload</button>'
     +'</div>',
     'max-w-md'
   );
@@ -246,7 +246,7 @@ App._clearOperational=()=>{
       +'<input type="checkbox" id="clr-'+cat.key+'" onchange="this.closest(\'label\').style.borderColor=this.checked?\'#EF4444\':\'#F3F4F6\'" style="width:17px;height:17px;accent-color:#EF4444;cursor:pointer;flex-shrink:0"/>'
       +'<span style="font-size:20px;flex-shrink:0">'+cat.icon+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;color:#15171C">'+cat.label+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#1C1712">'+cat.label+'</div>'
       +'<div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+cat.desc+'</div>'
       +'</div>'
       +'<span style="font-size:12px;font-weight:800;background:'+(n?'#FEF2F2':'#F6F7F8')+';color:'+(n?'#DC2626':'#9CA3AF')+';padding:3px 9px;border-radius:20px;flex-shrink:0">'+n+' records</span>'
@@ -405,10 +405,10 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('settings')?'Open Settings'
     :ctaUrl.includes('analytics')?'View Analytics'
     :'Open Bridge';
-  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F7F6F2;font-family:sans-serif">
+  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F7F3EC;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #ECEDF0;overflow:hidden">
-    <div style="background:#15171C;padding:20px 28px;display:flex;align-items:center;gap:10px">
-      <div style="width:28px;height:28px;border-radius:8px;background:#0E9F6E;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
+    <div style="background:#1C1712;padding:20px 28px;display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:8px;background:#E8785C;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
       <span style="font-weight:700;font-size:16px;color:#fff">${safeName}</span>
     </div>
     <div style="padding:28px">
@@ -417,7 +417,7 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
         :`<p style="font-size:14px;color:#6B7280;margin:0 0 8px;line-height:1.6">${l}</p>`
       ).join('')}
       ${ctaUrl?`<div style="margin-top:24px">
-        <a href="${ctaUrl}" style="display:inline-block;background:#15171C;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none">${ctaLabel} →</a>
+        <a href="${ctaUrl}" style="display:inline-block;background:#1C1712;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none">${ctaLabel} →</a>
         <p style="margin:10px 0 0;font-size:11px;color:#B8B5AC">Or copy: ${ctaUrl}</p>
       </div>`:''}
     </div>
@@ -464,7 +464,7 @@ function _nsTogRow(key,label,desc){
   const on=_ns?(_ns[key]!==false):true;
   return`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F5F4F0">
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:600;color:#15171C">${label}</div>
+      <div style="font-size:13px;font-weight:600;color:#1C1712">${label}</div>
       ${desc?`<div style="font-size:11px;color:#B8B5AC;margin-top:1px">${desc}</div>`:''}
     </div>
     <button role="switch" aria-checked="${on?'true':'false'}" aria-label="${esc(label)}" class="tog ${on?'on':'off'}" onclick="App._nsTog(this,'${key}')"><span></span></button>
@@ -575,7 +575,7 @@ function settingsPage(){
             style="width:120px;border:1.5px solid #E5E7EB;border-radius:10px;padding:8px 12px;font-size:13px;outline:none" class="rf"/>
         </div>
         <div style="display:flex;gap:8px">
-          <button onclick="App._nsSaveEmail()" style="flex:1;padding:10px;border-radius:11px;background:#15171C;color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer" onmouseover="this.style.background='#000'" onmouseout="this.style.background='#15171C'">Save settings</button>
+          <button onclick="App._nsSaveEmail()" style="flex:1;padding:10px;border-radius:11px;background:#1C1712;color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer" onmouseover="this.style.background='#000'" onmouseout="this.style.background='#1C1712'">Save settings</button>
           <button id="ns-test-btn" onclick="App._testEmail()" style="padding:10px 16px;border-radius:11px;background:#fff;color:#374151;font-size:13px;font-weight:700;border:1.5px solid #E5E7EB;cursor:pointer" onmouseover="this.style.background='#F9F8F5'" onmouseout="this.style.background='#fff'">Send test email</button>
         </div>
       </div>
@@ -610,15 +610,15 @@ function settingsPage(){
     ${EMAIL_EVENTS.map(ev=>{
       const tpl={...(defaults[ev.key]||{}), ...(ns.templates?.[ev.key]||{})};
       const open=expandedTpl===ev.key;
-      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#0E9F6E':'#ECEDF0'};overflow:hidden;transition:border-color .15s">
+      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#E8785C':'#ECEDF0'};overflow:hidden;transition:border-color .15s">
         <button onclick="S.filters.tplKey='${open?'':ev.key}';rr()"
           style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:transparent;border:none;cursor:pointer;text-align:left">
           <div>
-            <div style="font-size:13px;font-weight:700;color:#15171C">${ev.label}</div>
+            <div style="font-size:13px;font-weight:700;color:#1C1712">${ev.label}</div>
             <div style="font-size:11px;color:#B8B5AC;margin-top:1px">${ev.vars}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ECFDF5;color:#065F46">Custom</span>`:''}
+            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FBEAE2;color:#065F46">Custom</span>`:''}
             <span style="color:#B8B5AC;font-size:16px">${open?'▲':'▼'}</span>
           </div>
         </button>
@@ -638,7 +638,7 @@ function settingsPage(){
             <button onclick="App._resetTpl('${ev.key}')"
               style="padding:8px 14px;border-radius:9px;border:1.5px solid #ECEDF0;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#9CA3AF">Reset to default</button>
             <button onclick="App._saveTpl('${ev.key}')"
-              style="flex:1;padding:8px 14px;border-radius:9px;background:#15171C;color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save template</button>
+              style="flex:1;padding:8px 14px;border-radius:9px;background:#1C1712;color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save template</button>
           </div>
         </div>`:''}
       </div>`;

@@ -97,10 +97,10 @@ function _renderClModal(editing){
       <div>
         <div class="flex items-center justify-between mb-2">
           <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide">Questions <span style="color:#EF4444">*</span></label>
-          <button type="button" onclick="App._openClQuestionPicker()" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#0E9F6E;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add question</button>
+          <button type="button" onclick="App._openClQuestionPicker()" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#E8785C;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add question</button>
         </div>
         <div id="cn-questions" style="display:flex;flex-direction:column;gap:6px">
-          ${(c.questionIds||[]).map(qid=>{const q=(DB.questions||[]).find(x=>x.id===qid);if(!q)return'';const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;const clr=Q_TYPE_CLR[q.type]||'#6B7280';const bg=Q_TYPE_BG[q.type]||'#F6F7F8';const cfg=(c.questionConfigs||{})[qid]||{};const escCount=Object.values(cfg).filter(v=>v).length;return`<div style="display:flex;align-items:center;gap:8px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:8px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${bg};color:${clr};flex-shrink:0">${tl}</span><span style="flex:1;font-size:13px;font-weight:500;color:#15171C;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</span>${escCount?`<span style="font-size:10px;font-weight:700;color:#EF4444;flex-shrink:0">${escCount} escalation${escCount>1?'s':''}</span>`:''}<button type="button" onclick="App._editClQuestionEscalation('${qid}')" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;cursor:pointer;color:#374151;flex-shrink:0">Escalation</button><button type="button" onclick="App._removeClQuestion('${qid}')" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D1D5DB;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='#BE123C'" onmouseout="this.style.color='#D1D5DB'">${ic('x','w-3 h-3')}</button></div>`;}).join('')}
+          ${(c.questionIds||[]).map(qid=>{const q=(DB.questions||[]).find(x=>x.id===qid);if(!q)return'';const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;const clr=Q_TYPE_CLR[q.type]||'#6B7280';const bg=Q_TYPE_BG[q.type]||'#F6F7F8';const cfg=(c.questionConfigs||{})[qid]||{};const escCount=Object.values(cfg).filter(v=>v).length;return`<div style="display:flex;align-items:center;gap:8px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:8px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${bg};color:${clr};flex-shrink:0">${tl}</span><span style="flex:1;font-size:13px;font-weight:500;color:#1C1712;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</span>${escCount?`<span style="font-size:10px;font-weight:700;color:#EF4444;flex-shrink:0">${escCount} escalation${escCount>1?'s':''}</span>`:''}<button type="button" onclick="App._editClQuestionEscalation('${qid}')" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;cursor:pointer;color:#374151;flex-shrink:0">Escalation</button><button type="button" onclick="App._removeClQuestion('${qid}')" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D1D5DB;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='#BE123C'" onmouseout="this.style.color='#D1D5DB'">${ic('x','w-3 h-3')}</button></div>`;}).join('')}
           ${!(c.questionIds||[]).length?`<div style="text-align:center;padding:12px;border:2px dashed #E5E7EB;border-radius:10px;font-size:12px;color:#9CA3AF">No questions added yet</div>`:''}
         </div>
       </div>
@@ -124,7 +124,7 @@ function _renderClModal(editing){
     <!-- Sticky footer -->
     <div class="px-5 py-4 border-t border-ink-100 flex gap-3 bg-white">
       <button onclick="App.closeModal()" class="flex-1 py-3 rounded-xl border-2 border-ink-200 font-semibold text-sm text-ink-600 hover:bg-ink-50 transition">Cancel</button>
-      <button id="cl-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';try{App._saveCl(${editing});}catch(e){console.error('Save button error:',e);this.disabled=false;this.textContent='${editing?'Save changes':'Create checklist'}';}" style="flex:1;padding:12px;border-radius:12px;background:#15171C;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer" onmouseover="if(!this.disabled)this.style.background='#0E0F13'" onmouseout="if(!this.disabled)this.style.background='#15171C'">${editing?'Save changes':'Create checklist'}</button>
+      <button id="cl-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';try{App._saveCl(${editing});}catch(e){console.error('Save button error:',e);this.disabled=false;this.textContent='${editing?'Save changes':'Create checklist'}';}" style="flex:1;padding:12px;border-radius:12px;background:#1C1712;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer" onmouseover="if(!this.disabled)this.style.background='#0E0F13'" onmouseout="if(!this.disabled)this.style.background='#1C1712'">${editing?'Save changes':'Create checklist'}</button>
     </div>
   </div>`,'max-w-2xl');
 }
@@ -139,7 +139,7 @@ function _freqUI(freq){
       <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schedule</div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
         ${['Every day','Selected weekdays'].map(o=>`<button type="button" data-sched="${o}" onclick="App._dailySched('${o}',this)"
-          style="flex:1;padding:8px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;background:${sched===o?'#15171C':'#fff'};color:${sched===o?'#fff':'#6B7280'};border-color:${sched===o?'#15171C':'#ECEDF0'}">${o}</button>`).join('')}
+          style="flex:1;padding:8px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;background:${sched===o?'#1C1712':'#fff'};color:${sched===o?'#fff':'#6B7280'};border-color:${sched===o?'#1C1712':'#ECEDF0'}">${o}</button>`).join('')}
       </div>
       <div id="cn-daysel" style="display:${sched==='Selected weekdays'?'flex':'none'};flex-wrap:wrap;gap:6px">
         ${WKDAYS.map(d=>`<button type="button" onclick="App._togDay('${d}',this)" class="dchip ${sd.includes(d)?'on':''}">${d}</button>`).join('')}
@@ -163,7 +163,7 @@ function _freqUI(freq){
       <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Days of month</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
         ${nums.map(n=>{const on=sdtNorm.includes(n);return`<button type="button" onclick="App._togDN('${n}',this)"
-          style="min-width:${n==='L'?48:32}px;height:32px;border-radius:50%;border:1.5px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:${on?'#15171C':'#fff'};color:${on?'#fff':'#6B7280'};border-color:${on?'#15171C':'#ECEDF0'};${n==='L'?'border-radius:8px;padding:0 8px':''}" title="${n==='L'?'Last day of month':n}">${n==='L'?'Last':n}</button>`;}).join('')}
+          style="min-width:${n==='L'?48:32}px;height:32px;border-radius:50%;border:1.5px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:${on?'#1C1712':'#fff'};color:${on?'#fff':'#6B7280'};border-color:${on?'#1C1712':'#ECEDF0'};${n==='L'?'border-radius:8px;padding:0 8px':''}" title="${n==='L'?'Last day of month':n}">${n==='L'?'Last':n}</button>`;}).join('')}
       </div>
       <p style="font-size:11px;color:#9CA3AF">Tip: Select "Last" to always run on the last day of any month (handles 28/29/30/31 automatically)</p>
     </div>`;
@@ -183,15 +183,15 @@ function _freqUI(freq){
       <div style="background:#F6F7F8;border-radius:10px;padding:8px;display:inline-block;min-width:220px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth--;if(CLD._calMonth<0){CLD._calMonth=11;CLD._calYear--;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('back','w-3 h-3')}</button>
-          <span style="font-size:12px;font-weight:700;color:#15171C">${MN[calMonth]} ${calYear}</span>
+          <span style="font-size:12px;font-weight:700;color:#1C1712">${MN[calMonth]} ${calYear}</span>
           <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth++;if(CLD._calMonth>11){CLD._calMonth=0;CLD._calYear++;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('chevR','w-3 h-3')}</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px;text-align:center">
           ${['S','M','T','W','T','F','S'].map(d=>`<div style="font-size:9px;font-weight:700;color:#9CA3AF;padding:2px 0">${d}</div>`).join('')}
         </div>
-        ${weeks.map(w=>`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px">${w.map(d=>{if(!d)return'<div></div>';const iso=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const on=cdt.includes(iso);const past=iso<todayISO();return`<button type="button" onclick="App._togCalDate('${iso}')" style="aspect-ratio:1;border-radius:6px;border:none;font-size:11px;font-weight:${on?700:400};cursor:pointer;background:${on?'#15171C':'transparent'};color:${on?'#fff':past?'#D1D5DB':'#15171C'};padding:3px 0">${d}</button>`;}).join('')}</div>`).join('')}
+        ${weeks.map(w=>`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px">${w.map(d=>{if(!d)return'<div></div>';const iso=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const on=cdt.includes(iso);const past=iso<todayISO();return`<button type="button" onclick="App._togCalDate('${iso}')" style="aspect-ratio:1;border-radius:6px;border:none;font-size:11px;font-weight:${on?700:400};cursor:pointer;background:${on?'#1C1712':'transparent'};color:${on?'#fff':past?'#D1D5DB':'#1C1712'};padding:3px 0">${d}</button>`;}).join('')}</div>`).join('')}
       </div>
-      ${cdt.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${cdt.sort().map(d=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#15171C;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:0;font-size:13px;line-height:1">×</button></span>`).join('')}</div>`:''}
+      ${cdt.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${cdt.sort().map(d=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#1C1712;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:0;font-size:13px;line-height:1">×</button></span>`).join('')}</div>`:''}
     </div>`;
   }
   return'';
@@ -212,9 +212,9 @@ App._dailySched=(o,el)=>{
   // Update button styles
   el.parentNode.querySelectorAll('button[data-sched]').forEach(b=>{
     const active=b.dataset.sched===o;
-    b.style.background=active?'#15171C':'#fff';
+    b.style.background=active?'#1C1712':'#fff';
     b.style.color=active?'#fff':'#6B7280';
-    b.style.borderColor=active?'#15171C':'#ECEDF0';
+    b.style.borderColor=active?'#1C1712':'#ECEDF0';
   });
   // Show/hide weekday picker
   const daysel=$('#cn-daysel');
@@ -229,7 +229,7 @@ App._togDN=(n,el)=>{
   const i=CLD.selectedDates.indexOf(val);
   if(i>-1)CLD.selectedDates.splice(i,1);else CLD.selectedDates.push(val);
   const on=CLD.selectedDates.includes(val);
-  el.style.background=on?'#15171C':'#fff';el.style.color=on?'#fff':'#6B7280';el.style.borderColor=on?'#15171C':'#ECEDF0';
+  el.style.background=on?'#1C1712':'#fff';el.style.color=on?'#fff':'#6B7280';el.style.borderColor=on?'#1C1712':'#ECEDF0';
 };
 App._togCalDate=(iso)=>{
   if(!CLD.customDates)CLD.customDates=[];
@@ -238,7 +238,7 @@ App._togCalDate=(iso)=>{
   // Re-render the calendar
   const sw=$('#cn-sched');if(sw)sw.innerHTML=_freqUI('Custom');
 };
-App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const w=$('#cn-cdt');if(w)w.innerHTML=(CLD.customDates||[]).map(d=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#15171C;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" class="opacity-70 hover:opacity-100">${ic('x','w-3 h-3')}</button></span>`).join('');};
+App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const w=$('#cn-cdt');if(w)w.innerHTML=(CLD.customDates||[]).map(d=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#1C1712;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" class="opacity-70 hover:opacity-100">${ic('x','w-3 h-3')}</button></span>`).join('');};
 App._togLoc=(id,on,el)=>{if(!CLD.locationIds)CLD.locationIds=[];if(on&&!CLD.locationIds.includes(id))CLD.locationIds.push(id);if(!on)CLD.locationIds=CLD.locationIds.filter(x=>x!==id);el.closest('label').className=`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl border cursor-pointer transition ${on?'border-sky-300 bg-sky-50 text-sky-700':'border-ink-200 text-ink-600'}`;};
 App._togAsgn=(id,on,el)=>{if(!CLD.assignees)CLD.assignees=[];if(on&&!CLD.assignees.includes(id))CLD.assignees.push(id);if(!on)CLD.assignees=CLD.assignees.filter(a=>a!==id);el.closest('label').className=`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition text-xs ${on?'border-brand-300 bg-brand-50':'border-ink-100'}`;};
 
