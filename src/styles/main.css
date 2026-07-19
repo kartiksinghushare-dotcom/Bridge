@@ -183,7 +183,7 @@ body{background:var(--grad-paper)!important;background-attachment:fixed!importan
 /* Brand logo squares → gradient + glow (sidebar + topbar use .nav-brand) */
 .nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(232,120,92,.55);letter-spacing:-.5px}
 /* Sidebar → deep gradient with subtle inner glow */
-aside.sidebar{background:linear-gradient(180deg,#231C13 0%,#1C1712 60%,#141009 100%)!important;border-right:1px solid rgba(255,255,255,.05)}
+aside.sidebar{background-color:#1A140D!important;background-image:linear-gradient(180deg,#231C13 0%,#1C1712 60%,#141009 100%)!important;border-right:1px solid rgba(255,255,255,.05)}
 /* Page titles a touch larger + tighter */
 main#content h1.fd{letter-spacing:-.6px}
 /* ── Cards: more depth, bigger radius, lively hover lift ── */
@@ -541,7 +541,7 @@ input,select,textarea{outline:none}
    the mobile chrome (hamburger, bell, mobile profile, bottom nav) leaks onto desktop.
    These rules make the shell fully self-sufficient at the 768px breakpoint. */
 /* Sidebar — fully positioned here so it does not depend on Tailwind's fixed/inset/w-56. */
-.sidebar{position:fixed;top:0;bottom:0;left:0;width:224px;z-index:30;flex-direction:column;overflow-y:auto}
+.sidebar{position:fixed;top:0;bottom:0;left:0;width:224px;z-index:30;flex-direction:column;overflow-y:auto;background-color:#1A140D}
 /* Sticky topbar (sticky/top-0/z-20). */
 .topbar{position:sticky;top:0;z-index:20}
 /* Main column. */

@@ -163,7 +163,7 @@ function shell(content){
   }).join('');
 
   return`<div style="min-height:100vh;display:flex">
-  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:linear-gradient(177deg,#221B12 0%,#15100A 100%);color:#fff;border-right:1px solid rgba(255,255,255,.05)">
+  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#1A140D;background-image:linear-gradient(177deg,#221B12 0%,#15100A 100%);color:#fff;border-right:1px solid rgba(255,255,255,.05)">
     <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
       <div class="nav-brand">B</div>
       <span class="fd" style="font-weight:800;font-size:18px;letter-spacing:-.5px;color:#fff">Bridge</span>
