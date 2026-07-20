@@ -8,6 +8,7 @@
 - **Column delete validation**: a board column that still holds values on any ticket can no longer be deleted — the delete is blocked with a message showing how many tickets still use it; clear the values first. Empty columns delete as before (with confirmation).
 - **Add members by group**: the Board members and Channel members dialogs now have an "Add a whole group" section — one tap adds every (active) member of a people-group who isn't already in; the button shows how many it will add.
 - **Column reorder rebuilt**: drag the ⠿ grip in a column header (the header itself is no longer draggable, so clicking the name to edit and resizing no longer fight the drag). While dragging, a gold insertion bar shows exactly where the column will land — left half of a header inserts before it, right half after — and the dragged column dims. (v=55)
+- **Conversations compact everywhere** (chats, tickets, thread panels): consecutive messages from the same person within 5 minutes now **group** — one name header, bubbles 2px apart (9px between speakers). Sender name and time share one line (full date on bubble hover), the separate timestamp row is gone, avatars are 24px, bubbles 6×10px, and the thread side-panel slimmed to 320px with a tighter reply box. A back-and-forth that took a screen now fits in a third of it. (v=56)
 - Cache-busting bumped to `?v=54`.
 
 ## v3.10.1 — BloomingBox brand theme (BB Brand Guidelines 2023)
