@@ -1,5 +1,13 @@
 # Bridge (v3.10)
 
+## v3.10.2 — Theme polish + compact CRM chat
+
+- **Refined palette** (replaces v3.10.1's copper, which read muddy): interactive accent is now a **deep gold `#8B6B41`** (AA contrast with white text) with hover `#6F5430`, decorative gold stays brand `#D1B68F`, soft fills calmed to `#F5EEE1`, canvas/sidebars to warm porcelain `#F5F3EF`, ink stays Carbon `#13171B`. Same theme on every page — one sweep across all tokens, tailwind config and inline styles.
+- **Buttons back to normal case** (the all-caps CTA experiment is gone); success chips (On Time / Submitted / Active / Approved / Resolved) are properly **green** again instead of champagne, and the default "Resolved" ticket status is green too.
+- **CRM chat is compact**: message gap cut from ~20px to 7px, slimmer bubbles (7×11px padding, 13px text), smaller avatars (26px), tighter chat header, composer and conversation list rows.
+- **Column delete validation**: a board column that still holds values on any ticket can no longer be deleted — the delete is blocked with a message showing how many tickets still use it; clear the values first. Empty columns delete as before (with confirmation).
+- Cache-busting bumped to `?v=54`.
+
 ## v3.10.1 — BloomingBox brand theme (BB Brand Guidelines 2023)
 
 The whole UI now follows the BloomingBox brand guidelines:

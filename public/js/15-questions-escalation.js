@@ -150,7 +150,7 @@ function qCard(q){
     const mine=canManageQ(q);
     h+=`<div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
     if(mine){
-      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7F3D0':'#FDE68A'};background:${isPub?'#FFEAD7':'#FFFBEB'};font-size:11px;font-weight:700;color:${isPub?'#047857':'#B45309'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
+      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7F3D0':'#FDE68A'};background:${isPub?'#F5EEE1':'#FFFBEB'};font-size:11px;font-weight:700;color:${isPub?'#047857':'#B45309'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
       h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;
       h+=`<button onclick="App._delQuestion('${q.id}')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#D1D5DB;cursor:pointer" onmouseover="this.style.color='#BE123C'" onmouseout="this.style.color='#D1D5DB'">${ic('trash','w-4 h-4')}</button>`;
     } else {
@@ -185,8 +185,8 @@ function _qGroupHTML(list){
   const used=new Set();
   let html='';
   const chev=(open)=>`<span style="display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#F3F4F6;color:#6B7280;font-size:9px;flex-shrink:0;transform:rotate(${open?90:0}deg);transition:transform .15s">▶</span>`;
-  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#FFEAD7;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#111827">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F3F4F6;color:#6B7280">${count}</span></button>`;
-  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#936659"></span><div style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#9CA3AF">${count}</span></button>`;
+  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#F5EEE1;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#111827">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F3F4F6;color:#6B7280">${count}</span></button>`;
+  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#8B6B41"></span><div style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#9CA3AF">${count}</span></button>`;
   tops.forEach(dep=>{
     const direct=list.filter(q=>q.departmentId===dep.id&&!q.subDepartmentId);
     const subBlocks=subDepts(dep.id).map(sd=>({sd,qs:list.filter(q=>q.subDepartmentId===sd.id)}));
@@ -229,7 +229,7 @@ function questionsPage(){
         <div style="font-size:11px;color:#9CA3AF">Download the template, fill it in, then upload to add multiple questions at once</div>
       </div>
       <button onclick="App._downloadQTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #ECEDF0;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#374151;white-space:nowrap">${ic('download','w-3.5 h-3.5')} Download template</button>
-      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #936659;background:#FFEAD7;font-size:12px;font-weight:600;cursor:pointer;color:#047857;white-space:nowrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #8B6B41;background:#F5EEE1;font-size:12px;font-weight:600;cursor:pointer;color:#047857;white-space:nowrap">
         ${ic('upload','w-3.5 h-3.5')} Upload CSV
         <input type="file" accept=".csv" onchange="App._importQCSV(this)" style="display:none"/>
       </label>
@@ -309,7 +309,7 @@ App._renderQModal=()=>{
         <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D1D5DB;cursor:pointer">${ic('x','w-3 h-3')}</button>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#936659;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#8B6B41;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
   }
   else if(q.type==='number'){
     let rows='';
@@ -324,7 +324,7 @@ App._renderQModal=()=>{
         </div>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#936659;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#8B6B41;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
   }
   else {
     const labels={passfail:['Pass','Fail'],yesno:['Yes','No'],tick:['Done','Not done']};
@@ -725,15 +725,15 @@ function _subBadges(c,sub,opts){
   const fs=small?'10px':'11px';
   const allAns=total>0&&answered>=total;
   // Attempt badge — green when all questions attempted, grey otherwise
-  const attBg=allAns?'#FFEAD7':'#F6F7F8';
-  const attClr=allAns?'#7A5344':'#6B7280';
+  const attBg=allAns?'#F5EEE1':'#F6F7F8';
+  const attClr=allAns?'#6F5430':'#6B7280';
   const attLabel=small?answered+'/'+total:answered+'/'+total+' attempted';
   const attempt=total>0
     ? '<span title="'+answered+' of '+total+' question'+(total>1?'s':'')+' attempted" style="font-size:'+fs+';font-weight:700;padding:'+pad+';border-radius:20px;background:'+attBg+';color:'+attClr+'">'+(allAns?'✓ ':'')+attLabel+'</span>'
     : '';
   // Compliance badge — green "Compliant" when no escalations, red "N escalated" when flagged
-  const compBg=flagged?'#FFF1F2':'#FFEAD7';
-  const compClr=flagged?'#BE123C':'#7A5344';
+  const compBg=flagged?'#FFF1F2':'#F5EEE1';
+  const compClr=flagged?'#BE123C':'#6F5430';
   const compLabel=flagged
     ? (small?'⚠ '+flagged:'⚠ '+flagged+' escalated')
     : (small?'✓':'✓ Compliant');
@@ -895,9 +895,9 @@ function _feedbackTabContent(uid){
       +(fb.priority&&fb.priority!=='Low'?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+priBg+';color:'+priClr+'">'+fb.priority+'</span>':'')
       +'</div>'
       +'<p style="font-size:13px;line-height:1.6;margin:0 0 10px">'+esc(fb.text)+'</p>'
-      +(fb.reply?'<div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#7A5344;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#374151;margin:0">'+esc(fb.reply)+'</p></div>':'')
+      +(fb.reply?'<div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#6F5430;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#374151;margin:0">'+esc(fb.reply)+'</p></div>':'')
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#1D4ED8;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#936659">&#10003; Acknowledged</span>')
+      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#1D4ED8;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#8B6B41">&#10003; Acknowledged</span>')
       +(!fb.reply?'<button onclick="App._replyFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#F3F4F6;color:#374151;font-size:12px;font-weight:600;border:none;cursor:pointer">Reply</button>':'')
       +'</div></div>';
   }).join('')+'</div>';
@@ -984,7 +984,7 @@ function notificationsPage(){
                 +'<p style="font-size:13px;color:#111110;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
                 +'<p style="font-size:11px;color:#B8B5AC;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' · '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
                 +'</div>'
-                +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#936659;flex-shrink:0;margin-top:6px"></div>':'')
+                +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#8B6B41;flex-shrink:0;margin-top:6px"></div>':'')
                 +'</div>';
             }).join('')
           +'</div></div>'

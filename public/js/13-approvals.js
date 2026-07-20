@@ -34,7 +34,7 @@ function teamViewPage(){
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">
               ${_sc}
             </div>
-            <div style="font-size:12px;font-weight:600;color:#936659;display:flex;align-items:center;gap:4px">${ic('chevR','w-3.5 h-3.5')}View submissions</div>
+            <div style="font-size:12px;font-weight:600;color:#8B6B41;display:flex;align-items:center;gap:4px">${ic('chevR','w-3.5 h-3.5')}View submissions</div>
           </button>`;
         }).join('')}
       </div>
@@ -96,7 +96,7 @@ function teamViewPage(){
             <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${isSel?'rgba(255,255,255,.4)':'#B8B5AC'}">${dn.slice(0,3)}</span>
             <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#13171B'};background:${isT&&!isSel?'#13171B':'transparent'}">${num}</span>
             <div style="display:flex;gap:2px;height:6px">
-              ${hasSub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#A1735F'}"></span>`:'' }
+              ${hasSub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#9C7A4D'}"></span>`:'' }
               ${hasLate?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,180,180,.9)':'#F43F5E'}"></span>`:hasPend?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,220,120,.9)':'#F59E0B'}"></span>`:''}
             </div>
           </button>`;
@@ -109,7 +109,7 @@ function teamViewPage(){
       ${dayCls.length?dayCls.map(c=>{
         const sub=subForCl(c,S.tvUser,selDate);
         const st=sub?sub.status:selDate<today?'Late':'Pending';
-        const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#A1735F','Submitted':'#A1735F','Pending':'#F59E0B','Rejected':'#9F1239'};
+        const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#9C7A4D','Submitted':'#9C7A4D','Pending':'#F59E0B','Rejected':'#9F1239'};
         const exp=S.tvExpanded===c.id;
         return`<div style="background:#fff;border-radius:16px;border:1px solid #ECEDF0;border-left:4px solid ${BC[st]||'#D1D5DB'};overflow:hidden">
           <!-- Header -->
@@ -136,8 +136,8 @@ function teamViewPage(){
                 const qr=qResps.find(r=>r.questionId===q.id)||{};
                 const resp=qr.response;const hasR=resp!==null&&resp!==undefined&&resp!=='';
                 const esc1=escSet.has(q.id);
-                const boxBg=esc1?'#EF4444':(hasR?'#A1735F':'#E5E7EB');
-                const ansClr=esc1?'#BE123C':'#936659';
+                const boxBg=esc1?'#EF4444':(hasR?'#9C7A4D':'#E5E7EB');
+                const ansClr=esc1?'#BE123C':'#8B6B41';
                 return`<div style="padding:10px 14px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;${esc1?'background:#FFF5F5':''}">
                   <div style="width:18px;height:18px;border-radius:5px;background:${boxBg};display:grid;place-items:center;flex-shrink:0">${esc1?'<span style="color:#fff;font-size:12px;font-weight:800;line-height:1">!</span>':(hasR?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>':'')}</div>
                   <div style="flex:1;min-width:0">

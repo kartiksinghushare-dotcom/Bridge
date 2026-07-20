@@ -18,7 +18,7 @@ function loginView(){return`<div class="min-h-screen flex" style="background:var
     <div style="font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.35)">© 2026 BLOOMINGBOX</div>
   </div>
   <div class="flex-1 flex items-center justify-center p-6"><div class="w-full max-w-sm fade">
-    <div class="lg:hidden flex flex-col items-center gap-1 mb-8"><span class="fd" style="font-size:17px;font-weight:600;letter-spacing:.4em;color:var(--c-ink)">BRIDGE</span><span style="font-size:9px;font-weight:600;letter-spacing:.3em;color:#936659">BY BLOOMINGBOX</span></div>
+    <div class="lg:hidden flex flex-col items-center gap-1 mb-8"><span class="fd" style="font-size:17px;font-weight:600;letter-spacing:.4em;color:var(--c-ink)">BRIDGE</span><span style="font-size:9px;font-weight:600;letter-spacing:.3em;color:#8B6B41">BY BLOOMINGBOX</span></div>
     <h2 class="fd" style="font-size:26px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px">Welcome back</h2>
     <p style="color:var(--c-text-2);font-size:14px;margin-bottom:24px">Sign in to your workspace.</p>
     <div style="display:flex;flex-direction:column;gap:14px">

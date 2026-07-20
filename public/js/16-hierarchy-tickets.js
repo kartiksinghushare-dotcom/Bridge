@@ -107,7 +107,7 @@ function ticketsPage(){
           '<div style="font-size:14px;font-weight:700;color:#13171B;margin-bottom:4px">'+esc(t.title)+'</div>'+
           '<div style="font-size:12px;color:#6B7280;line-height:1.5;white-space:pre-wrap">'+esc(t.description)+'</div>'+
           ((t.occurrences||[]).length?'<div style="margin-top:7px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#B45309;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:3px 9px" title="'+esc((t.occurrences||[]).map(o=>fmtS(o.date||'')).join(', '))+'">\u{1F501} Reoccurred '+(t.occurrences||[]).length+'\u00D7 — last '+esc(fmtS((((t.occurrences||[]).slice(-1)[0])||{}).date||t.date||''))+'</div>':'')+
-          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#047857;background:#FFEAD7;border:1px solid #A7F3D0;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
+          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#047857;background:#F5EEE1;border:1px solid #A7F3D0;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
           // Show photo from the linked submission's question response
           (()=>{
             if(!t.questionId||!t.submitterId||!t.date)return'';
@@ -144,7 +144,7 @@ function ticketsPage(){
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
       statCard('Open',open,'#F97316',"App._tkFilter('status','Open')")+
       statCard('In Progress',inprog,'#3B82F6',"App._tkFilter('status','In Progress')")+
-      statCard('Resolved',resolved,'#936659',"App._tkFilter('status','Resolved')")+
+      statCard('Resolved',resolved,'#8B6B41',"App._tkFilter('status','Resolved')")+
     '</div>'+
     // R12 Filters: search · assignee · priority · sort (+ Clear), status pills below (one-line scroll)
     (()=>{
@@ -182,7 +182,7 @@ App._showTeamStat=(uid,type)=>{
     rows=cls.map(c=>{
       const today=todayISO();
       const isOn=clOn(c,today);
-      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F3F4F6">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#9CA3AF;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFEAD7;color:#7A5344">Active today</span>':'<span style="font-size:11px;color:#D1D5DB">Not today</span>')        +'</div>';
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F3F4F6">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#9CA3AF;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F5EEE1;color:#6F5430">Active today</span>':'<span style="font-size:11px;color:#D1D5DB">Not today</span>')        +'</div>';
     }).join('');
   } else if(type==='late'){
     title='Late submissions — '+esc(fullName(u));
@@ -231,7 +231,7 @@ App._resolveTicket=(id)=>{
     <textarea id="tk-note" rows="3" placeholder="What was done to resolve this?" style="width:100%;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px;font-size:13px;resize:none;outline:none;box-sizing:border-box"></textarea>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #E5E7EB;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#936659;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
+      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#8B6B41;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
     </div>
   </div>`,'max-w-sm');
 };
@@ -271,10 +271,10 @@ App._delTicket=async(id)=>{
 
 // ── Analytics clickable stat card ──
 App._aStatCard=(label,val,color,type,data)=>{
-  const colMap={sky:'#0EA5E9',brand:'#936659',rose:'#EF4444',orange:'#F97316'};
+  const colMap={sky:'#0EA5E9',brand:'#8B6B41',rose:'#EF4444',orange:'#F97316'};
   const c=colMap[color]||color;
   return`<div onclick="App._aStatDrill('${type}')" style="background:#fff;border-radius:16px;border:1.5px solid #E5E7EB;padding:16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${c}';this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow=''">`
-  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#936659;margin-top:6px">View details →</div></div>`;
+  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#8B6B41;margin-top:6px">View details →</div></div>`;
 };
 
 App._aStatDrill=(type)=>{
@@ -359,7 +359,7 @@ App._aStatDrill=(type)=>{
       +'<div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+'</div></div>'
       +(want
         ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1F2;color:#BE123C">⚠ '+n+' escalated</span>'
-        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFEAD7;color:#7A5344">✓ Compliant</span>')
+        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F5EEE1;color:#6F5430">✓ Compliant</span>')
       +'</div>';}).join('');
     emptyMsg=want?'No non-compliant submissions in this period — all clear.':'No compliant submissions in this period.';
   } else {

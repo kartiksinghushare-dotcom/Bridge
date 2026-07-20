@@ -56,11 +56,11 @@ function profilePage(){
     return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
       +'<h3 class="fd font-semibold text-sm">Recent Feedback</h3>'
-      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#936659;background:none;border:none;cursor:pointer">View all</button>'
+      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#8B6B41;background:none;border:none;cursor:pointer">View all</button>'
       +'</div>'
       +myFb.map(fb=>{
         const mgr=uById(fb.managerId);
-        const stClr=fb.status==='Responded'?'#7A5344':fb.status==='Acknowledged'?'#0EA5E9':'#3B82F6';
+        const stClr=fb.status==='Responded'?'#6F5430':fb.status==='Acknowledged'?'#0EA5E9':'#3B82F6';
         return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #F3F4F6">'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:13px;font-weight:600">'+(fb.title||fb.type+' Feedback')+'</div>'
@@ -111,7 +111,7 @@ App._uploadDoc=()=>{
   openModal(
     '<div class="p-6">'
     +'<div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Upload file</h2><button onclick="App.closeModal()" class="text-ink-400">'+ic('x')+'</button></div>'
-    +'<div id="ud-dropzone" style="border:2px dashed #D1D5DB;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#936659\';this.style.background=\'#F0FDF4\'" ondragleave="this.style.borderColor=\'#D1D5DB\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
+    +'<div id="ud-dropzone" style="border:2px dashed #D1D5DB;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#8B6B41\';this.style.background=\'#F0FDF4\'" ondragleave="this.style.borderColor=\'#D1D5DB\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
     +'<div style="font-size:32px;margin-bottom:8px">📎</div>'
     +'<div style="font-size:14px;font-weight:600;color:#374151">Click to browse or drag & drop</div>'
     +'<div style="font-size:12px;color:#9CA3AF;margin-top:4px">PDF, Word, Excel, PowerPoint, Images — max 50MB</div>'
@@ -120,7 +120,7 @@ App._uploadDoc=()=>{
     +'<div id="ud-preview" style="display:none;margin-bottom:14px"></div>'
     +'<div id="ud-progress" style="display:none;margin-bottom:14px">'
     +'<div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Uploading…</div>'
-    +'<div style="height:6px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#936659;border-radius:3px;width:0%;transition:width .3s"></div></div>'
+    +'<div style="height:6px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#8B6B41;border-radius:3px;width:0%;transition:width .3s"></div></div>'
     +'</div>'
     +'<button id="ud-btn" onclick="App._doUpload()" style="width:100%;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:700;font-size:15px;border:none;cursor:pointer;display:none">Upload</button>'
     +'</div>',
@@ -406,10 +406,10 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('settings')?'Open Settings'
     :ctaUrl.includes('analytics')?'View Analytics'
     :'Open Bridge';
-  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F1ECE4;font-family:sans-serif">
+  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F5F3EF;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #ECEDF0;overflow:hidden">
     <div style="background:#13171B;padding:20px 28px;display:flex;align-items:center;gap:10px">
-      <div style="width:28px;height:28px;border-radius:8px;background:#936659;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
+      <div style="width:28px;height:28px;border-radius:8px;background:#8B6B41;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
       <span style="font-weight:700;font-size:16px;color:#fff">${safeName}</span>
     </div>
     <div style="padding:28px">
@@ -619,7 +619,7 @@ function settingsPage(){
     ${EMAIL_EVENTS.map(ev=>{
       const tpl={...(defaults[ev.key]||{}), ...(ns.templates?.[ev.key]||{})};
       const open=expandedTpl===ev.key;
-      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#936659':'#ECEDF0'};overflow:hidden;transition:border-color .15s">
+      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#8B6B41':'#ECEDF0'};overflow:hidden;transition:border-color .15s">
         <button onclick="S.filters.tplKey='${open?'':ev.key}';rr()"
           style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:transparent;border:none;cursor:pointer;text-align:left">
           <div>
@@ -627,7 +627,7 @@ function settingsPage(){
             <div style="font-size:11px;color:#B8B5AC;margin-top:1px">${ev.vars}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFEAD7;color:#065F46">Custom</span>`:''}
+            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F5EEE1;color:#065F46">Custom</span>`:''}
             <span style="color:#B8B5AC;font-size:16px">${open?'▲':'▼'}</span>
           </div>
         </button>

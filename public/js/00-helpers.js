@@ -44,7 +44,7 @@ let _toast;
 function toast(msg,type='ok'){
   let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;z-index:500;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));pointer-events:none';document.body.appendChild(t);}
   const bg=type==='ok'?'#13171B':type==='warn'?'#D97706':'#DC2626';
-  const icbg=type==='ok'?'rgba(147,102,89,.9)':'rgba(255,255,255,.2)';
+  const icbg=type==='ok'?'rgba(139,107,65,.9)':'rgba(255,255,255,.2)';
   const glyph=type==='ok'?'✓':type==='warn'?'!':'✕';
   t.innerHTML=`<div class="pop tt" style="background:${bg};color:#fff;padding:11px 16px 11px 12px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 10px 34px -10px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.2)"><span class="ic" style="background:${icbg};color:#fff">${glyph}</span><span>${esc(msg)}</span></div>`;
   clearTimeout(_toast);_toast=setTimeout(()=>{if(t)t.innerHTML='';},type==='ok'?2800:4800);

@@ -28,8 +28,8 @@ function _scopeDocsTab(type, scopeKey){
   // Breadcrumb bar
   if(crumbs.length){
     html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
-      +'<button onclick="App._docNav(null)" style="font-size:13px;font-weight:600;color:#936659;background:none;border:none;cursor:pointer;padding:0">'+esc(rootLabel)+'</button>'
-      +crumbs.map(f=>'<span style="color:#D1D5DB">›</span><button onclick="App._docNav(this.dataset.id)" data-id="'+f.id+'" style="font-size:13px;font-weight:600;color:'+(folderId===f.id?'#13171B':'#936659')+';background:none;border:none;cursor:pointer;padding:0">'+esc(f.name)+'</button>').join('')
+      +'<button onclick="App._docNav(null)" style="font-size:13px;font-weight:600;color:#8B6B41;background:none;border:none;cursor:pointer;padding:0">'+esc(rootLabel)+'</button>'
+      +crumbs.map(f=>'<span style="color:#D1D5DB">›</span><button onclick="App._docNav(this.dataset.id)" data-id="'+f.id+'" style="font-size:13px;font-weight:600;color:'+(folderId===f.id?'#13171B':'#8B6B41')+';background:none;border:none;cursor:pointer;padding:0">'+esc(f.name)+'</button>').join('')
       +'</div>';
   }
   // Toolbar
@@ -61,7 +61,7 @@ function _scopeDocsTab(type, scopeKey){
           +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(d.name)+'</div>'
           +'<div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+(d.uploadedAt?fmtS(d.uploadedAt.slice(0,10)):'')+' · '+(d.uploaderName||'')+(d.fileSize?' · '+_fmtSize(d.fileSize):'')+'</div></div>'
           +'<div style="display:flex;gap:6px;flex-shrink:0">'
-          +(p.download||isAdm?'<button onclick="App._downloadDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#FFEAD7;color:#936659;font-size:12px;font-weight:700;border:1px solid #A7F3D0;cursor:pointer">↓ Download</button>':'')
+          +(p.download||isAdm?'<button onclick="App._downloadDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#F5EEE1;color:#8B6B41;font-size:12px;font-weight:700;border:1px solid #A7F3D0;cursor:pointer">↓ Download</button>':'')
           +(p.view||isAdm?'<button onclick="App._previewDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#F6F7F8;color:#374151;font-size:12px;font-weight:700;border:1px solid #ECEDF0;cursor:pointer">View</button>':'')
           +(isAdm||p.edit?'<button onclick="App._delDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 8px;border-radius:7px;background:#FEE2E2;color:#DC2626;font-size:12px;font-weight:700;border:1px solid #FECACA;cursor:pointer">✕</button>':'')
           +'</div></div>';
@@ -209,7 +209,7 @@ function _subDeptsTabHTML(d){
   else{h+='<div class="space-y-2">'+subs.map(s=>{
     const qn=(DB.questions||[]).filter(q=>q.subDepartmentId===s.id).length;
     return '<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;border:1px solid #ECEDF0;padding:12px 14px">'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:#FFEAD7;display:grid;place-items:center;flex-shrink:0">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:#F5EEE1;display:grid;place-items:center;flex-shrink:0">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(s.name)+'</div><div style="font-size:12px;color:#9CA3AF">'+qn+' question'+(qn===1?'':'s')+'</div></div>'
       +((can('subDepartments','edit')||can('subDepartments','delete'))?'<div style="display:flex;gap:4px">'+(can('subDepartments','edit')?'<button onclick="App.editDept(\''+s.id+'\')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#9CA3AF;cursor:pointer">'+ic('edit','w-4 h-4')+'</button>':'')+(can('subDepartments','delete')?'<button onclick="App.delDept(\''+s.id+'\')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#D1D5DB;cursor:pointer">'+ic('trash','w-4 h-4')+'</button>':'')+'</div>':'')
       +'</div>';
@@ -231,7 +231,7 @@ function deptsPage(){
       // Back bar
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
       +'<button onclick="App._closeDept()" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">'+ic('back','w-4 h-4')+'</button>'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:#FFEAD7;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:#F5EEE1;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
       +'<div style="flex:1"><div class="fd" style="font-size:16px;font-weight:800">'+esc(d.name)+'</div>'
       +'<div style="font-size:12px;color:#9CA3AF">'+dUsers.length+' users · '+dCls.length+' checklists'+(subDepts(d.id).length?' · '+subDepts(d.id).length+' sub-depts':'')+'</div></div>'
       +(can('departments','edit')?'<button onclick="App.editDept(this.dataset.id)" data-id="'+d.id+'" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:#F6F7F8;color:#374151;font-size:13px;font-weight:600;border:1px solid #ECEDF0;cursor:pointer">'+ic('edit','w-4 h-4')+'Edit</button>':'')
@@ -274,18 +274,18 @@ function deptsPage(){
       const folders=(DB.folders||[]).filter(x=>x.type==='dept'&&x.scope===d.name&&!x.parentId).length;
       return'<div onclick="App._openDept(this.dataset.id)" data-id="'+d.id+'" class="dept-card" style="background:#fff;border-radius:16px;border:1.5px solid #ECEDF0;padding:16px;cursor:pointer;transition:all .15s;display:block;width:100%">'
         +'<div style="display:flex;justify-content:space-between;margin-bottom:12px">'
-        +'<div style="width:36px;height:36px;border-radius:10px;background:#FFEAD7;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+        +'<div style="width:36px;height:36px;border-radius:10px;background:#F5EEE1;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
         +((can('departments','edit')||can('departments','delete'))?'<div style="display:flex;gap:4px" onclick="event.stopPropagation()">'+(can('departments','edit')?'<button onclick="App.editDept(this.dataset.id)" data-id="'+d.id+'" style="width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:#9CA3AF;border:none;background:transparent;cursor:pointer">'+ic('edit','w-3.5 h-3.5')+'</button>':'')+(can('departments','delete')?'<button onclick="App.delDept(this.dataset.id)" data-id="'+d.id+'" style="width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:#9CA3AF;border:none;background:transparent;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'</div>':'')
         +'</div>'
         +'<div class="fd" style="font-size:15px;font-weight:800;margin-bottom:6px">'+esc(d.name)+'</div>'
         +'<div style="display:flex;gap:12px;font-size:12px;color:#9CA3AF">'
         +'<span><b style="color:#13171B">'+us.length+'</b> users</span>'
         +'<span><b style="color:#13171B">'+cls.length+'</b> checklists</span>'+(subDepts(d.id).length?'<span><b style="color:#13171B">'+subDepts(d.id).length+'</b> sub-depts</span>':'')
-        +(docs||folders?'<span><b style="color:#936659">'+(folders+' folders, '+docs+' files')+'</b></span>':'')
+        +(docs||folders?'<span><b style="color:#8B6B41">'+(folders+' folders, '+docs+' files')+'</b></span>':'')
         +'</div>'
         +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'
         +'<div style="display:flex;-space-x-1.5">'+us.slice(0,5).map(u=>'<div style="border-radius:50%;ring:2px solid #fff;margin-right:-6px">'+avatar(u,'w-6 h-6','text-[9px]')+'</div>').join('')+'</div>'
-        +'<span style="font-size:11px;font-weight:600;color:#936659">Open →</span>'
+        +'<span style="font-size:11px;font-weight:600;color:#8B6B41">Open →</span>'
         +'</div></div>';
     }).join('')
     +(topDepts().length?'':empty('dept','No departments','Create your first department.'))
@@ -374,8 +374,8 @@ const Q_TYPES=[
   {id:'yesno',    label:'Yes / No',    desc:'Yes or No response'},
   {id:'tick',     label:'Tick / Cross',desc:'Done or Not done'},
 ];
-const Q_TYPE_CLR={answer:'#4338CA',number:'#0369A1',passfail:'#16A34A',yesno:'#D97706',tick:'#936659'};
-const Q_TYPE_BG ={answer:'#EEF2FF',number:'#E0F2FE',passfail:'#DCFCE7',yesno:'#FEF9C3',tick:'#FFEAD7'};
+const Q_TYPE_CLR={answer:'#4338CA',number:'#0369A1',passfail:'#16A34A',yesno:'#D97706',tick:'#8B6B41'};
+const Q_TYPE_BG ={answer:'#EEF2FF',number:'#E0F2FE',passfail:'#DCFCE7',yesno:'#FEF9C3',tick:'#F5EEE1'};
 const NUM_CONDITIONS=[
   {id:'lt',     label:'Less than'},
   {id:'lte',    label:'Less than or equal'},

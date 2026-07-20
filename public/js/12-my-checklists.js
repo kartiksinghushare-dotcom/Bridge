@@ -101,7 +101,7 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#F97316">Edit pending</span>';
     else if(editApproved)right='<button onclick="App._resubmit(\''+cid+'\',\''+date+'\')" class="submit-pill go">Edit &amp; Resubmit</button>';
     else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#F97316">Awaiting approval</span>';
-    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0D7A4E;background:#FFEAD7;border:1px solid #6EE7B7;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
+    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0D7A4E;background:#F5EEE1;border:1px solid #6EE7B7;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
     return left+right;
   }
   if(!sub){
@@ -109,7 +109,7 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     if(isFuture&&!u?.rules?.future)return '<span style="font-size:12px;color:#9CA3AF">Scheduled for this date</span><button class="submit-pill no" disabled style="opacity:.4;cursor:not-allowed">Not yet</button>';
     const _hasDraft=(DB.drafts||[]).some(d=>d.checklistId===cid&&d.userId===S.uid&&d.date===date);
     const _draftBtn='<button onclick="App._saveDraft(\''+cid+'\',\''+date+'\')" class="draft-pill" data-cl="'+cid+'" style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #E5E7EB;background:#fff;color:#374151;cursor:pointer">'+(_hasDraft?'Update draft':'Save as Draft')+'</button>';
-    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#936659;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
+    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#8B6B41;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
     return _leftBlk+'<button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit</button>';
   }
   // Editing mode
@@ -171,7 +171,7 @@ function _clCard(c,date){
               // After submit: show attempt + compliance badges (read-only, locked)
               return _subBadges(c,sub,{small:true});
             }
-            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#936659':'#9CA3AF'};flex-shrink:0">${answered}/${total} attempted</span>`;
+            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#8B6B41':'#9CA3AF'};flex-shrink:0">${answered}/${total} attempted</span>`;
           })()}
         </div>
       </div>
@@ -194,7 +194,7 @@ function _clCard(c,date){
           const TYPE_LABELS={answer:'Answer',number:'Number',passfail:'Pass/Fail',yesno:'Yes/No',tick:'Tick/Cross'};
           let inputHtml='';
           if(locked){
-            inputHtml='<span style="font-size:13px;font-weight:600;color:#936659">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#D1D5DB">Not answered</em>')+'</span>';
+            inputHtml='<span style="font-size:13px;font-weight:600;color:#8B6B41">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#D1D5DB">Not answered</em>')+'</span>';
           } else if(q.type==='answer'){
             inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#13171B':'#E5E7EB'};background:${resp===o.text?'#13171B':'#fff'};color:${resp===o.text?'#fff':'#374151'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
           } else if(q.type==='number'){
