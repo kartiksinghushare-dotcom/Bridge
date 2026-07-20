@@ -150,7 +150,7 @@ function qCard(q){
     const mine=canManageQ(q);
     h+=`<div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
     if(mine){
-      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7F3D0':'#FDE68A'};background:${isPub?'#FBEAE2':'#FFFBEB'};font-size:11px;font-weight:700;color:${isPub?'#047857':'#B45309'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
+      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7F3D0':'#FDE68A'};background:${isPub?'#FFEAD7':'#FFFBEB'};font-size:11px;font-weight:700;color:${isPub?'#047857':'#B45309'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
       h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;
       h+=`<button onclick="App._delQuestion('${q.id}')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#D1D5DB;cursor:pointer" onmouseover="this.style.color='#BE123C'" onmouseout="this.style.color='#D1D5DB'">${ic('trash','w-4 h-4')}</button>`;
     } else {
@@ -185,8 +185,8 @@ function _qGroupHTML(list){
   const used=new Set();
   let html='';
   const chev=(open)=>`<span style="display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#F3F4F6;color:#6B7280;font-size:9px;flex-shrink:0;transform:rotate(${open?90:0}deg);transition:transform .15s">▶</span>`;
-  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#FBEAE2;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#111827">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F3F4F6;color:#6B7280">${count}</span></button>`;
-  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#E8785C"></span><div style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#9CA3AF">${count}</span></button>`;
+  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#FFEAD7;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#111827">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F3F4F6;color:#6B7280">${count}</span></button>`;
+  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#936659"></span><div style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#9CA3AF">${count}</span></button>`;
   tops.forEach(dep=>{
     const direct=list.filter(q=>q.departmentId===dep.id&&!q.subDepartmentId);
     const subBlocks=subDepts(dep.id).map(sd=>({sd,qs:list.filter(q=>q.subDepartmentId===sd.id)}));
@@ -220,7 +220,7 @@ function questionsPage(){
       <select onchange="S.filters.qDept=this.value;S.filters.qSubDept='';rr()" class="ui-select" style="width:auto;min-width:150px;flex:0 0 auto"><option value="">All departments</option>${topDepts().map(d=>`<option value="${d.id}" ${(S.filters.qDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
       <select onchange="S.filters.qSubDept=this.value;rr()" class="ui-select" style="width:auto;min-width:160px;flex:0 0 auto" ${(S.filters.qDept&&(DB.departments||[]).some(d=>d.parentId===S.filters.qDept))?'':'disabled'}><option value="">All sub-departments</option>${(DB.departments||[]).filter(d=>d.parentId===(S.filters.qDept||'')).map(d=>`<option value="${d.id}" ${(S.filters.qSubDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
 
-      ${can('questions','create')?`<button onclick="App._editQuestion(null)" style="display:inline-flex;align-items:center;gap:6px;background:#1C1712;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:none;cursor:pointer">${ic('plus','w-4 h-4')} New question</button>`:''}
+      ${can('questions','create')?`<button onclick="App._editQuestion(null)" style="display:inline-flex;align-items:center;gap:6px;background:#13171B;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:none;cursor:pointer">${ic('plus','w-4 h-4')} New question</button>`:''}
     </div>
     <!-- CSV Import / Export bar -->
     ${can('questions','import')?`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#F9FAFB;border-radius:12px;border:1.5px solid #ECEDF0">
@@ -229,7 +229,7 @@ function questionsPage(){
         <div style="font-size:11px;color:#9CA3AF">Download the template, fill it in, then upload to add multiple questions at once</div>
       </div>
       <button onclick="App._downloadQTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #ECEDF0;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#374151;white-space:nowrap">${ic('download','w-3.5 h-3.5')} Download template</button>
-      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #E8785C;background:#FBEAE2;font-size:12px;font-weight:600;cursor:pointer;color:#047857;white-space:nowrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #936659;background:#FFEAD7;font-size:12px;font-weight:600;cursor:pointer;color:#047857;white-space:nowrap">
         ${ic('upload','w-3.5 h-3.5')} Upload CSV
         <input type="file" accept=".csv" onchange="App._importQCSV(this)" style="display:none"/>
       </label>
@@ -309,7 +309,7 @@ App._renderQModal=()=>{
         <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D1D5DB;cursor:pointer">${ic('x','w-3 h-3')}</button>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#E8785C;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#936659;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
   }
   else if(q.type==='number'){
     let rows='';
@@ -324,7 +324,7 @@ App._renderQModal=()=>{
         </div>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#E8785C;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#936659;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
   }
   else {
     const labels={passfail:['Pass','Fail'],yesno:['Yes','No'],tick:['Done','Not done']};
@@ -397,14 +397,14 @@ App._renderQModal=()=>{
       </div>
       <div style="background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:12px;padding:14px">
         <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Preview</div>
-        <div style="font-size:14px;font-weight:700;color:#1C1712;margin-bottom:10px">${q.text||'Your question text…'}</div>
+        <div style="font-size:14px;font-weight:700;color:#13171B;margin-bottom:10px">${q.text||'Your question text…'}</div>
         ${prev}
         ${flags.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${flags.map(f=>`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#F3F4F6;color:#374151">${f}</span>`).join('')}</div>`:''}
       </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid #ECEDF0;display:flex;gap:8px;background:#fff">
       <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#1C1712;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
+      <button onclick="App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
     </div>
   `,'max-w-lg');
 
@@ -475,8 +475,8 @@ App._showClQPicker=()=>{
           const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
           const clr=Q_TYPE_CLR[q.type]||'#6B7280';
           const bg=Q_TYPE_BG[q.type]||'#F6F7F8';
-          return`<label id="qpick-${q.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${on?'#1C1712':'#E5E7EB'};background:${on?'#F9FAFB':'#fff'};cursor:pointer" onclick="App._togClQ('${q.id}',this,event)">
-            <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${on?'#1C1712':'#D1D5DB'};background:${on?'#1C1712':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          return`<label id="qpick-${q.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${on?'#13171B':'#E5E7EB'};background:${on?'#F9FAFB':'#fff'};cursor:pointer" onclick="App._togClQ('${q.id}',this,event)">
+            <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${on?'#13171B':'#D1D5DB'};background:${on?'#13171B':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
               ${on?`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>`:''}
             </div>
             <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${bg};color:${clr};flex-shrink:0">${tl}</span>
@@ -490,7 +490,7 @@ App._showClQPicker=()=>{
     </div>
     <div style="padding:10px 16px;border-top:1px solid #ECEDF0;background:#fff;display:flex;gap:8px">
       <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._showClQEscalation()" style="flex:2;padding:11px;border-radius:11px;background:#1C1712;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Next: Set escalation →</button>
+      <button onclick="App._showClQEscalation()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Next: Set escalation →</button>
     </div>
   `,'max-w-md');
 };
@@ -500,12 +500,12 @@ App._togClQ=(qid,el,e)=>{if(e&&e.preventDefault)e.preventDefault();
   const on=App._clQSel.has(qid);
   if(on)App._clQSel.delete(qid);else App._clQSel.add(qid);
   const now=!on;
-  el.style.border=`1.5px solid ${now?'#1C1712':'#E5E7EB'}`;
+  el.style.border=`1.5px solid ${now?'#13171B':'#E5E7EB'}`;
   el.style.background=now?'#F9FAFB':'#fff';
   const box=el.querySelector('div');
   if(box){
-    box.style.border=`1.5px solid ${now?'#1C1712':'#D1D5DB'}`;
-    box.style.background=now?'#1C1712':'#fff';
+    box.style.border=`1.5px solid ${now?'#13171B':'#D1D5DB'}`;
+    box.style.background=now?'#13171B':'#fff';
     box.innerHTML=now?`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>`:'';
   }
 };
@@ -577,7 +577,7 @@ App._showClQEscalation=()=>{
     return`<div style="background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:12px;padding:12px 14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>
-        <span style="font-size:13px;font-weight:700;color:#1C1712">${q.text}</span>
+        <span style="font-size:13px;font-weight:700;color:#13171B">${q.text}</span>
       </div>
       <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Escalate answer to</div>
       ${optRows}
@@ -597,7 +597,7 @@ App._showClQEscalation=()=>{
     </div>
     <div style="padding:10px 16px;border-top:1px solid #ECEDF0;background:#fff;display:flex;gap:8px">
       <button onclick="App._showClQPicker()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">← Back</button>
-      <button onclick="App._confirmClQs()" style="flex:2;padding:11px;border-radius:11px;background:#1C1712;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Done</button>
+      <button onclick="App._confirmClQs()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Done</button>
     </div>
   `,'max-w-lg');
 };
@@ -725,15 +725,15 @@ function _subBadges(c,sub,opts){
   const fs=small?'10px':'11px';
   const allAns=total>0&&answered>=total;
   // Attempt badge — green when all questions attempted, grey otherwise
-  const attBg=allAns?'#FBEAE2':'#F6F7F8';
-  const attClr=allAns?'#CE5B41':'#6B7280';
+  const attBg=allAns?'#FFEAD7':'#F6F7F8';
+  const attClr=allAns?'#7A5344':'#6B7280';
   const attLabel=small?answered+'/'+total:answered+'/'+total+' attempted';
   const attempt=total>0
     ? '<span title="'+answered+' of '+total+' question'+(total>1?'s':'')+' attempted" style="font-size:'+fs+';font-weight:700;padding:'+pad+';border-radius:20px;background:'+attBg+';color:'+attClr+'">'+(allAns?'✓ ':'')+attLabel+'</span>'
     : '';
   // Compliance badge — green "Compliant" when no escalations, red "N escalated" when flagged
-  const compBg=flagged?'#FFF1F2':'#FBEAE2';
-  const compClr=flagged?'#BE123C':'#CE5B41';
+  const compBg=flagged?'#FFF1F2':'#FFEAD7';
+  const compClr=flagged?'#BE123C':'#7A5344';
   const compLabel=flagged
     ? (small?'⚠ '+flagged:'⚠ '+flagged+' escalated')
     : (small?'✓':'✓ Compliant');
@@ -895,9 +895,9 @@ function _feedbackTabContent(uid){
       +(fb.priority&&fb.priority!=='Low'?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+priBg+';color:'+priClr+'">'+fb.priority+'</span>':'')
       +'</div>'
       +'<p style="font-size:13px;line-height:1.6;margin:0 0 10px">'+esc(fb.text)+'</p>'
-      +(fb.reply?'<div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#CE5B41;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#374151;margin:0">'+esc(fb.reply)+'</p></div>':'')
+      +(fb.reply?'<div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#7A5344;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#374151;margin:0">'+esc(fb.reply)+'</p></div>':'')
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#1D4ED8;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#E8785C">&#10003; Acknowledged</span>')
+      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#1D4ED8;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#936659">&#10003; Acknowledged</span>')
       +(!fb.reply?'<button onclick="App._replyFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#F3F4F6;color:#374151;font-size:12px;font-weight:600;border:none;cursor:pointer">Reply</button>':'')
       +'</div></div>';
   }).join('')+'</div>';
@@ -963,7 +963,7 @@ function notificationsPage(){
     +TABS.map(t=>{
       const active=tab===t;
       const badge=counts[t]?(' <span style="font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:'+(active?'rgba(255,255,255,0.25)':'#F3F4F6')+';color:'+(active?'#fff':'#6B7280')+'">'+counts[t]+'</span>'):'';
-      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#1C1712':'transparent')+';color:'+(active?'#fff':'#6B7280')+'">'+t+badge+'</button>';
+      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#13171B':'transparent')+';color:'+(active?'#fff':'#6B7280')+'">'+t+badge+'</button>';
     }).join('')
     +'</div>'
     // Feedback section (when tab=Feedback)
@@ -984,7 +984,7 @@ function notificationsPage(){
                 +'<p style="font-size:13px;color:#111110;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
                 +'<p style="font-size:11px;color:#B8B5AC;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' · '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
                 +'</div>'
-                +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#E8785C;flex-shrink:0;margin-top:6px"></div>':'')
+                +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#936659;flex-shrink:0;margin-top:6px"></div>':'')
                 +'</div>';
             }).join('')
           +'</div></div>'
@@ -1038,7 +1038,7 @@ App._replyFb=(id)=>{
     +'<textarea id="rfb-t" rows="4" placeholder="Write your reply…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea>'
     +'<div class="flex gap-2 mt-4">'
     +'<button onclick="App.closeModal()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
-    +'<button onclick="App._saveReplyFb(this.dataset.id)" data-id="'+id+'" style="flex:1;padding:10px;border-radius:10px;background:#1C1712;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Send reply</button>'
+    +'<button onclick="App._saveReplyFb(this.dataset.id)" data-id="'+id+'" style="flex:1;padding:10px;border-radius:10px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Send reply</button>'
     +'</div></div>',
     'max-w-sm'
   );
@@ -1076,7 +1076,7 @@ App._openSendFeedback=(userId)=>{
     // Type selector
     +'<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;margin-bottom:6px">Feedback type</label>'
     +'<input type="hidden" id="sfb-type-val" value="General">'+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
-    +['General','Checklist','Performance'].map((t,i)=>'<button type="button" onclick="App._sfbSelectType(this)" data-type="'+t+'" style="padding:8px;border-radius:9px;border:1.5px solid '+(i===0?'#1C1712':'#E5E7EB')+';background:'+(i===0?'#1C1712':'#fff')+';color:'+(i===0?'#fff':'#6B7280')+';font-size:13px;font-weight:600;cursor:pointer">'+t+'</button>').join('')
+    +['General','Checklist','Performance'].map((t,i)=>'<button type="button" onclick="App._sfbSelectType(this)" data-type="'+t+'" style="padding:8px;border-radius:9px;border:1.5px solid '+(i===0?'#13171B':'#E5E7EB')+';background:'+(i===0?'#13171B':'#fff')+';color:'+(i===0?'#fff':'#6B7280')+';font-size:13px;font-weight:600;cursor:pointer">'+t+'</button>').join('')
     +'</div></div>'
     // Checklist dropdown
     +'<div id="sfb-cl-wrap" style="margin-bottom:14px"><label for="sfb-cl" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;margin-bottom:6px">Checklist <span style="color:#9CA3AF;text-transform:none;font-weight:400">(optional)</span></label>'
@@ -1093,7 +1093,7 @@ App._openSendFeedback=(userId)=>{
     // Comment
     +'<div style="margin-bottom:16px"><label for="sfb-text" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;margin-bottom:6px">Comment</label>'
     +'<textarea id="sfb-text" rows="4" placeholder="Write your feedback…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea></div>'
-    +'<button onclick="App._saveSendFeedback(this.dataset.uid)" data-uid="'+userId+'" style="width:100%;background:#1C1712;color:#fff;font-weight:700;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:15px">Send feedback</button>'
+    +'<button onclick="App._saveSendFeedback(this.dataset.uid)" data-uid="'+userId+'" style="width:100%;background:#13171B;color:#fff;font-weight:700;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:15px">Send feedback</button>'
     +'</div>',
     'max-w-md'
   );
@@ -1101,9 +1101,9 @@ App._openSendFeedback=(userId)=>{
 App._sfbSelectType=(btn)=>{
   document.querySelectorAll('[data-type]').forEach(b=>{
     const active=b===btn;
-    b.style.background=active?'#1C1712':'#fff';
+    b.style.background=active?'#13171B':'#fff';
     b.style.color=active?'#fff':'#6B7280';
-    b.style.borderColor=active?'#1C1712':'#E5E7EB';
+    b.style.borderColor=active?'#13171B':'#E5E7EB';
   });
   const type=btn.dataset.type;
   // Store in hidden input for reliable reading

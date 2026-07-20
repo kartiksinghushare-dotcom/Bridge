@@ -17,7 +17,7 @@ function _uRoleChip(u){
   const id=u&&u.hrm&&u.hrm.roleProfileId;
   const rp=id?(DB.roleProfiles||{})[id]:null;
   if(!rp)return'<span class="text-xs text-ink-300">No role</span>';
-  const st=id==='superadmin'?'background:#1C1712;color:#fff'
+  const st=id==='superadmin'?'background:#13171B;color:#fff'
     :id==='admin'?'background:#EEF2FF;color:#4338CA'
     :id==='manager'?'background:#E0F2FE;color:#0369A1'
     :id==='basic'?'background:#F3F4F6;color:#4B5563'
@@ -42,8 +42,8 @@ function usersPage(){
   S.filters.uSel=_uSel().filter(id=>_U_LIST.includes(id)); // drop selections hidden by filters
   const sel=S.filters.uSel;
   const allSel=list.length>0&&sel.length===list.length;
-  const cbx=(checked,onclick,title)=>`<input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();${onclick}" ${title?`title="${title}"`:''} style="width:16px;height:16px;accent-color:#1C1712;cursor:pointer;vertical-align:middle"/>`;
-  const bulkBar=canBulk&&sel.length?`<div class="ui-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;border:1.5px solid #1C1712">
+  const cbx=(checked,onclick,title)=>`<input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();${onclick}" ${title?`title="${title}"`:''} style="width:16px;height:16px;accent-color:#13171B;cursor:pointer;vertical-align:middle"/>`;
+  const bulkBar=canBulk&&sel.length?`<div class="ui-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;border:1.5px solid #13171B">
       <span style="font-size:13px;font-weight:800;color:var(--c-text)">${sel.length} selected</span>
       <span style="font-size:11.5px;color:var(--c-text-3)">of ${list.length} shown — pick the fields to change once, they apply to everyone selected</span>
       <span style="flex:1"></span>
@@ -62,7 +62,7 @@ function usersPage(){
     <tbody class="divide-y divide-ink-50">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<tr class="hover:bg-ink-50/50"${on?' style="background:#F5F8FF"':''}>${canBulk?`<td class="px-4 py-3">${cbx(on,`App._uSelTog('${u.id}')`)}</td>`:''}<td class="px-5 py-3"><div class="flex items-center gap-3">${avatar(u,'w-9 h-9','text-xs')}<div><div class="font-semibold">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.email)}</div></div></div></td><td class="px-5 py-3">${esc(u.department)}<div class="text-xs text-ink-400">${esc(u.position)}</div></td><td class="px-5 py-3">${_uRoleChip(u)}</td><td class="px-5 py-3 text-sm">${mgr?esc(fullName(mgr)):'<span class="text-ink-300">—</span>'}</td><td class="px-5 py-3">${chip(u.status)}</td><td class="px-5 py-3"><div class="flex gap-1 justify-end">${(can('employees','edit')||can('employees','resetPassword')||can('employees','deactivate')||can('employees','delete'))?`${can('employees','edit')?`<button onclick="App.editUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${ic('edit','w-4 h-4')}</button>`:''}${can('employees','resetPassword')?`<button onclick="App.resetPw('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'" title="Reset password">${ic('key','w-4 h-4')}</button>`:''}${can('employees','deactivate')?_disableBtn(u):''}${(!_uIsSuperAdmin(u)&&can('employees','delete'))?`<button onclick="App.delUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FFF1F2';this.style.color='#BE123C'" onmouseout="this.style.background='transparent';this.style.color='#9CA3AF'">${ic('trash','w-4 h-4')}</button>`:''}`:'<span class="text-ink-200">—</span>'}</div></td></tr>`;}).join('')}</tbody></table>
     ${list.length?'':empty('users','No users','')}
   </div>
-  <div class="md:hidden space-y-2">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4" style="${can('employees','edit')?'cursor:pointer;':''}${on?'border-color:#1C1712':''}"${can('employees','edit')?` onclick="App.editUser('${u.id}')"`:''}>
+  <div class="md:hidden space-y-2">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4" style="${can('employees','edit')?'cursor:pointer;':''}${on?'border-color:#13171B':''}"${can('employees','edit')?` onclick="App.editUser('${u.id}')"`:''}>
     <div class="flex items-center gap-3">${canBulk?`<span onclick="event.stopPropagation()">${cbx(on,`App._uSelTog('${u.id}')`)}</span>`:''}${avatar(u,'w-10 h-10','text-sm')}<div class="min-w-0 flex-1"><div class="font-semibold truncate">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.position)} · ${esc(u.department)}</div><div style="margin-top:3px">${_uRoleChip(u)}</div></div>${chip(u.status)}</div>
     ${mgr?`<div class="text-xs text-ink-400 mt-2.5 pt-2.5 border-t border-ink-50">Reports to <strong>${esc(fullName(mgr))}</strong></div>`:''}</div>`;}).join('')}</div>
 </div>`;}
@@ -79,7 +79,7 @@ App._bulkEditUsers=()=>{
   const mgrOpts=DB.users.filter(x=>x.status==='Active'&&!sel.includes(x.id));
   const L='font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em';
   const row=(k,label,control,hint)=>`<div style="display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--c-border);align-items:start">
-      <input type="checkbox" id="bu-on-${k}" onchange="const c=document.getElementById('bu-c-${k}');if(c){c.style.opacity=this.checked?'1':'.45';c.style.pointerEvents=this.checked?'auto':'none'}" style="width:16px;height:16px;accent-color:#1C1712;cursor:pointer;margin-top:2px"/>
+      <input type="checkbox" id="bu-on-${k}" onchange="const c=document.getElementById('bu-c-${k}');if(c){c.style.opacity=this.checked?'1':'.45';c.style.pointerEvents=this.checked?'auto':'none'}" style="width:16px;height:16px;accent-color:#13171B;cursor:pointer;margin-top:2px"/>
       <div><label for="bu-on-${k}" style="${L};cursor:pointer">${label}</label>
         <div id="bu-c-${k}" style="margin-top:6px;opacity:.45;pointer-events:none">${control}</div>
         ${hint?`<div style="font-size:11px;color:var(--c-text-3);margin-top:5px;line-height:1.45">${hint}</div>`:''}
@@ -218,7 +218,7 @@ App.editUser=(id=null)=>{
     <div class="bg-ink-50 rounded-2xl p-4"><p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide mb-2">Notifications</p>${mkTog('u-email',u?.emailEnabled??true,'Receive email notifications')}</div>
     <div style="font-size:11.5px;color:var(--c-text-3);background:var(--c-surface-2);border:1px dashed var(--c-border-2);border-radius:10px;padding:9px 12px">🛡️ Role, tab access, document permissions and submission rules are managed in <b>Access Control</b>.</div>
   </div>
-  <div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button id="save-user-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=this.textContent==='Save'?'Saving…':'Creating…';App.saveUser('${id||''}').catch(()=>{}).finally(()=>{const b=document.getElementById('save-user-btn');if(b){b.disabled=false;b.textContent='${u?'Save':'Create'}';}})" style="flex:1;padding:12px;border-radius:12px;background:#1C1712;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${u?'Save':'Create'}</button></div>
+  <div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button id="save-user-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=this.textContent==='Save'?'Saving…':'Creating…';App.saveUser('${id||''}').catch(()=>{}).finally(()=>{const b=document.getElementById('save-user-btn');if(b){b.disabled=false;b.textContent='${u?'Save':'Create'}';}})" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${u?'Save':'Create'}</button></div>
   </div>`,'max-w-2xl');
 };
 App.saveUser=async(id)=>{
@@ -331,7 +331,7 @@ App.resetPw=(id)=>{
     +fld('New password','rp-pw','','password','')
     +'<div class="flex gap-2 mt-4">'
     +'<button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #ECEDF0;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
-    +'<button id="rp-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=\'Resetting…\';App._doResetPw(this.dataset.uid).finally(()=>{const b=document.getElementById(\'rp-btn\');if(b){b.disabled=false;b.textContent=\'Reset\';}})" data-uid="'+id+'" style="flex:1;padding:12px;border-radius:12px;background:#1C1712;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Reset</button>'
+    +'<button id="rp-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=\'Resetting…\';App._doResetPw(this.dataset.uid).finally(()=>{const b=document.getElementById(\'rp-btn\');if(b){b.disabled=false;b.textContent=\'Reset\';}})" data-uid="'+id+'" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Reset</button>'
     +'</div></div>',
     'max-w-sm'
   );

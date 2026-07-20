@@ -78,7 +78,7 @@ function myClsPage(){
           <div style="font-size:40px;margin-bottom:10px">✅</div>
           <div class="fd" style="font-size:17px;font-weight:800;color:#111110">${sel>today?'Nothing scheduled':'All clear'}</div>
           <p style="font-size:13px;color:#B8B5AC;margin-top:6px">${sel>today?'No checklists for this date':can('checklists','create')&&DB.checklists.length?'You are not assigned to any checklist. Go to Checklists → edit → assign yourself.':'No checklists scheduled'}</p>
-          ${can('checklists','create')&&DB.checklists.length?`<button onclick="App.go('checklists')" style="margin-top:12px;padding:8px 20px;border-radius:10px;background:#1C1712;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Go to Checklists</button>`:''}
+          ${can('checklists','create')&&DB.checklists.length?`<button onclick="App.go('checklists')" style="margin-top:12px;padding:8px 20px;border-radius:10px;background:#13171B;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Go to Checklists</button>`:''}
         </div>`}
   </div></div>`;
 }
@@ -101,7 +101,7 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#F97316">Edit pending</span>';
     else if(editApproved)right='<button onclick="App._resubmit(\''+cid+'\',\''+date+'\')" class="submit-pill go">Edit &amp; Resubmit</button>';
     else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#F97316">Awaiting approval</span>';
-    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0D7A4E;background:#FBEAE2;border:1px solid #6EE7B7;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
+    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0D7A4E;background:#FFEAD7;border:1px solid #6EE7B7;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
     return left+right;
   }
   if(!sub){
@@ -109,7 +109,7 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     if(isFuture&&!u?.rules?.future)return '<span style="font-size:12px;color:#9CA3AF">Scheduled for this date</span><button class="submit-pill no" disabled style="opacity:.4;cursor:not-allowed">Not yet</button>';
     const _hasDraft=(DB.drafts||[]).some(d=>d.checklistId===cid&&d.userId===S.uid&&d.date===date);
     const _draftBtn='<button onclick="App._saveDraft(\''+cid+'\',\''+date+'\')" class="draft-pill" data-cl="'+cid+'" style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #E5E7EB;background:#fff;color:#374151;cursor:pointer">'+(_hasDraft?'Update draft':'Save as Draft')+'</button>';
-    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#E8785C;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
+    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#936659;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
     return _leftBlk+'<button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit</button>';
   }
   // Editing mode
@@ -171,7 +171,7 @@ function _clCard(c,date){
               // After submit: show attempt + compliance badges (read-only, locked)
               return _subBadges(c,sub,{small:true});
             }
-            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#E8785C':'#9CA3AF'};flex-shrink:0">${answered}/${total} attempted</span>`;
+            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#936659':'#9CA3AF'};flex-shrink:0">${answered}/${total} attempted</span>`;
           })()}
         </div>
       </div>
@@ -194,9 +194,9 @@ function _clCard(c,date){
           const TYPE_LABELS={answer:'Answer',number:'Number',passfail:'Pass/Fail',yesno:'Yes/No',tick:'Tick/Cross'};
           let inputHtml='';
           if(locked){
-            inputHtml='<span style="font-size:13px;font-weight:600;color:#E8785C">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#D1D5DB">Not answered</em>')+'</span>';
+            inputHtml='<span style="font-size:13px;font-weight:600;color:#936659">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#D1D5DB">Not answered</em>')+'</span>';
           } else if(q.type==='answer'){
-            inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#1C1712':'#E5E7EB'};background:${resp===o.text?'#1C1712':'#fff'};color:${resp===o.text?'#fff':'#374151'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
+            inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#13171B':'#E5E7EB'};background:${resp===o.text?'#13171B':'#fff'};color:${resp===o.text?'#fff':'#374151'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
           } else if(q.type==='number'){
             inputHtml=`<input type="number" value="${resp??''}" oninput="App._setQR('${c.id}','${q.id}',this.value,true)" onchange="App._setQR('${c.id}','${q.id}',this.value)" placeholder="Enter number…" style="width:120px;padding:6px 12px;border-radius:9px;border:1.5px solid #E5E7EB;font-size:13px;outline:none"/>`;
           } else if(q.type==='passfail'){
@@ -227,7 +227,7 @@ function _clCard(c,date){
           return`<div style="background:#FAFAFA;border:1px solid #ECEDF0;border-radius:12px;padding:12px 14px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
               <span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${Q_TYPE_BG[q.type]||'#F6F7F8'};color:${Q_TYPE_CLR[q.type]||'#6B7280'}">${TYPE_LABELS[q.type]||q.type}</span>
-              <span style="font-size:13px;font-weight:600;color:#1C1712">${esc(q.text)}</span>
+              <span style="font-size:13px;font-weight:600;color:#13171B">${esc(q.text)}</span>
               ${flags.length?`<span style="margin-left:auto;font-size:11px;color:#9CA3AF">${flags.join(' · ')}</span>`:''}
             </div>
             ${inputHtml}
@@ -517,7 +517,7 @@ App._saveDraft=async(clId,date)=>{
   else toast('Couldn’t save draft — please retry','err');
   rr();
 };
-App._reqEdit=(clId,date)=>{openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Request edit</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-4">Manager approval required to edit a submission.</p><textarea id="re-n" rows="3" placeholder="Reason for edit…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._sendReq('${clId}','${date}')" style="margin-top:16px;width:100%;background:#1C1712;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send request</button></div>`,'max-w-sm');};
+App._reqEdit=(clId,date)=>{openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Request edit</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-4">Manager approval required to edit a submission.</p><textarea id="re-n" rows="3" placeholder="Reason for edit…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._sendReq('${clId}','${date}')" style="margin-top:16px;width:100%;background:#13171B;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send request</button></div>`,'max-w-sm');};
 App._sendReq=(clId,date)=>{
   const note=$('#re-n')?.value.trim()||'Edit requested';
   const u=me();

@@ -5,21 +5,21 @@
    ============================================================ */
 /* ===== LOGIN ===== */
 function loginView(){return`<div class="min-h-screen flex" style="background:var(--c-bg)">
-  <div class="hidden lg:flex flex-col justify-between" style="width:44%;background:linear-gradient(160deg,#221B12 0%,#13161D 100%);color:#fff;padding:56px;position:relative;overflow:hidden">
-    <div style="position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(232,120,92,.4),transparent 70%);filter:blur(40px)"></div>
-    <div style="position:absolute;left:-80px;bottom:-100px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(2,132,199,.22),transparent 70%);filter:blur(50px)"></div>
-    <div class="flex items-center gap-3 relative"><div class="nav-brand" style="width:40px;height:40px;border-radius:12px;font-size:20px">B</div><span class="fd font-bold text-2xl">Bridge</span></div>
-    <div class="relative"><h1 class="fd text-4xl font-bold" style="line-height:1.12;letter-spacing:-1px">Every shift,<br>every check,<br><span style="color:var(--c-brand)">accounted for.</span></h1><p style="color:rgba(255,255,255,.65);margin-top:18px;line-height:1.6;font-size:14.5px;max-width:380px">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
-      <div style="display:flex;gap:20px;margin-top:32px">
-        <div><div class="fd" style="font-size:22px;font-weight:800">Checklists</div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">every shift covered</div></div>
-        <div style="width:1px;background:rgba(255,255,255,.12)"></div>
-        <div><div class="fd" style="font-size:22px;font-weight:800">Approvals</div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">one unified inbox</div></div>
+  <div class="hidden lg:flex flex-col justify-between" style="width:44%;background:#13171B;color:#fff;padding:56px;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(209,182,143,.28),transparent 70%);filter:blur(40px)"></div>
+    <div style="position:absolute;left:-80px;bottom:-100px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(226,183,169,.18),transparent 70%);filter:blur(50px)"></div>
+    <div class="relative" style="display:flex;flex-direction:column;gap:6px"><span class="fd" style="font-size:21px;font-weight:600;letter-spacing:.42em;color:#fff">BRIDGE</span><span style="font-size:10.5px;font-weight:600;letter-spacing:.34em;color:#D1B68F">BY BLOOMINGBOX</span></div>
+    <div class="relative"><h1 class="fd" style="font-size:33px;font-weight:500;line-height:1.32;letter-spacing:.07em">EVERY SHIFT,<br>EVERY CHECK,<br><span style="color:#D1B68F">ACCOUNTED FOR.</span></h1><div style="width:56px;height:1px;background:#D1B68F;margin-top:22px"></div><p style="color:rgba(255,255,255,.6);margin-top:20px;line-height:1.7;font-size:14px;max-width:380px;font-weight:300">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
+      <div style="display:flex;gap:24px;margin-top:34px">
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">CHECKLISTS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">every shift covered</div></div>
+        <div style="width:1px;background:rgba(209,182,143,.25)"></div>
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">APPROVALS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">one unified inbox</div></div>
       </div></div>
-    <div style="font-size:12px;color:rgba(255,255,255,.4)">© 2026 Bridge</div>
+    <div style="font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.35)">© 2026 BLOOMINGBOX</div>
   </div>
   <div class="flex-1 flex items-center justify-center p-6"><div class="w-full max-w-sm fade">
-    <div class="lg:hidden flex items-center gap-2 mb-8 justify-center"><div class="nav-brand">B</div><span class="fd font-bold text-xl">Bridge</span></div>
-    <h2 class="fd" style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">Welcome back</h2>
+    <div class="lg:hidden flex flex-col items-center gap-1 mb-8"><span class="fd" style="font-size:17px;font-weight:600;letter-spacing:.4em;color:var(--c-ink)">BRIDGE</span><span style="font-size:9px;font-weight:600;letter-spacing:.3em;color:#936659">BY BLOOMINGBOX</span></div>
+    <h2 class="fd" style="font-size:26px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px">Welcome back</h2>
     <p style="color:var(--c-text-2);font-size:14px;margin-bottom:24px">Sign in to your workspace.</p>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div>

@@ -23,7 +23,7 @@ function teamViewPage(){
           const tkCount=(DB.tickets||[]).filter(t=>t.submitterId===u.id&&t.status==='Open').length;
           const _uid2=u.id;
           const _statCell=(val,label,bg,color,type)=>'<div onclick="event.stopPropagation();App._showTeamStat(this.dataset.uid,this.dataset.type)" data-uid="'+_uid2+'" data-type="'+type+'" style="background:'+bg+';border-radius:8px;padding:8px 4px;cursor:pointer" title="Click to see details"><div style="font-size:18px;font-weight:800;color:'+color+'">'+val+'</div><div style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase">'+label+'</div></div>';
-          const _sc=_statCell(asgn,'assigned','#F6F7F8','#1C1712','assigned')+_statCell(late,'late',late?'#FFF1F2':'#F6F7F8',late?'#BE123C':'#1C1712','late')+_statCell(tkCount,'tickets',tkCount?'#FFF7ED':'#F6F7F8',tkCount?'#C2410C':'#1C1712','tickets');
+          const _sc=_statCell(asgn,'assigned','#F6F7F8','#13171B','assigned')+_statCell(late,'late',late?'#FFF1F2':'#F6F7F8',late?'#BE123C':'#13171B','late')+_statCell(tkCount,'tickets',tkCount?'#FFF7ED':'#F6F7F8',tkCount?'#C2410C':'#13171B','tickets');
           return`<button onclick="S.tvUser='${u.id}';S.tvCalDate=todayISO();S.tvCalWk=0;S.tvExpanded=null;rr()"
             style="background:#fff;border-radius:16px;border:1.5px solid #ECEDF0;padding:16px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:14px;transition:all .15s"
             class="team-card-hover">
@@ -34,7 +34,7 @@ function teamViewPage(){
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">
               ${_sc}
             </div>
-            <div style="font-size:12px;font-weight:600;color:#E8785C;display:flex;align-items:center;gap:4px">${ic('chevR','w-3.5 h-3.5')}View submissions</div>
+            <div style="font-size:12px;font-weight:600;color:#936659;display:flex;align-items:center;gap:4px">${ic('chevR','w-3.5 h-3.5')}View submissions</div>
           </button>`;
         }).join('')}
       </div>
@@ -70,7 +70,7 @@ function teamViewPage(){
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="App._userDrill(this.dataset.id)" data-id="${S.tvUser}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#F6F7F8;color:#374151;font-size:13px;font-weight:600;border:1px solid #ECEDF0;cursor:pointer">${ic('chart','w-4 h-4')}Stats</button>
-        <button onclick="App._openSendFeedback(this.dataset.id)" data-id="${S.tvUser}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#1C1712;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">${ic('msg','w-4 h-4')}Send feedback</button>
+        <button onclick="App._openSendFeedback(this.dataset.id)" data-id="${S.tvUser}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#13171B;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">${ic('msg','w-4 h-4')}Send feedback</button>
       </div>
     </div>
 
@@ -80,7 +80,7 @@ function teamViewPage(){
         <span style="font-size:13px;font-weight:600;color:#B8B5AC">${selDate===today?'Today · ':''}${fmtD(selDate)}</span>
         <div style="display:flex;gap:4px;align-items:center">
           <button onclick="S.tvCalWk--;rr()" style="width:28px;height:28px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('back','w-3.5 h-3.5')}</button>
-          <button onclick="S.tvCalWk=0;S.tvCalDate='${today}';rr()" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:${S.tvCalWk===0&&selDate===today?'#1C1712':'#F6F7F8'};color:${S.tvCalWk===0&&selDate===today?'#fff':'#6B7280'}">Today</button>
+          <button onclick="S.tvCalWk=0;S.tvCalDate='${today}';rr()" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:${S.tvCalWk===0&&selDate===today?'#13171B':'#F6F7F8'};color:${S.tvCalWk===0&&selDate===today?'#fff':'#6B7280'}">Today</button>
           <button onclick="S.tvCalWk++;rr()" style="width:28px;height:28px;border-radius:8px;border:1.5px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('chevR','w-3.5 h-3.5')}</button>
         </div>
       </div>
@@ -92,11 +92,11 @@ function teamViewPage(){
           const hasSub=dCls.some(c=>subForCl(c,S.tvUser,d));
           const hasPend=dCls.some(c=>!subForCl(c,S.tvUser,d));
           const hasLate=hasPend&&d<today;
-          return`<button onclick="S.tvCalDate='${d}';S.tvExpanded=null;rr();App._lazyLoadDate('teamview')" class="cal4-d ${isSel?'sel':''}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;border:none;background:${isSel?'#1C1712':'transparent'};gap:2px">
+          return`<button onclick="S.tvCalDate='${d}';S.tvExpanded=null;rr();App._lazyLoadDate('teamview')" class="cal4-d ${isSel?'sel':''}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;border:none;background:${isSel?'#13171B':'transparent'};gap:2px">
             <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${isSel?'rgba(255,255,255,.4)':'#B8B5AC'}">${dn.slice(0,3)}</span>
-            <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#1C1712'};background:${isT&&!isSel?'#1C1712':'transparent'}">${num}</span>
+            <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#13171B'};background:${isT&&!isSel?'#13171B':'transparent'}">${num}</span>
             <div style="display:flex;gap:2px;height:6px">
-              ${hasSub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#ED8368'}"></span>`:'' }
+              ${hasSub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#A1735F'}"></span>`:'' }
               ${hasLate?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,180,180,.9)':'#F43F5E'}"></span>`:hasPend?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,220,120,.9)':'#F59E0B'}"></span>`:''}
             </div>
           </button>`;
@@ -109,7 +109,7 @@ function teamViewPage(){
       ${dayCls.length?dayCls.map(c=>{
         const sub=subForCl(c,S.tvUser,selDate);
         const st=sub?sub.status:selDate<today?'Late':'Pending';
-        const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#ED8368','Submitted':'#ED8368','Pending':'#F59E0B','Rejected':'#9F1239'};
+        const BC={'Late':'#F43F5E','Pending Approval':'#F97316','On Time':'#A1735F','Submitted':'#A1735F','Pending':'#F59E0B','Rejected':'#9F1239'};
         const exp=S.tvExpanded===c.id;
         return`<div style="background:#fff;border-radius:16px;border:1px solid #ECEDF0;border-left:4px solid ${BC[st]||'#D1D5DB'};overflow:hidden">
           <!-- Header -->
@@ -136,12 +136,12 @@ function teamViewPage(){
                 const qr=qResps.find(r=>r.questionId===q.id)||{};
                 const resp=qr.response;const hasR=resp!==null&&resp!==undefined&&resp!=='';
                 const esc1=escSet.has(q.id);
-                const boxBg=esc1?'#EF4444':(hasR?'#ED8368':'#E5E7EB');
-                const ansClr=esc1?'#BE123C':'#E8785C';
+                const boxBg=esc1?'#EF4444':(hasR?'#A1735F':'#E5E7EB');
+                const ansClr=esc1?'#BE123C':'#936659';
                 return`<div style="padding:10px 14px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;${esc1?'background:#FFF5F5':''}">
                   <div style="width:18px;height:18px;border-radius:5px;background:${boxBg};display:grid;place-items:center;flex-shrink:0">${esc1?'<span style="color:#fff;font-size:12px;font-weight:800;line-height:1">!</span>':(hasR?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>':'')}</div>
                   <div style="flex:1;min-width:0">
-                    <div style="font-size:12px;font-weight:600;color:${hasR?'#1C1712':'#9CA3AF'}">${esc(q.text)}${esc1?'<span style="font-size:9px;font-weight:800;color:#BE123C;background:#FFE4E6;padding:1px 6px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em">Flagged</span>':''}</div>
+                    <div style="font-size:12px;font-weight:600;color:${hasR?'#13171B':'#9CA3AF'}">${esc(q.text)}${esc1?'<span style="font-size:9px;font-weight:800;color:#BE123C;background:#FFE4E6;padding:1px 6px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em">Flagged</span>':''}</div>
                     ${hasR?`<div style="font-size:11px;font-weight:700;color:${ansClr};margin-top:2px">${esc(String(resp))}</div>`:'<div style="font-size:11px;color:#D1D5DB;font-style:italic;margin-top:2px">Not answered</div>'}
                     ${qr.comment?`<div style="font-size:11px;color:#6B7280;margin-top:2px;font-style:italic">"${esc(qr.comment)}"</div>`:''}
                     ${(()=>{const pl=_qrPhotoList(qr);return pl.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:100px;max-height:72px;border-radius:8px;object-fit:cover;border:1px solid #E5E7EB;cursor:pointer" title="Click to enlarge"/>').join('')+'</div>':'';})()}

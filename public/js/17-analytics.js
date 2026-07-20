@@ -70,7 +70,7 @@ function analyticsPage(){
     const txt=sel.length===0?'All':sel.length===1?getLabel(items.find(x=>getId(x)===sel[0])||items[0])||'?':sel.length+' selected';
     return`<div data-af="1" style="position:relative;flex:1;min-width:120px">
       <button data-af="1" type="button" onclick="S.afOpen=S.afOpen==='${key}'?null:'${key}';rr()"
-        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#ED8368':sel.length?'#1C1712':'#E5E7EB'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#1C1712':'#9CA3AF'};cursor:pointer">
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#A1735F':sel.length?'#13171B':'#E5E7EB'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#13171B':'#9CA3AF'};cursor:pointer">
         <span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(label+(sel.length?': '+txt:''))}</span>
         <span style="color:#9CA3AF;transform:rotate(${isOpen?180:0}deg);transition:transform .15s;flex-shrink:0">${ic('chevD','w-4 h-4')}</span>
       </button>
@@ -78,10 +78,10 @@ function analyticsPage(){
         ${sel.length?`<button data-af="1" onclick="delete S.filters['${key}'];rr()" style="width:100%;text-align:left;padding:6px 10px;font-size:12px;font-weight:600;color:#E11D48;background:none;border:none;cursor:pointer;border-radius:8px">Clear selection</button><div style="height:1px;background:#F3F4F6;margin:4px 0"></div>`:''}
         ${items.map(item=>{const id=getId(item);const nm=getLabel(item)||'?';const on=sel.includes(id);return`<button data-af="1" type="button" onclick="App._togF('${key}','${id}')"
           style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;background:${on?'#FCF2EC':'transparent'};text-align:left">
-          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#ED8368':'#D1D5DB'};background:${on?'#ED8368':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#A1735F':'#D1D5DB'};background:${on?'#A1735F':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
             ${on?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>`:''}
           </div>
-          <span style="font-size:13px;font-weight:${on?600:400};color:${on?'#1C1712':'#6B7280'}">${esc(nm)}</span>
+          <span style="font-size:13px;font-weight:${on?600:400};color:${on?'#13171B':'#6B7280'}">${esc(nm)}</span>
         </button>`;}).join('')}
       </div>`:''}
     </div>`;
@@ -122,11 +122,11 @@ function analyticsPage(){
     ${App._aStatCard('Tickets',aTickets.length,'#F97316','tickets',aTickets)}
     ${App._aStatCard('Open',tkOpen,'#F59E0B','tkopen',aTickets.filter(t=>t.status==='Open'))}
     ${App._aStatCard('High Priority',tkHigh,'#DC2626','tkhigh',aTickets.filter(t=>t.priority==='High'||t.priority==='Critical'))}
-    ${App._aStatCard('Resolved',tkResolved,'#E8785C','tkresolved',aTickets.filter(t=>t.status==='Resolved'||t.status==='Closed'))}
+    ${App._aStatCard('Resolved',tkResolved,'#936659','tkresolved',aTickets.filter(t=>t.status==='Resolved'||t.status==='Closed'))}
   </div>
   <!-- Stats row 3: compliance (computed from answers — covers historical data) -->
   <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
-    ${App._aStatCard('Compliant',compliantN,'#E8785C','compliant',null)}
+    ${App._aStatCard('Compliant',compliantN,'#936659','compliant',null)}
     ${App._aStatCard('Non-compliant',nonCompliantN,'#BE123C','noncompliant',null)}
   </div>
 
@@ -137,7 +137,7 @@ function analyticsPage(){
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
     <div style="background:#fff;border-radius:16px;border:1px solid #E5E7EB;padding:18px">
       <div class="fd" style="font-size:14px;font-weight:700;margin-bottom:14px">Status breakdown</div>
-      ${[['On Time','#ED8368'],['Late','#EF4444'],['Pending Approval','#F97316'],['Rejected','#9F1239']].map(([k,c])=>{const v=byS[k]||0;const pct=Math.round(v/tot*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${k}</span><span style="color:#9CA3AF">${v} · ${pct}%</span></div><div style="height:5px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${c};border-radius:3px"></div></div></div>`;}).join('')}
+      ${[['On Time','#A1735F'],['Late','#EF4444'],['Pending Approval','#F97316'],['Rejected','#9F1239']].map(([k,c])=>{const v=byS[k]||0;const pct=Math.round(v/tot*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${k}</span><span style="color:#9CA3AF">${v} · ${pct}%</span></div><div style="height:5px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${c};border-radius:3px"></div></div></div>`;}).join('')}
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">
         <div style="font-size:12px;font-weight:600;color:#9CA3AF;margin-bottom:6px">MISSED (past, no submission)</div>
         <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600;color:#F97316">${totalMissed} missed</span><span style="color:#9CA3AF">of ${totalAssigned} assigned in period</span></div>
@@ -165,8 +165,8 @@ function analyticsPage(){
         <td style="padding:9px 16px;color:#9CA3AF;font-size:12px">${esc(c.department)}</td>
         <td style="padding:9px 16px;color:#9CA3AF;font-size:12px;white-space:nowrap">${fmtS(s.date)}</td>
         <td style="padding:9px 16px">${chip(s.status)}</td>
-        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#E8785C">${qCount}/${_qTot}</span>`:'<span style="color:#E5E7EB">—</span>'}</td>
-        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FBEAE2;color:#CE5B41;white-space:nowrap">✓</span>`):'<span style="color:#E5E7EB">—</span>'}</td>
+        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#936659">${qCount}/${_qTot}</span>`:'<span style="color:#E5E7EB">—</span>'}</td>
+        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFEAD7;color:#7A5344;white-space:nowrap">✓</span>`):'<span style="color:#E5E7EB">—</span>'}</td>
       </tr>`;}).join('')}</tbody>
     </table>${recent.length?'':empty('chart','No submissions match','Adjust filters or date range')}</div>
   </div></div>`;
@@ -199,17 +199,17 @@ App._userDrill=(uid)=>{
     +'</div>'
     // Score
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    +[['Submitted',tot,'#1C1712'],['On time',onTime,'#CE5B41'],['Late',late,'#DC2626'],['Pending',pending,'#F97316'],['Non-compliant',nonComp,'#BE123C'],['Answered',issues,'#E8785C']].map(([l,v,c])=>'<div style="background:#F9FAFB;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#9CA3AF;margin-top:2px">'+l+'</div></div>').join('')
+    +[['Submitted',tot,'#13171B'],['On time',onTime,'#7A5344'],['Late',late,'#DC2626'],['Pending',pending,'#F97316'],['Non-compliant',nonComp,'#BE123C'],['Answered',issues,'#936659']].map(([l,v,c])=>'<div style="background:#F9FAFB;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#9CA3AF;margin-top:2px">'+l+'</div></div>').join('')
     +'</div>'
     // Completion rate bar
     +'<div style="background:#F9FAFB;border-radius:12px;padding:12px;margin-bottom:16px">'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#CE5B41':pct>=60?'#F97316':'#DC2626')+'">'+pct+'%</span></div>'
-    +'<div style="height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#CE5B41':pct>=60?'#F97316':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#7A5344':pct>=60?'#F97316':'#DC2626')+'">'+pct+'%</span></div>'
+    +'<div style="height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#7A5344':pct>=60?'#F97316':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
     +'</div>'
     // Recent submissions
     +'<div class="fd" style="font-size:13px;font-weight:700;margin-bottom:8px">Recent submissions</div>'
     +(recent.length
-      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FBEAE2;color:#CE5B41">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F3F4F6;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
+      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFEAD7;color:#7A5344">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F3F4F6;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
       : '<p style="font-size:13px;color:#9CA3AF">No submissions in last 30 days</p>'
     )
     +'</div>',

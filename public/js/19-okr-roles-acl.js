@@ -134,7 +134,7 @@ const PERM_AREAS=[
   {key:'allChecklists',label:'All Checklists',desc:'Browse every checklist across the company',actions:['view','export'],scoped:false,group:'Tasks & Tickets'},
   {key:'questions',label:'Questions',desc:'The questions feature',actions:['view','create','edit','manage','delete','import','export'],scoped:false,group:'Tasks & Tickets'},
   {key:'tickets',label:'Tickets',desc:'Issue tickets',actions:['view','create','edit','assign','comment','resolve','reopen','close','manage','delete','export'],scoped:true,group:'Tasks & Tickets'},
-  {key:'crm',label:'CRM',desc:'CRM inbox — hubs, boards, chats & tickets',actions:['view','create','edit','convert','assign','delete','manage'],scoped:false,group:'Tasks & Tickets'},
+  {key:'crm',label:'CRM',desc:'CRM inbox — hubs, boards, chats & tickets. “Rename” covers hubs/channels/boards + the sidebar title; “People groups” lets them create & manage the reusable @taggable groups',actions:['view','create','edit','convert','assign','rename','groups','delete','manage'],scoped:false,group:'Tasks & Tickets'},
   {key:'documentsOrg',label:'Documents (organization)',desc:'Shared dept/location files',actions:['view','create','edit','delete','upload','download','approve'],scoped:true,group:'Content'},
   {key:'documentsPersonal',label:'Personal documents',desc:'Files on a person\'s profile',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
   {key:'analytics',label:'Analytics',desc:'Operational analytics dashboard (checklists, compliance, tickets)',actions:['view','export'],scoped:false,group:'Insights'},
@@ -146,7 +146,7 @@ const PERM_AREAS=[
   {key:'accessControl',label:'Access Control',desc:'The role-profile system itself',actions:['view','manage'],scoped:false,group:'System'},
 ];
 // Plain-language labels used by the Access Control editor + live summary.
-const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back'};
+const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups'};
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
 const SCOPE_LABEL={none:'None',self:'Only their own',team:'Their team',department:'Their department',location:'Their office',everyone:'Everyone'};
 const _areaByKey=k=>PERM_AREAS.find(a=>a.key===k);
@@ -168,7 +168,7 @@ function _seedRoleProfiles(){
       teamview:A('none','view'),
       checklists:A('team','view','create','edit','duplicate','assign','approve','delete'),
       tickets:A('team','view','create','edit','assign','resolve','manage'),
-      crm:A('everyone','view','create','edit','convert','assign','delete'),
+      crm:A('everyone','view','create','edit','convert','assign','rename','groups','delete'),
       documentsPersonal:A('self','view','create','download'),
       approvals:A('none','view','decide'),
       okr:A('team','view','create','edit','manage'),
@@ -184,7 +184,7 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='11'; // v11: OKRs are a SCOPED area now — built-ins re-seed so Manager sees team OKRs, Basic only their own, Admin/Super Admin everyone
+  const V='12'; // v12: CRM gains 'rename' (hubs/channels/boards + sidebar title) and 'groups' (people groups) — Super Admin/Admin/Manager get both; Basic gets neither. Custom roles keep their toggles: switch the new ones on per role in Access Control.
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
@@ -354,7 +354,7 @@ function chipBar(items,activeKey,fnName,opts={}){
   }).join('');
   return pill?`<div style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch">${inner}</div>`:`<div class="ui-tabs">${inner}</div>`;
 }
-const COUNT_TONE={danger:'#EF4444',approve:'#F97316',rose:'#E11D48',brand:'#E8785C'};
+const COUNT_TONE={danger:'#EF4444',approve:'#F97316',rose:'#E11D48',brand:'#936659'};
 const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style="background:${COUNT_TONE[tone]||tone};${extra}">${n}</span>`;
 /* badge(text,tone) — generic soft pill */
 
@@ -465,7 +465,7 @@ function okrStatusOf(o){
   if(exp===null)return pct>=50?'On track':'Off track';
   return pct>=exp-15?'On track':'Off track';
 }
-const OKR_ST_META={'Achieved':{bg:'#FBDCD1',fg:'#065F46',dot:'#ED8368'},'On track':{bg:'#FBEAE2',fg:'#CE5B41',dot:'#22C55E'},'Off track':{bg:'#FFF1F2',fg:'#BE123C',dot:'#EF4444'},'Not achieved':{bg:'#FEF2F2',fg:'#991B1B',dot:'#B91C1C'},'No data':{bg:'#F6F7F8',fg:'#6B7280',dot:'#9CA3AF'},'Closed':{bg:'#E5E7EB',fg:'#374151',dot:'#6B7280'}};
+const OKR_ST_META={'Achieved':{bg:'#F3E0C8',fg:'#065F46',dot:'#A1735F'},'On track':{bg:'#FFEAD7',fg:'#7A5344',dot:'#22C55E'},'Off track':{bg:'#FFF1F2',fg:'#BE123C',dot:'#EF4444'},'Not achieved':{bg:'#FEF2F2',fg:'#991B1B',dot:'#B91C1C'},'No data':{bg:'#F6F7F8',fg:'#6B7280',dot:'#9CA3AF'},'Closed':{bg:'#E5E7EB',fg:'#374151',dot:'#6B7280'}};
 function okrStatusChip(st,sm){const m=OKR_ST_META[st]||OKR_ST_META['No data'];return`<span style="display:inline-flex;align-items:center;gap:5px;padding:${sm?'2px 8px':'3px 10px'};border-radius:20px;font-size:${sm?'10.5':'11.5'}px;font-weight:800;background:${m.bg};color:${m.fg};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${m.dot};flex-shrink:0"></span>${esc(st)}</span>`;}
 function _okrBarColor(st){return(OKR_ST_META[st]||OKR_ST_META['No data']).dot;}
 /* Abbreviate big values: 1000 → 1k · 10000 → 10k · 1000000 → 1M (2 decimals max: 1.25M) */
@@ -586,7 +586,7 @@ function _okrQParent(qn){
   }
   return null;
 }
-const _OKR_LVL_C=['#221B12','#0EA5E9','#E8785C','#8B5CF6','#F59E0B','#EC4899'];
+const _OKR_LVL_C=['#221B12','#0EA5E9','#936659','#8B5CF6','#F59E0B','#EC4899'];
 function _okrCanManage(){return can('okr','manage');}
 function _okrCanCreate(){return can('okr','create')||_okrCanManage();}
 function _okrCanEditNode(o){return can('okr','edit')||_okrCanManage()||o.createdBy===S.uid;}
@@ -846,8 +846,8 @@ function okrPage(){
   const scard=(label,n,bg,fg,icon)=>`<div style="flex:1;min-width:108px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:11px;padding:7px 10px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:${bg};color:${fg};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</span><span style="min-width:0"><span class="fd" style="display:block;font-size:17px;font-weight:800;line-height:1;color:var(--c-text)">${n}</span><span style="display:block;font-size:10.5px;color:var(--c-text-2);margin-top:2px;white-space:nowrap">${label}</span></span></div>`;
   const summary=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
     ${scard('Total OKRs',vis.length,'var(--c-brand-soft)','var(--c-brand-ink)','chart')}
-    ${scard('Achieved',cnt('Achieved'),'#FBDCD1','#065F46','check')}
-    ${scard('On track',cnt('On track'),'#FBEAE2','#CE5B41','approve')}
+    ${scard('Achieved',cnt('Achieved'),'#F3E0C8','#065F46','check')}
+    ${scard('On track',cnt('On track'),'#FFEAD7','#7A5344','approve')}
     ${scard('Off track',cnt('Off track'),'#FFF1F2','#BE123C','alert')}
     ${scard('Not achieved',cnt('Not achieved'),'#FEF2F2','#991B1B','x')}
     ${cnt('Closed')?scard('Closed',cnt('Closed'),'#E5E7EB','#374151','lock'):''}
@@ -1088,7 +1088,7 @@ function _okrProgressPanel(o,kids,pct,st){
     const bar=(lbl,pct,col)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:88px;font-size:10.5px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.03em">${lbl}</span><div style="flex:1;height:6px;background:var(--c-border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct===null?0:Math.max(0,Math.min(100,pct))}%;background:${col}"></div></div><span style="width:46px;text-align:right;font-size:11.5px;font-weight:800;color:var(--c-text)">${pct===null?'—':pct+'%'}</span></div>`;
     const who=o.revisedBy&&uById(o.revisedBy)?fullName(uById(o.revisedBy)):'';
     return `<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:11px 13px;margin-top:12px">
-      <div style="display:flex;flex-direction:column;gap:6px">${bar('vs revised',pr,'#F59E0B')}${bar('vs original',po,'#E8785C')}</div>
+      <div style="display:flex;flex-direction:column;gap:6px">${bar('vs revised',pr,'#F59E0B')}${bar('vs original',po,'#936659')}</div>
       <div style="font-size:11px;color:var(--c-text-3);margin-top:8px">Revised${o.revisedAt?' '+fmtS(String(o.revisedAt).slice(0,10)):''}${who?' by '+esc(who):''}${o.revisedNote?' — “'+esc(o.revisedNote)+'”':''} · same updates feed both numbers</div>
     </div>`;})():'';
   const rollupNote=(o.rollup||o.isAnnual)?`<div style="display:flex;gap:8px;align-items:center;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px;color:#1E40AF">${ic('refresh','w-3.5 h-3.5')}${o.rollup?`This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives${o.isAnnual?' (roll-up override — turn it off in the editor for quarters-progress instead)':''}.`:`This annual objective updates automatically — its progress is the <b>&nbsp;combined progress of its quarters&nbsp;</b> (each quarter counts equally; the level below doesn't feed it).`}</div>`:'';
@@ -1254,7 +1254,7 @@ function _okrEdAnnualSection(o,L){
       <input type="date" value="${r.end||''}" onchange="App._okrEdQESet(${i},'end',this.value)" ${inp}/>
       <input type="number" step="any" value="${r.startVal!==null&&r.startVal!==undefined?r.startVal:''}" oninput="App._okrEdQESet(${i},'startVal',this.value)" ${inp}/>
       <input type="number" step="any" value="${r.target!==null&&r.target!==undefined?r.target:''}" oninput="App._okrEdQESet(${i},'target',this.value)" ${inp}/>
-      <span title="Existing quarterly objective — your edits save with this form" style="display:grid;place-items:center;color:#CE5B41">${ic('check','w-3.5 h-3.5')}</span>
+      <span title="Existing quarterly objective — your edits save with this form" style="display:grid;place-items:center;color:#7A5344">${ic('check','w-3.5 h-3.5')}</span>
     </div>`;
   return `<div style="border-top:1px dashed var(--c-border);padding-top:12px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -1530,7 +1530,7 @@ App._renderOKRCheckin=()=>{
   const d=_OKRCI;if(!d)return;
   const o=okrById(d.okrId);if(!o)return;
   const L='display:block;font-size:11px;font-weight:700;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px';
-  const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCISetVal(${v})" style="flex:1;padding:12px;border-radius:11px;border:2px solid ${Number(d.value)===v?(v===1?'#22C55E':'#EF4444'):'var(--c-border)'};background:${Number(d.value)===v?(v===1?'#FBEAE2':'#FFF1F2'):'var(--c-surface)'};color:${Number(d.value)===v?(v===1?'#047857':'#BE123C'):'var(--c-text-2)'};font-size:14px;font-weight:800;cursor:pointer">${label}</button>`;
+  const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCISetVal(${v})" style="flex:1;padding:12px;border-radius:11px;border:2px solid ${Number(d.value)===v?(v===1?'#22C55E':'#EF4444'):'var(--c-border)'};background:${Number(d.value)===v?(v===1?'#FFEAD7':'#FFF1F2'):'var(--c-surface)'};color:${Number(d.value)===v?(v===1?'#047857':'#BE123C'):'var(--c-text-2)'};font-size:14px;font-weight:800;cursor:pointer">${label}</button>`;
   modalShell({title:(d.existingId?'Edit update':'Add update'),sub:(o.title||'')+' · target '+(o.metricType==='yesno'?'Yes':_okrFmtVal(o,o.targetValue)),size:'max-w-md',key:'okr-ci',
     body:`<div style="display:flex;flex-direction:column;gap:14px">
       <div><label style="${L}">Date</label><input type="date" value="${d.date}" onchange="App._okrCISetDate(this.value)" class="ui-input rf"/></div>
@@ -1599,8 +1599,8 @@ App._renderOKRCheckinAll=()=>{
   const A=_OKRCIALL;if(!A)return;
   const rows=A.items.map((it,i)=>{
     const o=okrById(it.okrId);if(!o)return'';
-    const done=it.existingId?'<span style="font-size:10px;font-weight:800;background:#FBEAE2;color:#CE5B41;padding:2px 8px;border-radius:10px">already updated — editing</span>':'';
-    const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCIAllVal(${i},${v})" style="flex:1;padding:8px;border-radius:9px;border:2px solid ${Number(it.value)===v?(v===1?'#22C55E':'#EF4444'):'var(--c-border)'};background:${Number(it.value)===v?(v===1?'#FBEAE2':'#FFF1F2'):'var(--c-surface)'};color:${Number(it.value)===v?(v===1?'#047857':'#BE123C'):'var(--c-text-2)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`;
+    const done=it.existingId?'<span style="font-size:10px;font-weight:800;background:#FFEAD7;color:#7A5344;padding:2px 8px;border-radius:10px">already updated — editing</span>':'';
+    const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCIAllVal(${i},${v})" style="flex:1;padding:8px;border-radius:9px;border:2px solid ${Number(it.value)===v?(v===1?'#22C55E':'#EF4444'):'var(--c-border)'};background:${Number(it.value)===v?(v===1?'#FFEAD7':'#FFF1F2'):'var(--c-surface)'};color:${Number(it.value)===v?(v===1?'#047857':'#BE123C'):'var(--c-text-2)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`;
     return `<div style="border:1px solid var(--c-border);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--c-surface)">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
         ${_okrLvlChip(okrLevel(o))}
@@ -1636,7 +1636,7 @@ function _okrClCard(due,date){
   const rows=due.slice(0,6).map(o=>{
     const ck=okrCheckinFor(o.id,S.uid,date);
     return `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--c-text-2);padding:3px 0">
-      ${ck?`<span style="color:#CE5B41;flex-shrink:0">${ic('check','w-3.5 h-3.5')}</span>`:`<span style="width:6px;height:6px;border-radius:50%;background:#F59E0B;flex-shrink:0;margin:0 5px"></span>`}
+      ${ck?`<span style="color:#7A5344;flex-shrink:0">${ic('check','w-3.5 h-3.5')}</span>`:`<span style="width:6px;height:6px;border-radius:50%;background:#F59E0B;flex-shrink:0;margin:0 5px"></span>`}
       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.title)}</span>
       ${ck?`<span style="font-weight:800;color:var(--c-success-ink);font-size:12px">${esc(_okrFmtVal(o,ck.value))}</span>`:''}
     </div>`;
@@ -1832,7 +1832,7 @@ function _drawOKRCharts(){
         const idealRev=dates.map(d=>_okrIdealAt(o,d,[dates[0],dates[dates.length-1]],false,Number(o.revisedTarget)));
         if(idealRev.some(v=>v!==null))ds.push({label:'Revised pace',data:idealRev,borderColor:'#F59E0B',borderDash:[4,4],pointRadius:0,fill:false,tension:0,borderWidth:2});
       }
-      ds.push({label:'Actual',data:actual,spanGaps:true,order:-1,borderColor:'#E8785C',backgroundColor:'rgba(232,120,92,.12)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#E8785C',borderWidth:2});
+      ds.push({label:'Actual',data:actual,spanGaps:true,order:-1,borderColor:'#936659',backgroundColor:'rgba(147,102,89,.12)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#936659',borderWidth:2});
       const yOpts={beginAtZero:true,ticks:{color:T.tick,font:{size:10}},grid:{color:T.grid}};
       if(o.metricType!=='yesno'){
         // Y-axis baseline = the Start value; only drop lower if an actual input dips below it.
@@ -1939,8 +1939,8 @@ function _acDraft(u){
   return _ACD;
 }
 function _acTogBtn(on,label,onclick,disabled){
-  return `<button ${disabled?'disabled':''} onclick="${onclick}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid ${on?'#E8785C':'var(--c-border)'};background:${on?'#FBEAE2':'var(--c-surface)'};color:${on?'#CE5B41':'var(--c-text-3)'};font-size:11.5px;font-weight:700;cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'}">
-    <span style="width:6px;height:6px;border-radius:50%;background:${on?'#ED8368':'#D1D5DB'};flex-shrink:0"></span>${esc(label)}</button>`;
+  return `<button ${disabled?'disabled':''} onclick="${onclick}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid ${on?'#936659':'var(--c-border)'};background:${on?'#FFEAD7':'var(--c-surface)'};color:${on?'#7A5344':'var(--c-text-3)'};font-size:11.5px;font-weight:700;cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'}">
+    <span style="width:6px;height:6px;border-radius:50%;background:${on?'#A1735F':'#D1D5DB'};flex-shrink:0"></span>${esc(label)}</button>`;
 }
 App._acCustomize=(uid2)=>{
   if(_ACD&&_ACD.uid!==uid2&&_ACD.dirty&&!confirm('Discard unsaved changes for the previous person?'))return;
@@ -2131,7 +2131,7 @@ App._renderRPEdit=()=>{
       const nOn=a.actions.filter(x=>(cur.actions||{})[x]).length;
       const hay=(a.label+' '+a.desc+' '+a.actions.map(x=>PERM_ACTION_LABEL[x]||x).join(' ')).toLowerCase();
       return `<div data-rp-row="${esc(hay)}" style="display:${(p.q&&!hay.includes(String(p.q).toLowerCase()))?'none':'grid'};grid-template-columns:minmax(140px,200px) 1fr;gap:4px 12px;padding:8px 0;border-top:1px solid var(--c-border);align-items:center">
-        <div><div style="font-size:12px;font-weight:700;color:var(--c-text)">${esc(a.label)} ${nOn?`<span style="font-size:9px;font-weight:800;color:#CE5B41">${nOn} on</span>`:''}</div><div style="font-size:10px;color:var(--c-text-3);line-height:1.3">${esc(a.desc)}</div></div>
+        <div><div style="font-size:12px;font-weight:700;color:var(--c-text)">${esc(a.label)} ${nOn?`<span style="font-size:9px;font-weight:800;color:#7A5344">${nOn} on</span>`:''}</div><div style="font-size:10px;color:var(--c-text-3);line-height:1.3">${esc(a.desc)}</div></div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">
           ${a.actions.map(act=>_acTogBtn(!!(cur.actions||{})[act],PERM_ACTION_LABEL[act]||act,`App._rpT('${a.key}','${act}')`,dis)).join('')}
           ${a.scoped?`<span style="font-size:9.5px;color:var(--c-text-3)">sees:</span><select ${dis?'disabled':''} onchange="App._rpScope('${a.key}',this.value)" class="ui-select" style="width:auto;font-size:11px;padding:3px 24px 3px 8px;min-height:0;height:25px">${SCOPE_ORDER.map(s=>`<option value="${s}" ${((cur.scope||'none')===s)?'selected':''}>${SCOPE_LABEL[s]}</option>`).join('')}</select>`:''}

@@ -43,7 +43,7 @@ function chipBar(items,activeKey,fnName,opts={}){
   return pill?`<div style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch">${inner}</div>`:`<div class="ui-tabs">${inner}</div>`;
 }
 const togV=id=>{const el=$(`#${id}`);if(!el)return false;return el.classList?.contains('on')||false;};
-const STAT_C={sky:'#0284C7',brand:'#E8785C',rose:'#E11D48',amber:'#D97706',orange:'#EA580C',emerald:'#CE5B41'};
+const STAT_C={sky:'#0284C7',brand:'#936659',rose:'#E11D48',amber:'#D97706',orange:'#EA580C',emerald:'#7A5344'};
 const statCard=(t,v,c='sky',oc='')=>{
   const col=STAT_C[c]||c||'#0284C7';
   const base='background:var(--c-surface);border-radius:var(--r-lg);border:1px solid var(--c-border);box-shadow:var(--sh-sm);padding:18px';

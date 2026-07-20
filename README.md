@@ -1,3 +1,26 @@
+# Bridge (v3.10)
+
+## v3.10.1 — BloomingBox brand theme (BB Brand Guidelines 2023)
+
+The whole UI now follows the BloomingBox brand guidelines:
+
+- **Palette** (was coral/salmon): primary accent is now **Copper `#936659`** with **Gold `#D1B68F`** for light accents/borders, **Champagne `#FFEAD7`** for soft fills, **Leather Brown `#54433C`** for accent text, ink is **Carbon Black `#13171B`**, and the app canvas/sidebars use a **Sand Beige** tint (`#F1ECE4`, borders `#D8CCC0`). Mapped everywhere — tailwind config, CSS tokens (`--c-brand`, `--grad-brand`, focus rings) and every inline style across all pages (CRM, checklists, OKRs, dashboards, settings…).
+- **Typography**: Poppins everywhere (the brand's digital primary — already loaded). Primary/brand CTAs now use the brand's button style: **uppercase + wide letter-spacing** (like the guidelines' ADD TO CART). Display headings get subtle tracking.
+- **Login screen** rebuilt in brand style: Carbon Black panel, letterspaced `B R I D G E · BY BLOOMINGBOX` wordmark, gold rule + gold/nude glows.
+- Cache-busting bumped to `?v=53`.
+
+## v3.10 — CRM: Assignee column, chat fix, renaming, scoped people, resizable columns, People groups
+
+- **Assignee in the table.** Every ticket board's table now shows the built-in **Assignee** column right after the Ticket column — an inline dropdown (gated by CRM → Assign), listing only people on that board/channel. No more creating a custom "Assigned" people column to see it.
+- **Ticket chat fixed: scrolling + composer.** Opening a ticket from a table board rendered the message pane without a height constraint, so long threads pushed the message box below the fold with no scrollbar (the chat pane was missing `min-height:0`). The thread now scrolls and the composer (textarea + send, @mentions, image attach) is always visible.
+- **Rename everything** (new CRM → **Rename** permission): the sidebar's "Hubs" title is now a workspace label — click it to rename (e.g. "Workspaces", "Cities"); hubs, channels and boards each get a pencil to rename them, synced for everyone.
+- **People pickers are scoped to the board.** Person-type columns, the details-panel Assignee, the chat Assign button and every automation picker (assign to…, notify…, person-column values) now list **only members of that board or its channel** — not the whole company. Existing values from non-members still display.
+- **Tagging is scoped too.** @mention suggestions and who actually gets notified are limited to people assigned to that channel/board (chat boards and ticket boards alike). `@all` notifies board+channel members only.
+- **Resizable columns.** Drag the edge of any table header (Ticket, Assignee, custom columns) to resize. Widths are **shared per board** (stored in `board.settings.colWidths`, no schema change) and only people with CRM → Edit can resize.
+- **People groups** (new CRM → **People groups** permission): a Groups section at the bottom of the CRM sidebar. Create a group once (e.g. *Night Shift*) and use it everywhere: tag the whole group with `@NightShift` in any conversation, tick it in automation "notify" actions, in per-board notification rules and in global CRM defaults — in-app + email fan out to every member. Group tags only notify members who can see that board. Stored in `workspace_settings.crm_settings` — no schema change.
+- **Permissions:** the CRM area gains **Rename** and **People groups** toggles (Access Control → role → CRM). Built-in roles re-seeded (v12): Super Admin / Administrator / Team Lead-Manager get both; Basic Employee gets neither. Custom roles keep their toggles — flip the two new ones on per role as needed.
+- Cache-busting bumped to `?v=52`.
+
 # Bridge (v3.9)
 
 ## v3.9.2 — Progress panel shows only the feeders · revised target visible in the editor
