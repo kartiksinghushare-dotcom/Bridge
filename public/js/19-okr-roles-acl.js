@@ -74,6 +74,18 @@ function _howBar(key){
     <button onclick="try{localStorage.setItem('bridge_how_${key}','1')}catch(e){};rr()" title="Got it — hide" style="border:none;background:transparent;color:#1E40AF;cursor:pointer;font-size:14px;line-height:1;flex-shrink:0">×</button>
   </div>`;
 }
+/* dismissNote(key,html,opts) — an informational note the user can dismiss with × ("got it,
+   don't show again" — remembered per browser in localStorage, same rule as the How-bars).
+   opts: icon · style (extra outer css) · onDismiss (JS string run after hiding; default rr()). */
+function dismissNote(key,html,opts={}){
+  try{if(localStorage.getItem('bridge_note_'+key))return'';}catch(e){}
+  const after=opts.onDismiss||'rr()';
+  return `<div style="display:flex;gap:8px;align-items:flex-start;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:10px;padding:8px 12px;font-size:12px;color:#1E40AF;${opts.style||''}">
+    ${opts.icon?`<span style="flex-shrink:0;margin-top:1px">${ic(opts.icon,'w-3.5 h-3.5')}</span>`:''}
+    <div style="flex:1;min-width:0;line-height:1.5">${html}</div>
+    <button type="button" onclick="event.stopPropagation();try{localStorage.setItem('bridge_note_${key}','1')}catch(e){};${after}" title="Got it — don't show this again" aria-label="Dismiss" style="flex-shrink:0;width:18px;height:18px;border:none;background:transparent;color:#1E40AF;cursor:pointer;font-size:14px;line-height:1;padding:0;display:grid;place-items:center">×</button>
+  </div>`;
+}
 function _aChartTheme(){return {tick:'#9C9184',grid:'rgba(138,147,163,0.18)'};}
 App._searchRR=(inputId)=>{const a=document.activeElement;const ss=a?a.selectionStart:null,se=a?a.selectionEnd:null;rr();const el=document.getElementById(inputId);if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se);}catch(e){}}};
 
@@ -1050,7 +1062,7 @@ function okrPage(){
     const byLvl=(a,b)=>(okrLevel(a)-okrLevel(b))||byAnnual(a,b);
     Object.keys(_OKR_QVK).forEach(k=>_OKR_QVK[k].sort(byLvl));
     qRoots.sort(byLvl);
-    tree=qRoots.length?`<div style="font-size:11.5px;color:var(--c-text-3);margin-bottom:8px">Quarterly view — quarters keep their annual hierarchy${(F.okrQtr||[]).length?'':' · tick quarters in the filter to focus on one'}</div>`+qRoots.map(o=>_okrNodeHTML(o,0)).join('')
+    tree=qRoots.length?dismissNote('okr-qview',`Quarterly view — quarters keep their annual hierarchy${(F.okrQtr||[]).length?'':' · tick quarters in the filter to focus on one'}`,{icon:'calendar',style:'margin-bottom:8px'})+qRoots.map(o=>_okrNodeHTML(o,0)).join('')
       :empty('chart','No quarterly objectives','Turn on the “Annual objective” toggle on an objective to split it into quarters.');
   }else if(fActive){
     const q=(F.okrQ||'').toLowerCase();
@@ -1144,28 +1156,6 @@ function _okrProgressPanel(o,kids,pct,st){
   const canCk=_okrCanCheckin(o);
   const lab='font-size:10px;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700';
   const big='font-size:20px;font-weight:800;color:var(--c-text)';
-  // ── Goal + rules summary (folded in from the removed Rules & Target panel) ──
-  const ownersP=okrOwners(o).map(uById).filter(Boolean);
-  const creator=uById(o.createdBy);
-  const deptEff=okrDeptOf(o);
-  const deptP=(DB.departments||[]).find(d=>d.id===deptEff.deptId);
-  const subP=(DB.departments||[]).find(d=>d.id===deptEff.subDeptId);
-  const mLabel=(OKR_METRICS.find(m=>m[0]===o.metricType)||['','Number'])[1];
-  const metaBit=(l,v)=>v?`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--c-text-2);background:var(--c-surface);border:1px solid var(--c-border);border-radius:20px;padding:3px 10px;max-width:100%"><b style="color:var(--c-text-3);font-weight:800;text-transform:uppercase;font-size:9px;letter-spacing:.04em;flex-shrink:0">${l}</b><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v}</span></span>`:'';
-  const metaHead=`<div style="margin-bottom:12px">
-    ${o.description?`<div style="font-size:13px;color:var(--c-text-2);line-height:1.55;margin-bottom:9px"><b style="color:var(--c-text)">Goal:</b> ${esc(o.description)}</div>`:''}
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-      ${metaBit('Measured',esc(mLabel)+(o.metricType!=='yesno'?(o.direction==='down'?' · lower is better':' · higher is better'):''))}
-      ${metaBit('Owner'+(ownersP.length===1?'':'s'),ownersP.length?esc(ownersP.map(fullName).join(', '))+(ownersP.length>1?' — any can update':''):'—')}
-      ${deptP?metaBit('Dept',esc(deptP.name)+(subP?' › '+esc(subP.name):'')):''}
-      ${metaBit('Check-ins',esc(_okrFreqLabel(o)))}
-      ${metaBit('Period',(o.periodStart||o.periodEnd)?(esc(fmtS(o.periodStart))+' → '+esc(fmtS(o.periodEnd))):'Ongoing')}
-      ${creator?metaBit('Created by',esc(fullName(creator))+(o.createdAt?' · '+esc(fmtS(String(o.createdAt).slice(0,10))):'')):''}
-      ${o.statusMode==='manual'?metaBit('Status',('Marked manually ('+esc(o.statusManual||'—')+')')):''}
-      ${_okrCanEditNode(o)?`<button onclick="App._okrEdit('${o.id}')" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--c-text-2);background:var(--c-surface);border:1px solid var(--c-border-2);border-radius:20px;padding:3px 10px;cursor:pointer">${ic('edit','w-3 h-3')}Edit objective</button>`:''}
-    </div>
-    ${(o.frequency||{}).type==='custom'&&((o.frequency||{}).dates||[]).length?`<div style="margin-top:8px;font-size:11.5px;color:var(--c-text-2)"><b>Check-in dates:</b> ${(o.frequency.dates||[]).map(d=>esc(fmtS(d))).join(', ')}</div>`:''}
-  </div>`;
   const _ownCur=_okrOwnCur(o);
   const cur=esc(_okrFmtVal(o,_okrOwnCur(o)));
   const tgt=o.metricType==='yesno'?'Yes':esc(_okrFmtVal(o,o.targetValue));
@@ -1184,7 +1174,10 @@ function _okrProgressPanel(o,kids,pct,st){
       <div style="display:flex;flex-direction:column;gap:6px">${bar('vs revised',pr,'#F59E0B')}${bar('vs original',po,'#8B6B41')}</div>
       <div style="font-size:11px;color:var(--c-text-3);margin-top:8px">Revised${o.revisedAt?' '+fmtS(String(o.revisedAt).slice(0,10)):''}${who?' by '+esc(who):''}${o.revisedNote?' — “'+esc(o.revisedNote)+'”':''} · same updates feed both numbers</div>
     </div>`;})():'';
-  const rollupNote=(o.rollup||o.isAnnual)?`<div style="display:flex;gap:8px;align-items:center;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px;color:#1E40AF">${ic('refresh','w-3.5 h-3.5')}${o.rollup?`This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives${o.isAnnual?' (roll-up override — turn it off in the editor for quarters-progress instead)':''}.`:`This annual objective updates automatically — its progress is the <b>&nbsp;combined progress of its quarters&nbsp;</b> (each quarter counts equally; the level below doesn't feed it).`}</div>`:'';
+  const rollupNote=(o.rollup||o.isAnnual)?dismissNote('okr-auto-'+(o.rollup?'rollup':'annual'),
+    (o.rollup?`This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives${o.isAnnual?' (roll-up override — turn it off in the editor for quarters-progress instead)':''}.`
+             :`This annual objective updates automatically — its progress is the <b>&nbsp;combined progress of its quarters&nbsp;</b> (each quarter counts equally; the level below doesn't feed it).`),
+    {icon:'refresh',style:'margin-top:10px',onDismiss:`App._okrProgressModal('${o.id}')`}):'';
   // check-in feed (latest first)
   const feed=okrCheckinsOf(o.id).slice().reverse().slice(0,30).map(c=>{
     const u=uById(c.userId);
@@ -1218,7 +1211,6 @@ function _okrProgressPanel(o,kids,pct,st){
     </div>`:'';
   const logs=(DB.okrLogs||[]).filter(l=>l.okrId===o.id);
   return `<div style="border-top:1px solid var(--c-border);background:var(--c-surface-2);padding:14px 16px">
-    ${metaHead}
     <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div style="display:flex;gap:22px;flex-wrap:wrap">
         <div><div style="${lab}">Start</div><div style="${big}">${strt}</div></div>
@@ -1252,7 +1244,7 @@ App._okrEdit=(id,parentId)=>{
   if(existing&&!_okrCanEditNode(existing))return toast('You can\'t edit this OKR','err');
   if(!existing&&!_okrCanCreate())return toast('You can\'t create OKRs','err');
   _OKRED=existing?JSON.parse(JSON.stringify(existing)):{id:uid('okr'),parentId:parentId||null,title:'',description:'',departmentId:null,subDepartmentId:null,ownerId:S.uid,owners:[S.uid],metricType:'number',startValue:0,targetValue:null,unit:'',direction:'up',frequency:{type:'weekly',day:'Mon'},periodStart:null,periodEnd:null,statusMode:'auto',statusManual:null,isAnnual:false,quarterLabel:null,sort:okrChildren(parentId||null).length,createdBy:S.uid,createdAt:new Date().toISOString()};
-  delete _OKRED._qRows;delete _OKRED._qEdit;
+  delete _OKRED._qRows;delete _OKRED._qEdit;delete _OKRED._ownQ;
   if(existing&&existing.isAnnual)_OKRED._qEdit=_okrBuildQEdit(existing.id); // live quarter values — edits made on the quarters themselves show up here
   App._renderOKREdit();
 };
@@ -1357,7 +1349,9 @@ function _okrEdAnnualSection(o,L){
       <button type="button" role="switch" aria-checked="${o.isAnnual?'true':'false'}" class="tog ${o.isAnnual?'on':'off'}" style="margin-top:2px" onclick="App._okrEdTogAnnual()"><span></span></button>
     </div>
     ${o.isAnnual?`
-      <div style="margin-top:10px;font-size:11px;color:#1E40AF;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:9px;padding:8px 11px;line-height:1.5">${o.rollup?`<b>Note:</b> the “Auto-update from the level below” toggle (below) is also on and takes over the number. Turn it off for the quarters rule:`:''} This annual's progress = the <b>combined progress of its quarters</b>, each counting equally — e.g. Q1 done 10% and the rest untouched → annual shows 2.5%. Regular sub-objectives never feed it.</div>
+      ${o.rollup
+        ?`<div style="margin-top:10px;font-size:11px;color:#1E40AF;background:var(--c-info-soft);border:1px solid #BFDBFE;border-radius:9px;padding:8px 11px;line-height:1.5"><b>Note:</b> the “Auto-update from the level below” toggle (below) is also on and takes over the number. Turn it off for the quarters rule: this annual's progress = the <b>combined progress of its quarters</b>, each counting equally.</div>`
+        :dismissNote('okr-ed-annual',`This annual's progress = the <b>combined progress of its quarters</b>, each counting equally — e.g. Q1 done 10% and the rest untouched → annual shows 2.5%. Regular sub-objectives never feed it.`,{style:'margin-top:10px;font-size:11px',onDismiss:'App._renderOKREdit()'})}
       ${qEdit.length?`<div style="margin-top:12px"><label style="${L}">Quarterly objectives (${qEdit.length}) — edit them right here</label>
         ${gridHead}
         ${qEdit.map(eRow).join('')}
@@ -1375,6 +1369,16 @@ function _okrEdAnnualSection(o,L){
       </div>`:''}
   </div>`;
 }
+/* Live search over the owner list — filters the rendered rows directly (no re-render). */
+App._okrEdOwnQ=(v)=>{
+  if(_OKRED)_OKRED._ownQ=v;
+  const q=String(v||'').trim().toLowerCase();
+  const box=document.getElementById('okr-own-list');if(!box)return;
+  let any=false;
+  box.querySelectorAll('[data-own-name]').forEach(el=>{const hit=!q||(el.getAttribute('data-own-name')||'').includes(q);el.style.display=hit?'flex':'none';if(hit)any=true;});
+  const none=document.getElementById('okr-own-none');
+  if(none){none.style.display=any?'none':'block';const nq=document.getElementById('okr-own-none-q');if(nq)nq.textContent=v||'';}
+};
 /* Toggle an owner in the editor draft — owners is the source of truth, ownerId mirrors owners[0]. */
 App._okrEdTogOwner=(uid2)=>{
   const o=_OKRED;if(!o)return;
@@ -1407,14 +1411,23 @@ App._renderOKREdit=()=>{
         <div><label style="${L}">Sub-department</label><select class="ui-select rf" ${subOpts.length?'':'disabled'} onchange="_OKRED.subDepartmentId=this.value||null"><option value="">${subOpts.length?'— All / none —':'No sub-departments'}</option>${subOpts.map(s=>`<option value="${esc(s[0])}" ${o.subDepartmentId===s[0]?'selected':''}>${esc(s[1])}</option>`).join('')}</select></div>
       </div>${o.parentId?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px">Every level can carry its own department & sub-department — leave on “Inherit” to follow the parent's.</div>`:''}</div>`;})()}
       ${(()=>{const selOwn=okrOwners(o);
+      // v3.11.1 owner picker: selected owners as removable chips + a search box over the
+      // people list (typing filters the DOM directly — no re-render, focus never lost).
+      const list=users.slice().sort((a,b)=>{const sa=selOwn.includes(a.id)?0:1,sb2=selOwn.includes(b.id)?0:1;if(sa!==sb2)return sa-sb2;return fullName(a).localeCompare(fullName(b));});
       return `<div><label style="${L}">Owners — any of them can update & edit *</label>
-        <div style="border:1.5px solid var(--c-border);border-radius:12px;max-height:172px;overflow-y:auto;padding:4px;background:var(--c-surface)">
-          ${users.map(u=>{const on=selOwn.includes(u.id);return`<div role="checkbox" aria-checked="${on}" onclick="App._okrEdTogOwner('${u.id}')" style="display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer;${on?'background:var(--c-brand-soft);':''}">
-            <span style="width:16px;height:16px;border-radius:5px;border:1.5px solid ${on?'var(--c-brand)':'var(--c-border-2)'};background:${on?'var(--c-brand)':'#fff'};display:grid;place-items:center;color:#fff;flex-shrink:0">${on?ic('check','w-3 h-3'):''}</span>
-            ${avatar(u,'w-5 h-5','text-[9px]')}
-            <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fullName(u))}</span>
-            <span style="font-size:10px;color:var(--c-text-3);flex-shrink:0">${esc(u.department||'')}</span>
-          </div>`;}).join('')}
+        ${selOwn.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${selOwn.map(id=>{const u=uById(id);if(!u)return'';return`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--c-brand-soft);border:1px solid var(--c-border);border-radius:20px;padding:3px 5px;font-size:11.5px;font-weight:700;color:var(--c-text)">${avatar(u,'w-4 h-4','text-[8px]')}${esc(fullName(u))}<button type="button" onclick="App._okrEdTogOwner('${id}')" title="Remove ${esc(fullName(u))}" style="width:16px;height:16px;border-radius:50%;border:none;background:var(--c-border);color:var(--c-text-2);cursor:pointer;font-size:10px;line-height:1;display:grid;place-items:center;flex-shrink:0">×</button></span>`;}).join('')}</div>`
+        :`<div style="font-size:11.5px;color:#B45309;background:#FEF7E6;border-radius:8px;padding:6px 10px;margin-bottom:8px">No owner yet — search and tick at least one below.</div>`}
+        <div style="border:1.5px solid var(--c-border);border-radius:12px;background:var(--c-surface);overflow:hidden">
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--c-border);background:var(--c-surface-2);color:var(--c-text-3)">${ic('search','w-3.5 h-3.5')}<input id="okr-own-q" value="${esc(o._ownQ||'')}" oninput="App._okrEdOwnQ(this.value)" placeholder="Search by name, email or department…" style="flex:1;border:none;outline:none;background:transparent;font-size:12.5px;color:var(--c-text);min-width:0"/></div>
+          <div id="okr-own-list" style="max-height:148px;overflow-y:auto;padding:4px">
+            ${list.map(u=>{const on=selOwn.includes(u.id);return`<div data-own-name="${esc((fullName(u)+' '+(u.email||'')+' '+(u.department||'')).toLowerCase())}" role="checkbox" aria-checked="${on}" onclick="App._okrEdTogOwner('${u.id}')" style="display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;cursor:pointer;${on?'background:var(--c-brand-soft);':''}">
+              <span style="width:15px;height:15px;border-radius:5px;border:1.5px solid ${on?'var(--c-brand)':'var(--c-border-2)'};background:${on?'var(--c-brand)':'#fff'};display:grid;place-items:center;color:#fff;flex-shrink:0">${on?ic('check','w-3 h-3'):''}</span>
+              ${avatar(u,'w-5 h-5','text-[9px]')}
+              <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fullName(u))}</span>
+              <span style="font-size:10px;color:var(--c-text-3);flex-shrink:0">${esc(u.department||'')}</span>
+            </div>`;}).join('')}
+            <div id="okr-own-none" style="display:none;padding:10px;font-size:12px;color:var(--c-text-3)">No one matches “<span id="okr-own-none-q"></span>”.</div>
+          </div>
         </div>
         <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">${selOwn.length} selected · scheduled check-ins reach every owner as a <b>group task — any one</b> of them can fill it and it counts for everyone.</div>
       </div>`;})()}
@@ -1474,6 +1487,7 @@ App._renderOKREdit=()=>{
       <div style="font-size:11px;color:var(--c-text-3)">The period drives the automatic On track / Off track pace and stops check-in reminders after it ends.</div>
     </div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP(isExisting?'Save changes':'Create objective','App._okrSave()')});
+  if(o._ownQ)setTimeout(()=>{try{App._okrEdOwnQ((_OKRED&&_OKRED._ownQ)||'');}catch(e){}},0); // keep the owner search applied across re-renders
 };
 App._okrSave=()=>{
   const o=_OKRED;if(!o)return;
@@ -1518,7 +1532,7 @@ App._okrSave=()=>{
   if(f.type==='custom'&&!(f.dates||[]).length)return toast('Add at least one check-in date','err');
   }
   if(o.periodStart&&o.periodEnd&&o.periodEnd<o.periodStart)return toast('Period end is before its start','err');
-  delete o._qRows;delete o._qEdit; // editor-only — dropped AFTER validation so a failed save keeps the rows on screen
+  delete o._qRows;delete o._qEdit;delete o._ownQ; // editor-only — dropped AFTER validation so a failed save keeps the rows on screen
   if(o.metricType==='yesno'){o.startValue=0;o.targetValue=1;o.direction='up';}
   const idx=(DB.okrs||[]).findIndex(x=>x.id===o.id);
   if(idx>-1){

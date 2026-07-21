@@ -1,5 +1,16 @@
 # Bridge (v3.11)
 
+## v3.11.2 — dismissible info notes + slimmer CRM sidebar
+
+- **Info notes can be dismissed.** The blue explainer banners (e.g. "This annual objective updates automatically — combined progress of its quarters" in the Progress popup, the Quarterly-view hint, the annual explainer in the editor) now carry an **×** — click it and that note never shows again on this browser (same rule as the "How this tab works" bars). New shared `dismissNote()` helper, ready to reuse on any future note.
+- **CRM sidebar: group list removed.** With people-groups created, the sidebar no longer lists every group (each row just opened the same dialog anyway) — one compact **Groups (n)** entry opens the manage dialog; @tags, automations and notification fan-out are untouched. Cache-busting bumped to `?v=59`.
+
+## v3.11.1 — feedback fixes
+
+- **Progress popup decluttered**: the rules-summary chip row (Measured / Owner / Dept / Check-ins / Period / Created by / Edit objective) was removed — the popup goes straight to the numbers; rules live in the editor (pencil icon on the card).
+- **Users: visible “Template” button** in the page header (next to Download / Bulk upload) — no need to open the upload dialog to get it.
+- **Owner picker rebuilt for big teams**: selected owners show as removable chips on top; below them a **search box** (name / email / department) filters the people list live without losing focus; selected people sort first. Cache-busting bumped to `?v=58`.
+
 ## v3.11 — OKR: multi-owner group check-ins, per-level departments, clickable summary, multi-select filters, clean cards, full email suite · Users: bulk upload / download / template / search
 
 - **Multiple owners per OKR.** The editor's single "Owner" select is now a checkbox list — tick everyone responsible. **Any owner can edit the objective and fill its check-ins**, and the scheduled check-in behaves like a **group task** (same rule as "any one can complete" checklists): it appears in every owner's My Checklists / due-today panel, and one owner's submission counts for the whole group (cards show *by whom*). Owners always see their own OKRs; visibility scopes, the nav badge and the combined check-in modal all follow the group rule. DB: additive `okrs.owners` (jsonb, backfilled from `owner_id`; `owner_id` stays = `owners[0]` for compatibility).

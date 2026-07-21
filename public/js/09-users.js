@@ -52,6 +52,7 @@ function usersPage(){
     </div>`:'';
   const headActions=[
     can('employees','view')?btn('Download','App._usersExport()',{variant:'ghost',icon:'download'}):'',
+    can('employees','create')?btn('Template','App._usersTemplate()',{variant:'ghost',icon:'sheet'}):'',
     can('employees','create')?btn('Bulk upload','App._usersImport()',{variant:'ghost',icon:'upload'}):'',
     can('employees','create')?btnP('Add user','App.editUser()','plus'):''
   ].join('');
