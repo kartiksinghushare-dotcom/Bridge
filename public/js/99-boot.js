@@ -6,7 +6,7 @@
 /* ===== BOOT ===== */
 (async function boot(){
   const _hashRoute=(window.location.hash||'').replace('#','').trim();
-  const VALID_ROUTES=['dashboard','crm','mychecklists','users','hierarchy','checklists','allcl','questions','approvals','notifications','analytics','locations','departments','settings','audit','teamview','profile'];
+  const VALID_ROUTES=['dashboard','crm','mychecklists','users','hierarchy','checklists','allcl','questions','approvals','notifications','analytics','locations','departments','settings','audit','teamview','profile','okr','tickets'];
   const _deepLink=VALID_ROUTES.includes(_hashRoute)?_hashRoute:null;
   try{const{data:{session}}=await sb.auth.getSession();if(session){
       // Load local cache first for instant UI

@@ -50,9 +50,14 @@ function usersPage(){
       ${btnP('Bulk edit','App._bulkEditUsers()','edit')}
       <button onclick="App._uSelClear()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>
     </div>`:'';
-  return`<div class="fade">${hdr('Users',visU().length+' people',can('employees','create')?btnP('Add user','App.editUser()','plus'):'')}
+  const headActions=[
+    can('employees','view')?btn('Download','App._usersExport()',{variant:'ghost',icon:'download'}):'',
+    can('employees','create')?btn('Bulk upload','App._usersImport()',{variant:'ghost',icon:'upload'}):'',
+    can('employees','create')?btnP('Add user','App.editUser()','plus'):''
+  ].join('');
+  return`<div class="fade">${hdr('Users',visU().length+' people',headActions)}
   <div class="flex gap-2 mb-4 flex-wrap">
-    <div class="relative flex-1 min-w-[160px] md:hidden"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300">${ic('search','w-4 h-4')}</span><input oninput="S.search=this.value;rr()" value="${esc(S.search)}" placeholder="Search…" class="w-full bg-white border border-ink-200 rounded-xl pl-9 pr-3 py-2.5 text-sm rf"/></div>
+    <div class="relative flex-1 min-w-[160px]"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300">${ic('search','w-4 h-4')}</span><input id="u-search" oninput="S.search=this.value;App._searchRR('u-search')" value="${esc(S.search)}" placeholder="Search by name or email…" class="w-full bg-white border border-ink-200 rounded-xl pl-9 pr-3 py-2.5 text-sm rf"/></div>
     <select onchange="S.filters.dep=this.value;rr()" class="bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"><option value="">All depts</option>${topDepts().map(d=>`<option ${S.filters.dep===d.name?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
     <select onchange="S.filters.stat=this.value;rr()" class="bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"><option value="">Any status</option><option ${S.filters.stat==='Active'?'selected':''}>Active</option><option ${S.filters.stat==='Inactive'?'selected':''}>Inactive</option></select>
   </div>
@@ -387,5 +392,290 @@ App.delUser=async(id)=>{
     sb.from('feedback').delete().eq('user_id',id),
     sb.from('profiles').delete().eq('id',id),
   ]).then(()=>{}).catch(e=>console.warn('delUser cleanup:',e));
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   v3.11 — USERS IMPORT / EXPORT
+   · Download users  → .xlsx of everyone you can see
+   · Download template → .xlsx with a Users sheet + Help sheet
+   · Bulk upload → parse .xlsx/.csv → validate → preview → create
+     via the create-user edge function (real login accounts).
+   Passwords: use the file's Password column; blank = auto-generated
+   and shown in the results (downloadable credentials sheet).
+   ═══════════════════════════════════════════════════════════════ */
+let _UIMP=null;
+function _loadXLSX(){
+  return new Promise((res,rej)=>{
+    if(window.XLSX)return res(window.XLSX);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload=()=>window.XLSX?res(window.XLSX):rej(new Error('Spreadsheet library failed to load'));
+    s.onerror=()=>rej(new Error('Couldn\'t load the spreadsheet library — check your connection'));
+    document.head.appendChild(s);
+  });
+}
+const _U_TPL_HEADERS=['First name*','Last name*','Email*','Password','Phone','Position','Department','Reports to (email)','Status (Active/Inactive)','Role','Email notifications (On/Off)'];
+App._usersTemplate=async()=>{
+  try{
+    const X=await _loadXLSX();
+    const wb=X.utils.book_new();
+    const ws=X.utils.aoa_to_sheet([_U_TPL_HEADERS,['Aisha','Khan','aisha@company.com','','+971 50 000 0000','Sales Executive',(topDepts()[0]||{}).name||'','','Active','Basic Employee','On']]);
+    ws['!cols']=_U_TPL_HEADERS.map(h=>({wch:Math.max(16,h.length+2)}));
+    X.utils.book_append_sheet(wb,ws,'Users');
+    const roles=Object.values(DB.roleProfiles||{}).map(r=>r.name);
+    const help=[['How to fill this template'],[''],
+      ['• Required: First name, Last name, Email. Everything else is optional.'],
+      ['• Password: leave blank to auto-generate a secure one (shown to you right after the import). Minimum 6 characters if you set one.'],
+      ['• Department must match an existing department exactly:'],
+      ...topDepts().map(d=>['     - '+d.name]),
+      ['• Role must match an Access Control role (leave blank for the default):'],
+      ...roles.map(r=>['     - '+r]),
+      ['• Reports to: the manager\'s email — an existing user, or a user on an EARLIER row of this same file.'],
+      ['• Status: Active or Inactive (blank = Active). Email notifications: On or Off (blank = On).'],
+      ['• Rows with errors (missing name/email, duplicate or existing email…) are skipped and reported — the rest import fine.']];
+    X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(help),'Help');
+    X.writeFile(wb,'bridge_users_template.xlsx');
+    toast('Template downloaded');
+  }catch(e){toast(e.message,'err');}
+};
+App._usersExport=async()=>{
+  if(!can('employees','view'))return toast('You don\'t have permission to view users','err');
+  try{
+    const X=await _loadXLSX();
+    const rows=[['First name','Last name','Email','Phone','Position','Department','Reports to','Status','Role','Email notifications']];
+    visU().filter(Boolean).forEach(u=>{
+      const mgr=u.managerId?uById(u.managerId):null;
+      const rp=(DB.roleProfiles||{})[u.hrm?.roleProfileId];
+      rows.push([u.firstName||'',u.lastName||'',u.email||'',u.phone||'',u.position||'',u.department||'',mgr?(mgr.email||fullName(mgr)):'',u.status||'',rp?rp.name:'',u.emailEnabled===false?'Off':'On']);
+    });
+    const wb=X.utils.book_new();
+    const ws=X.utils.aoa_to_sheet(rows);
+    ws['!cols']=rows[0].map(()=>({wch:20}));
+    X.utils.book_append_sheet(wb,ws,'Users');
+    X.writeFile(wb,'bridge_users_'+todayISO()+'.xlsx');
+    log(fullName(me()),'Downloaded users',(rows.length-1)+' users');
+    toast('Downloaded '+(rows.length-1)+' user'+(rows.length===2?'':'s'));
+  }catch(e){toast(e.message,'err');}
+};
+App._usersImport=()=>{
+  if(!can('employees','create'))return toast('You don\'t have permission to create users','err');
+  _UIMP=null;
+  modalShell({title:'Bulk upload users',sub:'Upload the filled template — every row becomes a real login account',size:'max-w-2xl',key:'u-imp',
+    body:`<div id="uimp-body">${_uImpPickHTML()}</div>`});
+};
+function _uImpPickHTML(){
+  return `<div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      ${btn('Download template','App._usersTemplate()',{variant:'ghost',icon:'download'})}
+      <span style="font-size:11.5px;color:var(--c-text-3)">Fill it in Excel, then drop it below (.xlsx or .csv)</span>
+    </div>
+    <div onclick="document.getElementById('uimp-file').click()" ondragover="event.preventDefault();this.style.borderColor='#8B6B41'" ondragleave="this.style.borderColor='var(--c-border-2)'" ondrop="event.preventDefault();this.style.borderColor='var(--c-border-2)';App._uImpFile({files:event.dataTransfer.files})" style="border:2px dashed var(--c-border-2);border-radius:16px;padding:34px;text-align:center;cursor:pointer;transition:border-color .15s">
+      <div style="font-size:30px;margin-bottom:8px">📄</div>
+      <div style="font-size:14px;font-weight:700;color:var(--c-text)">Click to browse or drag &amp; drop</div>
+      <div style="font-size:12px;color:var(--c-text-3);margin-top:4px">.xlsx or .csv — same columns as the template</div>
+      <input type="file" id="uimp-file" accept=".xlsx,.xls,.csv" hidden onchange="App._uImpFile(this)"/>
+    </div>
+  </div>`;
+}
+App._uImpFile=async(input)=>{
+  const f=(input.files||[])[0];if(!f)return;
+  const body=document.getElementById('uimp-body');
+  if(body)body.innerHTML='<div style="padding:30px;text-align:center;color:var(--c-text-3);font-size:13px">Reading '+esc(f.name)+'…</div>';
+  try{
+    const X=await _loadXLSX();
+    const buf=await f.arrayBuffer();
+    const wb=X.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames.includes('Users')?'Users':wb.SheetNames[0]];
+    const aoa=X.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+    _uImpParse(aoa);
+  }catch(e){
+    toast('Couldn\'t read the file: '+(e.message||e),'err');
+    if(body)body.innerHTML=_uImpPickHTML();
+  }
+};
+function _uImpNorm(h){return String(h||'').toLowerCase().replace(/\(.*?\)/g,'').replace(/[^a-z]/g,'');}
+function _uImpGenPw(){const A='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';let p='';for(let i=0;i<10;i++)p+=A[Math.floor(Math.random()*A.length)];return p;}
+function _uImpParse(aoa){
+  const body=document.getElementById('uimp-body');
+  const rows=(aoa||[]).filter(r=>Array.isArray(r)&&r.some(c=>String(c||'').trim()!==''));
+  if(rows.length<2){toast('The file has no data rows','err');if(body)body.innerHTML=_uImpPickHTML();return;}
+  const H=rows[0].map(_uImpNorm);
+  const col={};
+  [['firstname','fn'],['lastname','ln'],['email','email'],['password','pw'],['phone','phone'],['position','pos'],['department','dep'],['reportsto','mgr'],['status','status'],['role','role'],['emailnotifications','notif']].forEach(([k,key])=>{col[key]=H.findIndex(h=>h===k||h.indexOf(k)===0);});
+  if(col.fn<0||col.ln<0||col.email<0){toast('Missing required columns — keep the template\'s First name, Last name and Email headers','err');if(body)body.innerHTML=_uImpPickHTML();return;}
+  const seen=new Set();
+  const canRole=can('accessControl','manage');
+  let roleWarned=false;
+  const parsed=rows.slice(1).map((r,i)=>{
+    const g=k=>col[k]>=0?String(r[col[k]]||'').trim():'';
+    const row={line:i+2,fn:g('fn'),ln:g('ln'),email:g('email').toLowerCase(),pw:g('pw'),phone:g('phone'),pos:g('pos'),dep:g('dep'),mgr:g('mgr').toLowerCase(),status:g('status'),role:g('role'),notif:g('notif'),roleId:null,errs:[],warns:[]};
+    if(!row.fn||!row.ln)row.errs.push('name missing');
+    if(!row.email)row.errs.push('email missing');
+    else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email))row.errs.push('invalid email');
+    else if(seen.has(row.email))row.errs.push('duplicate row in file');
+    else if((DB.users||[]).some(u=>String(u.email||'').toLowerCase()===row.email))row.errs.push('user already exists');
+    if(row.email)seen.add(row.email);
+    if(row.pw&&row.pw.length<6)row.errs.push('password under 6 characters');
+    if(row.dep){
+      const d=topDepts().find(x=>String(x.name).toLowerCase()===row.dep.toLowerCase());
+      if(d)row.dep=d.name;else{row.warns.push('unknown department “'+row.dep+'” — left empty');row.dep='';}
+    }
+    row.status=/^inactive$/i.test(row.status)?'Inactive':'Active';
+    row.emailEnabled=!/^(off|no|false|0)$/i.test(row.notif||'');
+    if(row.role){
+      const rp=Object.values(DB.roleProfiles||{}).find(x=>String(x.name).toLowerCase()===row.role.toLowerCase());
+      if(!rp)row.warns.push('unknown role “'+row.role+'” — default applies');
+      else if(!canRole){if(!roleWarned){roleWarned=true;}row.warns.push('no permission to assign roles — ignored');}
+      else row.roleId=rp.id;
+    }
+    row.genPw=!row.pw;
+    if(!row.pw)row.pw=_uImpGenPw();
+    return row;
+  });
+  _UIMP={rows:parsed};
+  _uImpPreview();
+}
+function _uImpPreview(){
+  const body=document.getElementById('uimp-body');if(!body||!_UIMP)return;
+  const rows=_UIMP.rows;
+  const ok=rows.filter(r=>!r.errs.length);
+  const bad=rows.filter(r=>r.errs.length);
+  const wn=rows.filter(r=>!r.errs.length&&r.warns.length);
+  const chip=(n,label,bg,fg)=>`<span style="font-size:12px;font-weight:800;background:${bg};color:${fg};padding:3px 11px;border-radius:20px">${n} ${label}</span>`;
+  const tr=r=>`<tr style="${r.errs.length?'background:#FFF1F2;':''}border-top:1px solid var(--c-border)">
+      <td style="padding:6px 8px;color:var(--c-text-3)">${r.line}</td>
+      <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(r.fn)} ${esc(r.ln)}</td>
+      <td style="padding:6px 8px">${esc(r.email)}</td>
+      <td style="padding:6px 8px">${esc(r.dep||'—')}</td>
+      <td style="padding:6px 8px">${esc(r.roleId?((DB.roleProfiles[r.roleId]||{}).name||''):(r.role?r.role+' ⚠':'—'))}</td>
+      <td style="padding:6px 8px;color:var(--c-text-3)">${r.genPw?'auto':'from file'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:${r.errs.length?'#BE123C':'#B45309'}">${esc([...r.errs,...r.warns].join(' · '))||'✓'}</td>
+    </tr>`;
+  body.innerHTML=`<div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      ${chip(ok.length,'ready','#E6F2EA','#1E7A50')}
+      ${bad.length?chip(bad.length,'skipped (errors)','#FFF1F2','#BE123C'):''}
+      ${wn.length?chip(wn.length,'with warnings','#FEF7E6','#B36A00'):''}
+      <span style="flex:1"></span>
+      <button onclick="document.getElementById('uimp-body').innerHTML=(_uImpPickHTML());_UIMP=null" class="ui-btn ui-btn-ghost ui-btn-sm">Pick another file</button>
+    </div>
+    <div style="max-height:300px;overflow:auto;border:1px solid var(--c-border);border-radius:12px">
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)">
+          <th style="padding:8px">Row</th><th style="padding:8px">Name</th><th style="padding:8px">Email</th><th style="padding:8px">Department</th><th style="padding:8px">Role</th><th style="padding:8px">Password</th><th style="padding:8px">Issues</th>
+        </tr></thead>
+        <tbody>${rows.map(tr).join('')}</tbody>
+      </table>
+    </div>
+    <div style="font-size:11.5px;color:var(--c-text-3);margin-top:8px">Auto-generated passwords are shown after the import, with a downloadable credentials sheet.</div>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end">
+      ${btnG('Cancel','App.closeModal()')}
+      ${ok.length?btnP('Create '+ok.length+' user'+(ok.length===1?'':'s'),'App._uImpRun()'):''}
+    </div>
+  </div>`;
+}
+App._uImpRun=async()=>{
+  if(!can('employees','create'))return toast('You don\'t have permission to create users','err');
+  const rows=((_UIMP&&_UIMP.rows)||[]).filter(r=>!r.errs.length);
+  if(!rows.length)return;
+  const body=document.getElementById('uimp-body');if(!body)return;
+  body.innerHTML=`<div style="padding:10px 0">
+    <div style="font-size:13.5px;font-weight:800;color:var(--c-text);margin-bottom:10px">Creating ${rows.length} user${rows.length===1?'':'s'}…</div>
+    <div style="height:7px;background:var(--c-surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px"><div id="uimp-bar" style="height:100%;width:0%;background:#8B6B41;border-radius:4px;transition:width .25s"></div></div>
+    <div id="uimp-live" style="max-height:260px;overflow-y:auto;font-size:12px;color:var(--c-text-2)"></div>
+    <div style="font-size:11px;color:var(--c-text-3);margin-top:10px">Keep this window open — each row creates a real login account.</div>
+  </div>`;
+  const bar=()=>document.getElementById('uimp-bar');
+  const live=()=>document.getElementById('uimp-live');
+  const results=[];
+  const emailToId={};(DB.users||[]).forEach(u=>{if(u.email)emailToId[String(u.email).toLowerCase()]=u.id;});
+  const canRole=can('accessControl','manage');
+  let done=0;
+  for(const r of rows){
+    // Manager: an existing user, or one created earlier in this same import
+    let mgrId=null;
+    if(r.mgr){
+      mgrId=emailToId[r.mgr]||null;
+      if(!mgrId){const mu=(DB.users||[]).find(u=>fullName(u).toLowerCase()===r.mgr);mgrId=mu?mu.id:null;}
+      if(!mgrId)r.warns.push('manager “'+r.mgr+'” not found — none set');
+    }
+    const baseRole=r.roleId==='superadmin'?'Admin':r.roleId==='admin'?'SubAdmin':'User';
+    const pd={first_name:r.fn,last_name:r.ln,email:r.email,phone:r.phone,position:r.pos,department:r.dep,role:baseRole,status:r.status,manager_id:mgrId,rules:{past:true,future:true,edit:true},approval_settings:{past:false,future:false,edited:false},doc_access:{departments:{},locations:{}},questions_access:false,email_enabled:r.emailEnabled,password:r.pw};
+    try{
+      const{data:res,error}=await sb.functions.invoke('create-user',{body:pd});
+      if(error||res?.error){
+        let msg=error?.message||res?.error||'Failed';
+        try{if(error?.context){const b=await error.context.json();msg=b.error||msg;}}catch(e){}
+        results.push({r:r,ok:false,msg:msg});
+      }else{
+        const newId=res?.id||res?.user?.id;
+        if(!newId){results.push({r:r,ok:false,msg:'created, but no id returned — reload to see them'});}
+        else{
+          emailToId[r.email]=newId;
+          const nu={id:newId,firstName:r.fn,lastName:r.ln,email:r.email,phone:r.phone,position:r.pos,department:r.dep,role:baseRole,status:r.status,managerId:mgrId,rules:pd.rules,approval:pd.approval_settings,questionsAccess:false,emailEnabled:r.emailEnabled,docAccess:pd.doc_access,cities:[],hrm:null,password:'***'};
+          DB.users.push(nu);
+          try{
+            _ensureHrm(nu);
+            if(canRole&&r.roleId&&DB.roleProfiles[r.roleId]){nu.hrm.roleProfileId=r.roleId;nu.hrm.permsV3=1;nu.hrm.isHR=false;}
+            else{_permsV3Migrate();}
+          }catch(e){}
+          sb.from('profiles').update({doc_access:pd.doc_access,questions_access:false,email_enabled:r.emailEnabled,hrm:nu.hrm||null}).eq('id',newId).then(()=>{}).catch(()=>{});
+          results.push({r:r,ok:true});
+        }
+      }
+    }catch(e){results.push({r:r,ok:false,msg:e.message||'Failed'});}
+    done++;
+    const b=bar();if(b)b.style.width=Math.round(done/rows.length*100)+'%';
+    const lv=live();if(lv){const last=results[results.length-1];lv.innerHTML+='<div style="padding:2px 0">'+(last.ok?'✅':'❌')+' '+esc(r.fn+' '+r.ln)+' — '+(last.ok?'created':esc(last.msg))+'</div>';lv.scrollTop=lv.scrollHeight;}
+  }
+  log(fullName(me()),'Bulk uploaded users',results.filter(x=>x.ok).length+' created of '+results.length);
+  saveDB();rr();
+  window._UIMP_RESULTS=results;
+  _uImpResults(results);
+};
+function _uImpResults(results){
+  const body=document.getElementById('uimp-body');if(!body)return;
+  const okR=results.filter(x=>x.ok),bad=results.filter(x=>!x.ok);
+  const tr=x=>`<tr style="${x.ok?'':'background:#FFF1F2;'}border-top:1px solid var(--c-border)">
+      <td style="padding:6px 8px">${x.ok?'✅':'❌'}</td>
+      <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(x.r.fn)} ${esc(x.r.ln)}</td>
+      <td style="padding:6px 8px">${esc(x.r.email)}</td>
+      <td style="padding:6px 8px;font-family:monospace">${x.ok?esc(x.r.pw):'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:${x.ok?'var(--c-text-3)':'#BE123C'}">${x.ok?(x.r.genPw?'auto-generated':'from file')+(x.r.warns.length?' · '+esc(x.r.warns.join(' · ')):''):esc(x.msg||'failed')}</td>
+    </tr>`;
+  body.innerHTML=`<div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <span style="font-size:12px;font-weight:800;background:#E6F2EA;color:#1E7A50;padding:3px 11px;border-radius:20px">${okR.length} created</span>
+      ${bad.length?`<span style="font-size:12px;font-weight:800;background:#FFF1F2;color:#BE123C;padding:3px 11px;border-radius:20px">${bad.length} failed</span>`:''}
+    </div>
+    ${okR.length?`<div style="font-size:12px;color:#B36A00;background:#FEF7E6;border:1px solid #FDE68A;border-radius:10px;padding:9px 12px;margin-bottom:10px">🔑 Passwords are shown below <b>only this once</b> — download the credentials sheet before closing.</div>`:''}
+    <div style="max-height:300px;overflow:auto;border:1px solid var(--c-border);border-radius:12px">
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)">
+          <th style="padding:8px"></th><th style="padding:8px">Name</th><th style="padding:8px">Email</th><th style="padding:8px">Password</th><th style="padding:8px">Notes</th>
+        </tr></thead>
+        <tbody>${results.map(tr).join('')}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end">
+      ${okR.length?btn('Download credentials (.xlsx)','App._uImpDownloadCreds()',{variant:'ghost',icon:'download'}):''}
+      ${btnP('Done','App.closeModal()')}
+    </div>
+  </div>`;
+}
+App._uImpDownloadCreds=async()=>{
+  const results=(window._UIMP_RESULTS||[]).filter(x=>x.ok);
+  if(!results.length)return toast('Nothing to download','warn');
+  try{
+    const X=await _loadXLSX();
+    const rows=[['First name','Last name','Email','Password','Status','Department']];
+    results.forEach(x=>rows.push([x.r.fn,x.r.ln,x.r.email,x.r.pw,x.r.status,x.r.dep||'']));
+    const wb=X.utils.book_new();
+    const ws=X.utils.aoa_to_sheet(rows);
+    ws['!cols']=rows[0].map(()=>({wch:22}));
+    X.utils.book_append_sheet(wb,ws,'Credentials');
+    X.writeFile(wb,'bridge_new_users_'+todayISO()+'.xlsx');
+    toast('Credentials downloaded — store it safely');
+  }catch(e){toast(e.message,'err');}
 };
 

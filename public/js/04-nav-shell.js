@@ -134,7 +134,7 @@ function _navBadgeFor(r){
   if(r==='approvals'){const ab=_approvalPendingCount();return ab?countBadge(ab,'approve'):'';}
   if(r==='tickets'){const tkB=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;return tkB?countBadge(tkB,'rose'):'';}
   if(r==='crm'&&window.CRM&&CRM._loaded){try{const vis=_crmVisibleBoardIds();const cb=CRM.convos.filter(c=>vis[c.boardId]&&_crmUnread(c)).length;return cb?countBadge(cb,'approve'):'';}catch(e){return'';}}
-  if(r==='okr'||r==='hub:dash'){try{const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinFor(o.id,S.uid,_t)).length;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
+  if(r==='okr'||r==='hub:dash'){try{const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinForDate(o.id,_t)).length;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
   return '';
 }
 function _navItemHTML([r,i,l]){

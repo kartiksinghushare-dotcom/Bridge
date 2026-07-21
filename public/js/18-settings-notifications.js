@@ -329,6 +329,11 @@ const EMAIL_EVENTS=[
   {key:'feedback_received',label:'Feedback received',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'deadline_reminder',label:'Deadline reminder',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'escalation',       label:'Escalation raised',    vars:'{{submitter}}, {{checklist_name}}, {{question}}, {{answer}}, {{action_url}}'},
+  {key:'okr_assigned',      label:'OKR assigned',          vars:'{{user_name}}, {{okr_title}}, {{assigner}}, {{target}}, {{schedule}}, {{period}}, {{action_url}}'},
+  {key:'okr_checkin_due',   label:'OKR check-in due (daily)',vars:'{{user_name}}, {{count}}, {{date}}, {{okr_titles}}, {{action_url}}'},
+  {key:'okr_update_added',  label:'OKR update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
+  {key:'okr_target_revised',label:'OKR target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
+  {key:'okr_closed',        label:'OKR closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
 ];
 
 function _defaultTemplates(){
@@ -347,6 +352,11 @@ function _defaultTemplates(){
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
     crm_reminder:{subject:'⏰ Reminder: {{note}}',body:'Hi {{user_name}},\n\nYour reminder is due: {{note}}\n\nConversation: "{{title}}"\n\n{{action_url}}'},
+    okr_assigned:{subject:'🎯 New OKR assigned: {{okr_title}}',body:'Hi {{user_name}},\n\n{{assigner}} assigned you an objective: {{okr_title}}\n\nTarget: {{target}}\nCheck-ins: {{schedule}}\nPeriod: {{period}}\n\nIf the objective has several owners, any one of you can submit an update — it counts for the whole group.\n\n{{action_url}}'},
+    okr_checkin_due:{subject:'⏰ OKR check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} OKR check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
+    okr_update_added:{subject:'📈 {{okr_title}} — updated by {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} added an update on "{{okr_title}}": {{value}}\n\n{{comment}}\n\nThis counts for the whole owner group — nothing more to do for today\'s check-in.\n\n{{action_url}}'},
+    okr_target_revised:{subject:'✏️ Target revised: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} revised the target on "{{okr_title}}": {{old_target}} → {{new_target}}\n\nReason: {{reason}}\n\nThe original target stays visible for comparison — the same updates feed both numbers.\n\n{{action_url}}'},
+    okr_closed:{subject:'🔒 OKR {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
   };
 }
 
@@ -360,6 +370,8 @@ function _nsDefault(){return{
   email_submission_late:true,email_submission_approved:true,email_submission_rejected:true,
   email_approval_requested:true,email_approval_decided:true,
   email_feedback_received:false,email_deadline_reminder:true,email_escalation:true,
+  inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
+  email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
   templates:{},
 };}
 let _ns=null;
@@ -381,6 +393,7 @@ async function _loadNS(){
 }
 async function _saveNS(){
   if(!_ns)return;
+  try{_ns.app_url=window.location.origin;}catch(e){} // the okr-reminders schedule reads this for email links
   localStorage.setItem(NS_LS,JSON.stringify(_ns));
   try{await sb.from('workspace_settings').upsert({key:'notification_settings',value:_ns,updated_at:new Date().toISOString()},{onConflict:'key'});}catch(e){console.warn('NS sync:',e.message);}
 }
@@ -405,6 +418,7 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('notifications')?'View Notifications'
     :ctaUrl.includes('settings')?'Open Settings'
     :ctaUrl.includes('analytics')?'View Analytics'
+    :ctaUrl.includes('okr')?'Open OKRs'
     :'Open Bridge';
   return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F5F3EF;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #ECEDF0;overflow:hidden">
@@ -445,6 +459,7 @@ async function sendEmail(eventType, userId, vars){
     submission_rejected:'mychecklists', approval_requested:'approvals',
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',
+    okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
@@ -546,6 +561,11 @@ function settingsPage(){
         ${_nsTogRow('inapp_crm_mention','Tagged in CRM chat','When someone @mentions you in a conversation')}
         ${_nsTogRow('inapp_crm_ticket','CRM ticket activity','Created, assigned, moved & automation alerts')}
         ${_nsTogRow('inapp_crm_reminder','CRM reminders','Your ⏰ date & time reminders on tickets and messages')}
+        <div style="font-size:10px;font-weight:800;color:#B8B5AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
+        ${_nsTogRow('inapp_okr_assigned','OKR assigned','Sent to every owner when an objective is assigned to them')}
+        ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
+        ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
@@ -600,6 +620,12 @@ function settingsPage(){
         ${_nsTogRow('email_crm_mention','Tagged in CRM chat','Email when someone @mentions you')}
         ${_nsTogRow('email_crm_ticket','CRM ticket activity','Email for created / assigned / automation alerts')}
         ${_nsTogRow('email_crm_reminder','CRM reminders','Email for your ⏰ date & time reminders')}
+        <div style="font-size:10px;font-weight:800;color:#B8B5AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
+        ${_nsTogRow('email_okr_assigned','OKR assigned','Email to every owner when an objective is assigned to them')}
+        ${_nsTogRow('email_okr_checkin_due','OKR check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}
+        ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
+        ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
