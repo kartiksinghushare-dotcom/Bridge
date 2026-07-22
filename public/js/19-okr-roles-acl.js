@@ -146,7 +146,7 @@ const PERM_AREAS=[
   {key:'allChecklists',label:'All Checklists',desc:'Browse every checklist across the company',actions:['view','export'],scoped:false,group:'Tasks & Tickets'},
   {key:'questions',label:'Questions',desc:'The questions feature',actions:['view','create','edit','manage','delete','import','export'],scoped:false,group:'Tasks & Tickets'},
   {key:'tickets',label:'Tickets',desc:'Issue tickets',actions:['view','create','edit','assign','comment','resolve','reopen','close','manage','delete','export'],scoped:true,group:'Tasks & Tickets'},
-  {key:'crm',label:'CRM',desc:'CRM inbox — hubs, boards, chats & tickets. “Rename” covers hubs/channels/boards + the sidebar title; “People groups” lets them create & manage the reusable @taggable groups',actions:['view','create','edit','convert','assign','rename','groups','delete','manage'],scoped:false,group:'Tasks & Tickets'},
+  {key:'crm',label:'CRM',desc:'CRM inbox — hubs, boards, chats & tickets. “Rename” covers hubs/boards + the sidebar title; “People groups” manages the reusable @taggable groups; “Filtered views” lets them create member-scoped filtered views on a board',actions:['view','create','edit','convert','assign','rename','groups','views','delete','manage'],scoped:false,group:'Tasks & Tickets'},
   {key:'documentsOrg',label:'Documents (organization)',desc:'Shared dept/location files',actions:['view','create','edit','delete','upload','download','approve'],scoped:true,group:'Content'},
   {key:'documentsPersonal',label:'Personal documents',desc:'Files on a person\'s profile',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
   {key:'analytics',label:'Analytics',desc:'Operational analytics dashboard (checklists, compliance, tickets)',actions:['view','export'],scoped:false,group:'Insights'},
@@ -158,7 +158,7 @@ const PERM_AREAS=[
   {key:'accessControl',label:'Access Control',desc:'The role-profile system itself',actions:['view','manage'],scoped:false,group:'System'},
 ];
 // Plain-language labels used by the Access Control editor + live summary.
-const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups'};
+const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views'};
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
 const SCOPE_LABEL={none:'None',self:'Only their own',team:'Their team',department:'Their department',location:'Their office',everyone:'Everyone'};
 const _areaByKey=k=>PERM_AREAS.find(a=>a.key===k);
@@ -180,7 +180,7 @@ function _seedRoleProfiles(){
       teamview:A('none','view'),
       checklists:A('team','view','create','edit','duplicate','assign','approve','delete'),
       tickets:A('team','view','create','edit','assign','resolve','manage'),
-      crm:A('everyone','view','create','edit','convert','assign','rename','groups','delete'),
+      crm:A('everyone','view','create','edit','convert','assign','rename','groups','views','delete'),
       documentsPersonal:A('self','view','create','download'),
       approvals:A('none','view','decide'),
       okr:A('team','view','create','edit','manage'),
@@ -196,7 +196,7 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='12'; // v12: CRM gains 'rename' (hubs/channels/boards + sidebar title) and 'groups' (people groups) — Super Admin/Admin/Manager get both; Basic gets neither. Custom roles keep their toggles: switch the new ones on per role in Access Control.
+  const V='13'; // v13: CRM gains 'views' (member-scoped filtered views) — Super Admin/Admin/Manager get it; Basic doesn't. Custom roles keep their toggles: switch the new one on per role in Access Control.
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles

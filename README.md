@@ -1,3 +1,14 @@
+# Bridge (v3.12)
+
+## v3.12 — CRM restructure: channels removed · boards on the hub · member-scoped filtered views · native Status column · filter every column
+
+- **Channels are gone.** A hub (e.g. **Dubai**) is now the whole workspace: open it and its **boards are tabs right there** — create as many boards (chat or ticket table) and columns as needed straight on the hub. One hub never shows another hub's content. The existing demo channels and their boards/conversations were deleted (per request); the Dubai / Abu Dhabi / Sharjah hubs remain, empty and ready. New boards are created with a name + type picker (Ticket table / Chat) and auto-add the creator as a member. DB: `crm_channels` / `crm_channel_members` no longer used; board access = board members (+ CRM managers).
+- **Filtered views under each hub** (sidebar children of the hub): a saved window into ONE board — pick the source board, add conditions, and **assign exactly who can see it**. Assigned people see the view (and can open its tickets) even if they're not members of the source board; edits made inside a view update the board itself, so the hub always shows everything. Views live in the sidebar with a live matching-count; creator (+ CRM managers) can edit/delete. Gated by a new **CRM → Filtered views** permission (built-in roles re-seeded v13: Super Admin / Admin / Manager get it). DB: new `crm_views` table.
+- **Status is a native column** in every ticket table — right after Assignee, an inline dropdown (like Assignee), resizable, driven by the board's custom statuses. The per-board **Statuses** editor (add/rename/recolor/mark-done) got its button back on the board bar, and the ticket details panel now has a Status field too.
+- **Every column is filterable.** New **Filter** button on every ticket board: build conditions over Status / Assignee / Priority / Customer / Title / Due date / every custom column (each type gets matching operators — contains, =, >, <, any-of, checked, date has passed…). The same condition builder powers filtered views. Board filters are per-session; view filters are saved.
+- **A Chat board always exists by default.** Every hub is created with a Chat board, and any hub found without one is healed automatically on load (deterministic id, so two clients can never double-create it). The three existing hubs were backfilled with their Chat boards (admins added as members).
+- Cache-busting bumped to `?v=60`.
+
 # Bridge (v3.11)
 
 ## v3.11.2 — dismissible info notes + slimmer CRM sidebar
