@@ -310,7 +310,7 @@ function crmPage(){
     var row1='<div class="crm-boardbar" style="padding:10px 16px;border-bottom:1px solid #ECEDF0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0"><button class="crm-only-mob" onclick="App._crmMobNav()" style="width:34px;height:34px;border:1px solid #E5E7EB;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#374151;flex-shrink:0">'+ic('menu','w-5 h-5')+'</button><div style="font-size:16px;font-weight:800;color:#13171B">'+esc(hub.name)+(view?' <span style="font-weight:800;color:#8B6B41;font-size:13px">· '+esc(view.name)+'</span>':'')+'</div><div style="flex:1"></div>'+_search+_dash+'</div>';
     var tabs=tabBoards.map(function(b){var on=b.id===CRM.sel.boardId;var _un=_crmUnreadCount(b.id);var _isC=_crmBS(b).type==='chat';var _cnt=inView&&!_isC?_crmApplyFilters(CRM.convos.filter(function(x){return x.boardId===b.id;}),_crmViewFilters(view,b.id)).length:CRM.convos.filter(function(x){return x.boardId===b.id;}).length;return'<button onclick="'+(inView?'App._crmSelVBoard':'App._crmSelBoard')+'(\''+b.id+'\')" class="crm-btab" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;background:transparent;border-bottom:2px solid '+(on?'#8B6B41':'transparent')+';color:'+(on?'#13171B':'#9CA3AF')+';font-size:13px;font-weight:'+(on?'800':'600')+';cursor:pointer;white-space:nowrap">'+ic(_isC?'msg':'ticket','w-3.5 h-3.5')+esc(b.name)+' <span style="font-size:11px;color:'+(on?'#8B6B41':'#C7CAD1')+'">'+_cnt+'</span>'+(_un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#8B6B41;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+_un+'</span>':'')+'</button>';}).join('');
     var boardCtl=board?(((can('crm','manage')||can('crm','edit'))?'<button title="Board members — who can access this board" onclick="App._crmTogMembers()" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;color:#6B7280;cursor:pointer;font-size:12px;font-weight:700">'+ic('users','w-3.5 h-3.5')+members.length+'</button>':'')+(can('crm','rename')?'<button title="Rename board" onclick="App._crmRenameBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;color:#6B7280;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-4 h-4')+'</button>':'')+(can('crm','delete')?'<button title="Delete board" onclick="App._crmDelBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #FCA5A5;background:#fff;color:#DC2626;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-4 h-4')+'</button>':'')):'';
-    var row2='<div class="crm-tabsrow" style="display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid #ECEDF0;overflow-x:auto;flex-shrink:0">'+(inView?'<span title="Filtered view — same boards as the hub, narrowed by its saved filters" style="display:inline-flex;align-items:center;gap:5px;margin:6px 6px 6px 2px;font-size:10.5px;font-weight:800;color:#4338CA;background:#EEF2FF;border-radius:7px;padding:4px 9px;white-space:nowrap">'+ic('filter','w-3 h-3')+'VIEW</span>':'')+tabs+(canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" title="New board" style="padding:8px 11px;border:none;background:transparent;color:#8B6B41;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+ic('plus','w-3.5 h-3.5')+'Board</button>':'')+'<div style="flex:1;min-width:8px"></div><div style="display:flex;align-items:center;gap:6px;padding:6px 2px">'+boardCtl+'</div></div>';
+    var row2='<div class="crm-tabsrow" style="display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid #ECEDF0;overflow-x:auto;flex-shrink:0">'+tabs+(canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" title="New board" style="padding:8px 11px;border:none;background:transparent;color:#8B6B41;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+ic('plus','w-3.5 h-3.5')+'Board</button>':'')+'<div style="flex:1;min-width:8px"></div><div style="display:flex;align-items:center;gap:6px;padding:6px 2px">'+boardCtl+'</div></div>';
     if(!board){mainInner=row1+row2+_crmEmpty('msg','No boards yet in this hub','Add a board — a chat, or a ticket table with its own columns, statuses, members & automations.',canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" style="margin-top:14px;padding:9px 18px;border:none;border-radius:10px;background:#8B6B41;color:#fff;font-weight:700;cursor:pointer">Create a board</button>':'');}
     else{
       var isChat=_crmBS(board).type==='chat';var searching=!!(CRM.search||'').trim();if(isChat){var convo=_crmConvo(CRM.sel.convoId);var filtered=_crmFilteredConvos();
@@ -542,12 +542,12 @@ function _crmFilterFields(board){
 }
 function _crmFOps(t){
   var TXT=[['contains','contains'],['equals','equals'],['set','is filled'],['empty','is empty']];
-  var NUM=[['eq','= equals'],['gt','> greater than'],['lt','< less than'],['set','is filled'],['empty','is empty']];
-  var DTE=[['on','on date'],['before','before'],['after','after'],['past','date has passed'],['set','is filled'],['empty','is empty']];
+  var NUM=[['eq','= equals'],['gt','> greater than'],['lt','< less than'],['between','between (range)'],['set','is filled'],['empty','is empty']];
+  var DTE=[['on','on date'],['before','before'],['after','after'],['daterange','between (range)'],['past','date has passed'],['set','is filled'],['empty','is empty']];
   return t==='_status'||t==='_assignee'||t==='_priority'||t==='dropdown'||t==='person'?[['in','is any of'],['set','is filled'],['empty','is empty']]
     :t==='number'||t==='currency'?NUM
     :t==='date'?DTE
-    :t==='time'?[['equals','equals'],['set','is filled'],['empty','is empty']]
+    :t==='time'?[['equals','equals'],['daterange','between (range)'],['set','is filled'],['empty','is empty']]
     :t==='checkbox'?[['checked','is checked'],['unchecked','is not checked']]
     :TXT;
 }
@@ -571,6 +571,8 @@ function _crmFMatch(c,f){
   if(op==='eq')return parseFloat(s)===parseFloat(fv);
   if(op==='gt')return parseFloat(s)>parseFloat(fv);
   if(op==='lt')return parseFloat(s)<parseFloat(fv);
+  if(op==='between'){var ba=Array.isArray(fv)?fv:[];var lo=parseFloat(ba[0]),hi=parseFloat(ba[1]);if(s.trim()==='')return false;var nv=parseFloat(s);if(!isFinite(nv))return false;if(isFinite(lo)&&nv<lo)return false;if(isFinite(hi)&&nv>hi)return false;return true;}
+  if(op==='daterange'){var da=Array.isArray(fv)?fv:[];var dlo=da[0]||'',dhi=da[1]||'';if(!s)return false;if(dlo&&s<dlo)return false;if(dhi&&s>dhi)return false;return true;}
   if(op==='on')return s===String(fv||'');
   if(op==='before')return !!s&&s<String(fv||'');
   if(op==='after')return !!s&&s>String(fv||'');
@@ -585,6 +587,16 @@ function _crmFValueUI(board,f,i){
   var fields=_crmFilterFields(board);var fd=fields.find(function(x){return x.id===f.field;})||fields[0];
   var ops=_crmFOps(fd.type);if(!ops.some(function(o){return o[0]===f.op;}))f.op=ops[0][0];
   if(['set','empty','checked','unchecked','past'].indexOf(f.op)>=0)return'';
+  if(f.op==='between'||f.op==='daterange'){
+    var ra=Array.isArray(f.value)&&f.value.length===2?f.value:['',''];
+    var it2=(fd.type==='number'||fd.type==='currency')?'number':(fd.type==='time'?'time':'date');
+    return'<div style="display:flex;gap:8px;align-items:center;margin-top:6px">'
+      +'<input type="'+it2+'" value="'+esc(ra[0]!=null?ra[0]:'')+'" oninput="App._crmFRange('+i+',0,this.value)" placeholder="from" class="ui-input" style="flex:1;min-height:34px;padding:6px 9px;font-size:12.5px"/>'
+      +'<span style="color:#9CA3AF;font-size:12px;flex-shrink:0">\u2192</span>'
+      +'<input type="'+it2+'" value="'+esc(ra[1]!=null?ra[1]:'')+'" oninput="App._crmFRange('+i+',1,this.value)" placeholder="to" class="ui-input" style="flex:1;min-height:34px;padding:6px 9px;font-size:12.5px"/>'
+    +'</div>'
+    +'<div style="font-size:10.5px;color:#B8B5AC;margin-top:4px">Leave one side empty for an open range \u2014 e.g. only \u201cfrom\u201d = everything above it.</div>';
+  }
   if(f.op==='in'){
     var choices=[];
     if(fd.type==='_status'){choices=_crmStatuses(board).map(function(s){return[s.name,s.name];});}
@@ -616,7 +628,8 @@ function _crmFilterBuilderHTML(board,filters){
 }
 App._crmFRr=()=>{try{var fn=CRM._fRerender;if(typeof fn==='function')fn();}catch(e){}};
 App._crmFField=(i,v)=>{var f=CRM._fDraft&&CRM._fDraft[i];if(!f)return;f.field=v;f.op=null;f.value=null;App._crmFRr();};
-App._crmFOp=(i,v)=>{var f=CRM._fDraft&&CRM._fDraft[i];if(!f)return;f.op=v;if(v==='in')f.value=Array.isArray(f.value)?f.value:[];App._crmFRr();};
+App._crmFOp=(i,v)=>{var f=CRM._fDraft&&CRM._fDraft[i];if(!f)return;f.op=v;f.value=(v==='in')?[]:((v==='between'||v==='daterange')?['','']:null);App._crmFRr();};
+App._crmFRange=(i,k,v)=>{var f=CRM._fDraft&&CRM._fDraft[i];if(!f)return;if(!Array.isArray(f.value)||f.value.length!==2)f.value=['',''];f.value[k]=v;};
 App._crmFValTog=(i,v)=>{var f=CRM._fDraft&&CRM._fDraft[i];if(!f)return;var a=Array.isArray(f.value)?f.value.slice():[];var k=a.indexOf(v);if(k>=0)a.splice(k,1);else a.push(v);f.value=a;App._crmFRr();};
 App._crmFAdd=()=>{if(!CRM._fDraft)CRM._fDraft=[];CRM._fDraft.push({field:'_status',op:'in',value:[]});App._crmFRr();};
 App._crmFDel=(i)=>{if(CRM._fDraft)CRM._fDraft.splice(i,1);App._crmFRr();};
