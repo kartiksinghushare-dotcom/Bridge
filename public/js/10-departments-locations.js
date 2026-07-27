@@ -181,8 +181,11 @@ function queueEmail(eventKey,userId,clId,date,vars){
 }
 
 
-function topDepts(){return (DB.departments||[]).filter(d=>!d.parentId);}
-function subDepts(pid){return (DB.departments||[]).filter(d=>d.parentId===pid);}
+// Deleted-department overlay: even if a soft-deleted department lingers in DB.departments
+// (e.g. re-added by a stale sync before it was reconciled), never surface it in any picker.
+function _deptIsDeleted(id){return (DB.departments_deleted||[]).includes(id);}
+function topDepts(){return (DB.departments||[]).filter(d=>d&&!d.parentId&&!_deptIsDeleted(d.id));}
+function subDepts(pid){return (DB.departments||[]).filter(d=>d&&d.parentId===pid&&!_deptIsDeleted(d.id));}
 // ── Sub-department <option>s for the checklist form (checklist.department is stored by NAME) ──
 function _clSubDeptOptions(deptName,selSub){
   const dep=(DB.departments||[]).find(d=>!d.parentId&&d.name===deptName);

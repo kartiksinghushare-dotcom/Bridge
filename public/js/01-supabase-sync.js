@@ -318,8 +318,14 @@ function _mirror(table,rows){
 }
 async function _sync(){try{
   const results=await Promise.allSettled([
-    _mirror('departments',DB.departments.map(d=>({id:d.id,name:d.name,parent_id:d.parentId||null}))),
-    _mirror('locations',DB.locations.map(l=>({id:l.id,name:l.name,address:l.address||'',department:l.department||'',status:l.status||'Active'}))),
+    // ⚠ Departments & locations are intentionally NOT mirrored in this background whole-table
+    //   sync. This bulk upsert let a stale second browser/tab (a) resurrect a department another
+    //   admin had just deleted and (b) overwrite a rename back to its old name — the "deleted or
+    //   renamed departments keep reappearing in the pickers" bug. They are now written ONLY
+    //   through their own confirmed saves — saveDept / delDept / saveLoc / delLoc, each of which
+    //   writes to the server directly and records deletions in the *_deleted overlay — so a stale
+    //   cache can no longer resurrect or revert them. (Same fix already applied to checklists,
+    //   questions and tickets above.)
     // ⚠ Checklists are intentionally NOT mirrored in this background whole-table sync.
     //   This upsert used to let a stale second browser silently overwrite a checklist another
     //   user had just edited (e.g. reverting a question count back up → the "Mohit sees 15,
