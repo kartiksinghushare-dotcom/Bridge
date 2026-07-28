@@ -70,18 +70,18 @@ function analyticsPage(){
     const txt=sel.length===0?'All':sel.length===1?getLabel(items.find(x=>getId(x)===sel[0])||items[0])||'?':sel.length+' selected';
     return`<div data-af="1" style="position:relative;flex:1;min-width:120px">
       <button data-af="1" type="button" onclick="S.afOpen=S.afOpen==='${key}'?null:'${key}';rr()"
-        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#9C7A4D':sel.length?'#13171B':'#E5E7EB'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#13171B':'#9CA3AF'};cursor:pointer">
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#FF8F33':sel.length?'#10262E':'#DFEAEC'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#10262E':'#90A5AB'};cursor:pointer">
         <span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(label+(sel.length?': '+txt:''))}</span>
-        <span style="color:#9CA3AF;transform:rotate(${isOpen?180:0}deg);transition:transform .15s;flex-shrink:0">${ic('chevD','w-4 h-4')}</span>
+        <span style="color:#90A5AB;transform:rotate(${isOpen?180:0}deg);transition:transform .15s;flex-shrink:0">${ic('chevD','w-4 h-4')}</span>
       </button>
-      ${isOpen?`<div data-af="1" style="position:absolute;top:calc(100%+4px);left:0;right:0;background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:100;max-height:220px;overflow-y:auto;padding:6px">
-        ${sel.length?`<button data-af="1" onclick="delete S.filters['${key}'];rr()" style="width:100%;text-align:left;padding:6px 10px;font-size:12px;font-weight:600;color:#E11D48;background:none;border:none;cursor:pointer;border-radius:8px">Clear selection</button><div style="height:1px;background:#F3F4F6;margin:4px 0"></div>`:''}
+      ${isOpen?`<div data-af="1" style="position:absolute;top:calc(100%+4px);left:0;right:0;background:#fff;border:1.5px solid #DFEAEC;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:100;max-height:220px;overflow-y:auto;padding:6px">
+        ${sel.length?`<button data-af="1" onclick="delete S.filters['${key}'];rr()" style="width:100%;text-align:left;padding:6px 10px;font-size:12px;font-weight:600;color:#DE2440;background:none;border:none;cursor:pointer;border-radius:8px">Clear selection</button><div style="height:1px;background:#F1F7F8;margin:4px 0"></div>`:''}
         ${items.map(item=>{const id=getId(item);const nm=getLabel(item)||'?';const on=sel.includes(id);return`<button data-af="1" type="button" onclick="App._togF('${key}','${id}')"
-          style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;background:${on?'#FCF2EC':'transparent'};text-align:left">
-          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#9C7A4D':'#D1D5DB'};background:${on?'#9C7A4D':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;background:${on?'#F2F9FA':'transparent'};text-align:left">
+          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#FF8F33':'#C9D9DD'};background:${on?'#FF8F33':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
             ${on?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>`:''}
           </div>
-          <span style="font-size:13px;font-weight:${on?600:400};color:${on?'#13171B':'#6B7280'}">${esc(nm)}</span>
+          <span style="font-size:13px;font-weight:${on?600:400};color:${on?'#10262E':'#5E767D'}">${esc(nm)}</span>
         </button>`;}).join('')}
       </div>`:''}
     </div>`;
@@ -91,7 +91,7 @@ function analyticsPage(){
   return`<div class="fade" onclick="(function(e){if(S.afOpen&&!e.target.closest('[data-af]')){S.afOpen=null;rr();}})(event)">
   ${hdr('Analytics','')}
   <!-- Filter bar -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #E5E7EB;padding:14px 16px;margin-bottom:14px;position:sticky;top:0;z-index:20">
+  <div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;padding:14px 16px;margin-bottom:14px;position:sticky;top:0;z-index:20">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       ${msDropdown('Status','stats',['On Time','Late','Pending Approval','Rejected'],s=>s,s=>s)}
       ${msDropdown('Department','deps',topDepts(),d=>d.name,d=>d.name)}
@@ -100,12 +100,12 @@ function analyticsPage(){
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:220px">
-        <input type="date" value="${f.dr1||''}" onchange="S.filters.dr1=this.value;rr()" style="flex:1;background:#F6F7F8;border:1.5px solid #E5E7EB;border-radius:8px;padding:6px 10px;font-size:13px;outline:none"/>
-        <span style="color:#9CA3AF">to</span>
-        <input type="date" value="${f.dr2||''}" onchange="S.filters.dr2=this.value;rr()" style="flex:1;background:#F6F7F8;border:1.5px solid #E5E7EB;border-radius:8px;padding:6px 10px;font-size:13px;outline:none"/>
+        <input type="date" value="${f.dr1||''}" onchange="S.filters.dr1=this.value;rr()" style="flex:1;background:#F4F9FA;border:1.5px solid #DFEAEC;border-radius:8px;padding:6px 10px;font-size:13px;outline:none"/>
+        <span style="color:#90A5AB">to</span>
+        <input type="date" value="${f.dr2||''}" onchange="S.filters.dr2=this.value;rr()" style="flex:1;background:#F4F9FA;border:1.5px solid #DFEAEC;border-radius:8px;padding:6px 10px;font-size:13px;outline:none"/>
       </div>
 
-      ${activeCount?`<button onclick="S.filters={};S.afOpen=null;rr()" style="padding:6px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:13px;font-weight:600;color:#9CA3AF;background:#fff;cursor:pointer">Clear (${activeCount})</button>`:''}
+      ${activeCount?`<button onclick="S.filters={};S.afOpen=null;rr()" style="padding:6px 12px;border-radius:8px;border:1px solid #DFEAEC;font-size:13px;font-weight:600;color:#90A5AB;background:#fff;cursor:pointer">Clear (${activeCount})</button>`:''}
       ${btnG('Export','App._exportCSV()','download')}
     </div>
   </div>
@@ -119,15 +119,15 @@ function analyticsPage(){
   </div>
   <!-- Stats row 2: tickets (all clickable) -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
-    ${App._aStatCard('Tickets',aTickets.length,'#F97316','tickets',aTickets)}
-    ${App._aStatCard('Open',tkOpen,'#F59E0B','tkopen',aTickets.filter(t=>t.status==='Open'))}
+    ${App._aStatCard('Tickets',aTickets.length,'#FF7F11','tickets',aTickets)}
+    ${App._aStatCard('Open',tkOpen,'#E0A106','tkopen',aTickets.filter(t=>t.status==='Open'))}
     ${App._aStatCard('High Priority',tkHigh,'#DC2626','tkhigh',aTickets.filter(t=>t.priority==='High'||t.priority==='Critical'))}
-    ${App._aStatCard('Resolved',tkResolved,'#8B6B41','tkresolved',aTickets.filter(t=>t.status==='Resolved'||t.status==='Closed'))}
+    ${App._aStatCard('Resolved',tkResolved,'#2BBE71','tkresolved',aTickets.filter(t=>t.status==='Resolved'||t.status==='Closed'))}
   </div>
   <!-- Stats row 3: compliance (computed from answers — covers historical data) -->
   <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
-    ${App._aStatCard('Compliant',compliantN,'#8B6B41','compliant',null)}
-    ${App._aStatCard('Non-compliant',nonCompliantN,'#BE123C','noncompliant',null)}
+    ${App._aStatCard('Compliant',compliantN,'#2BBE71','compliant',null)}
+    ${App._aStatCard('Non-compliant',nonCompliantN,'#C41E32','noncompliant',null)}
   </div>
 
 
@@ -135,38 +135,38 @@ function analyticsPage(){
 
   
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-    <div style="background:#fff;border-radius:16px;border:1px solid #E5E7EB;padding:18px">
+    <div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;padding:18px">
       <div class="fd" style="font-size:14px;font-weight:700;margin-bottom:14px">Status breakdown</div>
-      ${[['On Time','#9C7A4D'],['Late','#EF4444'],['Pending Approval','#F97316'],['Rejected','#9F1239']].map(([k,c])=>{const v=byS[k]||0;const pct=Math.round(v/tot*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${k}</span><span style="color:#9CA3AF">${v} · ${pct}%</span></div><div style="height:5px;background:#F3F4F6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${c};border-radius:3px"></div></div></div>`;}).join('')}
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">
-        <div style="font-size:12px;font-weight:600;color:#9CA3AF;margin-bottom:6px">MISSED (past, no submission)</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600;color:#F97316">${totalMissed} missed</span><span style="color:#9CA3AF">of ${totalAssigned} assigned in period</span></div>
+      ${[['On Time','#2BBE71'],['Late','#D92D20'],['Pending Approval','#E0A106'],['Rejected','#951B1B']].map(([k,c])=>{const v=byS[k]||0;const pct=Math.round(v/tot*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${k}</span><span style="color:#90A5AB">${v} · ${pct}%</span></div><div style="height:5px;background:#F1F7F8;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${c};border-radius:3px"></div></div></div>`;}).join('')}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F1F7F8">
+        <div style="font-size:12px;font-weight:600;color:#90A5AB;margin-bottom:6px">MISSED (past, no submission)</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600;color:#FF7F11">${totalMissed} missed</span><span style="color:#90A5AB">of ${totalAssigned} assigned in period</span></div>
       </div>
     </div>
-    <div style="background:#fff;border-radius:16px;border:1px solid #E5E7EB;padding:18px">
+    <div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;padding:18px">
       <div class="fd" style="font-size:14px;font-weight:700;margin-bottom:14px">Top contributors</div>
-      ${topU.slice(0,7).map(({u,n})=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer" onclick="App._userDrill('${u.id}')">${avatar(u,'w-7 h-7','text-[10px]')}<div style="flex:1;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(fullName(u))}</div><span class="fd" style="font-size:15px;font-weight:800">${n}</span><span style="font-size:11px;color:#9CA3AF">&rsaquo;</span></div>`).join('')||'<p style="font-size:13px;color:#9CA3AF">No data yet</p>'}
+      ${topU.slice(0,7).map(({u,n})=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer" onclick="App._userDrill('${u.id}')">${avatar(u,'w-7 h-7','text-[10px]')}<div style="flex:1;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(fullName(u))}</div><span class="fd" style="font-size:15px;font-weight:800">${n}</span><span style="font-size:11px;color:#90A5AB">&rsaquo;</span></div>`).join('')||'<p style="font-size:13px;color:#90A5AB">No data yet</p>'}
     </div>
   </div>
 
   <!-- Table -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden">
-    <div style="padding:14px 18px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center">
+  <div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid #F1F7F8;display:flex;justify-content:space-between;align-items:center">
       <span class="fd" style="font-size:14px;font-weight:700">Submissions (${subs.length})</span>
       ${btnG('Export CSV','App._exportCSV()','download')}
     </div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="border-bottom:1px solid #F3F4F6">
-        ${['User','Checklist','Dept','Date','Status','Answered','Compliance'].map(h=>`<th style="padding:9px 16px;font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;text-align:left;white-space:nowrap">${h}</th>`).join('')}
+      <thead><tr style="border-bottom:1px solid #F1F7F8">
+        ${['User','Checklist','Dept','Date','Status','Answered','Compliance'].map(h=>`<th style="padding:9px 16px;font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.05em;text-align:left;white-space:nowrap">${h}</th>`).join('')}
       </tr></thead>
-      <tbody>${recent.map(s=>{const u=uById(s.userId),c=clById(s.checklistId);if(!u)return'';const qCount=(s.questionResponses||[]).filter(r=>r.response!==null&&r.response!==undefined&&r.response!=='').length;if(!c)return`<tr style="border-bottom:1px solid #F9FAFB;opacity:.5"><td style="padding:9px 16px" colspan="7"><span style="font-size:12px;color:#9CA3AF">${esc(fullName(u))} — deleted checklist — ${fmtS(s.date)}</span></td></tr>`;const _qTot=(c.questionIds||[]).length;const _esc=_qTot?_subEscalationCount(c,s):0;return`<tr style="border-bottom:1px solid #F9FAFB;cursor:pointer" onclick="App.viewSub('${s.id}')" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background=''">
-        <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px;cursor:pointer" onclick="event.stopPropagation();App._userDrill('${u.id}')">${avatar(u,'w-7 h-7','text-[10px]')}<span style="font-weight:500;text-decoration:underline;text-decoration-color:#E5E7EB">${esc(fullName(u))}</span></div></td>
+      <tbody>${recent.map(s=>{const u=uById(s.userId),c=clById(s.checklistId);if(!u)return'';const qCount=(s.questionResponses||[]).filter(r=>r.response!==null&&r.response!==undefined&&r.response!=='').length;if(!c)return`<tr style="border-bottom:1px solid #F8FBFC;opacity:.5"><td style="padding:9px 16px" colspan="7"><span style="font-size:12px;color:#90A5AB">${esc(fullName(u))} — deleted checklist — ${fmtS(s.date)}</span></td></tr>`;const _qTot=(c.questionIds||[]).length;const _esc=_qTot?_subEscalationCount(c,s):0;return`<tr style="border-bottom:1px solid #F8FBFC;cursor:pointer" onclick="App.viewSub('${s.id}')" onmouseover="this.style.background='#F8FBFC'" onmouseout="this.style.background=''">
+        <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px;cursor:pointer" onclick="event.stopPropagation();App._userDrill('${u.id}')">${avatar(u,'w-7 h-7','text-[10px]')}<span style="font-weight:500;text-decoration:underline;text-decoration-color:#DFEAEC">${esc(fullName(u))}</span></div></td>
         <td style="padding:9px 16px;max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(c.name)}</td>
-        <td style="padding:9px 16px;color:#9CA3AF;font-size:12px">${esc(c.department)}</td>
-        <td style="padding:9px 16px;color:#9CA3AF;font-size:12px;white-space:nowrap">${fmtS(s.date)}</td>
+        <td style="padding:9px 16px;color:#90A5AB;font-size:12px">${esc(c.department)}</td>
+        <td style="padding:9px 16px;color:#90A5AB;font-size:12px;white-space:nowrap">${fmtS(s.date)}</td>
         <td style="padding:9px 16px">${chip(s.status)}</td>
-        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#8B6B41">${qCount}/${_qTot}</span>`:'<span style="color:#E5E7EB">—</span>'}</td>
-        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F5EEE1;color:#6F5430;white-space:nowrap">✓</span>`):'<span style="color:#E5E7EB">—</span>'}</td>
+        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#FF7F11">${qCount}/${_qTot}</span>`:'<span style="color:#DFEAEC">—</span>'}</td>
+        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1E4;color:#C25A00;white-space:nowrap">✓</span>`):'<span style="color:#DFEAEC">—</span>'}</td>
       </tr>`;}).join('')}</tbody>
     </table>${recent.length?'':empty('chart','No submissions match','Adjust filters or date range')}</div>
   </div></div>`;
@@ -194,23 +194,23 @@ App._userDrill=(uid)=>{
     +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +avatar(u,'w-12 h-12','text-sm')
     +'<div><div class="fd" style="font-size:18px;font-weight:800">'+esc(fullName(u))+'</div>'
-    +'<div style="font-size:12px;color:#9CA3AF;margin-top:2px">'+esc(u.position)+' · '+esc(u.department)+'</div></div>'
-    +'<button onclick="App.closeModal()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px">×</button>'
+    +'<div style="font-size:12px;color:#90A5AB;margin-top:2px">'+esc(u.position)+' · '+esc(u.department)+'</div></div>'
+    +'<button onclick="App.closeModal()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#90A5AB;font-size:20px">×</button>'
     +'</div>'
     // Score
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    +[['Submitted',tot,'#13171B'],['On time',onTime,'#6F5430'],['Late',late,'#DC2626'],['Pending',pending,'#F97316'],['Non-compliant',nonComp,'#BE123C'],['Answered',issues,'#8B6B41']].map(([l,v,c])=>'<div style="background:#F9FAFB;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#9CA3AF;margin-top:2px">'+l+'</div></div>').join('')
+    +[['Submitted',tot,'#10262E'],['On time',onTime,'#C25A00'],['Late',late,'#DC2626'],['Pending',pending,'#FF7F11'],['Non-compliant',nonComp,'#C41E32'],['Answered',issues,'#FF7F11']].map(([l,v,c])=>'<div style="background:#F8FBFC;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#90A5AB;margin-top:2px">'+l+'</div></div>').join('')
     +'</div>'
     // Completion rate bar
-    +'<div style="background:#F9FAFB;border-radius:12px;padding:12px;margin-bottom:16px">'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#6F5430':pct>=60?'#F97316':'#DC2626')+'">'+pct+'%</span></div>'
-    +'<div style="height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#6F5430':pct>=60?'#F97316':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
+    +'<div style="background:#F8FBFC;border-radius:12px;padding:12px;margin-bottom:16px">'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#C25A00':pct>=60?'#FF7F11':'#DC2626')+'">'+pct+'%</span></div>'
+    +'<div style="height:6px;background:#DFEAEC;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#C25A00':pct>=60?'#FF7F11':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
     +'</div>'
     // Recent submissions
     +'<div class="fd" style="font-size:13px;font-weight:700;margin-bottom:8px">Recent submissions</div>'
     +(recent.length
-      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFF1F2;color:#BE123C;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#F5EEE1;color:#6F5430">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F3F4F6;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#9CA3AF;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
-      : '<p style="font-size:13px;color:#9CA3AF">No submissions in last 30 days</p>'
+      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFF1E4;color:#C25A00">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F1F7F8;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#90A5AB;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
+      : '<p style="font-size:13px;color:#90A5AB">No submissions in last 30 days</p>'
     )
     +'</div>',
     'max-w-md'

@@ -31,13 +31,13 @@ function myClsPage(){
   <!-- Title row -->
   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
     <div>
-      <h1 class="fd" style="font-size:24px;font-weight:800;color:#111110;letter-spacing:-.5px">My Checklists</h1>
-      <p style="font-size:13px;color:#B8B5AC;margin-top:2px">${new Date(sel+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p>
+      <h1 class="fd" style="font-size:24px;font-weight:800;color:#10262E;letter-spacing:-.5px">My Checklists</h1>
+      <p style="font-size:13px;color:#93A6AC;margin-top:2px">${new Date(sel+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p>
     </div>
     <div style="display:flex;gap:3px;align-items:center;margin-top:2px">
-      <button onclick="(()=>{S.calWk--;const ref2=new Date(todayISO()+'T00:00:00');const dow2=ref2.getDay();ref2.setDate(ref2.getDate()+(dow2===0?-6:1-dow2)+S.calWk*7);const oldDow=new Date(S.calDate+'T00:00:00').getDay()||7;const nd=new Date(ref2);nd.setDate(nd.getDate()+oldDow-1);S.calDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')})()" style="width:30px;height:30px;border-radius:8px;border:1px solid #EEECE8;background:#fff;cursor:pointer;display:grid;place-items:center;color:#9CA3AF">${ic('back','w-4 h-4')}</button>
-      <button onclick="S.calWk=0;S.calDate='${today}';S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')" style="padding:0 12px;height:30px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${S.calWk===0&&sel===today?'#111110':'#F5F4F0'};color:${S.calWk===0&&sel===today?'#fff':'#9CA3AF'}">Today</button>
-      <button onclick="(()=>{S.calWk++;const ref2=new Date(todayISO()+'T00:00:00');const dow2=ref2.getDay();ref2.setDate(ref2.getDate()+(dow2===0?-6:1-dow2)+S.calWk*7);const oldDow=new Date(S.calDate+'T00:00:00').getDay()||7;const nd=new Date(ref2);nd.setDate(nd.getDate()+oldDow-1);S.calDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')})()" style="width:30px;height:30px;border-radius:8px;border:1px solid #EEECE8;background:#fff;cursor:pointer;display:grid;place-items:center;color:#9CA3AF">${ic('chevR','w-4 h-4')}</button>
+      <button onclick="(()=>{S.calWk--;const ref2=new Date(todayISO()+'T00:00:00');const dow2=ref2.getDay();ref2.setDate(ref2.getDate()+(dow2===0?-6:1-dow2)+S.calWk*7);const oldDow=new Date(S.calDate+'T00:00:00').getDay()||7;const nd=new Date(ref2);nd.setDate(nd.getDate()+oldDow-1);S.calDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')})()" style="width:30px;height:30px;border-radius:8px;border:1px solid #E4EDEF;background:#fff;cursor:pointer;display:grid;place-items:center;color:#90A5AB">${ic('back','w-4 h-4')}</button>
+      <button onclick="S.calWk=0;S.calDate='${today}';S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')" style="padding:0 12px;height:30px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:${S.calWk===0&&sel===today?'#10262E':'#EDF4F5'};color:${S.calWk===0&&sel===today?'#fff':'#90A5AB'}">Today</button>
+      <button onclick="(()=>{S.calWk++;const ref2=new Date(todayISO()+'T00:00:00');const dow2=ref2.getDay();ref2.setDate(ref2.getDate()+(dow2===0?-6:1-dow2)+S.calWk*7);const oldDow=new Date(S.calDate+'T00:00:00').getDay()||7;const nd=new Date(ref2);nd.setDate(nd.getDate()+oldDow-1);S.calDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');S.expandedCl=null;rr();App._lazyLoadDate('mychecklists')})()" style="width:30px;height:30px;border-radius:8px;border:1px solid #E4EDEF;background:#fff;cursor:pointer;display:grid;place-items:center;color:#90A5AB">${ic('chevR','w-4 h-4')}</button>
     </div>
   </div>
 
@@ -56,7 +56,7 @@ function myClsPage(){
         <span class="csd-n ${isT&&!isSel?'now':''}">${num}</span>
         <div class="csd-dots">
           ${hasDone?`<span style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(255,255,255,.7)':'#22C55E'}"></span>`:''}
-          ${hasLate?`<span style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(255,160,160)':'#EF4444'}"></span>`:hasPend?`<span style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(255,210,80)':'#F59E0B'}"></span>`:''}
+          ${hasLate?`<span style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(255,160,160)':'#EF4444'}"></span>`:hasPend?`<span style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(255,210,80)':'#E0A106'}"></span>`:''}
         </div>
       </button>`;
     }).join('')}
@@ -64,9 +64,9 @@ function myClsPage(){
 
   <!-- Pills -->
   ${dayCls.length?`<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-    ${doneN?`<span style="padding:4px 12px;border-radius:20px;background:#E8FAF3;color:#0D7A4E;font-size:12px;font-weight:700">${doneN} submitted</span>`:''}
-    ${pendN>0?`<span style="padding:4px 12px;border-radius:20px;background:#FEF7E6;color:#B36A00;font-size:12px;font-weight:700">${pendN} pending</span>`:''}
-    ${lateN>0?`<span style="padding:4px 12px;border-radius:20px;background:#FFEDED;color:#C92C2C;font-size:12px;font-weight:700">${lateN} late</span>`:''}
+    ${doneN?`<span style="padding:4px 12px;border-radius:20px;background:#E8F7EE;color:#0F7A45;font-size:12px;font-weight:700">${doneN} submitted</span>`:''}
+    ${pendN>0?`<span style="padding:4px 12px;border-radius:20px;background:#FEF5E0;color:#8A5F00;font-size:12px;font-weight:700">${pendN} pending</span>`:''}
+    ${lateN>0?`<span style="padding:4px 12px;border-radius:20px;background:#FEECEC;color:#CC2A2A;font-size:12px;font-weight:700">${lateN} late</span>`:''}
   </div>`:''}
 
   <!-- Cards -->
@@ -74,11 +74,11 @@ function myClsPage(){
     ${okrDue.length?_okrClCard(okrDue,sel):''}
     ${dayCls.length
       ?dayCls.map(c=>_clCard(c,sel)).join('')
-      :`<div style="padding:60px 20px;text-align:center;background:#fff;border-radius:18px;border:1px solid #EEECE8">
+      :`<div style="padding:60px 20px;text-align:center;background:#fff;border-radius:18px;border:1px solid #E4EDEF">
           <div style="font-size:40px;margin-bottom:10px">✅</div>
-          <div class="fd" style="font-size:17px;font-weight:800;color:#111110">${sel>today?'Nothing scheduled':'All clear'}</div>
-          <p style="font-size:13px;color:#B8B5AC;margin-top:6px">${sel>today?'No checklists for this date':can('checklists','create')&&DB.checklists.length?'You are not assigned to any checklist. Go to Checklists → edit → assign yourself.':'No checklists scheduled'}</p>
-          ${can('checklists','create')&&DB.checklists.length?`<button onclick="App.go('checklists')" style="margin-top:12px;padding:8px 20px;border-radius:10px;background:#13171B;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Go to Checklists</button>`:''}
+          <div class="fd" style="font-size:17px;font-weight:800;color:#10262E">${sel>today?'Nothing scheduled':'All clear'}</div>
+          <p style="font-size:13px;color:#93A6AC;margin-top:6px">${sel>today?'No checklists for this date':can('checklists','create')&&DB.checklists.length?'You are not assigned to any checklist. Go to Checklists → edit → assign yourself.':'No checklists scheduled'}</p>
+          ${can('checklists','create')&&DB.checklists.length?`<button onclick="App.go('checklists')" style="margin-top:12px;padding:8px 20px;border-radius:10px;background:#10262E;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">Go to Checklists</button>`:''}
         </div>`}
   </div></div>`;
 }
@@ -90,31 +90,31 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
   if(sub&&sub.status!=='Editing'&&sub.userId&&sub.userId!==S.uid){
     const by=uById(sub.userId);
     const st=sub.submittedAt?new Date(sub.submittedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    return '<span style="font-size:12px;color:#0D7A4E;font-weight:600">✓ Completed by '+esc(by?fullName(by):'a teammate')+(st?' · '+st:'')+'</span><span></span>';
+    return '<span style="font-size:12px;color:#0F7A45;font-weight:600">✓ Completed by '+esc(by?fullName(by):'a teammate')+(st?' · '+st:'')+'</span><span></span>';
   }
   // Guard: never show Submit if already submitted (catches stale RUN state)
   if(sub&&sub.status!=='Editing'){
     const st=sub.submittedAt?new Date(sub.submittedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    const eb=(sub.editCount||0)>0?'<span style="font-size:10px;font-weight:700;background:#FEF3C7;color:#92400E;padding:1px 6px;border-radius:10px">edit #'+sub.editCount+'</span>':'';
-    const left='<span style="font-size:12px;color:#B8B5AC">Submitted '+st+eb+'</span>';
+    const eb=(sub.editCount||0)>0?'<span style="font-size:10px;font-weight:700;background:#FDF3D9;color:#7A4E00;padding:1px 6px;border-radius:10px">edit #'+sub.editCount+'</span>':'';
+    const left='<span style="font-size:12px;color:#93A6AC">Submitted '+st+eb+'</span>';
     let right='';
-    if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#F97316">Edit pending</span>';
+    if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#FF7F11">Edit pending</span>';
     else if(editApproved)right='<button onclick="App._resubmit(\''+cid+'\',\''+date+'\')" class="submit-pill go">Edit &amp; Resubmit</button>';
-    else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#F97316">Awaiting approval</span>';
-    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0D7A4E;background:#F5EEE1;border:1px solid #6EE7B7;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
+    else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#FF7F11">Awaiting approval</span>';
+    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0F7A45;background:#FFF1E4;border:1px solid #6FE0A6;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
     return left+right;
   }
   if(!sub){
-    if(isPast&&!u?.rules?.past)return '<span style="font-size:12px;color:#B36A00;font-weight:600">No permission for past dates</span><span></span>';
-    if(isFuture&&!u?.rules?.future)return '<span style="font-size:12px;color:#9CA3AF">Scheduled for this date</span><button class="submit-pill no" disabled style="opacity:.4;cursor:not-allowed">Not yet</button>';
+    if(isPast&&!u?.rules?.past)return '<span style="font-size:12px;color:#8A5F00;font-weight:600">No permission for past dates</span><span></span>';
+    if(isFuture&&!u?.rules?.future)return '<span style="font-size:12px;color:#90A5AB">Scheduled for this date</span><button class="submit-pill no" disabled style="opacity:.4;cursor:not-allowed">Not yet</button>';
     const _hasDraft=(DB.drafts||[]).some(d=>d.checklistId===cid&&d.userId===S.uid&&d.date===date);
-    const _draftBtn='<button onclick="App._saveDraft(\''+cid+'\',\''+date+'\')" class="draft-pill" data-cl="'+cid+'" style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #E5E7EB;background:#fff;color:#374151;cursor:pointer">'+(_hasDraft?'Update draft':'Save as Draft')+'</button>';
-    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#8B6B41;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
+    const _draftBtn='<button onclick="App._saveDraft(\''+cid+'\',\''+date+'\')" class="draft-pill" data-cl="'+cid+'" style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #DFEAEC;background:#fff;color:#2F4C55;cursor:pointer">'+(_hasDraft?'Update draft':'Save as Draft')+'</button>';
+    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#FF7F11;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
     return _leftBlk+'<button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit</button>';
   }
   // Editing mode
   if(sub.status==='Editing'){
-    return '<span style="font-size:12px;font-weight:700;color:#0EA5E9">Editing\u2026</span><button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit edit</button>';
+    return '<span style="font-size:12px;font-weight:700;color:#12A3E0">Editing\u2026</span><button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit edit</button>';
   }
   return '';
 }
@@ -152,17 +152,17 @@ function _clCard(c,date){
   const hasEditReq=DB.approvals.some(a=>a.type==='Edit Request'&&a.requesterId===S.uid&&a.checklistId===c.id&&a.date===date&&a.status==='Pending');
   const editApproved=DB.approvals.some(a=>a.type==='Edit Request'&&a.requesterId===S.uid&&a.checklistId===c.id&&a.date===date&&a.status==='Approved');
   const stCls={'On Time':'st-on','Submitted':'st-sub','Pending':'st-pend','Late':'st-late','Pending Approval':'st-pa','Rejected':'st-late','Editing':'st-pend','Upcoming':'st-pend'};
-  const stBar={'On Time':'#22C55E','Submitted':'#22C55E','Pending':'#F59E0B','Late':'#EF4444','Pending Approval':'#F97316','Rejected':'#EF4444','Editing':'#0EA5E9','Upcoming':'#A855F7'};
+  const stBar={'On Time':'#22C55E','Submitted':'#22C55E','Pending':'#E0A106','Late':'#EF4444','Pending Approval':'#FF7F11','Rejected':'#EF4444','Editing':'#12A3E0','Upcoming':'#A855F7'};
 
-  return`<div class="clc" style="border-top:3px solid ${stBar[st]||'#EEECE8'}">
+  return`<div class="clc" style="border-top:3px solid ${stBar[st]||'#E4EDEF'}">
     <!-- Header -->
     <button class="clc-hdr" onclick="S.expandedCl=S.expandedCl==='${c.id}'?null:'${c.id}';rr()">
       <div style="flex:1;text-align:left;min-width:0">
-        <div class="fd" style="font-size:15px;font-weight:800;color:#111110">${esc(c.name)}</div>
+        <div class="fd" style="font-size:15px;font-weight:800;color:#10262E">${esc(c.name)}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
-          ${c.department?`<span style="font-size:12px;color:#B8B5AC">${esc(c.department)}</span>`:''}
-          ${c.anyOne?`<span title="Any one assignee can complete this" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#EEF2FF;color:#4338CA;flex-shrink:0">👥 Any one</span>`:''}
-          ${c.description?`<span style="font-size:11px;color:#B8B5AC;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(c.description)}</span>`:''}
+          ${c.department?`<span style="font-size:12px;color:#93A6AC">${esc(c.department)}</span>`:''}
+          ${c.anyOne?`<span title="Any one assignee can complete this" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#F0EDFE;color:#5B45D6;flex-shrink:0">👥 Any one</span>`:''}
+          ${c.description?`<span style="font-size:11px;color:#93A6AC;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(c.description)}</span>`:''}
           ${(()=>{
             const total=(c.questionIds||[]).length;if(!total)return'';
             const answered=(run?.questionResponses||[]).filter(r=>r.response!==null&&r.response!==undefined&&r.response!=='').length;
@@ -171,14 +171,14 @@ function _clCard(c,date){
               // After submit: show attempt + compliance badges (read-only, locked)
               return _subBadges(c,sub,{small:true});
             }
-            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#8B6B41':'#9CA3AF'};flex-shrink:0">${answered}/${total} attempted</span>`;
+            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#FF7F11':'#90A5AB'};flex-shrink:0">${answered}/${total} attempted</span>`;
           })()}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        ${(!isSubmitted&&(DB.drafts||[]).some(d=>d.checklistId===c.id&&d.userId===S.uid&&d.date===date))?'<span title="You have a saved draft" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;background:#EEF2FF;color:#4338CA">📝 Draft</span>':''}
-        <span style="font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;${stCls[st]?'':'background:#F5F4F0;color:#9CA3AF'}" class="${stCls[st]||''}">${st}</span>
-        <span style="color:#C8C5BD;transform:rotate(${exp?90:0}deg);transition:transform .2s">${ic('chevR','w-4 h-4')}</span>
+        ${(!isSubmitted&&(DB.drafts||[]).some(d=>d.checklistId===c.id&&d.userId===S.uid&&d.date===date))?'<span title="You have a saved draft" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;background:#F0EDFE;color:#5B45D6">📝 Draft</span>':''}
+        <span style="font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;${stCls[st]?'':'background:#EDF4F5;color:#90A5AB'}" class="${stCls[st]||''}">${st}</span>
+        <span style="color:#B9CBCF;transform:rotate(${exp?90:0}deg);transition:transform .2s">${ic('chevR','w-4 h-4')}</span>
       </div>
     </button>
 
@@ -188,23 +188,23 @@ function _clCard(c,date){
         const qs=(c.questionIds||[]).map(qid=>(DB.questions||[]).find(x=>x.id===qid)).filter(Boolean);
         if(!qs.length)return'';
         const locked=isSubmitted&&(!run||run.status!=='Editing');
-        return'<div style="padding:12px 16px;border-top:1px solid #F5F4F0;display:flex;flex-direction:column;gap:10px">'+qs.map((q,qi)=>{
+        return'<div style="padding:12px 16px;border-top:1px solid #EDF4F5;display:flex;flex-direction:column;gap:10px">'+qs.map((q,qi)=>{
           const qr=(run.questionResponses||[]).find(r=>r.questionId===q.id)||{};
           const resp=qr.response??null;
           const TYPE_LABELS={answer:'Answer',number:'Number',passfail:'Pass/Fail',yesno:'Yes/No',tick:'Tick/Cross'};
           let inputHtml='';
           if(locked){
-            inputHtml='<span style="font-size:13px;font-weight:600;color:#8B6B41">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#D1D5DB">Not answered</em>')+'</span>';
+            inputHtml='<span style="font-size:13px;font-weight:600;color:#FF7F11">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#C9D9DD">Not answered</em>')+'</span>';
           } else if(q.type==='answer'){
-            inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#13171B':'#E5E7EB'};background:${resp===o.text?'#13171B':'#fff'};color:${resp===o.text?'#fff':'#374151'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
+            inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#10262E':'#DFEAEC'};background:${resp===o.text?'#10262E':'#fff'};color:${resp===o.text?'#fff':'#2F4C55'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
           } else if(q.type==='number'){
-            inputHtml=`<input type="number" value="${resp??''}" oninput="App._setQR('${c.id}','${q.id}',this.value,true)" onchange="App._setQR('${c.id}','${q.id}',this.value)" placeholder="Enter number…" style="width:120px;padding:6px 12px;border-radius:9px;border:1.5px solid #E5E7EB;font-size:13px;outline:none"/>`;
+            inputHtml=`<input type="number" value="${resp??''}" oninput="App._setQR('${c.id}','${q.id}',this.value,true)" onchange="App._setQR('${c.id}','${q.id}',this.value)" placeholder="Enter number…" style="width:120px;padding:6px 12px;border-radius:9px;border:1.5px solid #DFEAEC;font-size:13px;outline:none"/>`;
           } else if(q.type==='passfail'){
-            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Pass')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Pass'?'#16A34A':'#E5E7EB'};background:${resp==='Pass'?'#DCFCE7':'#fff'};color:${resp==='Pass'?'#16A34A':'#374151'};font-weight:700;font-size:13px;cursor:pointer">Pass</button><button onclick="App._setQR('${c.id}','${q.id}','Fail')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Fail'?'#DC2626':'#E5E7EB'};background:${resp==='Fail'?'#FEE2E2':'#fff'};color:${resp==='Fail'?'#DC2626':'#374151'};font-weight:700;font-size:13px;cursor:pointer">Fail</button></div>`;
+            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Pass')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Pass'?'#16A34A':'#DFEAEC'};background:${resp==='Pass'?'#DCF7E4':'#fff'};color:${resp==='Pass'?'#16A34A':'#2F4C55'};font-weight:700;font-size:13px;cursor:pointer">Pass</button><button onclick="App._setQR('${c.id}','${q.id}','Fail')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Fail'?'#DC2626':'#DFEAEC'};background:${resp==='Fail'?'#FDE4E4':'#fff'};color:${resp==='Fail'?'#DC2626':'#2F4C55'};font-weight:700;font-size:13px;cursor:pointer">Fail</button></div>`;
           } else if(q.type==='yesno'){
-            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Yes')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Yes'?'#16A34A':'#E5E7EB'};background:${resp==='Yes'?'#DCFCE7':'#fff'};color:${resp==='Yes'?'#16A34A':'#374151'};font-weight:700;font-size:13px;cursor:pointer">Yes</button><button onclick="App._setQR('${c.id}','${q.id}','No')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='No'?'#DC2626':'#E5E7EB'};background:${resp==='No'?'#FEE2E2':'#fff'};color:${resp==='No'?'#DC2626':'#374151'};font-weight:700;font-size:13px;cursor:pointer">No</button></div>`;
+            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Yes')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='Yes'?'#16A34A':'#DFEAEC'};background:${resp==='Yes'?'#DCF7E4':'#fff'};color:${resp==='Yes'?'#16A34A':'#2F4C55'};font-weight:700;font-size:13px;cursor:pointer">Yes</button><button onclick="App._setQR('${c.id}','${q.id}','No')" style="flex:1;min-height:44px;padding:6px 18px;border-radius:9px;border:1.5px solid ${resp==='No'?'#DC2626':'#DFEAEC'};background:${resp==='No'?'#FDE4E4':'#fff'};color:${resp==='No'?'#DC2626':'#2F4C55'};font-weight:700;font-size:13px;cursor:pointer">No</button></div>`;
           } else if(q.type==='tick'){
-            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Done')" style="flex:1;min-height:44px;padding:6px 20px;border-radius:9px;border:1.5px solid ${resp==='Done'?'#16A34A':'#E5E7EB'};background:${resp==='Done'?'#DCFCE7':'#fff'};color:${resp==='Done'?'#16A34A':'#374151'};font-weight:800;font-size:15px;cursor:pointer">✓</button><button onclick="App._setQR('${c.id}','${q.id}','Not done')" style="flex:1;min-height:44px;padding:6px 20px;border-radius:9px;border:1.5px solid ${resp==='Not done'?'#DC2626':'#E5E7EB'};background:${resp==='Not done'?'#FEE2E2':'#fff'};color:${resp==='Not done'?'#DC2626':'#374151'};font-weight:800;font-size:15px;cursor:pointer">✕</button></div>`;
+            inputHtml=`<div style="display:flex;gap:8px"><button onclick="App._setQR('${c.id}','${q.id}','Done')" style="flex:1;min-height:44px;padding:6px 20px;border-radius:9px;border:1.5px solid ${resp==='Done'?'#16A34A':'#DFEAEC'};background:${resp==='Done'?'#DCF7E4':'#fff'};color:${resp==='Done'?'#16A34A':'#2F4C55'};font-weight:800;font-size:15px;cursor:pointer">✓</button><button onclick="App._setQR('${c.id}','${q.id}','Not done')" style="flex:1;min-height:44px;padding:6px 20px;border-radius:9px;border:1.5px solid ${resp==='Not done'?'#DC2626':'#DFEAEC'};background:${resp==='Not done'?'#FDE4E4':'#fff'};color:${resp==='Not done'?'#DC2626':'#2F4C55'};font-weight:800;font-size:15px;cursor:pointer">✕</button></div>`;
           }
           const flags=[];if(q.photo)flags.push('📷 Required');if(q.approval)flags.push('✓ Approval');if(q.comment)flags.push('💬 Required');
           // Photo upload — always shown; q.photo flag only makes it mandatory at submit.
@@ -213,8 +213,8 @@ function _clCard(c,date){
             const _qrPhoto=(run.questionResponses||[]).find(r=>r.questionId===q.id)||{};
             const photos=_qrPhotoList(_qrPhoto);
             inputHtml+='<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-              +photos.map((ph,pi)=>'<div style="position:relative;display:inline-block"><img src="'+ph+'" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:100px;max-height:72px;border-radius:8px;object-fit:cover;border:1.5px solid #BBF7D0;cursor:pointer"/><button onclick="App._clearQRPhoto(\''+c.id+'\',\''+q.id+'\','+pi+')" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#EF4444;border:1.5px solid #fff;color:#fff;font-size:11px;cursor:pointer;display:grid;place-items:center;font-weight:700">×</button></div>').join('')
-              +'<label style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;background:'+(photos.length?'#F0FDF4':'#F3F4F6')+';color:'+(photos.length?'#16A34A':'#374151')+';font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid '+(photos.length?'#BBF7D0':'#E5E7EB')+'">'
+              +photos.map((ph,pi)=>'<div style="position:relative;display:inline-block"><img src="'+ph+'" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:100px;max-height:72px;border-radius:8px;object-fit:cover;border:1.5px solid #B7F0C8;cursor:pointer"/><button onclick="App._clearQRPhoto(\''+c.id+'\',\''+q.id+'\','+pi+')" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#EF4444;border:1.5px solid #fff;color:#fff;font-size:11px;cursor:pointer;display:grid;place-items:center;font-weight:700">×</button></div>').join('')
+              +'<label style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;background:'+(photos.length?'#F2FBF5':'#F1F7F8')+';color:'+(photos.length?'#16A34A':'#2F4C55')+';font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid '+(photos.length?'#B7F0C8':'#DFEAEC')+'">'
               +ic('cam','w-3.5 h-3.5')+(photos.length?'Add more':'Add photo')+(q.photo&&!photos.length?' <span style="color:#EF4444">*</span>':'')
               +'<input type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="App._setQRPhoto(\''+c.id+'\',\''+q.id+'\',this)"/>'
               +'</label>'
@@ -222,29 +222,29 @@ function _clCard(c,date){
           } else {
             const _qr2=(sub?.questionResponses||[]).find(r=>r.questionId===q.id)||{};
             const photos2=_qrPhotoList(_qr2);
-            if(photos2.length)inputHtml+='<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+photos2.map(ph=>'<img src="'+ph+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:110px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #E5E7EB;cursor:pointer"/>').join('')+'</div>';
+            if(photos2.length)inputHtml+='<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+photos2.map(ph=>'<img src="'+ph+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:110px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #DFEAEC;cursor:pointer"/>').join('')+'</div>';
           }
-          return`<div style="background:#FAFAFA;border:1px solid #ECEDF0;border-radius:12px;padding:12px 14px">
+          return`<div style="background:#F8FBFC;border:1px solid #E7F0F2;border-radius:12px;padding:12px 14px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-              <span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${Q_TYPE_BG[q.type]||'#F6F7F8'};color:${Q_TYPE_CLR[q.type]||'#6B7280'}">${TYPE_LABELS[q.type]||q.type}</span>
-              <span style="font-size:13px;font-weight:600;color:#13171B">${esc(q.text)}</span>
-              ${flags.length?`<span style="margin-left:auto;font-size:11px;color:#9CA3AF">${flags.join(' · ')}</span>`:''}
+              <span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${Q_TYPE_BG[q.type]||'#F4F9FA'};color:${Q_TYPE_CLR[q.type]||'#5E767D'}">${TYPE_LABELS[q.type]||q.type}</span>
+              <span style="font-size:13px;font-weight:600;color:#10262E">${esc(q.text)}</span>
+              ${flags.length?`<span style="margin-left:auto;font-size:11px;color:#90A5AB">${flags.join(' · ')}</span>`:''}
             </div>
             ${inputHtml}
-            ${!locked?`<textarea oninput="App._setQRComment('${c.id}','${q.id}',this.value)" placeholder="${q.comment?'Comment (required)…':'Add a comment (optional)…'}" style="width:100%;box-sizing:border-box;margin-top:8px;padding:8px 10px;border:1.5px solid ${q.comment?'#FCA5A5':'#E5E7EB'};border-radius:9px;font-size:12px;resize:none;outline:none;font-family:inherit;background:#fff" rows="2">${esc(qr.comment||'')}</textarea>`:''}
-            ${locked&&qr.comment?`<div style="margin-top:6px;font-size:12px;color:#6B7280;font-style:italic;padding:5px 8px;background:#F9FAFB;border-radius:7px">"${esc(qr.comment)}"</div>`:''}
+            ${!locked?`<textarea oninput="App._setQRComment('${c.id}','${q.id}',this.value)" placeholder="${q.comment?'Comment (required)…':'Add a comment (optional)…'}" style="width:100%;box-sizing:border-box;margin-top:8px;padding:8px 10px;border:1.5px solid ${q.comment?'#F9A9A9':'#DFEAEC'};border-radius:9px;font-size:12px;resize:none;outline:none;font-family:inherit;background:#fff" rows="2">${esc(qr.comment||'')}</textarea>`:''}
+            ${locked&&qr.comment?`<div style="margin-top:6px;font-size:12px;color:#5E767D;font-style:italic;padding:5px 8px;background:#F8FBFC;border-radius:7px">"${esc(qr.comment)}"</div>`:''}
           </div>`;
         }).join('')+'</div>';
       })()}
       <div class="clc-ft">${_clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved)}</div>
       ${sub?DB.feedback.filter(fb=>fb.checklistId===c.id&&fb.userId===S.uid&&fb.date===date).map(fb=>{
         const mgr=uById(fb.managerId);
-        return`<div style="background:#EFF6FF;border-top:1px solid #BFDBFE;padding:12px 18px">
+        return`<div style="background:#EAF2FE;border-top:1px solid #BCD9FB;padding:12px 18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:12px;font-weight:700;color:#1D4ED8">${ic('msg','w-3.5 h-3.5 inline')} From ${mgr?esc(fullName(mgr)):'Manager'}</span>
-            ${!fb.acknowledged?`<button onclick="App._ackFb('${fb.id}')" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;background:#1D4ED8;color:#fff;border:none;cursor:pointer">Acknowledge</button>`:`<span style="font-size:11px;color:#1D4ED8">✓ Acknowledged</span>`}
+            <span style="font-size:12px;font-weight:700;color:#1257B5">${ic('msg','w-3.5 h-3.5 inline')} From ${mgr?esc(fullName(mgr)):'Manager'}</span>
+            ${!fb.acknowledged?`<button onclick="App._ackFb('${fb.id}')" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;background:#1257B5;color:#fff;border:none;cursor:pointer">Acknowledge</button>`:`<span style="font-size:11px;color:#1257B5">✓ Acknowledged</span>`}
           </div>
-          <p style="font-size:13px;color:#1E3A8A;margin:0;line-height:1.5">${esc(fb.text)}</p>
+          <p style="font-size:13px;color:#123F80;margin:0;line-height:1.5">${esc(fb.text)}</p>
         </div>`;}).join(''):''}
     </div>`:''}
   </div>`;
@@ -517,7 +517,7 @@ App._saveDraft=async(clId,date)=>{
   else toast('Couldn’t save draft — please retry','err');
   rr();
 };
-App._reqEdit=(clId,date)=>{openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Request edit</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-4">Manager approval required to edit a submission.</p><textarea id="re-n" rows="3" placeholder="Reason for edit…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._sendReq('${clId}','${date}')" style="margin-top:16px;width:100%;background:#13171B;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send request</button></div>`,'max-w-sm');};
+App._reqEdit=(clId,date)=>{openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Request edit</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><p class="text-sm text-ink-400 mb-4">Manager approval required to edit a submission.</p><textarea id="re-n" rows="3" placeholder="Reason for edit…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea><button onclick="App._sendReq('${clId}','${date}')" style="margin-top:16px;width:100%;background:#10262E;color:#fff;font-weight:600;padding:12px;border-radius:12px;border:none;cursor:pointer">Send request</button></div>`,'max-w-sm');};
 App._sendReq=(clId,date)=>{
   const note=$('#re-n')?.value.trim()||'Edit requested';
   const u=me();

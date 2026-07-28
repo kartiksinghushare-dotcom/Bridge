@@ -56,7 +56,7 @@ function _hubHome(k){const t=_hubTabsAllowed(k);return t.length?t[0][0]:null;}
 function _hubStrip(k){
   const tabs=_hubTabsAllowed(k);if(tabs.length<2)return'';
   return `<div class="hscroll" style="gap:4px;margin-bottom:16px;padding:5px;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:14px;width:fit-content;max-width:100%">${tabs.map(([r,l])=>{const on=S.route===r;
-    return `<button onclick="App.go('${r}')" style="flex-shrink:0;padding:8px 15px;border-radius:10px;border:none;background:${on?'var(--c-surface)':'transparent'};box-shadow:${on?'0 1px 3px rgba(21,23,28,.1)':'none'};color:${on?'var(--c-text)':'var(--c-text-2)'};font-size:13px;font-weight:${on?'800':'600'};cursor:pointer;transition:background .15s,color .15s;white-space:nowrap">${l}${(r==='notifications'||r==='approvals')?_navBadgeFor(r):''}</button>`;}).join('')}</div>`;
+    return `<button onclick="App.go('${r}')" style="flex-shrink:0;padding:8px 15px;border-radius:10px;border:none;background:${on?'var(--c-surface)':'transparent'};box-shadow:${on?'0 1px 3px rgba(16,38,46,.1)':'none'};color:${on?'var(--c-text)':'var(--c-text-2)'};font-size:13px;font-weight:${on?'800':'600'};cursor:pointer;transition:background .15s,color .15s;white-space:nowrap">${l}${(r==='notifications'||r==='approvals')?_navBadgeFor(r):''}</button>`;}).join('')}</div>`;
 }
 const navFor=()=>NAV_ALL.filter(n=>{try{return !!n[3]();}catch(e){return false;}}).map(n=>[n[0],n[1],n[2]]);
 const NAV_DAILY=['hub:dash','mychecklists','okr','crm','hub:inbox']; // keep the daily strip tiny — everything else lives in named sections
@@ -163,7 +163,7 @@ function shell(content){
   }).join('');
 
   return`<div style="min-height:100vh;display:flex">
-  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#1A140D;background-image:linear-gradient(177deg,#221B12 0%,#15100A 100%);color:#fff;border-right:1px solid rgba(255,255,255,.05)">
+  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#0C222A;background-image:linear-gradient(177deg,#0F3038 0%,#0A1B21 100%);color:#fff;border-right:1px solid rgba(255,255,255,.05)">
     <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
       <div class="nav-brand">B</div>
       <span class="fd" style="font-weight:800;font-size:18px;letter-spacing:-.5px;color:#fff">Bridge</span>
@@ -174,24 +174,24 @@ function shell(content){
         ${avatar(u,'w-8 h-8','text-[11px]')}
         <div style="min-width:0;text-align:left;flex:1">
           <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(fullName(u))}</div>
-          <div style="font-size:11px;color:#A9ADB8;margin-top:1px">${esc(u.position||u.department||'')}</div>
+          <div style="font-size:11px;color:#9DB1B6;margin-top:1px">${esc(u.position||u.department||'')}</div>
         </div>
         <span style="font-size:10px;color:rgba(255,255,255,.3)">${ic('chevR','w-3 h-3')}</span>
       </button>
-      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#A9ADB8;font-size:12px;font-weight:500" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.color='#A9ADB8';this.style.background='transparent'">
+      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#9DB1B6;font-size:12px;font-weight:500" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.color='#9DB1B6';this.style.background='transparent'">
         ${ic('logout','w-3.5 h-3.5')}Sign out
       </button>
     </div>
   </aside>
   <div class="flex flex-col" style="flex:1;min-width:0;margin-left:0" id="main-wrap">
-    <header class="topbar sticky top-0 z-20" style="${S.route==='crm'?'display:none !important;':''}background:rgba(250,246,239,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--c-border)">
+    <header class="topbar sticky top-0 z-20" style="${S.route==='crm'?'display:none !important;':''}background:rgba(246,250,251,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--c-border)">
       <div style="height:56px;padding:0 18px;display:flex;align-items:center;gap:10px">
         <button onclick="App.moreMenu()" class="md:hidden" aria-label="Open menu" style="${S.route==='crm'?'display:grid !important;':''}width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--c-text);display:grid;place-items:center;cursor:pointer">${ic('menu','w-5 h-5')}</button>
         <div class="md:hidden flex items-center gap-2">
           <div class="nav-brand" style="width:24px;height:24px;font-size:11px">B</div>
           <span class="fd" style="font-weight:800;font-size:15px">Bridge</span>
         </div>
-        <div style="flex:1"></div><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(16,24,40,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
+        <div style="flex:1"></div><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(13,38,46,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
         <button onclick="App.go('notifications')" class="md:hidden" aria-label="Notifications" style="position:relative;width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--c-text);display:grid;place-items:center;cursor:pointer">${ic('bell','w-5 h-5')}${(()=>{const n=_notifCount();return n?`<span style="position:absolute;top:5px;right:5px">${countBadge(n,'danger')}</span>`:'';})()}</button>
         <button onclick="App.go('profile')" class="md:hidden" aria-label="Profile">${avatar(u,'w-8 h-8','text-[11px]')}</button>
       </div>
@@ -199,7 +199,7 @@ function shell(content){
     <div style="max-width:1152px;width:100%;margin:0 auto;padding:0 20px"></div>
     <main id="content" style="${S.route==='crm'?'flex:1;min-width:0;padding:0;max-width:none;width:100%;margin:0;height:calc(100dvh - 56px);overflow:hidden':'flex:1;padding:22px 20px;padding-bottom:96px;max-width:1152px;width:100%;margin:0 auto'}" class="${S.route==='crm'?'':'md:pb-10'}">${content}</main>
   </div>
-  <nav id="bottom-nav" class="mob-nav md:hidden fixed bottom-0 inset-x-0 z-30" style="background:var(--c-surface);border-top:1px solid var(--c-border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(16,24,40,.06)">
+  <nav id="bottom-nav" class="mob-nav md:hidden fixed bottom-0 inset-x-0 z-30" style="background:var(--c-surface);border-top:1px solid var(--c-border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(13,38,46,.06)">
     <div style="display:grid;grid-template-columns:repeat(${mob.length},1fr);height:60px">
       ${mob.map(r=>{
         if(r==='more')return`<button onclick="App.moreMenu()" aria-label="More" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--c-text-3);min-height:44px">${ic('menu','w-[22px] h-[22px]')}<span style="font-size:10px;font-weight:700">More</span></button>`;

@@ -14,7 +14,7 @@ let list=can('allChecklists','view')?DB.checklists:DB.checklists.filter(c=>c.cre
       const ass=(c.assignees||[]).map(uById).filter(Boolean);
       const active=clOn(c,todayISO());
       const locs=(c.locationIds||[]).map(locById).filter(Boolean);
-      return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4"><div class="flex items-start gap-3"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap mb-1"><span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${active?'bg-brand-50 text-brand-700':'bg-ink-100 text-ink-400'}">${esc(c.frequency)}</span><span class="text-xs text-ink-400">${esc(c.department)}</span>${locs.length?`<span class="text-xs text-sky-600 flex items-center gap-1">${ic('pin','w-3 h-3')}${locs.map(l=>esc(l.name)).join(', ')}</span>`:''}</div><h3 class="fd font-bold">${esc(c.name)}${c.status==='Draft'?'<span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;background:#FEF3C7;color:#92400E;margin-left:6px;vertical-align:middle">DRAFT</span>':''}</h3><p class="text-xs text-ink-400 mt-0.5 line-clamp-1">${esc(c.description||'')}</p><div class="flex items-center gap-3 mt-1.5 text-xs text-ink-400"><span>${ic('clock','w-3 h-3 inline mr-0.5')}${esc(c.schedule||c.frequency)}${c.scheduleTime?' · due '+c.scheduleTime:''}</span>${c.startDate?`<span>${ic('doc','w-3 h-3 inline mr-0.5')}${fmtS(c.startDate)}${c.endDate?' → '+fmtS(c.endDate):''}</span>`:''}</div></div><div class="flex flex-col items-end gap-2 shrink-0">${(can('checklists','edit')||can('checklists','duplicate')||can('checklists','delete'))?`<div class="flex gap-1">${can('checklists','edit')?`<button onclick="App.editCl('${c.id}')" title="Edit" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${ic('edit','w-3.5 h-3.5')}</button>`:''}${can('checklists','duplicate')?`<button onclick="App.dupCl('${c.id}')" title="Duplicate" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#EFF6FF';this.style.color='#3B82F6'" onmouseout="this.style.background='transparent';this.style.color='#9CA3AF'">${ic('copy','w-3.5 h-3.5')}</button>`:''}${can('checklists','delete')?`<button onclick="App.delCl('${c.id}')" title="Delete" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#9CA3AF;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FFF1F2';this.style.color='#BE123C'" onmouseout="this.style.background='transparent';this.style.color='#9CA3AF'">${ic('trash','w-3.5 h-3.5')}</button>`:''}</div>`:''}<div class="flex -space-x-1">${ass.slice(0,4).map(u=>`<div class="ring-2 ring-white rounded-full">${avatar(u,'w-6 h-6','text-[9px]')}</div>`).join('')}</div></div></div></div>`;
+      return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4"><div class="flex items-start gap-3"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap mb-1"><span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${active?'bg-brand-50 text-brand-700':'bg-ink-100 text-ink-400'}">${esc(c.frequency)}</span><span class="text-xs text-ink-400">${esc(c.department)}</span>${locs.length?`<span class="text-xs text-sky-600 flex items-center gap-1">${ic('pin','w-3 h-3')}${locs.map(l=>esc(l.name)).join(', ')}</span>`:''}</div><h3 class="fd font-bold">${esc(c.name)}${c.status==='Draft'?'<span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;background:#FDF3D9;color:#7A4E00;margin-left:6px;vertical-align:middle">DRAFT</span>':''}</h3><p class="text-xs text-ink-400 mt-0.5 line-clamp-1">${esc(c.description||'')}</p><div class="flex items-center gap-3 mt-1.5 text-xs text-ink-400"><span>${ic('clock','w-3 h-3 inline mr-0.5')}${esc(c.schedule||c.frequency)}${c.scheduleTime?' · due '+c.scheduleTime:''}</span>${c.startDate?`<span>${ic('doc','w-3 h-3 inline mr-0.5')}${fmtS(c.startDate)}${c.endDate?' → '+fmtS(c.endDate):''}</span>`:''}</div></div><div class="flex flex-col items-end gap-2 shrink-0">${(can('checklists','edit')||can('checklists','duplicate')||can('checklists','delete'))?`<div class="flex gap-1">${can('checklists','edit')?`<button onclick="App.editCl('${c.id}')" title="Edit" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'">${ic('edit','w-3.5 h-3.5')}</button>`:''}${can('checklists','duplicate')?`<button onclick="App.dupCl('${c.id}')" title="Duplicate" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#EAF2FE';this.style.color='#2680EB'" onmouseout="this.style.background='transparent';this.style.color='#90A5AB'">${ic('copy','w-3.5 h-3.5')}</button>`:''}${can('checklists','delete')?`<button onclick="App.delCl('${c.id}')" title="Delete" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FEEEEF';this.style.color='#C41E32'" onmouseout="this.style.background='transparent';this.style.color='#90A5AB'">${ic('trash','w-3.5 h-3.5')}</button>`:''}</div>`:''}<div class="flex -space-x-1">${ass.slice(0,4).map(u=>`<div class="ring-2 ring-white rounded-full">${avatar(u,'w-6 h-6','text-[9px]')}</div>`).join('')}</div></div></div></div>`;
     }).join('')}
     ${list.length?'':empty('list','No checklists','Create your first checklist.')}
   </div></div>`;}
@@ -47,7 +47,7 @@ function _renderClModal(editing){
         <h2 class="fd text-xl font-bold">${editing?'Edit checklist':'New checklist'}</h2>
         <p class="text-xs text-ink-400 mt-0.5">${editing?'Update checklist settings and tasks':'Configure schedule, tasks, and assignments'}</p>
       </div>
-      <button onclick="App.closeModal()" style="width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#9CA3AF" onmouseover="this.style.background='#F6F7F8'" onmouseout="this.style.background='transparent'">${ic('x')}</button>
+      <button onclick="App.closeModal()" style="width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#90A5AB" onmouseover="this.style.background='#F4F9FA'" onmouseout="this.style.background='transparent'">${ic('x')}</button>
     </div>
     <!-- Scrollable body -->
     <div style="overflow-y:auto;flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:20px">
@@ -97,11 +97,11 @@ function _renderClModal(editing){
       <div>
         <div class="flex items-center justify-between mb-2">
           <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide">Questions <span style="color:#EF4444">*</span></label>
-          <button type="button" onclick="App._openClQuestionPicker()" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#8B6B41;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add question</button>
+          <button type="button" onclick="App._openClQuestionPicker()" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#FF7F11;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add question</button>
         </div>
         <div id="cn-questions" style="display:flex;flex-direction:column;gap:6px">
-          ${(c.questionIds||[]).map(qid=>{const q=(DB.questions||[]).find(x=>x.id===qid);if(!q)return'';const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;const clr=Q_TYPE_CLR[q.type]||'#6B7280';const bg=Q_TYPE_BG[q.type]||'#F6F7F8';const cfg=(c.questionConfigs||{})[qid]||{};const escCount=Object.values(cfg).filter(v=>v).length;return`<div style="display:flex;align-items:center;gap:8px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:8px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${bg};color:${clr};flex-shrink:0">${tl}</span><span style="flex:1;font-size:13px;font-weight:500;color:#13171B;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</span>${escCount?`<span style="font-size:10px;font-weight:700;color:#EF4444;flex-shrink:0">${escCount} escalation${escCount>1?'s':''}</span>`:''}<button type="button" onclick="App._editClQuestionEscalation('${qid}')" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;cursor:pointer;color:#374151;flex-shrink:0">Escalation</button><button type="button" onclick="App._removeClQuestion('${qid}')" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D1D5DB;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='#BE123C'" onmouseout="this.style.color='#D1D5DB'">${ic('x','w-3 h-3')}</button></div>`;}).join('')}
-          ${!(c.questionIds||[]).length?`<div style="text-align:center;padding:12px;border:2px dashed #E5E7EB;border-radius:10px;font-size:12px;color:#9CA3AF">No questions added yet</div>`:''}
+          ${(c.questionIds||[]).map(qid=>{const q=(DB.questions||[]).find(x=>x.id===qid);if(!q)return'';const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;const clr=Q_TYPE_CLR[q.type]||'#5E767D';const bg=Q_TYPE_BG[q.type]||'#F4F9FA';const cfg=(c.questionConfigs||{})[qid]||{};const escCount=Object.values(cfg).filter(v=>v).length;return`<div style="display:flex;align-items:center;gap:8px;background:#F8FBFC;border:1px solid #DFEAEC;border-radius:10px;padding:8px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${bg};color:${clr};flex-shrink:0">${tl}</span><span style="flex:1;font-size:13px;font-weight:500;color:#10262E;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</span>${escCount?`<span style="font-size:10px;font-weight:700;color:#EF4444;flex-shrink:0">${escCount} escalation${escCount>1?'s':''}</span>`:''}<button type="button" onclick="App._editClQuestionEscalation('${qid}')" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid #DFEAEC;background:#fff;cursor:pointer;color:#2F4C55;flex-shrink:0">Escalation</button><button type="button" onclick="App._removeClQuestion('${qid}')" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#C9D9DD;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='#C41E32'" onmouseout="this.style.color='#C9D9DD'">${ic('x','w-3 h-3')}</button></div>`;}).join('')}
+          ${!(c.questionIds||[]).length?`<div style="text-align:center;padding:12px;border:2px dashed #DFEAEC;border-radius:10px;font-size:12px;color:#90A5AB">No questions added yet</div>`:''}
         </div>
       </div>
       <!-- Assign -->
@@ -109,7 +109,7 @@ function _renderClModal(editing){
         <label class="block text-xs font-bold text-ink-500 uppercase tracking-wide mb-2">Assign to</label>
         <div class="bg-ink-50 rounded-xl p-3 mb-2">
           ${mkTog('cn-anyone',c.anyOne||false,'Any one assignee can complete')}
-          <p style="font-size:11px;color:#9CA3AF;margin-top:2px">On: one submission by any assignee completes it for everyone. Off: every assignee must submit individually.</p>
+          <p style="font-size:11px;color:#90A5AB;margin-top:2px">On: one submission by any assignee completes it for everyone. Off: every assignee must submit individually.</p>
         </div>
         <div class="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
           ${cands.map(u=>`<label class="flex items-center gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition ${(c.assignees||[]).includes(u.id)?'border-brand-400 bg-brand-50':'border-ink-100 hover:border-ink-200'}">
@@ -124,7 +124,7 @@ function _renderClModal(editing){
     <!-- Sticky footer -->
     <div class="px-5 py-4 border-t border-ink-100 flex gap-3 bg-white">
       <button onclick="App.closeModal()" class="flex-1 py-3 rounded-xl border-2 border-ink-200 font-semibold text-sm text-ink-600 hover:bg-ink-50 transition">Cancel</button>
-      <button id="cl-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';try{App._saveCl(${editing});}catch(e){console.error('Save button error:',e);this.disabled=false;this.textContent='${editing?'Save changes':'Create checklist'}';}" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer" onmouseover="if(!this.disabled)this.style.background='#0E0F13'" onmouseout="if(!this.disabled)this.style.background='#13171B'">${editing?'Save changes':'Create checklist'}</button>
+      <button id="cl-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';try{App._saveCl(${editing});}catch(e){console.error('Save button error:',e);this.disabled=false;this.textContent='${editing?'Save changes':'Create checklist'}';}" style="flex:1;padding:12px;border-radius:12px;background:#10262E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer" onmouseover="if(!this.disabled)this.style.background='#0A1B21'" onmouseout="if(!this.disabled)this.style.background='#10262E'">${editing?'Save changes':'Create checklist'}</button>
     </div>
   </div>`,'max-w-2xl');
 }
@@ -136,10 +136,10 @@ function _freqUI(freq){
 
   if(freq==='Daily'){
     return`<div>
-      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schedule</div>
+      <div style="font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schedule</div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
         ${['Every day','Selected weekdays'].map(o=>`<button type="button" data-sched="${o}" onclick="App._dailySched('${o}',this)"
-          style="flex:1;padding:8px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;background:${sched===o?'#13171B':'#fff'};color:${sched===o?'#fff':'#6B7280'};border-color:${sched===o?'#13171B':'#ECEDF0'}">${o}</button>`).join('')}
+          style="flex:1;padding:8px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;background:${sched===o?'#10262E':'#fff'};color:${sched===o?'#fff':'#5E767D'};border-color:${sched===o?'#10262E':'#E7F0F2'}">${o}</button>`).join('')}
       </div>
       <div id="cn-daysel" style="display:${sched==='Selected weekdays'?'flex':'none'};flex-wrap:wrap;gap:6px">
         ${WKDAYS.map(d=>`<button type="button" onclick="App._togDay('${d}',this)" class="dchip ${sd.includes(d)?'on':''}">${d}</button>`).join('')}
@@ -149,7 +149,7 @@ function _freqUI(freq){
 
   if(freq==='Weekly'){
     return`<div>
-      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Repeat on</div>
+      <div style="font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Repeat on</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">${WKDAYS.map(d=>`<button type="button" onclick="App._togDay('${d}',this)" class="dchip ${sd.includes(d)?'on':''}">${d}</button>`).join('')}</div>
     </div>`;
   }
@@ -160,12 +160,12 @@ function _freqUI(freq){
     // Normalise sdt: always compare as numbers (Supabase may return strings)
     const sdtNorm=sdt.map(x=>x==='L'?'L':Number(x));
     return`<div>
-      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Days of month</div>
+      <div style="font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Days of month</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
         ${nums.map(n=>{const on=sdtNorm.includes(n);return`<button type="button" onclick="App._togDN('${n}',this)"
-          style="min-width:${n==='L'?48:32}px;height:32px;border-radius:50%;border:1.5px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:${on?'#13171B':'#fff'};color:${on?'#fff':'#6B7280'};border-color:${on?'#13171B':'#ECEDF0'};${n==='L'?'border-radius:8px;padding:0 8px':''}" title="${n==='L'?'Last day of month':n}">${n==='L'?'Last':n}</button>`;}).join('')}
+          style="min-width:${n==='L'?48:32}px;height:32px;border-radius:50%;border:1.5px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:${on?'#10262E':'#fff'};color:${on?'#fff':'#5E767D'};border-color:${on?'#10262E':'#E7F0F2'};${n==='L'?'border-radius:8px;padding:0 8px':''}" title="${n==='L'?'Last day of month':n}">${n==='L'?'Last':n}</button>`;}).join('')}
       </div>
-      <p style="font-size:11px;color:#9CA3AF">Tip: Select "Last" to always run on the last day of any month (handles 28/29/30/31 automatically)</p>
+      <p style="font-size:11px;color:#90A5AB">Tip: Select "Last" to always run on the last day of any month (handles 28/29/30/31 automatically)</p>
     </div>`;
   }
 
@@ -179,19 +179,19 @@ function _freqUI(freq){
     const cells=[];for(let i=0;i<firstDay;i++)cells.push('');for(let d=1;d<=daysInMonth;d++)cells.push(d);while(cells.length%7!==0)cells.push('');
     const weeks=[];for(let i=0;i<cells.length;i+=7)weeks.push(cells.slice(i,i+7));
     return`<div>
-      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Pick dates</div>
-      <div style="background:#F6F7F8;border-radius:10px;padding:8px;display:inline-block;min-width:220px">
+      <div style="font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Pick dates</div>
+      <div style="background:#F4F9FA;border-radius:10px;padding:8px;display:inline-block;min-width:220px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth--;if(CLD._calMonth<0){CLD._calMonth=11;CLD._calYear--;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('back','w-3 h-3')}</button>
-          <span style="font-size:12px;font-weight:700;color:#13171B">${MN[calMonth]} ${calYear}</span>
-          <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth++;if(CLD._calMonth>11){CLD._calMonth=0;CLD._calYear++;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #ECEDF0;background:#fff;cursor:pointer;display:grid;place-items:center;color:#6B7280">${ic('chevR','w-3 h-3')}</button>
+          <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth--;if(CLD._calMonth<0){CLD._calMonth=11;CLD._calYear--;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #E7F0F2;background:#fff;cursor:pointer;display:grid;place-items:center;color:#5E767D">${ic('back','w-3 h-3')}</button>
+          <span style="font-size:12px;font-weight:700;color:#10262E">${MN[calMonth]} ${calYear}</span>
+          <button type="button" onclick="if(!CLD._calYear)CLD._calYear=${cy};if(!CLD._calMonth&&CLD._calMonth!==0)CLD._calMonth=${cm};CLD._calMonth++;if(CLD._calMonth>11){CLD._calMonth=0;CLD._calYear++;}$('#cn-sched').innerHTML=_freqUI('Custom')" style="width:22px;height:22px;border-radius:6px;border:1px solid #E7F0F2;background:#fff;cursor:pointer;display:grid;place-items:center;color:#5E767D">${ic('chevR','w-3 h-3')}</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px;text-align:center">
-          ${['S','M','T','W','T','F','S'].map(d=>`<div style="font-size:9px;font-weight:700;color:#9CA3AF;padding:2px 0">${d}</div>`).join('')}
+          ${['S','M','T','W','T','F','S'].map(d=>`<div style="font-size:9px;font-weight:700;color:#90A5AB;padding:2px 0">${d}</div>`).join('')}
         </div>
-        ${weeks.map(w=>`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px">${w.map(d=>{if(!d)return'<div></div>';const iso=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const on=cdt.includes(iso);const past=iso<todayISO();return`<button type="button" onclick="App._togCalDate('${iso}')" style="aspect-ratio:1;border-radius:6px;border:none;font-size:11px;font-weight:${on?700:400};cursor:pointer;background:${on?'#13171B':'transparent'};color:${on?'#fff':past?'#D1D5DB':'#13171B'};padding:3px 0">${d}</button>`;}).join('')}</div>`).join('')}
+        ${weeks.map(w=>`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px">${w.map(d=>{if(!d)return'<div></div>';const iso=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const on=cdt.includes(iso);const past=iso<todayISO();return`<button type="button" onclick="App._togCalDate('${iso}')" style="aspect-ratio:1;border-radius:6px;border:none;font-size:11px;font-weight:${on?700:400};cursor:pointer;background:${on?'#10262E':'transparent'};color:${on?'#fff':past?'#C9D9DD':'#10262E'};padding:3px 0">${d}</button>`;}).join('')}</div>`).join('')}
       </div>
-      ${cdt.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${cdt.sort().map(d=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#13171B;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:0;font-size:13px;line-height:1">×</button></span>`).join('')}</div>`:''}
+      ${cdt.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${cdt.sort().map(d=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#10262E;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:0;font-size:13px;line-height:1">×</button></span>`).join('')}</div>`:''}
     </div>`;
   }
   return'';
@@ -212,9 +212,9 @@ App._dailySched=(o,el)=>{
   // Update button styles
   el.parentNode.querySelectorAll('button[data-sched]').forEach(b=>{
     const active=b.dataset.sched===o;
-    b.style.background=active?'#13171B':'#fff';
-    b.style.color=active?'#fff':'#6B7280';
-    b.style.borderColor=active?'#13171B':'#ECEDF0';
+    b.style.background=active?'#10262E':'#fff';
+    b.style.color=active?'#fff':'#5E767D';
+    b.style.borderColor=active?'#10262E':'#E7F0F2';
   });
   // Show/hide weekday picker
   const daysel=$('#cn-daysel');
@@ -229,7 +229,7 @@ App._togDN=(n,el)=>{
   const i=CLD.selectedDates.indexOf(val);
   if(i>-1)CLD.selectedDates.splice(i,1);else CLD.selectedDates.push(val);
   const on=CLD.selectedDates.includes(val);
-  el.style.background=on?'#13171B':'#fff';el.style.color=on?'#fff':'#6B7280';el.style.borderColor=on?'#13171B':'#ECEDF0';
+  el.style.background=on?'#10262E':'#fff';el.style.color=on?'#fff':'#5E767D';el.style.borderColor=on?'#10262E':'#E7F0F2';
 };
 App._togCalDate=(iso)=>{
   if(!CLD.customDates)CLD.customDates=[];
@@ -238,7 +238,7 @@ App._togCalDate=(iso)=>{
   // Re-render the calendar
   const sw=$('#cn-sched');if(sw)sw.innerHTML=_freqUI('Custom');
 };
-App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const w=$('#cn-cdt');if(w)w.innerHTML=(CLD.customDates||[]).map(d=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#13171B;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" class="opacity-70 hover:opacity-100">${ic('x','w-3 h-3')}</button></span>`).join('');};
+App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const w=$('#cn-cdt');if(w)w.innerHTML=(CLD.customDates||[]).map(d=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#10262E;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" class="opacity-70 hover:opacity-100">${ic('x','w-3 h-3')}</button></span>`).join('');};
 App._togLoc=(id,on,el)=>{if(!CLD.locationIds)CLD.locationIds=[];if(on&&!CLD.locationIds.includes(id))CLD.locationIds.push(id);if(!on)CLD.locationIds=CLD.locationIds.filter(x=>x!==id);el.closest('label').className=`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl border cursor-pointer transition ${on?'border-sky-300 bg-sky-50 text-sky-700':'border-ink-200 text-ink-600'}`;};
 App._togAsgn=(id,on,el)=>{if(!CLD.assignees)CLD.assignees=[];if(on&&!CLD.assignees.includes(id))CLD.assignees.push(id);if(!on)CLD.assignees=CLD.assignees.filter(a=>a!==id);el.closest('label').className=`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition text-xs ${on?'border-brand-300 bg-brand-50':'border-ink-100'}`;};
 

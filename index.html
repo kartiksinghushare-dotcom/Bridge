@@ -7,8 +7,14 @@
 <title>Bridge</title>
 <script>(()=>{const w=console.warn;console.warn=(...a)=>{if(typeof a[0]==='string'&&a[0].includes('cdn.tailwind'))return;w(...a)};window.addEventListener('error',e=>{if(!e.filename||e.filename.includes('cdn.tailwind')||e.filename.includes('fonts.google'))e.stopImmediatePropagation();},true);})();</script>
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
-<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Poppins"','ui-sans-serif','sans-serif'],sans:['"Poppins"','ui-sans-serif','sans-serif']},colors:{ink:{DEFAULT:'#13171B',50:'#F6F7F8',100:'#ECEDF0',200:'#D6D8DE',300:'#A9ADB8',400:'#6B7280',500:'#3A3E48',600:'#262A33',700:'#1C1F26',800:'#13171B'},brand:{DEFAULT:'#8B6B41',50:'#F5EEE1',100:'#EBDFC9',400:'#D1B68F',500:'#9C7A4D',600:'#8B6B41',700:'#6F5430'},paper:'#F5F3EF'},boxShadow:{soft:'0 1px 2px rgba(16,24,40,.04),0 4px 16px -6px rgba(16,24,40,.10)',pop:'0 8px 40px -8px rgba(16,24,40,.28)'}}}}</script>
+<!-- Type: Aptos first (renders natively wherever Microsoft 365 is installed).
+     Inter is loaded as the closest free stand-in for every other machine. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..800;1,300..600&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Aptos";font-weight:100 900;font-style:normal;font-display:swap;src:local("Aptos"),local("Aptos Regular"),local("Aptos-Regular")}
+@font-face{font-family:"Aptos";font-weight:100 900;font-style:italic;font-display:swap;src:local("Aptos Italic"),local("Aptos-Italic")}
+</style>
+<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Aptos"','"Aptos Display"','"Inter"','"Segoe UI Variable"','ui-sans-serif','system-ui','sans-serif'],sans:['"Aptos"','"Aptos Display"','"Inter"','"Segoe UI Variable"','ui-sans-serif','system-ui','sans-serif']},colors:{ink:{DEFAULT:'#10262E',50:'#F4F9FA',100:'#E7F0F2',200:'#CBDBDF',300:'#9DB1B6',400:'#5E767D',500:'#35545C',600:'#234049',700:'#16323A',800:'#10262E'},brand:{DEFAULT:'#FF7F11',50:'#FFF1E4',100:'#FFE0C7',200:'#FFD9B8',400:'#FF9A68',500:'#FF8F33',600:'#FF7F11',700:'#C25A00',800:'#B85200'},teal:{DEFAULT:'#00C2C7',50:'#E3FAFB',100:'#C6F4F5',300:'#4DE0D2',500:'#00C2C7',600:'#00A8AD',700:'#087078'},paper:'#F6FAFB'},boxShadow:{soft:'0 1px 2px rgba(13,38,46,.04),0 4px 16px -6px rgba(13,38,46,.10)',pop:'0 8px 40px -8px rgba(13,38,46,.28)'}}}}</script>
 <link rel="stylesheet" href="/src/styles/main.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
