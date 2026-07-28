@@ -935,20 +935,24 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   #content{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
   .mob-nav,nav.md\:hidden,#bottom-nav{padding-bottom:env(safe-area-inset-bottom)}
 
-  /* ── 3. Touch targets. The 44px rules only reached .ui-* controls before,
-         so every hand-rolled inline-styled button in the app missed them. ─ */
+  /* ── 3. Compact but thumb-safe. 34–36px hit areas, not 44px blocks — the
+         earlier pass inflated every control and the UI read as oversized. ── */
   #content button,#content a[onclick],#content [role=button],#content label[onclick],
-  #modal button,.topbar button,.mob-nav button{min-height:40px}
-  /* square icon-only buttons get a real thumb target without changing their look */
+  #modal button,.topbar button{min-height:34px}
   #content button:has(> svg:only-child),#modal button:has(> svg:only-child),
-  .topbar button:has(> svg:only-child){min-width:40px}
-  #content input[type=checkbox],#content input[type=radio]{min-width:22px;min-height:22px}
-  /* 16px is the threshold below which iOS Safari zooms the page on focus */
-  input,select,textarea{font-size:16px!important}          /* topbar + CRM inputs too */
+  .topbar button:has(> svg:only-child){min-width:34px}
+  #content input[type=checkbox],#content input[type=radio]{min-width:20px;min-height:20px}
+  /* 16px is the threshold below which iOS Safari zooms on focus — keep the font,
+     take the height back out of the padding instead. */
+  input,select,textarea{font-size:16px!important}
   #content input,#content select,#content textarea,
   #modal input,#modal select,#modal textarea,
-  .topbar input,.topbar select{min-height:44px}
-  #content textarea,#modal textarea{min-height:80px}
+  .topbar input,.topbar select{min-height:38px;padding-top:7px;padding-bottom:7px}
+  #content textarea,#modal textarea{min-height:62px;line-height:1.4}
+  .ui-btn{min-height:36px;padding:7px 13px;font-size:13.5px}
+  .ui-btn-sm{min-height:32px;padding:5px 10px;font-size:12.5px}
+  .ui-input,.ui-select{padding:7px 11px;border-radius:10px}
+  .ui-label{font-size:11.5px;margin-bottom:5px}
 
   /* ── 4. Tables never blow out the page ──────────────────────────────── */
   /* The table stays a real table — making it display:block decouples thead/tbody
@@ -997,13 +1001,37 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   #content [style*="position:absolute"][style*="width:"]{max-width:92vw}
   #toast,.pop{max-width:94vw}
 
-  /* ── 9. Type + spacing scale down a touch so more fits ─────────────── */
-  main#content h1.fd{font-size:22px;letter-spacing:-.4px}
+  /* ── 9. Mobile type + density scale ────────────────────────────────── */
+  :root{--fs-h1:20px;--fs-h2:15.5px;--fs-card:13.5px;--fs-body:13.5px;--fs-cap:11px;
+        --r-sm:8px;--r-md:10px;--r-lg:14px;--r-xl:18px;
+        --sp-4:12px;--sp-5:14px;--sp-6:16px;--sp-8:22px}
+  body{font-size:13.5px}
+  main#content h1.fd{font-size:20px;letter-spacing:-.3px;line-height:1.2}
+  main#content h1.fd + p{font-size:12.5px}
+  /* oversized stat numbers */
   main#content .fd[style*="font-size:30px"],
-  main#content [style*="font-size:28px"][style*="font-weight:800"]{font-size:24px!important}
-  .ui-card-pad{padding:14px}
-  .ui-card-head{padding:13px 14px}
-  .ui-table th,.ui-table td{padding:9px 10px}
+  main#content [style*="font-size:28px"][style*="font-weight:800"]{font-size:21px!important;letter-spacing:-.5px}
+  main#content [style*="font-size:27px"]{font-size:20px!important}
+  main#content [style*="font-size:18px"]{font-size:15.5px!important}
+  /* cards + rows tighten up */
+  .ui-card{border-radius:14px}
+  .ui-card-pad{padding:11px 12px}
+  .ui-card-head{padding:10px 12px}
+  .ui-card-title{font-size:13.5px}
+  .ui-table{font-size:12.5px}
+  .ui-table th{padding:7px 9px;font-size:10px}
+  .ui-table td{padding:8px 9px}
+  .ui-tab{padding:6px 11px;min-height:32px;font-size:12.5px}
+  .ui-tab-pill{padding:6px 12px;min-height:32px;font-size:12.5px}
+  .ui-tabs{padding:3px}
+  .dchip{padding:3px 9px;font-size:11.5px}
+  .stat-card-click::before{top:10px;bottom:10px}
+  main#content .grid{gap:8px}
+  main#content h1.fd,main#content .fd{letter-spacing:-.2px}
+  /* headings are no longer heavy — inline font-weight:800 needs overriding */
+  main#content h1.fd,#modal h2.fd,.ui-card-title{font-weight:600!important}
+  /* page header block sits closer to the content on a small screen */
+  main#content h1.fd{margin-bottom:0}
 
   /* ── 10. Sidebar stays off-canvas; content owns the full width ─────── */
   #main-wrap{margin-left:0!important}

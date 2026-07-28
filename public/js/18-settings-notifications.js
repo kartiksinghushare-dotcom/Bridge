@@ -334,6 +334,14 @@ const EMAIL_EVENTS=[
   {key:'okr_update_added',  label:'OKR update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
   {key:'okr_target_revised',label:'OKR target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
   {key:'okr_closed',        label:'OKR closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
+  /* Workspace. These templates already existed and were honoured by sendEmail, but were
+     absent from this list, so nothing rendered an editor for them. */
+  {key:'crm_automation',label:'Workspace automation (all boards)',vars:'{{user_name}}, {{rule}}, {{title}}, {{customer}}, {{board}}, {{status}}, {{priority}}, {{assignee}}, {{due_date}}, {{actor}}, {{action_url}}'},
+  {key:'crm_ticket',    label:'Workspace ticket activity',        vars:'{{user_name}}, {{title}}, {{customer}}, {{type}}, {{action_url}}'},
+  {key:'crm_mention',   label:'Workspace chat mention',           vars:'{{user_name}}, {{actor}}, {{title}}, {{action_url}}'},
+  {key:'crm_approval',  label:'Workspace approval needed',        vars:'{{user_name}}, {{title}}, {{customer}}, {{action_url}}'},
+  {key:'crm_decided',   label:'Workspace approval decided',       vars:'{{user_name}}, {{title}}, {{decision}}, {{actor}}, {{action_url}}'},
+  {key:'crm_reminder',  label:'Workspace reminder',               vars:'{{user_name}}, {{note}}, {{title}}, {{action_url}}'},
 ];
 
 function _defaultTemplates(){
@@ -348,6 +356,7 @@ function _defaultTemplates(){
     deadline_reminder:{subject:'⏳ Reminder: {{checklist_name}} deadline soon', body:'Hi {{user_name}},\n\nYour checklist {{checklist_name}} deadline is approaching soon. Please complete it before the cutoff.\n\n{{action_url}}'},
     escalation:{subject:'⚠️ Escalation: {{checklist_name}}',                    body:'An escalation was raised on {{checklist_name}}.\n\nQuestion: {{question}}\nAnswer: {{answer}}\nRaised by: {{submitter}}\n\nOpen Bridge to follow up.\n\n{{action_url}}'},
     crm_mention:{subject:'💬 You were tagged in {{title}}',body:'Hi {{user_name}},\n\n{{actor}} tagged you in "{{title}}" on the Workspace.\n\nOpen Bridge to reply.\n\n{{action_url}}'},
+    crm_automation:{subject:'⚡ {{rule}} — {{title}}',body:'Hi {{user_name}},\n\nThe automation "{{rule}}" ran on {{board}}.\n\nTicket: {{title}}\nCustomer: {{customer}}\nStatus: {{status}}\nPriority: {{priority}}\nAssigned to: {{assignee}}\nDue: {{due_date}}\n\n{{action_url}}'},
     crm_ticket:{subject:'🎫 New {{type}} ticket: {{title}}',body:'Hi {{user_name}},\n\nA new {{type}} ticket was created: "{{title}}" ({{customer}}).\n\n{{action_url}}'},
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
@@ -458,7 +467,7 @@ async function sendEmail(eventType, userId, vars){
     submission_late:'mychecklists', submission_approved:'mychecklists',
     submission_rejected:'mychecklists', approval_requested:'approvals',
     approval_decided:'approvals', feedback_received:'notifications',
-    deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',
+    deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
     okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
