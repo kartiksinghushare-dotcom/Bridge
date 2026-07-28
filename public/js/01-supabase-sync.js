@@ -72,6 +72,8 @@ function _applyTickets(rows){
   // Keep any local-only tickets (just created, or older than the 30-day window) that the
   // server query didn't return — never drop them (but never re-add a deleted one).
   const fromSB=new Set(allTk.map(t=>t.id));
+  /* Same protection the tickets path uses, reused for OKRs: a server snapshot must never
+     clobber a row whose local change is still sitting in the sync queue. */
   const localOnly=(DB.tickets||[]).filter(t=>!fromSB.has(t.id)&&!_delTk.has(t.id));
   // ── v2 FIX: never let a server snapshot clobber a ticket that still has queued local
   //    writes (e.g. it was closed while the session was stale — the close sits in the
@@ -87,6 +89,16 @@ let _tabLoading={};
 /* ── PORTED: sync bar + tab-loading helpers (Safe Backup) ── */
 function _anyLoading(){try{return Object.values(_tabLoading||{}).some(Boolean);}catch(e){return false;}}
 function _syncBar(on){try{let b=document.getElementById('syncbar');if(!b){if(!on)return;b=document.createElement('div');b.id='syncbar';document.body.appendChild(b);}b.classList.toggle('on',!!on);}catch(e){}}
+/* Server rows win, except where a local row still has an unsent queued write. */
+function _keepPending(table,serverRows,localRows){
+  const pend=typeof pendingWriteIds==='function'?pendingWriteIds(table):new Set();
+  if(!pend.size)return serverRows;
+  const byId=new Map((localRows||[]).map(r=>[r.id,r]));
+  const merged=serverRows.map(sv=>pend.has(sv.id)&&byId.has(sv.id)?byId.get(sv.id):sv);
+  const seen=new Set(serverRows.map(r=>r.id));
+  (localRows||[]).forEach(r=>{if(pend.has(r.id)&&!seen.has(r.id))merged.push(r);});   // queued insert not on the server yet
+  return merged;
+}
 async function _lazyLoad(kind){
   if(!S.uid||document.visibilityState==='hidden'||_tabLoading[kind])return;
   _tabLoading[kind]=true;_syncBar(true);
@@ -106,7 +118,7 @@ async function _lazyLoad(kind){
       if(!r[0].error&&r[0].data){const _delCls=new Set(DB.checklists_deleted||[]);DB.checklists=_mC(r[0].data).filter(c=>!_delCls.has(c.id));}
       if(!r[1].error&&r[1].data){const _delQs=new Set(DB.questions_deleted||[]);DB.questions=r[1].data.filter(q=>!_delQs.has(q.id)).map(_mQrow);}
     }
-    else if(kind==='okr'){const r=await Promise.all([sb.from('okrs').select('*').order('created_at',{ascending:true}),sb.from('okr_checkins').select('*').order('date',{ascending:true}),sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800)]);if(!r[0].error)DB.okrs=_mOKR(r[0].data);if(!r[1].error)DB.okrCheckins=_mOKRCheckin(r[1].data);if(!r[2].error)DB.okrLogs=_mOKRLog(r[2].data);}
+    else if(kind==='okr'){const r=await Promise.all([sb.from('okrs').select('*').order('created_at',{ascending:true}),sb.from('okr_checkins').select('*').order('date',{ascending:true}),sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800)]);if(!r[0].error)DB.okrs=_keepPending('okrs',_mOKR(r[0].data),DB.okrs);if(!r[1].error)DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(r[1].data),DB.okrCheckins);if(!r[2].error)DB.okrLogs=_mOKRLog(r[2].data);}
     saveDB();rr();
   }catch(e){console.warn('[lazyLoad]',kind,e.message);}
   finally{clearTimeout(_loadTO);_tabLoading[kind]=false;_syncBar(_anyLoading());}
@@ -255,7 +267,7 @@ async function loadFromSB(){
 
   // ── PORTED (Safe Backup): OKR data + role profiles + role migration ──
   DB.users.forEach(u=>_ensureHrm(u));
-  DB.okrs=_mOKR(okrRows);DB.okrCheckins=_mOKRCheckin(okrCiRows);DB.okrLogs=_mOKRLog(okrLogRows);
+  DB.okrs=_keepPending('okrs',_mOKR(okrRows),DB.okrs);DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(okrCiRows),DB.okrCheckins);DB.okrLogs=_mOKRLog(okrLogRows);
   try{const _rpRow=(rpRows&&rpRows[0])||null;if(_rpRow&&_rpRow.value&&typeof _rpRow.value==='object')DB.roleProfiles={...(DB.roleProfiles||{}),..._rpRow.value};}catch(e){}
   _seedRoleProfiles();
   try{_permsV3Migrate();}catch(e){console.warn('[perms] migrate skipped:',e.message);}

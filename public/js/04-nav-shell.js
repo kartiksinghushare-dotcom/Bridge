@@ -18,7 +18,7 @@ const NAV_ALL=[
   ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
   ['okr','flag','OKRs',()=>can('okr','view')],
-  ['crm','msg','CRM',()=>can('crm','view')],
+  ['crm','msg','Workspace',()=>can('crm','view')],
   ['hub:inbox','bell','Inbox',()=>true],
 
   ['hub:cl','list','Checklists',()=>!!_hubHome('cl')],

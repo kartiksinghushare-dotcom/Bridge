@@ -347,7 +347,7 @@ function _defaultTemplates(){
     feedback_received:{subject:'💬 New feedback received',                      body:'Hi {{user_name}},\n\nYou have received new feedback on {{checklist_name}}.\n\n{{action_url}}'},
     deadline_reminder:{subject:'⏳ Reminder: {{checklist_name}} deadline soon', body:'Hi {{user_name}},\n\nYour checklist {{checklist_name}} deadline is approaching soon. Please complete it before the cutoff.\n\n{{action_url}}'},
     escalation:{subject:'⚠️ Escalation: {{checklist_name}}',                    body:'An escalation was raised on {{checklist_name}}.\n\nQuestion: {{question}}\nAnswer: {{answer}}\nRaised by: {{submitter}}\n\nOpen Bridge to follow up.\n\n{{action_url}}'},
-    crm_mention:{subject:'💬 You were tagged in {{title}}',body:'Hi {{user_name}},\n\n{{actor}} tagged you in "{{title}}" on the CRM.\n\nOpen Bridge to reply.\n\n{{action_url}}'},
+    crm_mention:{subject:'💬 You were tagged in {{title}}',body:'Hi {{user_name}},\n\n{{actor}} tagged you in "{{title}}" on the Workspace.\n\nOpen Bridge to reply.\n\n{{action_url}}'},
     crm_ticket:{subject:'🎫 New {{type}} ticket: {{title}}',body:'Hi {{user_name}},\n\nA new {{type}} ticket was created: "{{title}}" ({{customer}}).\n\n{{action_url}}'},
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
@@ -557,10 +557,10 @@ function settingsPage(){
         ${_nsTogRow('inapp_approval_requested','Approval requested','Sent to admin when an approval is pending')}
         ${_nsTogRow('inapp_approval_decided','Approval decided','Sent to the user when their approval is approved/rejected')}
         ${_nsTogRow('inapp_feedback_received','Feedback received','Sent to the user when their manager sends feedback')}
-        <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">CRM</div>
-        ${_nsTogRow('inapp_crm_mention','Tagged in CRM chat','When someone @mentions you in a conversation')}
-        ${_nsTogRow('inapp_crm_ticket','CRM ticket activity','Created, assigned, moved & automation alerts')}
-        ${_nsTogRow('inapp_crm_reminder','CRM reminders','Your ⏰ date & time reminders on tickets and messages')}
+        <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Workspace</div>
+        ${_nsTogRow('inapp_crm_mention','Tagged in Workspace chat','When someone @mentions you in a conversation')}
+        ${_nsTogRow('inapp_crm_ticket','Workspace ticket activity','Created, assigned, moved & automation alerts')}
+        ${_nsTogRow('inapp_crm_reminder','Workspace reminders','Your ⏰ date & time reminders on tickets and messages')}
         <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
         ${_nsTogRow('inapp_okr_assigned','OKR assigned','Sent to every owner when an objective is assigned to them')}
         ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
@@ -616,10 +616,10 @@ function settingsPage(){
         ${_nsTogRow('email_approval_decided','Approval decided','Email sent to the user')}
         ${_nsTogRow('email_feedback_received','Feedback received','Email sent to the user')}
         ${_nsTogRow('email_escalation','Escalation raised','Email sent to the person it escalates to')}
-        <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">CRM</div>
-        ${_nsTogRow('email_crm_mention','Tagged in CRM chat','Email when someone @mentions you')}
-        ${_nsTogRow('email_crm_ticket','CRM ticket activity','Email for created / assigned / automation alerts')}
-        ${_nsTogRow('email_crm_reminder','CRM reminders','Email for your ⏰ date & time reminders')}
+        <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Workspace</div>
+        ${_nsTogRow('email_crm_mention','Tagged in Workspace chat','Email when someone @mentions you')}
+        ${_nsTogRow('email_crm_ticket','Workspace ticket activity','Email for created / assigned / automation alerts')}
+        ${_nsTogRow('email_crm_reminder','Workspace reminders','Email for your ⏰ date & time reminders')}
         <div style="font-size:10px;font-weight:800;color:#93A6AC;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
         ${_nsTogRow('email_okr_assigned','OKR assigned','Email to every owner when an objective is assigned to them')}
         ${_nsTogRow('email_okr_checkin_due','OKR check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}

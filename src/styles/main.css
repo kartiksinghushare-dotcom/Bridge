@@ -572,7 +572,7 @@ input,select,textarea{outline:none}
    Consistent breakpoint: 768px = the sidebar/bottom-nav switch (matches Tailwind md:).
    These rules harden layout for BOTH viewports without touching markup/handlers. */
 /* No accidental horizontal overflow anywhere. */
-html,body{max-width:100%;overflow-x:hidden}
+html,body{max-width:100%;overflow-x:clip}   /* clip, not hidden: hidden would make BODY a scroll container (html,body{height:100%} above) and break window scrolling + position:sticky */
 #content{min-width:0}
 /* Tables: never blow out the viewport — wrap them in a horizontal scroller on small screens.
    Any .ui-table / raw <table> inside #content gets a scroll parent via overflow-x on its wrapper. */
@@ -913,3 +913,104 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
 .ui-count{background:var(--c-brand);color:var(--c-on-brand)}
 /* avatars pick up a soft teal ring */
 .rounded-full.grid.place-items-center{box-shadow:inset 0 0 0 1px rgba(0,194,199,.22)}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MOBILE — platform-wide pass. Everything must fit the screen, nothing may push
+   the viewport sideways, and every control must be reachable with a thumb.
+   Breakpoint 768px = the sidebar/bottom-nav switch (matches Tailwind md:).
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media(max-width:767px){
+
+  /* ── 1. Nothing escapes the viewport ─────────────────────────────────── */
+  html,body{overflow-x:clip;max-width:100vw}
+  #app,#main-wrap,#content,main#content{max-width:100vw;min-width:0}
+  #content *{max-width:100%}
+  #content img,#content video,#content canvas,#content svg{height:auto}
+  /* long unbroken strings (emails, URLs, IDs) wrap instead of stretching the page */
+  #content,#modal{overflow-wrap:anywhere;word-break:break-word}
+  #content pre{white-space:pre-wrap}
+
+  /* ── 2. Clear the bottom nav + the iOS home indicator everywhere ─────── */
+  #content{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  .mob-nav,nav.md\:hidden,#bottom-nav{padding-bottom:env(safe-area-inset-bottom)}
+
+  /* ── 3. Touch targets. The 44px rules only reached .ui-* controls before,
+         so every hand-rolled inline-styled button in the app missed them. ─ */
+  #content button,#content a[onclick],#content [role=button],#content label[onclick],
+  #modal button,.topbar button,.mob-nav button{min-height:40px}
+  /* square icon-only buttons get a real thumb target without changing their look */
+  #content button:has(> svg:only-child),#modal button:has(> svg:only-child),
+  .topbar button:has(> svg:only-child){min-width:40px}
+  #content input[type=checkbox],#content input[type=radio]{min-width:22px;min-height:22px}
+  /* 16px is the threshold below which iOS Safari zooms the page on focus */
+  input,select,textarea{font-size:16px!important}          /* topbar + CRM inputs too */
+  #content input,#content select,#content textarea,
+  #modal input,#modal select,#modal textarea,
+  .topbar input,.topbar select{min-height:44px}
+  #content textarea,#modal textarea{min-height:80px}
+
+  /* ── 4. Tables never blow out the page ──────────────────────────────── */
+  /* The table stays a real table — making it display:block decouples thead/tbody
+     column widths and the header stops lining up. Scroll its container instead. */
+  #content table{width:auto;min-width:100%;max-width:none}
+  #content table th,#content table td{white-space:nowrap}
+  #content .ui-card:has(table),#content div:has(> table),#content div:has(> .ui-table){
+    overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+
+  /* ── 5. Grids collapse to one column (two for compact stat tiles) ───── */
+  #content .grid{gap:.55rem}
+  #content .lg\:col-span-2,#content .md\:col-span-2{grid-column:auto!important}
+  /* everything multi-column collapses to one … */
+  #content [class*="grid-cols-"],
+  #content [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  /* … except compact tiles, which stay 2-up. These MUST come after the collapse rule:
+     same specificity, so source order decides the winner. */
+  #content .astat-grid,
+  #content .grid.grid-cols-2,
+  #content [style*="grid-template-columns:repeat(2"]{grid-template-columns:repeat(2,1fr)!important}
+
+  /* ── 6. Flex rows wrap rather than squeeze ─────────────────────────── */
+  #content [style*="display:flex"]:not([style*="flex-direction:column"]):not(.hscroll):not(.cal-strip):not(.cal4):not(.ui-tabs){flex-wrap:wrap}
+  .cal-strip,.cal4{flex-wrap:nowrap}
+  .ui-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  /* fixed-width panels inside content become full width */
+  #content [style*="width:284px"],#content [style*="width:320px"],
+  #content [style*="width:330px"],#content [style*="width:340px"]{width:100%!important;max-width:100%!important}
+  #content [style*="min-width:"]{min-width:0!important}
+
+  /* ── 7. Modals behave as bottom sheets ─────────────────────────────── */
+  /* openModal already renders a bottom sheet (items-end + rounded-t + max-h-92vh +
+     overflow-y-auto) with position:sticky header and footer. Keep that intact —
+     making the dialog a flex column would break the sticky bars. */
+  #modal{padding:0!important;align-items:flex-end!important}
+  #modal>[role=dialog]{width:100%!important;max-width:100%!important;
+    border-radius:20px 20px 0 0!important;margin:0!important;-webkit-overflow-scrolling:touch}
+  #modal [class*="max-w-"]{max-width:100%!important}
+  /* the sticky footer must clear the iOS home indicator, and its buttons must fit */
+  #modal>[role=dialog]>div[style*="position:sticky"][style*="bottom:0"]{
+    padding-bottom:calc(14px + env(safe-area-inset-bottom))!important}
+  #modal>[role=dialog]>div[style*="position:sticky"][style*="bottom:0"] button{flex:1 1 auto;min-width:0}
+
+  /* ── 8. Popovers / dropdowns stay on screen ────────────────────────── */
+  #content [style*="position:absolute"][style*="width:"]{max-width:92vw}
+  #toast,.pop{max-width:94vw}
+
+  /* ── 9. Type + spacing scale down a touch so more fits ─────────────── */
+  main#content h1.fd{font-size:22px;letter-spacing:-.4px}
+  main#content .fd[style*="font-size:30px"],
+  main#content [style*="font-size:28px"][style*="font-weight:800"]{font-size:24px!important}
+  .ui-card-pad{padding:14px}
+  .ui-card-head{padding:13px 14px}
+  .ui-table th,.ui-table td{padding:9px 10px}
+
+  /* ── 10. Sidebar stays off-canvas; content owns the full width ─────── */
+  #main-wrap{margin-left:0!important}
+}
+
+/* Landscape phones: keep sheets usable when the keyboard eats the height */
+@media(max-width:900px) and (max-height:520px){
+  #modal>[role=dialog],#modal>div{max-height:96vh}
+  #content{padding-bottom:calc(70px + env(safe-area-inset-bottom))!important}
+}
