@@ -587,7 +587,9 @@ function okrCheckinForDate(okrId,date){const cs=(DB.okrCheckins||[]).filter(c=>c
      1) OWNERSHIP FLOOR — you always see objectives you own or created (you must update them).
      2) SUBTREE RULE — everything below a visible node is visible ("their level and below"). */
 function okrVisible(){
-  const all=DB.okrs||[];
+  /* _shadow rows are numeric stand-ins for objectives RLS hides from this user.
+     They feed roll-up math only and must never appear in any list. */
+  const all=(DB.okrs||[]).filter(o=>!o._shadow);
   if(!S.uid||!can('okr','view'))return[];
   const sc=scopeOf('okr');
   if(sc==='everyone')return all;
@@ -619,7 +621,7 @@ function okrVisible(){
    Used to guard the detail, edit, move, revise and check-in paths — the list was
    already filtered, but those entry points are reachable directly by id. */
 function okrCanSee(o){
-  if(!o)return false;
+  if(!o||o._shadow)return false;
   if(!S.uid||!can('okr','view'))return false;
   const sc=scopeOf('okr');
   if(sc==='everyone')return true;
@@ -701,7 +703,7 @@ function _okrQParent(qn){
   }
   return null;
 }
-const _OKR_LVL_C=['#0F3038','#12A3E0','#FF7F11','#8B5CF6','#E0A106','#EC4899'];
+const _OKR_LVL_T=['#0F3038','#0C74A2','#BF5100','#7C3AED','#8A5F00','#DB2777'];      /* the same hues as TEXT on white, AA-safe */
 function _okrCanManage(){return can('okr','manage');}
 function _okrCanCreate(){return can('okr','create')||_okrCanManage();}
 function _okrCanEditNode(o){return can('okr','edit')||_okrCanManage()||o.createdBy===S.uid||okrOwnerIs(o,S.uid);} // any owner can edit
@@ -713,10 +715,12 @@ function _okrCanCheckin(o){
 }
 /* Deleting is gated on the declared 'delete' permission, not merely on ownership. */
 function _okrCanDelete(o){return okrCanSee(o)&&_okrCanEditNode(o)&&(can('okr','delete')||_okrCanManage());}
-function _okrLvlChip(lvl){const c=_OKR_LVL_C[lvl%_OKR_LVL_C.length];return`<span style="flex-shrink:0;display:inline-flex;align-items:center;font-size:10px;font-weight:800;line-height:1;padding:4px 7px;border-radius:6px;background:${c};color:#fff;letter-spacing:.03em">L${lvl}</span>`;}
+function _okrLvlChip(lvl){const c=_OKR_LVL_T[lvl%_OKR_LVL_T.length];return`<span style="flex-shrink:0;display:inline-flex;align-items:center;font-size:11.5px;font-weight:800;line-height:1;color:${c};letter-spacing:.02em">L${lvl}</span>`;}
 /* Annual / quarter tags shown next to the level chip — keeps the tree readable at a glance. */
 function _okrAnnualChip(){return`<span title="Annual objective — updates automatically from its quarterly objectives" style="flex-shrink:0;display:inline-flex;align-items:center;font-size:10px;font-weight:800;line-height:1;padding:3px 7px;border-radius:6px;background:#F0EDFE;color:#5B45D6;border:1px solid #CFC6FA;letter-spacing:.04em">ANNUAL</span>`;}
-function _okrQtrChip(label){return`<span title="Quarterly objective — feeds its annual objective" style="flex-shrink:0;display:inline-flex;align-items:center;font-size:10px;font-weight:800;line-height:1;padding:3px 7px;border-radius:6px;background:#FDF3D9;color:#7A4E00;border:1px solid #FBE6A6;letter-spacing:.04em">${esc(label)}</span>`;}
+/* Quarter tags removed from the rows — the Quarterly view already groups by quarter,
+   so repeating "Q1" on every line was noise. Kept as a no-op so call sites stay put. */
+function _okrQtrChip(label){return'';}
 I.move='<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>';
 /* TZ-safe date helpers (toISOString shifts a day in +TZ — use local fields like todayISO does) */
 const _okrISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');

@@ -89,6 +89,42 @@ let _tabLoading={};
 /* ── PORTED: sync bar + tab-loading helpers (Safe Backup) ── */
 function _anyLoading(){try{return Object.values(_tabLoading||{}).some(Boolean);}catch(e){return false;}}
 function _syncBar(on){try{let b=document.getElementById('syncbar');if(!b){if(!on)return;b=document.createElement('div');b.id='syncbar';document.body.appendChild(b);}b.classList.toggle('on',!!on);}catch(e){}}
+/* ── Roll-up-safe aggregates under OKR row-level security ────────────────────
+   RLS now hides objectives outside the user's scope. A roll-up or annual PARENT
+   still has to total its children, so bridge_okr_rollup_facts() returns numbers
+   only — no title, owner, department, comment or check-in author — for the
+   descendants the caller cannot see. They are merged as SHADOW rows: the roll-up
+   math walks them, but okrVisible()/okrCanSee() exclude them so they never render
+   and can never be opened, edited or exported. */
+async function _loadOkrShadows(){
+  try{
+    const{data,error}=await sb.rpc('bridge_okr_rollup_facts');
+    if(error||!data)return;
+    const so=(data.okrs||[]).map(o=>({
+      id:o.id,parentId:o.parent_id||null,title:'',description:'',
+      ownerId:null,owners:[],departmentId:null,subDepartmentId:null,
+      metricType:o.metric_type||'number',direction:o.direction||'up',unit:'',
+      startValue:o.start_value===null||o.start_value===undefined?0:Number(o.start_value),
+      targetValue:o.target_value===null||o.target_value===undefined?null:Number(o.target_value),
+      revisedTarget:o.revised_target===null||o.revised_target===undefined?null:Number(o.revised_target),
+      rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',isAnnual:!!o.is_annual,
+      quarterLabel:o.quarter_label||null,closed:!!o.closed,
+      periodStart:o.period_start||null,periodEnd:o.period_end||null,
+      frequency:{},statusMode:'auto',statusManual:null,createdBy:null,
+      _shadow:true                                    // <- never rendered, math only
+    }));
+    const sc=(data.checkins||[]).map(c=>({
+      id:c.id,okrId:c.okr_id,userId:null,date:c.date,
+      value:c.value===null||c.value===undefined?null:Number(c.value),
+      comment:'',photos:[],statusMark:null,editCount:0,createdAt:null,_shadow:true
+    }));
+    const have=new Set((DB.okrs||[]).map(o=>o.id));
+    DB.okrs=[...(DB.okrs||[]),...so.filter(o=>!have.has(o.id))];
+    const haveC=new Set((DB.okrCheckins||[]).map(c=>c.id));
+    DB.okrCheckins=[...(DB.okrCheckins||[]),...sc.filter(c=>!haveC.has(c.id))];
+    if(so.length&&typeof rr==='function'&&S&&S.route==='okr')rr();   // redraw once totals can be computed
+  }catch(e){console.warn('[okr rollup facts]',e&&e.message);}
+}
 /* Server rows win, except where a local row still has an unsent queued write. */
 function _keepPending(table,serverRows,localRows){
   const pend=typeof pendingWriteIds==='function'?pendingWriteIds(table):new Set();
@@ -118,7 +154,7 @@ async function _lazyLoad(kind){
       if(!r[0].error&&r[0].data){const _delCls=new Set(DB.checklists_deleted||[]);DB.checklists=_mC(r[0].data).filter(c=>!_delCls.has(c.id));}
       if(!r[1].error&&r[1].data){const _delQs=new Set(DB.questions_deleted||[]);DB.questions=r[1].data.filter(q=>!_delQs.has(q.id)).map(_mQrow);}
     }
-    else if(kind==='okr'){const r=await Promise.all([sb.from('okrs').select('*').order('created_at',{ascending:true}),sb.from('okr_checkins').select('*').order('date',{ascending:true}),sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800)]);if(!r[0].error)DB.okrs=_keepPending('okrs',_mOKR(r[0].data),DB.okrs);if(!r[1].error)DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(r[1].data),DB.okrCheckins);if(!r[2].error)DB.okrLogs=_mOKRLog(r[2].data);}
+    else if(kind==='okr'){const r=await Promise.all([sb.from('okrs').select('*').order('created_at',{ascending:true}),sb.from('okr_checkins').select('*').order('date',{ascending:true}),sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800)]);if(!r[0].error)DB.okrs=_keepPending('okrs',_mOKR(r[0].data),DB.okrs);if(!r[1].error)DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(r[1].data),DB.okrCheckins);if(!r[2].error)DB.okrLogs=_mOKRLog(r[2].data);await _loadOkrShadows();}
     saveDB();rr();
   }catch(e){console.warn('[lazyLoad]',kind,e.message);}
   finally{clearTimeout(_loadTO);_tabLoading[kind]=false;_syncBar(_anyLoading());}
@@ -267,7 +303,7 @@ async function loadFromSB(){
 
   // ── PORTED (Safe Backup): OKR data + role profiles + role migration ──
   DB.users.forEach(u=>_ensureHrm(u));
-  DB.okrs=_keepPending('okrs',_mOKR(okrRows),DB.okrs);DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(okrCiRows),DB.okrCheckins);DB.okrLogs=_mOKRLog(okrLogRows);
+  DB.okrs=_keepPending('okrs',_mOKR(okrRows),DB.okrs);DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(okrCiRows),DB.okrCheckins);DB.okrLogs=_mOKRLog(okrLogRows);_loadOkrShadows();
   try{const _rpRow=(rpRows&&rpRows[0])||null;if(_rpRow&&_rpRow.value&&typeof _rpRow.value==='object')DB.roleProfiles={...(DB.roleProfiles||{}),..._rpRow.value};}catch(e){}
   _seedRoleProfiles();
   try{_permsV3Migrate();}catch(e){console.warn('[perms] migrate skipped:',e.message);}
