@@ -7,44 +7,41 @@
 <title>Bridge</title>
 <script>(()=>{const w=console.warn;console.warn=(...a)=>{if(typeof a[0]==='string'&&a[0].includes('cdn.tailwind'))return;w(...a)};window.addEventListener('error',e=>{if(!e.filename||e.filename.includes('cdn.tailwind')||e.filename.includes('fonts.google'))e.stopImmediatePropagation();},true);})();</script>
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Type: Aptos first (renders natively wherever Microsoft 365 is installed).
-     Inter is loaded as the closest free stand-in for every other machine. -->
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..800;1,300..600&display=swap" rel="stylesheet">
-<style>
-@font-face{font-family:"Aptos";font-weight:100 900;font-style:normal;font-display:swap;src:local("Aptos"),local("Aptos Regular"),local("Aptos-Regular")}
-@font-face{font-family:"Aptos";font-weight:100 900;font-style:italic;font-display:swap;src:local("Aptos Italic"),local("Aptos-Italic")}
-</style>
-<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Aptos"','"Aptos Display"','"Inter"','"Segoe UI Variable"','ui-sans-serif','system-ui','sans-serif'],sans:['"Aptos"','"Aptos Display"','"Inter"','"Segoe UI Variable"','ui-sans-serif','system-ui','sans-serif']},colors:{ink:{DEFAULT:'#10262E',50:'#F4F9FA',100:'#E7F0F2',200:'#CBDBDF',300:'#9DB1B6',400:'#5E767D',500:'#35545C',600:'#234049',700:'#16323A',800:'#10262E'},brand:{DEFAULT:'#FF7F11',50:'#FFF1E4',100:'#FFE0C7',200:'#FFD9B8',400:'#FF9A68',500:'#FF8F33',600:'#FF7F11',700:'#C25A00',800:'#B85200'},teal:{DEFAULT:'#00C2C7',50:'#E3FAFB',100:'#C6F4F5',300:'#4DE0D2',500:'#00C2C7',600:'#00A8AD',700:'#087078'},paper:'#F6FAFB'},boxShadow:{soft:'0 1px 2px rgba(13,38,46,.04),0 4px 16px -6px rgba(13,38,46,.10)',pop:'0 8px 40px -8px rgba(13,38,46,.28)'}}}}</script>
+<!-- Type: Poppins everywhere — one family for display and body. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Poppins"','ui-sans-serif','system-ui','sans-serif'],sans:['"Poppins"','ui-sans-serif','system-ui','sans-serif']},colors:{ink:{DEFAULT:'#10262E',50:'#F4F9FA',100:'#E7F0F2',200:'#CBDBDF',300:'#9DB1B6',400:'#5E767D',500:'#35545C',600:'#234049',700:'#16323A',800:'#10262E'},brand:{DEFAULT:'#FF7F11',50:'#FFF1E4',100:'#FFE0C7',200:'#FFD9B8',400:'#FF9A68',500:'#FF8F33',600:'#FF7F11',700:'#C25A00',800:'#B85200'},teal:{DEFAULT:'#00C2C7',50:'#E3FAFB',100:'#C6F4F5',300:'#4DE0D2',500:'#00C2C7',600:'#00A8AD',700:'#087078'},paper:'#F6FAFB'},boxShadow:{soft:'0 1px 2px rgba(13,38,46,.04),0 4px 16px -6px rgba(13,38,46,.10)',pop:'0 8px 40px -8px rgba(13,38,46,.28)'}}}}</script>
 <link rel="stylesheet" href="/src/styles/main.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<!-- Charts pick up the app font too, so axis labels and legends match the UI. -->
+<script>if(typeof Chart!=='undefined'&&Chart.defaults&&Chart.defaults.font)Chart.defaults.font.family='"Poppins",ui-sans-serif,system-ui,sans-serif';</script>
 </head>
 <body>
 <div id="app"></div>
 
 <!-- ══ App modules — classic scripts, shared scope, ORDER MATTERS ══ -->
-<script defer src="js/00-helpers.js?v=66"></script>
-<script defer src="js/01-supabase-sync.js?v=66"></script>
-<script defer src="js/01a-sync-queue.js?v=66"></script>
-<script defer src="js/02-state-roles.js?v=66"></script>
-<script defer src="js/03-ui-kit.js?v=66"></script>
-<script defer src="js/04-nav-shell.js?v=66"></script>
-<script defer src="js/05-router-dashboard.js?v=66"></script>
-<script defer src="js/06-crm.js?v=66"></script>
-<script defer src="js/07-login.js?v=66"></script>
-<script defer src="js/08-dashboards.js?v=66"></script>
-<script defer src="js/09-users.js?v=66"></script>
-<script defer src="js/10-departments-locations.js?v=66"></script>
-<script defer src="js/11-checklists-admin.js?v=66"></script>
-<script defer src="js/12-my-checklists.js?v=66"></script>
-<script defer src="js/13-approvals.js?v=66"></script>
-<script defer src="js/14-all-checklists.js?v=66"></script>
-<script defer src="js/15-questions-escalation.js?v=66"></script>
-<script defer src="js/16-hierarchy-tickets.js?v=66"></script>
-<script defer src="js/17-analytics.js?v=66"></script>
-<script defer src="js/18-settings-notifications.js?v=66"></script>
-<script defer src="js/19-okr-roles-acl.js?v=66"></script>
-<script defer src="js/99-boot.js?v=66"></script>
+<script defer src="js/00-helpers.js?v=67"></script>
+<script defer src="js/01-supabase-sync.js?v=67"></script>
+<script defer src="js/01a-sync-queue.js?v=67"></script>
+<script defer src="js/02-state-roles.js?v=67"></script>
+<script defer src="js/03-ui-kit.js?v=67"></script>
+<script defer src="js/04-nav-shell.js?v=67"></script>
+<script defer src="js/05-router-dashboard.js?v=67"></script>
+<script defer src="js/06-crm.js?v=67"></script>
+<script defer src="js/07-login.js?v=67"></script>
+<script defer src="js/08-dashboards.js?v=67"></script>
+<script defer src="js/09-users.js?v=67"></script>
+<script defer src="js/10-departments-locations.js?v=67"></script>
+<script defer src="js/11-checklists-admin.js?v=67"></script>
+<script defer src="js/12-my-checklists.js?v=67"></script>
+<script defer src="js/13-approvals.js?v=67"></script>
+<script defer src="js/14-all-checklists.js?v=67"></script>
+<script defer src="js/15-questions-escalation.js?v=67"></script>
+<script defer src="js/16-hierarchy-tickets.js?v=67"></script>
+<script defer src="js/17-analytics.js?v=67"></script>
+<script defer src="js/18-settings-notifications.js?v=67"></script>
+<script defer src="js/19-okr-roles-acl.js?v=67"></script>
+<script defer src="js/99-boot.js?v=67"></script>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

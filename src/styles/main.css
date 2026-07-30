@@ -1,7 +1,7 @@
 /* ─ Bridge base ─ */
 html,body{height:100%}
-body{font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;background:#F6FAFB;color:#10262E;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
-.fd{font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif}
+body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;background:#F6FAFB;color:#10262E;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+.fd{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#CBDBDF;border-radius:4px}
 .fade{animation:fd .22s ease}@keyframes fd{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 input,select,textarea{outline:none}
@@ -181,7 +181,7 @@ button:focus-visible,a:focus-visible{outline-offset:3px;border-radius:8px}
 /* App backdrop */
 body{background:var(--grad-paper)!important;background-attachment:fixed!important}
 /* Brand logo squares → gradient + glow (sidebar + topbar use .nav-brand) */
-.nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(255,127,17,.55);letter-spacing:-.5px}
+.nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(255,127,17,.55);letter-spacing:-.5px}
 /* Sidebar → deep gradient with subtle inner glow */
 aside.sidebar{background-color:#0C222A!important;background-image:linear-gradient(180deg,#123840 0%,#10262E 60%,#0A1B21 100%)!important;border-right:1px solid rgba(255,255,255,.05)}
 /* Page titles a touch larger + tighter */
@@ -384,19 +384,19 @@ main#content input:focus,main#content select:focus,main#content textarea:focus{ 
   --sh-pop:0 28px 72px -18px rgba(13,38,46,.30),0 10px 28px -12px rgba(13,38,46,.16);
   /* type scale */
   --fs-h1:27px; --fs-h2:19px; --fs-card:14.5px; --fs-body:14px; --fs-cap:11.5px;
-  /* type family — single Aptos family across the app (display + body) */
-  --font-display:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;
-  --font-sans:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  /* type family — single Poppins family across the app (display + body) */
+  --font-display:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --font-sans:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;
   --ring:0 0 0 3.5px rgba(255,127,17,.20);
 }
 /* ─ Bridge base ─ */
 html,body{height:100%}
-body{font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior:none}
-.fd{font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;letter-spacing:-.01em}
+body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior:none}
+.fd{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;letter-spacing:-.01em}
 
 /* ════════ Component primitives (token-driven) ════════ */
 /* Buttons */
-.ui-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:600;font-size:14px;line-height:1;padding:10px 17px;min-height:42px;border-radius:var(--r-md);border:1.5px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,opacity .15s,transform .1s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.ui-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:600;font-size:14px;line-height:1;padding:10px 17px;min-height:42px;border-radius:var(--r-md);border:1.5px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,opacity .15s,transform .1s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .ui-btn:active{transform:translateY(1px) scale(.985)}
 .ui-btn:focus-visible{outline:none;box-shadow:var(--ring)}
 .ui-btn-md{padding:10px 17px;min-height:42px}
@@ -429,7 +429,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .ui-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
 .ui-card-pad{padding:20px}
 .ui-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 20px;border-bottom:1px solid var(--c-border)}
-.ui-card-title{font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:700;font-size:15px;color:var(--c-text)}
+.ui-card-title{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:700;font-size:15px;color:var(--c-text)}
 /* Tab / chip bar */
 .ui-tabs{display:inline-flex;gap:3px;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:var(--r-md);padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 .ui-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:8px 15px;min-height:38px;border-radius:9px;border:none;background:transparent;color:var(--c-text-2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -465,7 +465,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .nav-sec.collapsed .nav-chev{transform:rotate(-90deg)}
 .nav-sec.collapsed .nav-sec-body{display:none}
 /* Brand mark */
-.nav-brand{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--c-brand),#FFA94D);color:#fff;display:grid;place-items:center;font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px -1px rgba(255,127,17,.5)}
+.nav-brand{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--c-brand),#FFA94D);color:#fff;display:grid;place-items:center;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px -1px rgba(255,127,17,.5)}
 /* Modal/toast pop-in */
 .pop{animation:uipop .2s cubic-bezier(.16,1,.3,1)}
 @keyframes uipop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
@@ -723,7 +723,7 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
 /* ══════════════════════════════════════════════════════════════════════════════
    BRIDGE THEME v6 — "Energizing Orange + Secondary Teal"
    Appended last: the cascade wins over every legacy literal above.
-   Type: Aptos (Inter is the loaded stand-in for machines without Aptos).
+   Type: Poppins (loaded from Google Fonts in index.html).
    ══════════════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── Core palette ───────────────────────────────────────────────── */
@@ -782,7 +782,7 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
 
 /* ── Type ──────────────────────────────────────────────────────────── */
 body,.fd,.ui-btn,.ui-card-title,.nav-brand,input,select,textarea,button{
-  font-family:"Aptos","Aptos Display","Inter","Segoe UI Variable","Segoe UI",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;
 }
 body{background:var(--grad-paper)!important;background-attachment:fixed!important;color:var(--c-text)}
 ::selection{background:rgba(0,194,199,.24);color:var(--c-ink)}
