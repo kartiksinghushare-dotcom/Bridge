@@ -61,7 +61,7 @@ App._howModal=()=>{
       ${h.l&&h.l.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center"><span style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase">Linked tabs:</span>${h.l.filter(x=>navFor().some(n=>n[0]===x[0])).map(x=>`<button onclick="App.closeModal();App.go('${x[0]}')" class="ui-btn ui-btn-ghost ui-btn-sm">${x[1]} →</button>`).join('')}</div>`:''}`,
     footer:btnP('Got it','App.closeModal()')});
 };
-function _howBar(key){
+function _howBar(key){return'';// v3.16: blue helper banners removed (user request) — the "?" HOW modal content stays available to future UI
   const h=HOW[key];if(!h)return'';
   try{if(localStorage.getItem('bridge_how_'+key))return'';}catch(e){}
   return `<div style="display:flex;gap:10px;align-items:flex-start;background:var(--c-info-soft);border:1px solid #BCD9FB;border-radius:12px;padding:10px 14px;margin-bottom:14px">
@@ -79,7 +79,7 @@ function _howBar(key){
 /* dismissNote(key,html,opts) — an informational note the user can dismiss with × ("got it,
    don't show again" — remembered per browser in localStorage, same rule as the How-bars).
    opts: icon · style (extra outer css) · onDismiss (JS string run after hiding; default rr()). */
-function dismissNote(key,html,opts={}){
+function dismissNote(key,html,opts={}){return'';// v3.16: blue info notes removed (user request)
   try{if(localStorage.getItem('bridge_note_'+key))return'';}catch(e){}
   const after=opts.onDismiss||'rr()';
   return `<div style="display:flex;gap:8px;align-items:flex-start;background:var(--c-info-soft);border:1px solid #BCD9FB;border-radius:10px;padding:8px 12px;font-size:12px;color:#14509E;${opts.style||''}">
@@ -476,7 +476,7 @@ function okrRootOf(o){let cur=o,g=0;while(cur&&cur.parentId&&g++<15){const p=okr
 function okrCheckinsOf(id){return(DB.okrCheckins||[]).filter(c=>c.okrId===id).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));}
 function okrLatestCheckin(id){const cs=okrCheckinsOf(id);return cs.length?cs[cs.length-1]:null;}
 // Leaf progress %: how far the latest reported value moved from startValue toward targetValue.
-// Works for direction 'down' too (target < start flips the sign naturally). Capped 0–100.
+// Works for direction 'down' too (target < start flips the sign naturally). v3.17: >100% shows when beaten.
 /* ── Revisions: a revised target OVERLAYS the same objective. The original target and every
    check-in stay untouched — one input stream feeds both numbers, so the two can be compared. ── */
 function okrHasRevision(o){return !!o&&o.revisedTarget!==null&&o.revisedTarget!==undefined&&o.metricType!=='yesno';}
@@ -494,7 +494,7 @@ function _okrTargetEff(o){return okrHasRevision(o)?Number(o.revisedTarget):((o.t
             There is no start, so "how far along" is meaningless. The % instead reports
             COMPLIANCE: what share of the updates in the period landed on the good side.
             8 of 10 weekly readings at or above 98% → 80%. Status follows the LATEST reading.
-   Everything is capped 0–100. A reading can beat its target, but the bar cannot exceed full. */
+   v3.17: the % is uncapped above 100 (real overachievement shows); bars still fill at 100; floor stays 0. */
 const OKR_DIRS=[['up','Higher is better'],['down','Lower is better'],['gte','Greater than'],['lte','Less than']];
 const OKR_DIR_LONG={
   up:'Higher is better — start value climbs to the target',
@@ -548,15 +548,15 @@ function _okrCompliancePct(o){
   const ok=pts.filter(p=>okrThreshOK(o,p.value)===true).length;
   return Math.round((ok/pts.length)*1000)/10;
 }
-/* One clamp for every percentage the app shows: 0–100, one decimal. Nothing reads 150% again. */
-function _okrClampPct(p){return isFinite(p)?Math.round(Math.max(0,Math.min(100,Number(p)))*10)/10:null;}
+/* v3.17: floor 0, one decimal, sanity ceiling 999 — real overachievement shows (e.g. 122%), absurd values don't. */
+function _okrClampPct(p){return isFinite(p)?Math.round(Math.max(0,Math.min(999,Number(p)))*10)/10:null;}
 function okrDirLabel(o){const d=okrDirOf(o);return(OKR_DIRS.find(x=>x[0]===d)||OKR_DIRS[0])[1];}
 /* The comparison sign that belongs in front of a TARGET: "\u226550" for a floor, "\u226450" for a
    ceiling. Use this wherever a TARGET is shown; never for current/start/check-in values. */
 function _okrTargetSign(o){const d=okrDirOf(o);return d==='gte'?'\u2265':(d==='lte'||d==='down')?'\u2264':'';}
 function _okrFmtTarget(o,v){const t=_okrFmtVal(o,v);return t==='\u2014'?t:(_okrTargetSign(o)+t);}
 function _okrTargetWord(o){return okrIsThresh(o)?'threshold':okrDirDown(o)?'limit':'target';}
-/* The % against target `t`. Never exceeds 100 \u2014 beating the target is Achieved, not 140%. */
+/* The % against target `t`. v3.17: beating the target shows the REAL number (122%); bars still fill at 100. */
 function _okrPctVs(o,t){
   if(okrIsThresh(o))return _okrCompliancePct(o);
   const v0=okrCurrentOf(o);if(v0===null||v0===undefined)return null;
@@ -592,8 +592,8 @@ function _okrQProgressAvg(o){
   const qs=_okrQKids(o);
   if(!qs.length)return null;
   let any=false;
-  // Every quarter is already clamped 0–100 by okrProgress, so the average is too.
-  const ps=qs.map(k=>{const p=okrProgress(k);if(p===null)return 0;any=true;return Math.max(0,Math.min(100,p));});
+  // v3.17: quarters contribute their REAL progress (an overachieved Q1 counts fully); floor 0 each.
+  const ps=qs.map(k=>{const p=okrProgress(k);if(p===null)return 0;any=true;return Math.max(0,p);});
   if(!any)return null;
   return _okrClampPct(ps.reduce((a,b)=>a+b,0)/qs.length);
 }
@@ -1089,6 +1089,8 @@ App._okrSummaryList=(key)=>{
   modalShell({title:key==='all'?'All OKRs':(key+' — OKRs'),sub:hits.length+' objective'+(hits.length===1?'':'s')+' behind this number · tap one to open it',size:'max-w-lg',key:'okr-sum',
     body:rows||'<p style="font-size:13px;color:var(--c-text-3)">No OKRs in this bucket right now.</p>'});
 };
+let _OKR_FLTOPEN=false; // v3.16: the filter chips live in a collapsible panel — this is its open state (per session, not persisted)
+App._okrTogFilters=()=>{_OKR_FLTOPEN=!_OKR_FLTOPEN;S.filters.okrMSOpen=null;S.filters.okrQtrOpen=false;rr();};
 App._okrTogExp=(id)=>{const _qv=(S.filters.okrView==='quarter');const cur=_qv?(_OKR_EXP[id]!==false):!!_OKR_EXP[id];_OKR_EXP[id]=!cur;saveOkrExpanded(_OKR_EXP);rr();};
 /* Logout / login without a page reload: the in-memory map has to be reset too, otherwise
    the next person's first expand writes the PREVIOUS person's branch ids back to disk. */
@@ -1181,7 +1183,7 @@ function okrPage(){
   const sts=vis.map(o=>okrStatusOf(o));
   const cnt=x=>sts.filter(s=>s===x).length;
   const scard=(label,n,bg,fg,icon,key)=>`<div role="button" tabindex="0" onclick="App._okrSummaryList('${key}')" onkeydown="if(event.key==='Enter')App._okrSummaryList('${key}')" title="See which OKRs these are" style="flex:1;min-width:108px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:11px;padding:7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--c-text)'" onmouseout="this.style.borderColor='var(--c-border)'"><span style="width:30px;height:30px;border-radius:9px;background:${bg};color:${fg};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</span><span style="min-width:0"><span class="fd" style="display:block;font-size:17px;font-weight:800;line-height:1;color:var(--c-text)">${n}</span><span style="display:block;font-size:10.5px;color:var(--c-text-2);margin-top:2px;white-space:nowrap">${label}</span></span></div>`;
-  const summary=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+  const summary=`<div class="okr-stats">
     ${scard('Total OKRs',vis.length,'var(--c-brand-soft)','var(--c-brand-ink)','chart','all')}
     ${scard('Achieved',cnt('Achieved'),'#FFE0C7','#0B5F37','check','Achieved')}
     ${scard('On track',cnt('On track'),'#FFF1E4','#C25A00','approve','On track')}
@@ -1278,18 +1280,22 @@ function okrPage(){
      objective and the "Deleted" button you need to restore it goes too. Shown whenever there
      is anything to show, a filter to clear, or a recycle bin to reach. */
   const _canBin=can('okr','delete')||_okrCanManage();
-  const fBar=(vis.length||fActive||_view==='quarter'||_canBin)?`<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px;overflow:visible">
+  const _fCnt=(fDept.length?1:0)+(fSub.length?1:0)+(fOwn.length?1:0)+(fSt.length?1:0)+(fLvl.length?1:0)+(fDir.length?1:0)+(((F.okrQ||'').trim())?1:0)+((F.okrQtr||[]).length?1:0);
+  const _fltBtn=`<button onclick="App._okrTogFilters()" title="Show / hide filters" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:9px;border:1.5px solid ${(_OKR_FLTOPEN||_fCnt)?'var(--c-text)':'var(--c-border-2)'};background:${_OKR_FLTOPEN?'var(--c-ink)':'var(--c-surface)'};color:${_OKR_FLTOPEN?'#fff':'var(--c-text-2)'};font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${ic('filter','w-3.5 h-3.5')}Filters${_fCnt?`<span style="display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border-radius:20px;padding:1px 6px;min-width:16px;background:${_OKR_FLTOPEN?'rgba(255,255,255,.22)':'var(--c-brand)'};color:#fff">${_fCnt}</span>`:''}<span style="transform:${_OKR_FLTOPEN?'rotate(180deg)':'none'};display:inline-flex">${ic('chevD','w-3 h-3')}</span></button>`;
+  const fBar=(vis.length||fActive||_view==='quarter'||_canBin)?`<div class="ui-card okr-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 10px;margin-bottom:${_OKR_FLTOPEN?'8px':'14px'};overflow:visible">
       ${qtrDrop}
-      <input id="okr-q" value="${esc(F.okrQ||'')}" oninput="S.filters.okrQ=this.value;App._searchRR('okr-q')" placeholder="Search objectives…" class="ui-input" style="flex:1;min-width:150px;height:32px;min-height:0;padding:4px 12px;font-size:12.5px"/>
+      <input id="okr-q" value="${esc(F.okrQ||'')}" oninput="S.filters.okrQ=this.value;App._searchRR('okr-q')" placeholder="Search…" class="ui-input" style="flex:1;min-width:110px;height:32px;min-height:0;padding:4px 12px;font-size:12.5px"/>
+      ${_fltBtn}
+      ${fActive||_view==='quarter'?`<button onclick="S.filters.okrQ='';S.filters.okrDept=[];S.filters.okrSub=[];S.filters.okrOwner=[];S.filters.okrStatus=[];S.filters.okrLvl=[];S.filters.okrDir=[];S.filters.okrQtr=[];S.filters.okrView='';S.filters.okrQtrOpen=false;S.filters.okrMSOpen=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}
+    </div>${_OKR_FLTOPEN?`<div class="ui-card okr-fpanel" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px;overflow:visible">
       ${msDrop('okrDept','Departments',deptIds.map(id=>[id,_dName(id)]))}
       ${(subIds.length||fSub.length)?msDrop('okrSub','Sub-departments',subIds.map(id=>[id,_dName(id)])):''}
       ${msDrop('okrOwner','Owners',ownerIds.map(id=>{const u2=uById(id);return[id,u2?fullName(u2):id];}))}
       ${msDrop('okrStatus','Status',['Achieved','On track','Off track','Not achieved','No data','Closed'].map(s=>[s,s]))}
       ${msDrop('okrDir','Which way is good?',OKR_DIRS.map(d=>[d[0],d[1]]))}
       ${msDrop('okrLvl','Level',lvlsPresent.map(i=>[String(i),'L'+i]))}
-      ${fActive||_view==='quarter'?`<button onclick="S.filters.okrQ='';S.filters.okrDept=[];S.filters.okrSub=[];S.filters.okrOwner=[];S.filters.okrStatus=[];S.filters.okrLvl=[];S.filters.okrDir=[];S.filters.okrQtr=[];S.filters.okrView='';S.filters.okrQtrOpen=false;S.filters.okrMSOpen=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear all</button>`:''}
       ${_canBin?`<button onclick="App._okrRecycle()" title="Objectives that were deleted — restore them or erase them for good" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-left:auto">${ic('trash','w-3.5 h-3.5')}Deleted</button>`:''}
-    </div>`:'';
+    </div>`:''}`:'';
   // ── Three renderings: quarterly hierarchy tree · flat filtered list · the annual tree ──
   let tree;
   if(_view==='quarter'){
@@ -1359,7 +1365,7 @@ function okrPage(){
         ${btn('Bulk edit '+_selCount+' objective'+(_selCount===1?'':'s'),'App._okrBulk()',{variant:'primary',size:'sm',icon:'edit'})}
         <button onclick="App._okrExport()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Download these objectives with every update, revision and activity entry as an Excel workbook">Export to Excel</button>
         <button onclick="App._okrSelClear()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear selection</button>`
-      :`<span style="flex:1;min-width:180px;font-size:11.5px;color:var(--c-text-3)">Tick the box on any objective to change several at once — owners, department, dates, targets, schedule, status, close or delete.</span>
+      :`<span class="okr-bulkhint" style="flex:1;min-width:180px;font-size:11.5px;color:var(--c-text-3)">Tick the box on any objective to change several at once — owners, department, dates, targets, schedule, status, close or delete.</span>
         <button onclick="App._okrExport()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Download every objective you can see — with all updates, revisions and activity — as an Excel workbook">Export to Excel</button>`}
     </div>`:'';
   return `<div class="fade">${head}${_howBar('okr')}${summary}${duePanel}${fBar}${bulkBar}<div>${tree}</div></div>`;
@@ -1420,7 +1426,7 @@ function _okrNodeHTML(o,depth){
             ${kids.length?`<span style="${meta}">${ic('tree','w-3 h-3')}${kids.length} sub-objective${kids.length===1?'':'s'}</span>`:''}
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:auto;padding-left:6px">
+        <div class="okr-nums" style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:auto;padding-left:6px">
           <span style="font-size:11px;font-weight:700;color:var(--c-text-2);white-space:nowrap">${curTgt}</span>
           <div title="${barTitle}" style="width:70px;height:5px;background:var(--c-border);border-radius:3px;overflow:hidden;flex-shrink:0"><div style="height:100%;width:${pct===null?0:Math.max(0,Math.min(100,pct))}%;background:${barC};border-radius:3px;transition:width .3s"></div></div>
           <span class="fd" title="${barTitle}" style="font-size:13px;font-weight:800;color:var(--c-text);min-width:38px;text-align:right">${pct===null?'—':pct+'%'}</span>
@@ -1519,17 +1525,22 @@ function _okrProgressPanel(o,kids,pct,st){
   /* "Lower is better" explainer — spells out what the two graph lines mean for this objective. */
   const _capV=_okrTargetEff(o);
   /* One note explaining how THIS objective's mode is scored — nothing for plain higher-is-better. */
-  const dirNote=(()=>{
-    if(!okrDirDown(o)&&!okrIsThresh(o))return '';
-    const wrap=(txt)=>`<div style="display:flex;gap:8px;align-items:flex-start;background:#FEF5E0;border:1px solid #FBE6A6;border-radius:10px;padding:8px 11px;margin-top:10px;font-size:11.5px;color:#7A4E00;line-height:1.6">${ic('alert','w-3.5 h-3.5')}<span>${txt}</span></div>`;
-    if(okrIsThresh(o)){
-      const gte=okrDirOf(o)==='gte';
-      const r=_okrReadings(o),ok=r.filter(x=>okrThreshOK(o,x.value)===true).length;
-      return wrap(`<b>${gte?'Greater than':'Less than'}</b> — ${esc(_okrFmtVal(o,_capV))} is a single line, not a journey, so there is no start value and no pace to be ahead or behind of. Every update <b>${gte?'at or above':'at or below'}</b> it counts as good: <b>On track</b> while the period runs, <b>Achieved</b> once it closes. The % is <b>compliance</b> — ${r.length?`<b>${ok} of ${r.length}</b> updates this period stayed on the good side`:'no updates recorded in this period yet'}. The graph draws that line flat, with each reading dotted green when it held and red when it broke.`);
-    }
-    return wrap(okrIsLimit(o)
-      ?`<b>Lower is better</b>, and your target sits above the start — so ${esc(_okrFmtVal(o,_capV))} acts as an <b>allowance</b>. The % is <b>how much of it is used</b> — this period's figure ÷ ${esc(_okrFmtVal(o,Number(_capV)-Number(o.startValue||0)))}. The straight red line on the graph is the allowance and the dashed grey line is the pace that keeps you inside it: <b>under the pace → On track</b>, above the pace but still inside → <b>Off track</b>, past it → <b>Not achieved</b>. If you only care that it stays under ${esc(_okrFmtVal(o,_capV))}, switch this to <b>Less than</b> in the editor.`
-      :`<b>Lower is better</b> — the job is to bring this number <b>down</b> from ${esc(_okrFmtVal(o,o.startValue))} to ${esc(_okrFmtVal(o,_capV))}. The % is how much of that drop is done; the red line on the graph marks the target.`);
+  const dirNote=(()=>{ // v3.17 — the un-dismissable yellow essay is gone; instead: the ACTUAL arithmetic behind the %, with a × (remembered per browser)
+    try{if(localStorage.getItem('bridge_note_okrmath'))return '';}catch(e){}
+    if(o.metricType==='yesno')return '';
+    const X=`<button onclick="event.stopPropagation();try{localStorage.setItem('bridge_note_okrmath','1')}catch(e){};App._okrProgressModal('${o.id}')" title="Hide this explanation" aria-label="Dismiss" style="margin-left:auto;flex-shrink:0;border:none;background:transparent;color:var(--c-text-3);cursor:pointer;font-size:14px;line-height:1;padding:0 2px">×</button>`;
+    const wrap=t2=>`<div style="display:flex;gap:7px;align-items:flex-start;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:9px;padding:7px 10px;margin-top:10px;font-size:11px;color:var(--c-text-2);line-height:1.55">${ic('info','w-3.5 h-3.5')}<span style="min-width:0">${t2}</span>${X}</div>`;
+    const f=v2=>esc(_okrFmtVal(o,v2));
+    const p=okrProgress(o);if(p===null)return '';
+    if(o.rollup)return wrap(`<b>${p}%</b> = ${esc(_okrModeLabel(o.rollupMode))} of its direct sub-objectives.`);
+    if(o.isAnnual)return wrap(`<b>${p}%</b> = the average of its quarters' progress, each counting equally.`);
+    const t=_okrTargetEff(o),s2=Number(o.startValue||0),v=okrCurrentOf(o);
+    if(okrIsThresh(o)){const r=_okrReadings(o),ok=r.filter(x=>okrThreshOK(o,x.value)===true).length;return wrap(`<b>${p}%</b> = compliance — <b>${ok} of ${r.length}</b> update${r.length===1?'':'s'} this period ${okrDirOf(o)==='gte'?'at or above':'at or below'} the ${f(t)} line.`);}
+    if(v===null||t===null||!isFinite(Number(t)))return '';
+    if(okrIsLimit(o))return wrap(`<b>${p}%</b> of the allowance used = ${f(v)} ÷ (${f(t)} − ${f(s2)}).`);
+    if(Number(t)===s2)return wrap(`<b>${p}%</b> — hold the line at ${f(t)}: meeting it reads 100%.`);
+    const raw=((Number(v)-s2)/(Number(t)-s2))*100;
+    return wrap(`<b>${p}%</b> = (current − start) ÷ (target − start) = (${f(v)} − ${f(s2)}) ÷ (${f(t)} − ${f(s2)})${(isFinite(raw)&&raw<0)?' — the number is moving <b>away</b> from the target, so it reads 0%':(p>100?' — target beaten':'')}.`);
   })();
   // manual status marking (owner / manager) — every mark is logged
   const markRow=canCk?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px">
@@ -3626,3 +3637,31 @@ function _syncRoleProfiles(){
     .then(({error})=>{if(error)toast('Couldn\'t sync role profiles to server','err');}).catch(()=>toast('Couldn\'t sync role profiles to server','err'));
 }
 
+
+/* ═══ v3.16 — keep OKR filter popovers on-screen on phones ═══
+   The multi-select dropdowns anchor left:0 to their chip; a chip in the right half
+   of a phone screen pushed its 232px popover past the edge, so the tap LOOKED dead.
+   After every redraw, any open popover that pokes past the right edge is flipped to
+   right-align against its chip (and clamped on the left as a last resort). */
+App._okrClampPop=function(){
+  try{
+    if(S.route!=='okr')return;
+    document.querySelectorAll('.okr-fpanel [style*="position:absolute"],.okr-toolbar [style*="position:absolute"]').forEach(function(p){
+      var r=p.getBoundingClientRect();if(!r.width)return;
+      var vw=window.innerWidth||document.documentElement.clientWidth;
+      if(r.right>vw-8){
+        p.style.left='auto';p.style.right='0';
+        var r2=p.getBoundingClientRect();
+        if(r2.left<8){var par=p.offsetParent?p.offsetParent.getBoundingClientRect():r2;p.style.right='auto';p.style.left=(8-par.left)+'px';}
+      }
+    });
+  }catch(e){}
+};
+(function(){
+  var _rr0=window.rr;
+  if(typeof _rr0==='function'&&!window.__okrRRWrapped){
+    window.__okrRRWrapped=true;
+    window.rr=function(){_rr0();try{requestAnimationFrame(App._okrClampPop);}catch(e){}};
+    App.rr=window.rr;
+  }
+})();

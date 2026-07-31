@@ -1042,3 +1042,47 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   #modal>[role=dialog],#modal>div{max-height:96vh}
   #content{padding-bottom:calc(70px + env(safe-area-inset-bottom))!important}
 }
+
+
+/* OKR — mobile-friendly node + stat layout (v3.15) — opt these components out of the blunt mobile min-width:0 rule */
+.okr-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+@media(max-width:767px){
+  /* v3.16: one horizontally-scrollable strip of stat tiles — costs one row, not three */
+  .okr-stats{display:flex!important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding-bottom:2px}
+  #content .okr-stats>div{flex:0 0 auto!important;min-width:118px!important;max-width:160px}
+  /* the numbers block (value/target, bar, %, status) drops below the title so the
+     title + owner names get the full row width instead of collapsing to 1 char/line */
+  .okr-nums{flex:1 1 100%!important;width:100%;margin-left:0!important;padding-left:0!important;margin-top:8px;justify-content:flex-start;gap:12px}
+  /* the bulk-edit hint is desktop guidance — on a phone it cost a third of the screen */
+  .okr-bulkhint{display:none!important}
+}
+
+/* CRM ticket table — mobile readable columns (v3.15): keep column widths and scroll instead of cramming names to "Or" */
+@media(max-width:767px){
+  /* #content prefix so these beat the blunt "#content [style*=min-width]{min-width:0}" rule */
+  #content .crm-fs .crm-scroll > table{min-width:680px!important}
+  #content .crm-fs .crm-scroll > table th,#content .crm-fs .crm-scroll > table td{min-width:120px!important}
+  #content .crm-fs .crm-scroll > table th:first-child,#content .crm-fs .crm-scroll > table td:first-child{min-width:210px!important}
+  #content .crm-fs .crm-scroll > table th:last-child,#content .crm-fs .crm-scroll > table td:last-child{min-width:40px!important}
+}
+
+
+/* v3.16 — Workspace + OKR mobile declutter (round 2) */
+@media(max-width:767px){
+  /* Workspace top bar: one tidy line — hamburger · hub name (truncates) · full-width search */
+  #content .crm-fs .crm-boardbar{flex-wrap:nowrap!important;gap:8px}
+  #content .crm-fs .crm-hubname{flex:0 0 auto;max-width:36vw}   /* full name unless truly long */
+  #content .crm-fs .crm-search{flex:1 1 auto;min-width:0}
+  #content .crm-fs .crm-search input{width:100%!important;max-width:none!important}
+  .crm-dash{display:none!important}                 /* bottom nav already has Dashboard */
+  /* ticket toolbar (+ New ticket · Column · Statuses · Filter · Automations): one scrollable line */
+  #content .crm-fs .crm-viewbar{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #content .crm-fs .crm-viewbar>*{flex-shrink:0}
+  /* board-tab row controls align with the tabs */
+  #content .crm-fs .crm-tabsrow button{min-height:34px;min-width:34px}
+  /* floating New-chat button (chat boards; hidden while a conversation is open) */
+  .crm-fab{display:inline-flex;align-items:center;gap:6px;position:absolute;right:14px;bottom:14px;z-index:36;border:none;border-radius:24px;background:#FF7F11;color:#fff;font-size:13.5px;font-weight:800;padding:12px 18px;box-shadow:0 8px 24px rgba(255,127,17,.45);cursor:pointer}
+  .crm-hasconvo .crm-fab{display:none!important}
+  #crm-list{padding-bottom:76px}                    /* list scrolls clear of the FAB */
+}
+@media(min-width:768px){.crm-fab{display:none!important}}
