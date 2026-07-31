@@ -49,6 +49,10 @@ App.login=async()=>{
     if(cachedUser&&cachedUser.status==='Active'){
       S.uid=cachedUser.id;
       S.route=cachedUser.role==='Admin'?'dashboard':'mychecklists';
+      // v3.14: signing in must adopt THIS person's remembered filters. restoreFilters
+      // throws the whole map away if it was written by someone else — people close the
+      // browser without signing out, and the next person must not inherit their view.
+      try{restoreFilters(S.route);if(typeof App._okrReloadExpanded==='function')App._okrReloadExpanded();}catch(e){}
       render(); // show page instantly
     }
     // Load fresh profile in background
@@ -60,6 +64,8 @@ App.login=async()=>{
     if(idx>-1)DB.users[idx]=u;else DB.users.push(u);
     S.uid=u.id;
     if(!S.route||S.route==='login')S.route=u.role==='Admin'?'dashboard':'mychecklists';
+    // Same restore on the no-cache path (first sign-in on this device, or cache miss).
+    try{restoreFilters(S.route);if(typeof App._okrReloadExpanded==='function')App._okrReloadExpanded();}catch(e){}
     saveDB();render();
     // Load full data in background — don't block UI
     loadFromSB().then(()=>{saveDB();if(Date.now()-_lastUserAction>3000)render();}).catch(()=>{});

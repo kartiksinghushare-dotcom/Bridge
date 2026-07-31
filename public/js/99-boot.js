@@ -11,7 +11,7 @@
   try{const{data:{session}}=await sb.auth.getSession();if(session){
       // Load local cache first for instant UI
       const hadLocal=loadDB();
-      if(S.uid){S.route=_deepLink||S.route||'dashboard';_recoverEditingSubmissions();render();}
+      if(S.uid){S.route=_deepLink||S.route||'dashboard';restoreFilters(S.route);_recoverEditingSubmissions();render();}
       const{data:profile}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
       if(profile&&profile.status==='Active'){
         const mapped={id:profile.id,firstName:_unesc(profile.first_name)||'',lastName:_unesc(profile.last_name)||'',email:profile.email||'',phone:_unesc(profile.phone)||'',position:_unesc(profile.position)||'',department:_unesc(profile.department)||'',role:profile.role||'User',status:profile.status,managerId:profile.manager_id||null,rules:profile.rules||{past:true,future:true,edit:true},approval:profile.approval_settings||{past:false,future:false,edited:false},docAccess:profile.doc_access||{departments:{},locations:{}},questionsAccess:profile.questions_access||false,emailEnabled:profile.email_enabled!==false,cities:Array.isArray(profile.cities)?profile.cities:[],hrm:(profile.hrm&&typeof profile.hrm==='object')?profile.hrm:null,password:'***'};
@@ -19,6 +19,9 @@
         S.uid=mapped.id;
         if(_deepLink)S.route=_deepLink;
         else if(!S.route||S.route==='login')S.route=mapped.role==='Admin'?'dashboard':'mychecklists';
+        // v3.14: bring back this tab's remembered filters (and the OKR tree's open branches)
+        // before the first paint, so a refresh lands you exactly where you left off.
+        restoreFilters(S.route);
         // CRITICAL: Always load from Supabase FIRST before any sync
         // This prevents empty local state from overwriting real server data
         await loadFromSB();

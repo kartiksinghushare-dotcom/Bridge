@@ -214,7 +214,7 @@ function questionsPage(){
   return`<div class="fade">${hdr('Questions','Reusable question library for your checklists')}
     <!-- Action bar: New + Search -->
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-      <input id="qSearchInput" type="text" placeholder="Search questions…" value="${S.filters.qSearch||''}"
+      <input id="qSearchInput" type="text" placeholder="Search questions…" value="${esc(S.filters.qSearch||'')}"
         oninput="App._filterQuestions(this.value)"
         style="flex:1;min-width:180px;border:1.5px solid #E7F0F2;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;background:#fff"/>
       <select onchange="S.filters.qDept=this.value;S.filters.qSubDept='';rr()" class="ui-select" style="width:auto;min-width:150px;flex:0 0 auto"><option value="">All departments</option>${topDepts().map(d=>`<option value="${d.id}" ${(S.filters.qDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
@@ -255,7 +255,7 @@ App._filterQuestions=(val)=>{
   box.innerHTML=_qGroupHTML(filtered);
 };
 
-App._delQuestion=(id)=>{
+App._delQuestion=async(id)=>{
   const q=(DB.questions||[]).find(x=>x.id===id);if(!q)return;
   if(!canManageQ(q)&&!can('questions','delete')){toast('You don’t have permission to delete this question','err');return;}
   // ── Guard: a question that is still used in ANY checklist must not be deleted. Deleting a
@@ -268,7 +268,11 @@ App._delQuestion=(id)=>{
     alert("Can't delete this question — it's still used in "+_usedIn.length+' checklist'+(_usedIn.length>1?'s':'')+':\n'+_names+(_assignees.size?'\n\nThose checklists are assigned to '+_assignees.size+' user'+(_assignees.size>1?'s':''):'')+".\n\nOpen each checklist and remove this question first, then you can delete it.");
     return;
   }
-  if(!confirm('Delete "'+q.text+'"?'))return;
+  if(!(await confirmP({
+    title:'Delete question',
+    body:'<b>'+esc(q.text||'This question')+'</b> will be removed from the question bank.',
+    items:['its escalation rule, if it has one, goes with it','answers already captured in past submissions are kept'],
+    confirmLabel:'Delete question',cancelLabel:'Keep it'})))return;
   if(!DB.questions_deleted)DB.questions_deleted=[];
   if(!DB.questions_deleted.includes(id))DB.questions_deleted.push(id);
   DB.questions=(DB.questions||[]).filter(x=>x.id!==id);

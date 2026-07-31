@@ -344,7 +344,11 @@ App.delCl=async(id)=>{
     alert("Can't delete \""+(c.name||'this checklist')+"\" — it's assigned to "+c.assignees.length+' user'+(c.assignees.length>1?'s':'')+".\n\nOpen the checklist and remove everyone from Assignees first, or set its Status to Inactive to pause it. Past submissions are always kept.");
     return;
   }
-  if(!confirm('Delete "'+c.name+'"?\n\nPast submissions will be preserved.'))return;
+  if(!(await confirmP({
+    title:'Delete checklist',
+    body:'<b>'+esc(c.name||'This checklist')+'</b> will be deleted and stops appearing for everyone.',
+    items:['past submissions are <b>kept</b> — history is not touched'],
+    confirmLabel:'Delete checklist',cancelLabel:'Keep it'})))return;
   // ── Delete on the server FIRST. Only update local state / audit log after
   //    the server confirms, so the UI and DB never disagree. ──
   toast('Deleting…','warn');

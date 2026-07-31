@@ -108,8 +108,12 @@ App._cmdkQ=(q)=>{
   const out=[];
   navFor().forEach(([r,i,l])=>{if(!q||l.toLowerCase().includes(q))out.push({icon:i,label:l,sub:'Page',go:`App.closeModal();App.go('${r}')`});});
   if(typeof HUB_DEF!=='undefined')Object.keys(HUB_DEF).forEach(k=>{_hubTabsAllowed(k).forEach(([r,l])=>{if(q&&!l.toLowerCase().includes(q))return;if(out.some(o=>o.go.includes(`'${r}'`)))return;out.push({icon:'grid',label:l,sub:HUB_DEF[k].label,go:`App.closeModal();App.go('${r}')`});});});
-  if(can('employees','view'))(typeof visU==='function'?visU():DB.users).filter(Boolean).forEach(u=>{if(q&&fullName(u).toLowerCase().includes(q))out.push({icon:'users',label:fullName(u),sub:(u.position||'Person')+' · '+(u.department||''),go:`App.closeModal();S.search='${esc(fullName(u))}';App.go('users')`});});
-  if(can('okr','view'))okrVisible().forEach(o=>{if(q&&(o.title||'').toLowerCase().includes(q))out.push({icon:'chart',label:o.title,sub:'OKR · L'+okrLevel(o),go:`App.closeModal();App.go('okr');S.filters.okrQ='${esc(o.title)}';rr()`});});
+  if(can('employees','view'))(typeof visU==='function'?visU():DB.users).filter(Boolean).forEach(u=>{if(q&&fullName(u).toLowerCase().includes(q))out.push({icon:'users',label:fullName(u),sub:(u.position||'Person')+' · '+(u.department||''),go:`App.closeModal();App.go('users');S.search='${jsq(fullName(u))}';rr()`});});
+  // ^ two fixes (v3.14): order — App.go() resets S.search, so setting it FIRST meant picking
+  //   a person in ⌘K landed on an unfiltered Users list; and jsq() not esc(), because these
+  //   strings are JS inside an attribute and esc()'s &#39; decodes back to a bare quote that
+  //   breaks the handler outright for anyone named O'Brien.
+  if(can('okr','view'))okrVisible().forEach(o=>{if(q&&(o.title||'').toLowerCase().includes(q))out.push({icon:'chart',label:o.title,sub:'OKR · L'+okrLevel(o),go:`App.closeModal();App.go('okr');S.filters.okrQ='${jsq(o.title)}';rr()`});});
   const SUB=[['Email settings','settings','stab','email','settings'],['Templates (Settings)','settings','stab','templates','settings'],['In-app notification rules','settings','stab','inapp','settings'],['Roles (Access Control)','accesscontrol','acTab','roles','accessControl'],['People (Access Control)','accesscontrol','acTab','people','accessControl']];
   SUB.forEach(([label,route,fk,fv,area])=>{if(q&&label.toLowerCase().includes(q)&&can(area,'view'))out.push({icon:'cog',label:label,sub:'Screen',go:`App.closeModal();App.go('${route}');S.filters.${fk}='${fv}';rr()`});});
   box.innerHTML=out.slice(0,12).map(r=>`<button data-go onclick="${r.go}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:none;background:transparent;cursor:pointer;text-align:left" onmouseover="this.style.background='var(--c-surface-2)'" onmouseout="this.style.background='transparent'">
@@ -375,10 +379,18 @@ const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style
 
 /* ═════════════════ PORTED BLOCK: OKR MODULE (from Safe Backup) ═════════════════ */
 /* ═══ PORTED: OKR mappers ═══ */
-function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,owners:(Array.isArray(o.owners)&&o.owners.length)?o.owners.filter(Boolean):(o.owner_id?[o.owner_id]:[]),metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',isAnnual:!!o.is_annual,quarterLabel:_unesc(o.quarter_label)||null,closed:!!o.closed,closedReason:_unesc(o.closed_reason)||'',closedAt:o.closed_at||null,closedBy:o.closed_by||null,revisedTarget:(o.revised_target===null||o.revised_target===undefined)?null:Number(o.revised_target),revisedNote:_unesc(o.revised_note)||'',revisedAt:o.revised_at||null,revisedBy:o.revised_by||null,sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
+function _mOKR(rows){return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,owners:(Array.isArray(o.owners)&&o.owners.length)?o.owners.filter(Boolean):(o.owner_id?[o.owner_id]:[]),metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',isAnnual:!!o.is_annual,quarterLabel:_unesc(o.quarter_label)||null,closed:!!o.closed,closedReason:_unesc(o.closed_reason)||'',closedAt:o.closed_at||null,closedBy:o.closed_by||null,revisedTarget:(o.revised_target===null||o.revised_target===undefined)?null:Number(o.revised_target),revisedNote:_unesc(o.revised_note)||'',revisedAt:o.revised_at||null,revisedBy:o.revised_by||null,deletedAt:o.deleted_at||null,deletedBy:o.deleted_by||null,sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null}));}
 function _mOKRCheckin(rows){return(rows||[]).map(c=>({id:c.id,okrId:c.okr_id,userId:c.user_id||null,date:c.date,value:(c.value===null||c.value===undefined)?null:Number(c.value),comment:_unesc(c.comment)||'',photos:Array.isArray(c.photos)?c.photos:[],statusMark:c.status_mark||null,editCount:c.edit_count||0,createdAt:c.created_at,updatedAt:c.updated_at||null}));}
 function _mOKRLog(rows){return(rows||[]).map(l=>({id:l.id,okrId:l.okr_id,actorId:l.actor_id||null,action:l.action||'',details:(l.details&&typeof l.details==='object')?l.details:{},createdAt:l.created_at}));}
-function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,owners:okrOwners(o),metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,rollup:!!o.rollup,rollup_mode:o.rollupMode||'sum',is_annual:!!o.isAnnual,quarter_label:o.quarterLabel||null,closed:!!o.closed,closed_reason:o.closedReason||null,closed_at:o.closedAt||null,closed_by:o.closedBy||null,revised_target:(o.revisedTarget===null||o.revisedTarget===undefined||o.revisedTarget==='')?null:o.revisedTarget,revised_note:o.revisedNote||'',revised_at:o.revisedAt||null,revised_by:o.revisedBy||null,sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
+function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',description:o.description||'',department_id:o.departmentId||null,sub_department_id:o.subDepartmentId||null,owner_id:o.ownerId||null,owners:okrOwners(o),metric_type:o.metricType||'number',start_value:(o.startValue===null||o.startValue===undefined||o.startValue==='')?0:o.startValue,target_value:(o.targetValue===null||o.targetValue===undefined||o.targetValue==='')?null:o.targetValue,unit:o.unit||'',direction:o.direction||'up',frequency:o.frequency||{},period_start:o.periodStart||null,period_end:o.periodEnd||null,status_mode:o.statusMode||'auto',status_manual:o.statusManual||null,rollup:!!o.rollup,rollup_mode:o.rollupMode||'sum',is_annual:!!o.isAnnual,quarter_label:o.quarterLabel||null,closed:!!o.closed,closed_reason:o.closedReason||null,closed_at:o.closedAt||null,closed_by:o.closedBy||null,revised_target:(o.revisedTarget===null||o.revisedTarget===undefined||o.revisedTarget==='')?null:o.revisedTarget,revised_note:o.revisedNote||'',revised_at:o.revisedAt||null,revised_by:o.revisedBy||null,
+  /* v3.14: deleted_at / deleted_by are deliberately NOT written here. This row is sent by
+     every ordinary save (_okrPush) from whatever the client has in memory, which may be
+     minutes old — including a copy fetched before someone else deleted the objective.
+     Writing deleted_at:null from that stale copy would silently UN-DELETE it for everyone
+     (and a queued write replayed after a reconnect would do it 30 seconds later). PostgREST
+     upserts only touch the columns present in the payload, so leaving them out means the
+     delete state can be changed by exactly two places: _okrPurgeIds and _okrBinRestore. */
+  sort:o.sort||0,created_by:o.createdBy||null,created_at:o.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 function _okrCheckinRow(c){return{id:c.id,okr_id:c.okrId,user_id:c.userId||null,date:c.date,value:(c.value===null||c.value===undefined||c.value==='')?null:c.value,comment:c.comment||'',photos:(c.photos||[]).filter(p=>typeof p==='string'&&p!=='[photo]'),status_mark:c.statusMark||null,edit_count:c.editCount||0,created_at:c.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()};}
 /* ═══ PORTED: OKR helpers ═══ */
 const OKR_METRICS=[['number','Number'],['percent','Percentage'],['currency','Currency'],['yesno','Yes / No (done or not)']];
@@ -414,7 +426,50 @@ function okrLevel(o){
     if(!cur.quarterLabel)l++; // quarter → annual is a sideways step, not down
     cur=p;
   }
+  /* v3.14 — the walk above can only climb ancestors THIS user is allowed to see, so it
+     stops at the first hidden one and under-reports: a person scoped to "only their own"
+     was shown their L3 objective as L0. bridge_okr_levels() supplies the real depth for
+     every objective they can see. Take whichever is larger: the server value is the truth,
+     and the local walk covers an objective just created or moved deeper in this session,
+     before the map has been refreshed. The walk can only ever under-count, never over. */
+  try{
+    const t=(typeof OKR_TRUE_LVL!=='undefined'&&OKR_TRUE_LVL&&o)?OKR_TRUE_LVL[o.id]:undefined;
+    if(typeof t==='number'&&t>l)return t;
+  }catch(e){}
   return l;
+}
+/* Where the objective sits in the tree YOU ARE LOOKING AT, which is what indentation needs.
+   Distinct from okrLevel(): a person scoped to "only their own" should read the real "L3" on
+   the chip, but the card must still sit flush at the left of their list rather than indented
+   three steps for ancestors that aren't on screen. */
+function okrLevelVisible(o){
+  let l=0,cur=o,g=0;
+  while(cur&&cur.parentId&&g++<15){
+    const p=okrById(cur.parentId);
+    if(!p)break;
+    if(!cur.quarterLabel)l++;
+    cur=p;
+  }
+  return l;
+}
+/* The server's level map is refreshed on load, so between refreshes a create or a move
+   would leave it stale — no entry at all for something just created (falling back to the
+   under-counting local walk), or, worse, a now-too-deep entry for something moved higher up,
+   which okrLevel()'s "take the larger" rule would then trust. Derive the subtree's levels
+   from the new parent's known level instead. */
+function _okrRelevel(id,_d){
+  if((_d||0)>15)return;
+  try{
+    if(typeof OKR_TRUE_LVL==='undefined'||!OKR_TRUE_LVL)return;
+    const o=okrById(id);if(!o)return;
+    if(!o.parentId)OKR_TRUE_LVL[o.id]=0;
+    else{
+      const pl=OKR_TRUE_LVL[o.parentId];
+      if(typeof pl!=='number')delete OKR_TRUE_LVL[o.id];   // parent unknown → fall back to the walk
+      else OKR_TRUE_LVL[o.id]=pl+(o.quarterLabel?0:1);
+    }
+    okrChildren(o.id).forEach(k=>_okrRelevel(k.id,(_d||0)+1));
+  }catch(e){}
 }
 function okrDescendants(id,_seen){_seen=_seen||new Set();if(_seen.has(id))return[];_seen.add(id);return okrChildren(id).flatMap(c=>[c,...okrDescendants(c.id,_seen)]);}
 function okrRootOf(o){let cur=o,g=0;while(cur&&cur.parentId&&g++<15){const p=okrById(cur.parentId);if(!p)break;cur=p;}return cur;}
@@ -751,7 +806,9 @@ function _okrNotifyAssigned(o,ids){
    value, roll-up graph, check-ins with comments & photos, manual status marking, per-OKR
    activity log). Every change writes an okr_logs entry. (v3.11: the separate Rules & Target
    panel was removed — its info lives at the top of the Progress popup + the editor.) */
-let _OKR_EXP={},_OKR_LOGS={},_OKRED=null,_OKRCI=null,_OKRCIALL=null,_OKR_QVK={};
+/* v3.14: which branches of the tree are open is restored from localStorage, so a refresh
+   (or coming back tomorrow) does not collapse the whole tree back to the roots. */
+let _OKR_EXP=(typeof loadOkrExpanded==='function'?loadOkrExpanded():{}),_OKR_LOGS={},_OKRED=null,_OKRCI=null,_OKRCIALL=null,_OKR_QVK={};
 /* v3.13 — BULK EDIT: ids ticked on the cards + the draft of what the bulk dialog will write.
    _OKRBULK.on is the per-field "apply this one" switch; a field is only written when ticked. */
 let _OKRSEL=new Set(),_OKRBULK=null,_OKR_SHOWN=[];
@@ -878,6 +935,9 @@ App._okrMoveSave=()=>{
   // (empty = inherits the parent's). Moving to top level applies the picked department.
   if(!newParentId){o.departmentId=d.deptId||null;o.subDepartmentId=d.subDeptId||null;}
   o.sort=okrChildren(newParentId).filter(x=>x.id!==o.id).length;
+  // The parent changed, so the server's level map is stale for this whole branch — a move
+  // UP would otherwise keep reporting the old, deeper level until the next refresh.
+  _okrRelevel(o.id);
   const desc=okrDescendants(o.id);
   okrLog(o.id,'Moved objective',{changes:[
     {field:'Parent',from:oldParent?(oldParent.title||'—'):'Top level',to:newParent?(newParent.title||'—'):'Top level'},
@@ -914,10 +974,14 @@ App._okrCloseGo=(id)=>{
   _okrNotify(okrOwners(o),'okr_closed','🔒 OKR closed: "'+(o.title||'')+'" — '+reason,{okr_title:o.title||'',actor:fullName(me()),status:'closed',reason:reason});
   _okrPush(o);saveDB();closeModal();toast('Objective closed — kept for record');rr();
 };
-App._okrReopen=(id)=>{
+App._okrReopen=async(id)=>{
   const o=okrById(id);if(!o)return;
   if(!_okrCanEditNode(o))return toast('You can\'t reopen this OKR','err');
-  if(!confirm('Reopen "'+(o.title||'this objective')+'"?\n\nUpdates and reminders resume. The closing reason stays in the activity log.'))return;
+  if(!(await confirmP({
+    title:'Reopen objective',
+    body:'<b>'+esc(o.title||'This objective')+'</b> goes back to being active.',
+    items:['updates and check-ins resume',(o.rollup?'it keeps updating from the level below':'its owners start getting check-in reminders again'),'the closing reason stays in the activity log'],
+    confirmLabel:'Reopen',cancelLabel:'Leave it closed',danger:false,icon:'unlock'})))return;
   okrLog(id,'Reopened objective',{was:o.closedReason||''});
   const _wasReason=o.closedReason||'';
   o.closed=false;o.closedReason='';o.closedAt=null;o.closedBy=null;
@@ -1025,7 +1089,11 @@ App._okrSummaryList=(key)=>{
   modalShell({title:key==='all'?'All OKRs':(key+' — OKRs'),sub:hits.length+' objective'+(hits.length===1?'':'s')+' behind this number · tap one to open it',size:'max-w-lg',key:'okr-sum',
     body:rows||'<p style="font-size:13px;color:var(--c-text-3)">No OKRs in this bucket right now.</p>'});
 };
-App._okrTogExp=(id)=>{const _qv=(S.filters.okrView==='quarter');const cur=_qv?(_OKR_EXP[id]!==false):!!_OKR_EXP[id];_OKR_EXP[id]=!cur;rr();};
+App._okrTogExp=(id)=>{const _qv=(S.filters.okrView==='quarter');const cur=_qv?(_OKR_EXP[id]!==false):!!_OKR_EXP[id];_OKR_EXP[id]=!cur;saveOkrExpanded(_OKR_EXP);rr();};
+/* Logout / login without a page reload: the in-memory map has to be reset too, otherwise
+   the next person's first expand writes the PREVIOUS person's branch ids back to disk. */
+App._okrResetExpanded=()=>{_OKR_EXP={};saveOkrExpanded({});};
+App._okrReloadExpanded=()=>{_OKR_EXP=loadOkrExpanded();};
 App._okrNodeLogs=(id)=>{
   const o=okrById(id);if(!o)return;
   const logs=(DB.okrLogs||[]).filter(l=>l.okrId===id).slice(0,80);
@@ -1064,13 +1132,26 @@ function _okrPMRefresh(id){
   // changes show IMMEDIATELY (page behind the modal already re-renders via rr()).
   try{const el=document.getElementById('okr-pm');if(el&&el.getAttribute('data-okr')===id)App._okrProgressModal(id);}catch(e){}
 }
-App._okrCkDel=(okrId,ckId)=>{
+App._okrCkDel=async(okrId,ckId)=>{
   const o=okrById(okrId);if(!o)return;
   const c=(DB.okrCheckins||[]).find(x=>x.id===ckId);if(!c)return;
+  if(o.rollup)return toast('This objective updates from the level below — its past updates are read-only history','warn');
   if(!(c.userId===S.uid||_okrCanManage()||okrOwnerIs(o,S.uid)))return toast('Only the author, an owner or a manager can delete an update','err');
-  // (was: an undefined `confirmModal` here threw a ReferenceError, so the delete button did nothing)
-  if(!confirm('Delete this update?\n\nThe value '+_okrFmtVal(o,c.value)+' from '+fmtS(c.date)+' will be removed. This is logged.'))return;
+  // This button lives INSIDE the Progress & Updates popup, and the app has one modal slot —
+  // the confirm takes it over. Note whether the popup was open so it can be put back, on
+  // Cancel as well as after the delete; otherwise saying "no" costs you the popup you were
+  // reading, and saying "yes" leaves _okrPMRefresh with no #okr-pm element to refresh.
+  let _pmWasOpen=false;
+  try{const el=document.getElementById('okr-pm');_pmWasOpen=!!(el&&el.getAttribute('data-okr')===okrId);}catch(e){}
+  const _reopen=()=>{if(_pmWasOpen)App._okrProgressModal(okrId);};
+  if(!(await confirmP({
+    title:'Delete update',
+    body:'The value <b>'+esc(_okrFmtVal(o,c.value))+'</b> recorded on <b>'+esc(fmtS(c.date))+'</b> will be removed from <b>'+esc(o.title||'this objective')+'</b>.',
+    items:[c.comment?'its comment':'',(c.photos||[]).filter(p=>typeof p==='string'&&p!=='[photo]').length?'its photo(s)':'','progress and the graph recalculate without it'].filter(Boolean),
+    note:'The deletion itself is written to the activity log.',
+    confirmLabel:'Delete update',cancelLabel:'Keep it'})))return _reopen();
   App._okrCkDelGo(okrId,ckId);
+  _reopen();
 };
 App._okrCkDelGo=(okrId,ckId)=>{
   const c=(DB.okrCheckins||[]).find(x=>x.id===ckId);if(!c)return;
@@ -1131,7 +1212,13 @@ function okrPage(){
   const deptIds=[...new Set(vis.map(o=>okrDeptOf(o).deptId).filter(Boolean))];
   const subIds=[...new Set(vis.map(o=>okrDeptOf(o)).filter(e=>e.subDeptId&&(!fDept.length||fDept.includes(e.deptId))).map(e=>e.subDeptId))];
   const ownerIds=[...new Set(vis.flatMap(o=>okrOwners(o)))];
-  const maxLvl=vis.reduce((m,o)=>Math.max(m,okrLevel(o)),0);
+  /* v3.14: list the levels that actually occur rather than 0…max. Now that levels are the
+     TRUE depth, someone who only sees their own objectives may have nothing above L3, and
+     offering them L0/L1/L2 filters that can never match reads as broken. */
+  //   Levels already ticked are kept in the list even when nothing matches them any more,
+  //   so a filter remembered from a previous session can still be seen and unticked.
+  const lvlsPresent=[...new Set([...vis.map(o=>okrLevel(o)),..._okrFArr('okrLvl').map(Number)])]
+    .filter(n=>Number.isFinite(n)).sort((a,b)=>a-b);
   const _qy2=Number(F.okrQtrYear)||new Date().getFullYear();
   const _qsel=F.okrQtr||[];
   const _QR=_okrQuarterRanges(_qy2);
@@ -1185,7 +1272,13 @@ function okrPage(){
       </div>`:''}
     </div>`;
   };
-  const fBar=vis.length?`<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px;overflow:visible">
+  /* v3.14 — the bar also has to survive an EMPTY result, not just an empty workspace. Gating
+     it on `vis.length` alone produced two dead ends: filter down to nothing and the "Clear
+     all" button that would rescue you disappears with the bar, and delete your last visible
+     objective and the "Deleted" button you need to restore it goes too. Shown whenever there
+     is anything to show, a filter to clear, or a recycle bin to reach. */
+  const _canBin=can('okr','delete')||_okrCanManage();
+  const fBar=(vis.length||fActive||_view==='quarter'||_canBin)?`<div class="ui-card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;margin-bottom:14px;overflow:visible">
       ${qtrDrop}
       <input id="okr-q" value="${esc(F.okrQ||'')}" oninput="S.filters.okrQ=this.value;App._searchRR('okr-q')" placeholder="Search objectives…" class="ui-input" style="flex:1;min-width:150px;height:32px;min-height:0;padding:4px 12px;font-size:12.5px"/>
       ${msDrop('okrDept','Departments',deptIds.map(id=>[id,_dName(id)]))}
@@ -1193,8 +1286,9 @@ function okrPage(){
       ${msDrop('okrOwner','Owners',ownerIds.map(id=>{const u2=uById(id);return[id,u2?fullName(u2):id];}))}
       ${msDrop('okrStatus','Status',['Achieved','On track','Off track','Not achieved','No data','Closed'].map(s=>[s,s]))}
       ${msDrop('okrDir','Which way is good?',OKR_DIRS.map(d=>[d[0],d[1]]))}
-      ${msDrop('okrLvl','Level',Array.from({length:maxLvl+1},(_,i)=>[String(i),'L'+i]))}
+      ${msDrop('okrLvl','Level',lvlsPresent.map(i=>[String(i),'L'+i]))}
       ${fActive||_view==='quarter'?`<button onclick="S.filters.okrQ='';S.filters.okrDept=[];S.filters.okrSub=[];S.filters.okrOwner=[];S.filters.okrStatus=[];S.filters.okrLvl=[];S.filters.okrDir=[];S.filters.okrQtr=[];S.filters.okrView='';S.filters.okrQtrOpen=false;S.filters.okrMSOpen=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear all</button>`:''}
+      ${_canBin?`<button onclick="App._okrRecycle()" title="Objectives that were deleted — restore them or erase them for good" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-left:auto">${ic('trash','w-3.5 h-3.5')}Deleted</button>`:''}
     </div>`:'';
   // ── Three renderings: quarterly hierarchy tree · flat filtered list · the annual tree ──
   let tree;
@@ -1307,7 +1401,8 @@ function _okrNodeHTML(o,depth){
   const sel=_OKRSEL.has(o.id);
   const selBox=canEdit?`<button onclick="event.stopPropagation();App._okrTogSel('${o.id}')" role="checkbox" aria-checked="${sel}" title="${sel?'Deselect':'Select for bulk edit'}" style="width:24px;height:24px;display:grid;place-items:center;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="width:16px;height:16px;border-radius:5px;border:1.5px solid ${sel?'var(--c-brand)':'var(--c-border-2)'};background:${sel?'var(--c-brand)':'var(--c-surface)'};display:grid;place-items:center;color:#fff">${sel?ic('check','w-3 h-3'):''}</span></button>`:`<span style="width:24px;flex-shrink:0"></span>`;
   const barTitle=pct===null?'No data yet':okrIsThresh(o)?(pct+'% of this period\'s updates stayed '+(okrDirOf(o)==='gte'?'at or above':'at or below')+' '+_okrFmtVal(o,_okrTargetEff(o))):(_isLim?(pct+'% of the limit used — lower is better'):(pct+'% of target'));
-  const _ind=_qv?okrLevel(o):depth;const card=`<div onclick="App._okrProgressModal('${o.id}')" style="background:var(--c-surface);border:1px solid ${sel?'var(--c-brand)':'var(--c-border)'};${sel?'box-shadow:0 0 0 2px var(--c-brand-soft);':''}border-radius:12px;margin-bottom:6px;${_ind?'margin-left:'+Math.min(_ind,5)*16+'px;':''}${o.closed?'opacity:.72;':''}overflow:hidden;cursor:pointer;transition:border-color .12s,box-shadow .12s" onmouseover="this.style.borderColor='${sel?'var(--c-brand)':'var(--c-text-3)'}'" onmouseout="this.style.borderColor='${sel?'var(--c-brand)':'var(--c-border)'}'" title="Open Progress &amp; Updates">
+  // Indentation follows the tree ON SCREEN, not the absolute level — see okrLevelVisible().
+  const _ind=_qv?okrLevelVisible(o):depth;const card=`<div onclick="App._okrProgressModal('${o.id}')" style="background:var(--c-surface);border:1px solid ${sel?'var(--c-brand)':'var(--c-border)'};${sel?'box-shadow:0 0 0 2px var(--c-brand-soft);':''}border-radius:12px;margin-bottom:6px;${_ind?'margin-left:'+Math.min(_ind,5)*16+'px;':''}${o.closed?'opacity:.72;':''}overflow:hidden;cursor:pointer;transition:border-color .12s,box-shadow .12s" onmouseover="this.style.borderColor='${sel?'var(--c-brand)':'var(--c-text-3)'}'" onmouseout="this.style.borderColor='${sel?'var(--c-brand)':'var(--c-border)'}'" title="Open Progress &amp; Updates">
     <div style="padding:10px 13px">
       <div style="display:flex;align-items:flex-start;gap:9px">
         ${selBox}
@@ -1458,7 +1553,10 @@ function _okrProgressPanel(o,kids,pct,st){
   const feed=okrCheckinsOf(o.id).slice().reverse().slice(0,30).map(c=>{
     const u=uById(c.userId);
     const photos=(c.photos||[]).filter(p=>typeof p==='string'&&p!=='[photo]');
-    const canEditCk=c.userId===S.uid||_okrCanManage()||okrOwnerIs(o,S.uid); // co-owners can edit the group's entry
+    // co-owners can edit the group's entry — but NOT once the objective auto-updates from
+    // the level below (v3.14): its number no longer comes from these entries, so they are
+    // kept as read-only history rather than something that can still be edited or deleted.
+    const canEditCk=!o.rollup&&(c.userId===S.uid||_okrCanManage()||okrOwnerIs(o,S.uid));
     const hasBody=!!c.comment||photos.length>0; // only entries with content collapse/expand
     const peekTxt=c.comment?_okrCommentPreview(c.comment):(photos.length?(photos.length+' photo'+(photos.length>1?'s':'')):'');
     const commentHtml=c.comment?`<div style="font-size:12px;color:var(--c-text-2);margin-top:5px;line-height:1.55">${_okrFmtComment(c.comment)}</div>`:'';
@@ -1544,16 +1642,43 @@ App._okrEdQESet=(i,field,val)=>{
 /* ── Annual objective → quarterly split (editor-side helpers) ──
    _OKRED._qRows holds the NEW quarterly periods being defined: [{label,start,end,startVal,target}].
    Fully flexible: keep 2, add 6, change any date — the defaults are only a starting point. */
+/* ══ Split a period into REAL calendar quarters ═════════════════════════════════════════════
+   Every calendar quarter the period overlaps, clipped to the period's own edges:
+     Jan 1 – Dec 31  → Q1 · Q2 · Q3 · Q4                         (four full quarters)
+     Jan 1 – Jul 31  → Q1 · Q2 · Q3 (Jul 1 – Jul 31)             (three, the last one short)
+     Jun 1 – Feb 28  → Q2 (Jun 1–Jun 30) · Q3 · Q4 · Q1 '27      (year in the label once it wraps)
+   A period that sits inside ONE calendar quarter is split into its MONTHS instead — asking to
+   split "Q1" into four sub-quarters called Q1–Q4 is never what anyone means, and it used to
+   produce ranges like "Q2 = Jan 24 – Feb 14" that no reporting period lines up with.
+   This replaces the old behaviour of cutting the span into four equal day-slices, which only
+   gave true quarters when the period was exactly Jan 1 – Dec 31.                            */
+const _OKR_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function _okrMonthLen(y,m){return m===2?(((y%4===0&&y%100!==0)||y%400===0)?29:28):[31,28,31,30,31,30,31,31,30,31,30,31][m-1];}
+function _okrMkISO(y,m,d){return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
 function _okrCalQuarters(ps,pe){
-  const y=ps.slice(0,4);
-  if(ps===y+'-01-01'&&pe===y+'-12-31'){const R=_okrQuarterRanges(Number(y));return['Q1','Q2','Q3','Q4'].map(q=>({label:q,start:R[q][0],end:R[q][1]}));}
-  const t0=new Date(ps+'T00:00:00'),t1=new Date(pe+'T00:00:00');
-  if(isNaN(t0)||isNaN(t1)||t1<=t0)return[];
-  const days=Math.round((t1-t0)/86400000)+1,slice=days/4,out=[];
-  for(let i=0;i<4;i++){
-    const s=i===0?ps:_okrDateAddD(ps,Math.round(slice*i));
-    const e=i===3?pe:_okrDateAddD(ps,Math.round(slice*(i+1))-1);
-    out.push({label:'Q'+(i+1),start:s,end:e});
+  if(!ps||!pe||pe<ps)return[];
+  const y0=+ps.slice(0,4),m0=+ps.slice(5,7),y1=+pe.slice(0,4),m1=+pe.slice(5,7);
+  if(!isFinite(y0)||!isFinite(m0)||!isFinite(y1)||!isFinite(m1))return[];
+  const q0=Math.floor((m0-1)/3),q1=Math.floor((m1-1)/3);
+  const out=[];
+  // Inside a single calendar quarter → months, so a quarter can still be broken down usefully.
+  if(y0===y1&&q0===q1){
+    for(let m=m0;m<=m1;m++){
+      out.push({label:_OKR_MONTHS[m-1],
+        start:m===m0?ps:_okrMkISO(y0,m,1),
+        end:m===m1?pe:_okrMkISO(y0,m,_okrMonthLen(y0,m))});
+    }
+    return out;
+  }
+  const multiYear=y0!==y1;
+  let y=y0,q=q0;
+  while(y*4+q<=y1*4+q1){
+    const a=q*3+1,b=q*3+3;
+    let s=_okrMkISO(y,a,1),e=_okrMkISO(y,b,_okrMonthLen(y,b));
+    if(s<ps)s=ps;          // clip the first quarter to the period's start
+    if(e>pe)e=pe;          // clip the last quarter to the period's end
+    out.push({label:'Q'+(q+1)+(multiYear?(" '"+String(y).slice(2)):''),start:s,end:e});
+    if(++q>3){q=0;y++;}
   }
   return out;
 }
@@ -1652,9 +1777,9 @@ function _okrEdAnnualSection(o,L){
         ${rows.map(rowHTML).join('')||(qKids.length?'':'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:4px">No periods yet — add one below.</div>')}
         <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
           <button type="button" onclick="App._okrEdQAdd()" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('plus','w-3.5 h-3.5')}Add period</button>
-          ${!qKids.length?`<button type="button" onclick="App._okrEdReQ()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Re-split the annual period into 4 suggested quarters">${ic('refresh','w-3.5 h-3.5')}Reset to 4 quarters</button>`:''}
+          ${!qKids.length?`<button type="button" onclick="App._okrEdReQ()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Re-split the annual period into calendar quarters">${ic('refresh','w-3.5 h-3.5')}Reset to calendar quarters</button>`:''}
         </div>
-        <div style="font-size:11px;color:var(--c-text-3);margin-top:8px;line-height:1.5">Fully flexible — keep 2 periods, add 6, rename them, shift any date. Defaults split the annual period into 4 quarters with suggested values.</div>
+        <div style="font-size:11px;color:var(--c-text-3);margin-top:8px;line-height:1.5">Fully flexible — keep 2 periods, add 6, rename them, shift any date. Defaults follow real calendar quarters, clipped to the period — a Jan–Jul objective gets Q1, Q2 and a short Q3. A period inside one quarter is split into its months instead.</div>
       </div>`:''}
   </div>`;
 }
@@ -1788,7 +1913,10 @@ App._renderOKREdit=()=>{
           </select>
           <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">Works best when the L${lvl+1} sub-objectives measure the same thing in the same unit.</div></div>`:''}
       </div>`:''}
-      ${(o.rollup&&!o.isAnnual)?'':`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Check-in frequency — ${o.isAnnual?'when is the owner asked to update each quarterly objective?':'when is the owner asked for an update?'}</label>
+      ${(o.rollup&&!o.isAnnual)?`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Check-in frequency</label>
+        <div style="font-size:11.5px;color:#7A4E00;background:#FDF3D9;border:1px solid #FBE6A6;border-radius:9px;padding:8px 11px;line-height:1.55">
+          <b>No check-ins on this objective.</b> Its value is the ${esc(_okrModeLabel(o.rollupMode))} of the level below, so nobody is asked to update it: no schedule, no reminder e-mail, and it never appears as a task in My Checklists. Any schedule it had is cleared on save. Update the sub-objectives instead — this number follows them.
+        </div></div>`:`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Check-in frequency — ${o.isAnnual?'when is the owner asked to update each quarterly objective?':'when is the owner asked for an update?'}</label>
         <select class="ui-select rf" onchange="App._okrEdSetFreqType(this.value)">
           <option value="weekly" ${fType==='weekly'?'selected':''}>Weekly · on a chosen day</option>
           <option value="monthly" ${fType==='monthly'?'selected':''}>Monthly · on a chosen date</option>
@@ -1855,6 +1983,16 @@ App._okrSave=()=>{
   }
   if(o.periodStart&&o.periodEnd&&o.periodEnd<o.periodStart)return toast('Period end is before its start','err');
   delete o._qRows;delete o._qEdit;delete o._ownQ; // editor-only — dropped AFTER validation so a failed save keeps the rows on screen
+  /* v3.14 — auto-update from the level below means NO manual input on this objective:
+     no update button, no check-in, and no task in anybody's checklist. okrDueOn() and
+     _okrCanCheckin() already refuse it, but a stored schedule left sitting on the row is
+     a trap — flip any other flag later and it starts firing again. So the schedule is
+     cleared on save. An ANNUAL keeps its frequency even with roll-up on, because there it
+     is only the template stamped onto its quarterly objectives, never a task for itself.
+     Placed AFTER every validation return, for the same reason the editor-only fields are:
+     `o` IS the live editor state, so wiping it before a toast-and-abort would silently
+     destroy the user's schedule on a save that never happened. */
+  if(o.rollup&&!o.isAnnual)o.frequency={};
   if(o.metricType==='yesno'){o.startValue=0;o.targetValue=1;}
   const idx=(DB.okrs||[]).findIndex(x=>x.id===o.id);
   if(idx>-1){
@@ -1924,6 +2062,9 @@ App._okrSave=()=>{
     }
   }else{
     DB.okrs=DB.okrs||[];DB.okrs.push(o);
+    // Brand new: the server's level map has no entry yet, and the local walk under-reports
+    // for anyone who can't see the ancestors. Derive it from the parent's known level.
+    _okrRelevel(o.id);
     okrLog(o.id,'Created objective',{level:'L'+(o.parentId?okrLevel(o):0)});
     if(o.parentId)_OKR_EXP[o.parentId]=true;
     _okrNotifyAssigned(o,okrOwners(o)); // every owner (except the creator) gets in-app + email
@@ -1936,6 +2077,7 @@ App._okrSave=()=>{
     qRows.forEach((r,i)=>{
       const q={id:uid('okr'),parentId:o.id,quarterLabel:String(r.label).trim(),title:(o.title||'').trim()+' — '+String(r.label).trim(),description:o.description||'',departmentId:null,subDepartmentId:null,ownerId:o.ownerId,owners:okrOwners(o),metricType:o.metricType,startValue:Number(r.startVal||0),targetValue:Number(r.target),unit:o.unit||'',direction:o.direction||'up',frequency:JSON.parse(JSON.stringify(o.frequency||{})),periodStart:r.start,periodEnd:r.end,statusMode:'auto',statusManual:null,rollup:false,rollupMode:'sum',isAnnual:false,sort:baseSort+i,createdBy:S.uid,createdAt:new Date().toISOString()};
       DB.okrs.push(q);
+      _okrRelevel(q.id);   // a quarter sits AT its annual's level — derive, don't guess
       okrLog(q.id,'Created objective',{level:'L'+okrLevel(q),quarter:q.quarterLabel,from:'annual split of "'+(o.title||'')+'"'});
       _okrPush(q);
     });
@@ -1944,18 +2086,313 @@ App._okrSave=()=>{
   }
   saveDB();closeModal();toast(o.isAnnual&&qRows&&qRows.length?('OKR saved — '+qRows.length+' quarterly objective'+(qRows.length===1?'':'s')+' created'):'OKR saved');rr();
 };
-App._okrDelete=(id)=>{
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 v3.14 \u2014 CASCADE DELETE (subtree, on the server too) \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   The old version pulled the whole subtree out of the LOCAL list but sent exactly ONE
+   delete to Supabase \u2014 the objective itself. Its children, their check-ins and their
+   activity logs stayed on the server and were pulled straight back on the next refresh,
+   so deleting an L0 (or an annual with quarters) looked like it worked and then undid
+   itself. Every id in the subtree is now deleted explicitly, each with its check-ins
+   and its log, so deleting an L0 takes its L1s / L2s / quarters with it for good.     */
+function _okrPurgeIds(ids){
+  /* 1. Cancel queued writes to the OKR ROWS only \u2014 never to their check-ins or logs.
+        \u00b7 okrs: a queued _okrPush is an UPSERT. Omitting deleted_at protects the ON CONFLICT
+          branch, but if the row was never on the server (created while offline, save still
+          queued) the replay takes the INSERT branch, deleted_at defaults to NULL, and the
+          objective comes back live. Note the delete itself gives no warning in that case \u2014
+          an UPDATE matching zero rows is a success, not an error.
+        \u00b7 okr_checkins / okr_logs: deliberately left queued. Cancelling them would throw away
+          exactly the history the restore promises to return \u2014 a check-in submitted offline
+          and still unsent when the objective was deleted would simply never exist. */
+  try{cancelPendingWrites('okrs',ids);}catch(e){}
+  // 2. Remember locally that these ids are gone, so a soft-delete write that fails outright
+  //    can't have the next refresh hand the rows back before the queue flushes (the same
+  //    overlay pattern tickets/users/questions already use).
+  DB.okrsDeleted=DB.okrsDeleted||[];
+  ids.forEach(oid=>{if(DB.okrsDeleted.indexOf(oid)<0)DB.okrsDeleted.push(oid);});
+  if(DB.okrsDeleted.length>2000)DB.okrsDeleted=DB.okrsDeleted.slice(-2000);
+  // 3. SOFT delete: stamp deleted_at instead of dropping the row. The objective disappears
+  //    from the app completely \u2014 tree, filters, counts, roll-ups, exports, tasks, reminders,
+  //    for everyone \u2014 but the row, its check-ins and its whole activity log stay in the
+  //    database, so the deletion can be pulled back from Deleted objectives (recycle bin).
+  //    Check-ins and logs are deliberately NOT touched: they are only reachable through the
+  //    objective, and leaving them intact is what makes a restore complete rather than a
+  //    hollow shell. Permanent removal is a separate, explicit action in the recycle bin.
+  const stamp=new Date().toISOString();
+  ids.forEach(oid=>{
+    const o=okrById(oid);if(o){o.deletedAt=stamp;o.deletedBy=S.uid;}
+    sbWrite({table:'okrs',op:'update',id:oid,match:{col:'id',val:oid},
+             values:{deleted_at:stamp,deleted_by:S.uid,updated_at:stamp}},{label:'OKR delete',silent:true});
+  });
+}
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 v3.14 \u2014 DELETED OBJECTIVES (recycle bin) \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   Because a delete only stamps deleted_at, everything that was removed is still in the
+   database and can be brought back. This lists each DELETION rather than each row: only
+   the top of every deleted branch is shown, because that is how it was deleted \u2014 restoring
+   one brings its whole subtree back with its check-ins and activity log intact.
+   Deleted rows are excluded from the app's normal reads, so they are fetched on demand. */
+const _OKRBIN_LIMIT=2000;
+let _OKRBIN=null,_OKRBIN_SEQ=0;
+App._okrRecycle=async()=>{
+  if(!(can('okr','delete')||_okrCanManage()))return toast('You don\u2019t have permission to see deleted objectives','err');
+  const seq=++_OKRBIN_SEQ;
+  _OKRBIN={loading:true,rows:[],err:'',truncated:false,seq:seq};
+  App._renderOKRBin();
+  let next;
+  try{
+    // Ordered by id as the tie-break: every row in one deletion carries the SAME deleted_at
+    // stamp, so ordering by the timestamp alone leaves the cut-off inside a tie group and
+    // Postgres may return half a branch.
+    const{data,error}=await sb.from('okrs').select('*').not('deleted_at','is',null)
+      .order('deleted_at',{ascending:false}).order('id',{ascending:true}).limit(_OKRBIN_LIMIT);
+    if(error)throw error;
+    next={loading:false,rows:_mOKR(data||[]),err:'',truncated:(data||[]).length>=_OKRBIN_LIMIT,seq:seq};
+  }catch(e){next={loading:false,rows:[],err:(e&&e.message)||'Could not load',truncated:false,seq:seq};}
+  // Don't reopen over whatever the user is doing now: they may have closed this dialog while
+  // the fetch was in flight, or opened an editor. Only paint if this is still the live bin.
+  if(!_okrBinPaint(seq)){_OKRBIN=next;return;}
+  _OKRBIN=next;App._renderOKRBin();
+};
+/* May the bin (re)draw itself right now? Only if it is still the bin the user asked for AND
+   nothing else has taken the single modal slot. An empty slot is fine — that is the state
+   right after a confirmP resolves, when the bin is expected to come back. Anything else on
+   screen (an objective editor with half-typed input, say) must not be painted over: these
+   handlers now await real network round-trips, so the page is interactive in between. */
+function _okrBinPaint(seq){
+  if(_OKRBIN_SEQ!==seq)return false;
+  const m=$('#modal');
+  if(!m)return true;
+  const k=m.dataset.mkey||'';
+  return k==='okr-bin'||k==='app-confirm';
+}
+/* Each DELETION is one entry, not each row. Every objective removed in a single delete
+   carries the same `deletedAt` stamp, which is what identifies the batch: a row belongs to
+   its parent's entry only if the parent was deleted in the SAME action. That distinction
+   matters \u2014 deleting an L1 on Monday and its L0 on Friday are two separate deletions, so
+   restoring Friday's L0 must not silently resurrect the L1 you deliberately removed on
+   Monday, and Monday's L1 must keep its own entry rather than vanishing from the list. */
+function _okrBinBatchParent(r,byId){
+  if(!r.parentId)return null;
+  const p=byId.get(r.parentId);
+  return (p&&String(p.deletedAt||'')===String(r.deletedAt||''))?p:null;
+}
+function _okrBinRoots(){
+  const rows=(_OKRBIN&&_OKRBIN.rows)||[];
+  const byId=new Map(rows.map(r=>[r.id,r]));
+  return rows.filter(r=>!_okrBinBatchParent(r,byId));
+}
+function _okrBinSubtree(id){
+  const rows=(_OKRBIN&&_OKRBIN.rows)||[];
+  const byId=new Map(rows.map(r=>[r.id,r]));
+  const root=byId.get(id);if(!root)return[];
+  const out=[],seen=new Set([id]);
+  (function walk(pid){
+    rows.forEach(r=>{
+      if(r.parentId!==pid||seen.has(r.id))return;
+      if(String(r.deletedAt||'')!==String(root.deletedAt||''))return;  // a different deletion
+      seen.add(r.id);out.push(r);walk(r.id);
+    });
+  })(id);
+  return out;
+}
+App._renderOKRBin=()=>{
+  const B=_OKRBIN;if(!B)return;
+  let body;
+  if(B.loading)body='<div style="padding:26px 0;text-align:center;font-size:13px;color:var(--c-text-3)">Loading deleted objectives\u2026</div>';
+  else if(B.err)body='<div style="padding:20px;border:1px solid var(--c-danger-soft);background:var(--c-danger-soft);border-radius:11px;font-size:13px;color:var(--c-danger-ink)">'+esc(B.err)+'</div>';
+  else{
+    const roots=_okrBinRoots();
+    if(!roots.length)body='<div style="padding:26px 0;text-align:center"><div style="font-size:13.5px;font-weight:700;color:var(--c-text-2)">Nothing has been deleted</div><div style="font-size:12px;color:var(--c-text-3);margin-top:4px">Deleted objectives are kept here so you can bring them back.</div></div>';
+    else body=(B.truncated?'<div style="font-size:11.5px;color:#7A4E00;background:#FDF3D9;border:1px solid #FBE6A6;border-radius:9px;padding:8px 11px;margin-bottom:10px;line-height:1.5">Showing the <b>'+_OKRBIN_LIMIT+'</b> most recent deletions. Older ones are still in the database \u2014 erase or restore some of these to see further back.</div>':'')
+      +roots.map(r=>{
+      const kids=_okrBinSubtree(r.id).length;
+      const who=fullName(uById(r.deletedBy))||'someone';
+      const when=r.deletedAt?fmtS(String(r.deletedAt).slice(0,10)):'';
+      const mine=_okrCanEditNode(r);
+      // NOTE: no "parent is gone" claim here. okrById() only sees LIVE objectives, so a
+      // parent that is merely soft-deleted, or simply outside this user's visibility scope,
+      // also reads as missing \u2014 the old check turned that into "returns at the top level"
+      // and then actually nulled parent_id, permanently detaching a branch. The real state
+      // of the parent is checked against the server at restore time instead.
+      return`<div style="border:1px solid var(--c-border);border-radius:12px;padding:12px 13px;margin-bottom:9px;background:var(--c-surface)">
+        <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:13.5px;font-weight:700;color:var(--c-text);line-height:1.4">${esc(r.title||'Untitled objective')}</div>
+            <div style="font-size:11.5px;color:var(--c-text-3);margin-top:3px">
+              Deleted by ${esc(who)}${when?' \u00b7 '+esc(when):''}${kids?' \u00b7 brings back <b>'+kids+'</b> sub-objective'+(kids===1?'':'s'):''}
+            </div>
+            ${mine?'':'<div style="font-size:11px;color:var(--c-text-3);margin-top:5px">You can\u2019t restore or erase this one \u2014 you\u2019re not an owner and don\u2019t have edit rights on it.</div>'}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            ${mine?`<button onclick="App._okrBinRestore('${r.id}')" class="ui-btn ui-btn-primary ui-btn-sm">${ic('refresh','w-3.5 h-3.5')}Restore</button>
+            <button onclick="App._okrBinErase('${r.id}')" title="Remove permanently \u2014 this cannot be undone" class="ui-btn ui-btn-ghost ui-btn-sm" style="color:var(--c-danger)">${ic('trash','w-3.5 h-3.5')}Erase</button>`:''}
+          </div>
+        </div></div>`;
+    }).join('');
+  }
+  modalShell({title:'Deleted objectives',sub:'Restore a deletion, or erase it for good',size:'max-w-2xl',key:'okr-bin',
+    body:body,footer:btnG('Close','App.closeModal()')});
+};
+/* What has become of a restored objective's parent? okrById() is not enough \u2014 it only sees
+   live objectives the user can see, so it says "missing" for a parent that is merely
+   soft-deleted OR simply outside this user's visibility scope. Ask the server. */
+async function _okrParentState(parentId){
+  if(!parentId)return'none';                       // top-level already
+  if(okrById(parentId))return'live';               // visible and alive \u2014 nothing to warn about
+  try{
+    const{data,error}=await sb.from('okrs').select('id,deleted_at').eq('id',parentId).maybeSingle();
+    if(error)return'unknown';
+    if(!data)return'unknown';                      // erased, or hidden from this user by RLS
+    return data.deleted_at?'deleted':'live-hidden';
+  }catch(e){return'unknown';}
+}
+App._okrBinRestore=async(id)=>{
+  const B=_OKRBIN;if(!B)return;
+  const seq=_OKRBIN_SEQ;
+  const root=(B.rows||[]).find(r=>r.id===id);if(!root)return;
+  // Per-row rights: the bin's own gate is only can('okr','delete'), which would otherwise let
+  // someone restore or erase an objective they could never have deleted from the tree.
+  if(!_okrCanEditNode(root))return toast('You can\u2019t restore this objective \u2014 you\u2019re not an owner and don\u2019t have edit rights on it','err');
+  const subtree=_okrBinSubtree(id);
+  const ids=[root.id,...subtree.map(r=>r.id)];
+  const pstate=await _okrParentState(root.parentId);
+  // parent_id is NEVER rewritten. Detaching a branch is destructive and irreversible, and
+  // the three "can't see the parent" cases are indistinguishable from the client.
+  const parentNote=pstate==='deleted'
+      ?'its parent is still deleted, so it stays hidden until you restore that one too'
+    :pstate==='unknown'
+      ?'its parent isn\u2019t visible to you, so it may not appear in your own tree'
+    :'';
+  if(!(await confirmP({
+    title:'Restore objective',
+    body:'<b>'+esc(root.title||'This objective')+'</b> comes back with everything that was deleted alongside it.',
+    items:[subtree.length?('<b>'+subtree.length+'</b> sub-objective'+(subtree.length===1?'':'s')):'',
+           'their check-ins, comments and activity logs are intact',
+           parentNote].filter(Boolean),
+    confirmLabel:'Restore',cancelLabel:'Cancel',danger:false,icon:'refresh'})))return App._renderOKRBin();
+  // Await the writes: the reload below issues its SELECT in the same tick, so firing these
+  // off unawaited meant the refresh raced ahead of them and the tree came back unchanged.
+  const stamp=new Date().toISOString();
+  const oks=await Promise.all(ids.map(oid=>sbWrite(
+    {table:'okrs',op:'update',id:oid,match:{col:'id',val:oid},values:{deleted_at:null,deleted_by:null,updated_at:stamp}},
+    {label:'OKR restore',silent:true})));
+  // If the server refused (an RLS write rule the client can't see, a 5xx), say so instead of
+  // claiming success — the reload a moment later would silently take the objective away
+  // again, which reads as the restore button simply not working.
+  if(oks.some(ok=>!ok)){
+    const failed=oks.filter(ok=>!ok).length;
+    toast(failed===ids.length?'Restore failed — nothing was changed on the server':(failed+' of '+ids.length+' could not be restored; retrying in the background'),'err');
+    if(failed===ids.length)return _okrBinPaint(seq)&&App._renderOKRBin();
+  }
+  // Drop them from this device's tombstone list, or the next refresh hides them again.
+  const back=new Set(ids);
+  DB.okrsDeleted=(DB.okrsDeleted||[]).filter(x=>!back.has(x));
+  // Put them straight back into the live list too, so the tree updates now rather than
+  // whenever the next background load happens to run.
+  const live=new Set((DB.okrs||[]).map(x=>x.id));
+  [root,...subtree].forEach(r=>{if(!live.has(r.id)){const c=JSON.parse(JSON.stringify(r));c.deletedAt=null;c.deletedBy=null;DB.okrs.push(c);}});
+  okrLog(root.id,'Restored objective',{count:ids.length,from:'Deleted objectives'});
+  _OKRBIN.rows=(_OKRBIN.rows||[]).filter(r=>!back.has(r.id));
+  saveDB();toast(ids.length>1?(ids.length+' objectives restored'):'Objective restored');
+  if(_okrBinPaint(seq))App._renderOKRBin();
+  rr();
+  try{await _lazyLoad('okr');}catch(e){}
+};
+App._okrBinErase=async(id)=>{
+  const B=_OKRBIN;if(!B)return;
+  const seq=_OKRBIN_SEQ;
+  const root=(B.rows||[]).find(r=>r.id===id);if(!root)return;
+  if(!_okrCanEditNode(root))return toast('You can\u2019t erase this objective \u2014 you\u2019re not an owner and don\u2019t have edit rights on it','err');
+  const subtree=_okrBinSubtree(id);
+  const ids=[root.id,...subtree.map(r=>r.id)];
+  if(!(await confirmP({
+    title:'Erase permanently',
+    body:'<b>'+esc(root.title||'This objective')+'</b> will be removed from the database for good.',
+    items:[subtree.length?('<b>'+subtree.length+'</b> sub-objective'+(subtree.length===1?'':'s')):'',
+           'every check-in, comment and activity log in that branch'].filter(Boolean),
+    note:'This is the one that cannot be undone \u2014 it will not come back from here.',
+    confirmLabel:'Erase '+ids.length,cancelLabel:'Keep it'})))return App._renderOKRBin();
+  _okrHardPurgeIds(new Set(ids));
+  const gone=new Set(ids);
+  _OKRBIN.rows=(_OKRBIN.rows||[]).filter(r=>!gone.has(r.id));
+  DB.okrsDeleted=(DB.okrsDeleted||[]).filter(x=>!gone.has(x));
+  saveDB();toast(ids.length+' objective'+(ids.length===1?'':'s')+' erased','warn');
+  if(_okrBinPaint(seq))App._renderOKRBin();
+};
+/* Permanent removal \u2014 only ever reached from the recycle bin, never from a normal delete. */
+function _okrHardPurgeIds(ids){
+  try{
+    cancelPendingWrites('okrs',ids);
+    cancelPendingWrites('okr_checkins',ids,'okr_id');
+    cancelPendingWrites('okr_logs',ids,'okr_id');
+  }catch(e){}
+  ids.forEach(oid=>{
+    sbWrite({table:'okrs',op:'delete',id:oid,match:{col:'id',val:oid}},{label:'OKR erase',silent:true});
+    sbWrite({table:'okr_checkins',op:'delete',match:{col:'okr_id',val:oid}},{label:'OKR check-ins erase',silent:true});
+    sbWrite({table:'okr_logs',op:'delete',match:{col:'okr_id',val:oid}},{label:'OKR log erase',silent:true});
+  });
+}
+/* Everything that will disappear with `o` \u2014 used to spell it out in the confirmation.
+   SHADOW rows are excluded deliberately. _loadOkrShadows() merges numbers-only stand-ins
+   for objectives row-level security hides from this user; they carry no title or owner,
+   exist purely so a roll-up parent can total its children, and RLS would refuse to delete
+   them anyway (a delete matching zero rows reports success, so we would tell the user they
+   were deleted and then watch them return as parentless roots). Counting them would also
+   leak how many hidden objectives sit under the tree. If any are present the caller blocks
+   the delete outright rather than knowingly orphaning them. */
+function _okrDeleteScope(roots){
+  const ids=new Set();
+  roots.forEach(o=>{ids.add(o.id);okrDescendants(o.id).forEach(d=>ids.add(d.id));});
+  let hidden=0;
+  [...ids].forEach(x=>{const o=okrById(x);if(o&&o._shadow){hidden++;ids.delete(x);}});
+  const all=[...ids].map(okrById).filter(Boolean);
+  const rootIds=new Set(roots.map(r=>r.id));
+  const kids=all.filter(x=>!rootIds.has(x.id));
+  return{
+    ids,
+    hidden,
+    subCount:kids.length,
+    quarterCount:kids.filter(x=>x.quarterLabel).length,
+    checkins:(DB.okrCheckins||[]).filter(c=>ids.has(c.okrId)&&!c._shadow).length
+  };
+}
+/* Shown when a branch reaches into objectives this user cannot see. */
+async function _okrBlockedByHidden(n){
+  await confirmP({
+    title:'Can\u2019t delete this branch',
+    body:'<b>'+n+'</b> objective'+(n===1?'':'s')+' below this one '+(n===1?'is':'are')+' outside what you have access to, so '+(n===1?'it':'they')+' cannot be deleted from here.',
+    items:['deleting only the part you can see would leave '+(n===1?'it':'them')+' with no parent',
+           'ask an administrator, or someone with access to that department, to delete the branch'],
+    confirmLabel:'OK',cancelLabel:'Close',danger:false,icon:'lock'});
+  return false;
+}
+App._okrDelete=async(id)=>{
   const o=okrById(id);if(!o)return;
   if(!_okrCanDelete(o))return toast('You can\u2019t delete this OKR','err');
-  const desc=okrDescendants(id);
-  if(!confirm('Delete "'+(o.title||'this objective')+'"'+(desc.length?(' and its '+desc.length+' sub-objective'+(desc.length===1?'':'s')):'')+'? Check-in history and logs go with it.'))return;
-  const ids=new Set([id,...desc.map(d=>d.id)]);
+  const sc=_okrDeleteScope([o]);
+  if(sc.hidden)return _okrBlockedByHidden(sc.hidden);
+  const plainSubs=sc.subCount-sc.quarterCount;
+  const items=[];
+  if(sc.quarterCount)items.push('<b>'+sc.quarterCount+'</b> quarterly objective'+(sc.quarterCount===1?'':'s'));
+  if(plainSubs)items.push('<b>'+plainSubs+'</b> sub-objective'+(plainSubs===1?'':'s')+' below it');
+  if(sc.checkins)items.push('<b>'+sc.checkins+'</b> check-in'+(sc.checkins===1?'':'s')+' and their comments');
+  if(sc.subCount)items.push('every activity log in that branch');
+  if(!(await confirmP({
+    title:'Delete objective',
+    body:'<b>'+esc(o.title||'This objective')+'</b>'+(sc.subCount?' and <b>everything underneath it</b> will be removed':' will be removed')+' \u2014 from the tree, the filters, the totals, everyone\u2019s check-in tasks and the reminders.',
+    items:items,
+    note:'Kept in <b>Deleted objectives</b>, so you can restore the whole branch \u2014 history included \u2014 if you change your mind.',
+    confirmLabel:sc.subCount?('Delete all '+(sc.subCount+1)):'Delete',
+    cancelLabel:'Keep it'})))return;
+  const ids=sc.ids;
+  // Purge FIRST, then drop the rows locally: _okrPurgeIds reads each row via okrById() to
+  // stamp deletedAt on the in-memory copy, and those rows are about to be filtered out.
+  _okrPurgeIds(ids);
   DB.okrs=(DB.okrs||[]).filter(x=>!ids.has(x.id));
   DB.okrCheckins=(DB.okrCheckins||[]).filter(c=>!ids.has(c.okrId));
   DB.okrLogs=(DB.okrLogs||[]).filter(l=>!ids.has(l.okrId));
-  sbWrite({table:'okrs',op:'delete',id:id,match:{col:'id',val:id}},{label:'OKR delete'});
-  _OKRSEL.delete(id);
-  saveDB();toast('OKR deleted','warn');rr();
+  ids.forEach(x=>{_OKRSEL.delete(x);delete _OKR_EXP[x];});
+  saveOkrExpanded(_OKR_EXP);
+  saveDB();toast(ids.size>1?(ids.size+' objectives deleted'):'OKR deleted','warn');rr();
 };
 /* ═══════════════ v3.13 — BULK EDIT (any field, any number of objectives) ═══════════════
    Tick objectives on the tree → "Bulk edit" → tick the FIELDS you want written. ONLY ticked
@@ -2114,7 +2551,7 @@ App._renderOKRBulk=()=>{
       `<div style="display:flex;gap:6px;flex-wrap:wrap">${pill(d.lifecycle==='close','Close them',"App._okrBulkSetR('lifecycle','close')")}${pill(d.lifecycle==='reopen','Reopen them',"App._okrBulkSetR('lifecycle','reopen')")}</div>
       ${d.lifecycle==='close'?`<div style="margin-top:10px"><label style="${L}">Reason — required, kept on the record</label><textarea rows="2" oninput="App._okrBulkSet('closeReason',this.value)" placeholder="e.g. Superseded by the FY27 plan" class="ui-input" style="resize:vertical">${esc(d.closeReason||'')}</textarea></div>`:''}`)}
     <div style="border:1.5px solid #FBCDCD;background:#FEF0F0;border-radius:12px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div style="min-width:0"><div class="fd" style="font-size:12.5px;font-weight:800;color:#991B1B">Delete these objectives</div><div style="font-size:11px;color:#B91C1C;margin-top:2px;line-height:1.5">Sub-objectives, check-in history and logs go with them. This cannot be undone.</div></div>
+      <div style="min-width:0"><div class="fd" style="font-size:12.5px;font-weight:800;color:#991B1B">Delete these objectives</div><div style="font-size:11px;color:#B91C1C;margin-top:2px;line-height:1.5">Sub-objectives, check-in history and logs go with them — kept in Deleted objectives, so a deletion can be restored.</div></div>
       <button type="button" onclick="App._okrBulkDelete()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;border:1.5px solid #B91C1C;background:var(--c-surface);color:#B91C1C;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">${ic('trash','w-3.5 h-3.5')}Delete ${targets.length}</button>
     </div>
   </div>`;
@@ -2189,6 +2626,18 @@ App._okrBulkApply=()=>{
       if(d.rollup)set('rollupMode','Roll-up mode',d.rollupMode||'sum');
     }
     if(on.isAnnual&&o.metricType!=='yesno'&&!!o.isAnnual!==!!d.isAnnual){ch.push({field:'Annual objective',from:!!o.isAnnual,to:!!d.isAnnual});o.isAnnual=!!d.isAnnual;}
+    /* v3.14: same rule as the single editor — roll-up ON (and not an annual, whose
+       frequency is only the template for its quarters) means this objective is never
+       asked for an update, so any schedule on it is cleared rather than left dormant.
+       Runs AFTER the rollup/isAnnual toggles above so it sees their final values, and
+       ONLY when this pass actually touched roll-up, the schedule, or the annual flag —
+       bulk-editing the department of 40 objectives must not quietly wipe a schedule on
+       any of them, but turning the annual flag OFF on a roll-up objective leaves exactly
+       the `rollup && !isAnnual` + live schedule combination this rule exists to prevent. */
+    if((on.rollup||on.freq||on.isAnnual)&&o.rollup&&!o.isAnnual&&Object.keys(o.frequency||{}).length){
+      ch.push({field:'Check-in schedule',from:_okrFreqLabel({frequency:o.frequency||{}}),to:'none — updates from the level below'});
+      o.frequency={};
+    }
     if(on.statusMark){
       if(d.statusMark==='auto'){
         if(o.statusMode==='manual'){ch.push({field:'Status',from:o.statusManual,to:'Auto'});o.statusMode='auto';o.statusManual=null;}
@@ -2217,20 +2666,45 @@ App._okrBulkApply=()=>{
   saveDB();closeModal();rr();
   toast(changed?(changed+' objective'+(changed===1?'':'s')+' updated'+tail):('Nothing needed changing'+tail),changed?'':'warn');
 };
-App._okrBulkDelete=()=>{
+App._okrBulkDelete=async()=>{
   const sel=[..._OKRSEL].map(okrById).filter(Boolean);
   const targets=sel.filter(_okrCanDelete);
   if(!targets.length)return toast('Nothing you can delete is selected','err');
-  const ids=new Set();
-  targets.forEach(o=>{ids.add(o.id);okrDescendants(o.id).forEach(x=>ids.add(x.id));});
-  const extra=ids.size-targets.length;
-  if(!confirm('Delete '+targets.length+' objective'+(targets.length===1?'':'s')+(extra?(' and '+extra+' sub-objective'+(extra===1?'':'s')):'')+'?\n\nCheck-in history and logs go with them. This cannot be undone.'))return;
+  const sc=_okrDeleteScope(targets);
+  // Blocked because the branch reaches objectives this user cannot see — that notice takes
+  // over the single modal slot, so put the bulk dialog back once it is dismissed.
+  if(sc.hidden){closeModal();await _okrBlockedByHidden(sc.hidden);return App._renderOKRBulk();}
+  // "Skipped" must only count objectives that really survive. One you have no rights to
+  // still goes if it sits UNDER something you are deleting, so reporting it as skipped
+  // while deleting it anyway was a lie — count only those outside every target's subtree.
+  const skipped=sel.filter(x=>!sc.ids.has(x.id)).length;
+  const plainSubs=sc.subCount-sc.quarterCount;
+  const items=[];
+  if(sc.quarterCount)items.push('<b>'+sc.quarterCount+'</b> quarterly objective'+(sc.quarterCount===1?'':'s'));
+  if(plainSubs)items.push('<b>'+plainSubs+'</b> sub-objective'+(plainSubs===1?'':'s')+' below them');
+  if(sc.checkins)items.push('<b>'+sc.checkins+'</b> check-in'+(sc.checkins===1?'':'s')+' and their comments');
+  items.push('every activity log in those branches');
+  if(skipped)items.push('<span style="color:var(--c-text-3)">'+skipped+' selected objective'+(skipped===1?'':'s')+' will be skipped — you don’t have delete rights</span>');
+  // Closing the bulk dialog first, so the confirm is not stacked on top of it.
+  closeModal();
+  if(!(await confirmP({
+    title:'Delete '+targets.length+' objective'+(targets.length===1?'':'s'),
+    body:'<b>'+targets.length+'</b> selected objective'+(targets.length===1?'':'s')+(sc.subCount?' and <b>everything underneath</b> will be removed':' will be removed')+' from the tree, the totals and everyone’s check-in tasks.',
+    items:items,
+    note:'Kept in <b>Deleted objectives</b> — each deletion can be restored with its history.',
+    confirmLabel:'Delete '+sc.ids.size,
+    cancelLabel:'Keep them'})))return App._renderOKRBulk(); // cancel puts the bulk dialog back, selection intact
+  const ids=sc.ids;
+  // v3.14: mark the FULL subtree deleted server-side, not just the selected roots — and
+  // before the local rows go, since _okrPurgeIds reads each one via okrById().
+  _okrPurgeIds(ids);
   DB.okrs=(DB.okrs||[]).filter(x=>!ids.has(x.id));
   DB.okrCheckins=(DB.okrCheckins||[]).filter(c=>!ids.has(c.okrId));
   DB.okrLogs=(DB.okrLogs||[]).filter(l=>!ids.has(l.okrId));
-  targets.forEach(o=>{sbWrite({table:'okrs',op:'delete',id:o.id,match:{col:'id',val:o.id}},{label:'OKR delete'});});
+  ids.forEach(x=>{delete _OKR_EXP[x];});
+  saveOkrExpanded(_OKR_EXP);
   _OKRSEL=new Set();
-  saveDB();closeModal();toast(ids.size+' objective'+(ids.size===1?'':'s')+' deleted','warn');rr();
+  saveDB();toast(ids.size+' objective'+(ids.size===1?'':'s')+' deleted','warn');rr();
 };
 App._okrMarkStatus=(id,st)=>{
   const o=okrById(id);if(!o)return;
@@ -2297,6 +2771,12 @@ App._renderOKRCheckin=()=>{
 // Shared apply: used by the single modal AND the combined "due today" modal. Logs everything.
 function _okrApplyCheckin(okrId,date,d){
   const o=okrById(okrId);if(!o)return false;
+  /* v3.14 — the last gate before a value is written. An objective that auto-updates from
+     the level below takes its number from its sub-objectives and from nothing else, so no
+     manual value may land on it whatever route got here: a modal left open while somebody
+     else flipped the toggle, a queued save replayed after reconnect, or any future caller.
+     Annuals (fed by their quarters) and closed objectives are refused for the same reason. */
+  if(o.rollup||o.isAnnual||o.closed)return false;
   if(d.value===null||d.value===undefined||!isFinite(d.value))return false;
   const ex=d.existingId?(DB.okrCheckins||[]).find(c=>c.id===d.existingId):null;
   if(ex){
@@ -2327,7 +2807,16 @@ App._okrCheckinSave=()=>{
   const d=_OKRCI;if(!d)return;
   const o=okrById(d.okrId);if(!o)return;
   if(d.value===null||d.value===undefined||!isFinite(d.value))return toast(o.metricType==='yesno'?'Pick Yes or No':'Enter the value','err');
-  _okrApplyCheckin(d.okrId,d.date,d);
+  // v3.14: honour the guard's answer. _okrApplyCheckin refuses roll-up / annual / closed
+  // objectives; reporting "Update saved" while silently dropping the value is exactly how
+  // people lose work — this is the case where a co-owner flipped the toggle (and a
+  // background refresh replaced DB.okrs) while this modal sat open.
+  if(!_okrApplyCheckin(d.okrId,d.date,d)){
+    return toast(o.rollup?'This objective now updates from the level below — your value was not saved'
+                :o.isAnnual?'This objective now updates from its quarters — your value was not saved'
+                :o.closed?'This objective has been closed — your value was not saved'
+                :'That value could not be saved','err');
+  }
   const _oid=d.okrId;_OKRCI=null;saveDB();closeModal();toast('Update saved');rr();if(typeof _okrPMRefresh==='function')_okrPMRefresh(_oid);
 };
 
@@ -2857,8 +3346,11 @@ function _acTogBtn(on,label,onclick,disabled){
   return `<button ${disabled?'disabled':''} onclick="${onclick}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid ${on?'#FF7F11':'var(--c-border)'};background:${on?'#FFF1E4':'var(--c-surface)'};color:${on?'#C25A00':'var(--c-text-3)'};font-size:11.5px;font-weight:700;cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'}">
     <span style="width:6px;height:6px;border-radius:50%;background:${on?'#FF8F33':'#C9D9DD'};flex-shrink:0"></span>${esc(label)}</button>`;
 }
-App._acCustomize=(uid2)=>{
-  if(_ACD&&_ACD.uid!==uid2&&_ACD.dirty&&!confirm('Discard unsaved changes for the previous person?'))return;
+App._acCustomize=async(uid2)=>{
+  if(_ACD&&_ACD.uid!==uid2&&_ACD.dirty&&!(await confirmP({
+    title:'Discard unsaved changes?',
+    body:'You have unsaved permission changes for <b>'+esc(fullName(uById(_ACD.uid))||'the previous person')+'</b>. Switching now throws them away.',
+    confirmLabel:'Discard and switch',cancelLabel:'Go back',danger:false,icon:'alert'})))return;
   if(_ACD&&_ACD.uid!==uid2)_ACD=null;
   S.filters.acUser=uid2;
   App._renderACUser();
@@ -3113,13 +3605,17 @@ App._rpDup=(id)=>{
   log(fullName(me()),'Role duplicated',ex.name);
   saveDB();_syncRoleProfiles();toast('Role duplicated — edit the copy');rr();
 };
-App._rpDel=(id)=>{
+App._rpDel=async(id)=>{
   if(!can('accessControl','manage'))return toast('You need Access Control → Manage','err');
   const ex=DB.roleProfiles[id];if(!ex)return;
   if(ex.builtin)return toast('Built-in roles can\'t be deleted (duplicate them instead)','err');
   const n=DB.users.filter(u=>u.hrm?.roleProfileId===id).length;
   if(n)return toast(n+' people still have this role — assign them another role first','err');
-  if(!confirm('Delete role "'+ex.name+'"?'))return;
+  if(!(await confirmP({
+    title:'Delete role',
+    body:'The role <b>'+esc(ex.name)+'</b> and all of its permission settings will be deleted.',
+    items:['nobody currently holds this role, so no one loses access'],
+    confirmLabel:'Delete role',cancelLabel:'Keep it'})))return;
   delete DB.roleProfiles[id];
   log(fullName(me()),'Role deleted',ex.name);
   saveDB();_syncRoleProfiles();toast('Role deleted','warn');rr();

@@ -9,6 +9,15 @@ const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const uid=p=>p+'_'+Math.random().toString(36).slice(2,9);
 const esc=s=>(s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* v3.14 — escape a value that lands inside a SINGLE-QUOTED JS STRING within an inline
+   handler attribute, e.g. onclick="App.go('users');S.search='<here>'".
+   esc() alone is wrong there: it turns ' into &#39;, the HTML parser decodes that back to a
+   bare ' before the JS is compiled, and the handler dies with a SyntaxError — which is why
+   picking "Sara O'Brien" (or an OKR titled "Dubai's revenue") in ⌘K did nothing at all.
+   Backslash-escape for JS first, THEN HTML-escape: &#39; decodes to ' with the \ still in
+   front of it, so the JS parser sees a properly escaped \'. Newlines would end the string
+   literal too, so they are flattened to spaces. */
+const jsq=s=>esc((s==null?'':String(s)).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n\u2028\u2029]/g,' '));
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const nowHM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes();};
 const hm2m=t=>{if(!t)return 1440;const[h,m]=t.split(':').map(Number);return h*60+(m||0);};

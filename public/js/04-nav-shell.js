@@ -90,14 +90,14 @@ App.toggleNavSec=(name)=>{
   S._navCollapsed[name]=!cur;
   render();
 };
-App.go=(r)=>{if(r&&String(r).slice(0,4)==='hub:')r=_hubHome(String(r).slice(4))||'mychecklists';S.route=r;S.search='';S.expandedCl=null;S.afOpen=null;
-  // Preserve analytics filters; preserve questions sub-tab state; reset everything else
-  if(r==='analytics'){/* keep filters */}
-  else if(r==='questions'){const qTab=S.filters.qTab;const eQ=S.filters.expandedQ;const eL=S.filters.expandedL;S.filters={};if(qTab)S.filters.qTab=qTab;if(eQ)S.filters.expandedQ=eQ;if(eL)S.filters.expandedL=eL;}
-  else if(r==='notifications'){const ntab=S.filters.ntab;S.filters={};if(ntab)S.filters.ntab=ntab;}
-  else if(r==='settings'){const stab=S.filters.stab;const tplKey=S.filters.tplKey;S.filters={};if(stab)S.filters.stab=stab;if(tplKey)S.filters.tplKey=tplKey;}
-  else if(r==='accesscontrol'){const at=S.filters.acTab;const au=S.filters.acUser;const aq=S.filters.acQ;S.filters={};if(at)S.filters.acTab=at;if(au)S.filters.acUser=au;if(aq)S.filters.acQ=aq;}
-  else{S.filters={};}
+App.go=(r)=>{if(r&&String(r).slice(0,4)==='hub:')r=_hubHome(String(r).slice(4))||'mychecklists';
+  // v3.14 — FILTER MEMORY. Every tab keeps its own filters: stash the one we are
+  // leaving, restore the one we are entering. This replaces the old hand-picked
+  // "preserve two keys on four routes, wipe everything else" block, which is why
+  // filters vanished the moment you stepped into another tab and came back.
+  saveFilters(S.route);
+  S.route=r;S.search='';S.expandedCl=null;S.afOpen=null;
+  restoreFilters(r);
   if(r!=='teamview')S.tvUser=null;
   // Update URL hash so deep-links work; pushState so browser Back/Forward walk in-app history.
   if(location.hash!=='#'+r){ if(history.pushState)history.pushState(null,'','#'+r); else if(history.replaceState)history.replaceState(null,'','#'+r); }
@@ -122,7 +122,12 @@ function render(){if(!S.uid){$('#app').innerHTML=loginView();return;}
   const _sb=document.querySelector('.sidebar');const _sy=_sb?_sb.scrollTop:0;
   $('#app').innerHTML=shell(pageContent());
   const _sb2=document.querySelector('.sidebar');if(_sb2&&_sy)_sb2.scrollTop=_sy;}
-function rr(){_invalidateNotifCache();const _y=window.scrollY||document.documentElement.scrollTop||0;const c=$('#content');if(c)c.innerHTML=pageContent();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
+function rr(){_invalidateNotifCache();
+  // v3.14: persist the CURRENT tab's filters on every redraw. Saving only when leaving a
+  // tab meant the tab you were actually sitting on was never written, so a refresh lost
+  // exactly the filters you had just set. Also covers the few places that assign S.route
+  // directly instead of going through App.go(). Cheap — it no-ops unless something changed.
+  try{saveFilters(S.route);}catch(e){}const _y=window.scrollY||document.documentElement.scrollTop||0;const c=$('#content');if(c)c.innerHTML=pageContent();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
 App.rr=rr;
 // UI-1: live-search helper — rr() rebuilds #content and destroys the typing <input>, dropping
 // focus/caret. Re-render, then restore focus + selection on the search input by id.
@@ -261,6 +266,9 @@ App.changePw=async()=>{const cur=($('#pw-cur')?.value||'').trim();const nw=($('#
 App.logout=()=>{
   try{log(fullName(me()),'Logged out','');saveDB();}catch(e){}
   // Clear state and render immediately — don't wait for Supabase
+  // v3.14: filters are remembered per tab across refreshes — wipe the whole stored map on
+  // logout so a shared browser never shows the next person the previous one's filtered view.
+  clearAllFilters();try{if(typeof App._okrResetExpanded==='function')App._okrResetExpanded();}catch(e){}
   S.uid=null;S.route='dashboard';S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
   closeModal();render();
   // Sign out Supabase in background

@@ -12,7 +12,9 @@ const chip=s=>{const st=CHIP_STYLE[s]||'background:#FEFAEC;color:#8A5F00';const 
 /* ===== DATA MODEL ===== */
 let DB={
   departments:[],
-  users:[],checklists:[],submissions:[],approvals:[],feedback:[],folders:[],documents:[],locations:[],audit:[],notifications:[],questions:[],tickets:[],okrs:[],okrCheckins:[],okrLogs:[],drafts:[]
+  // okrsDeleted (v3.14): ids removed by a cascade delete, kept until the server confirms —
+  // stops a failed/lagging delete request resurrecting the subtree on the next refresh.
+  users:[],checklists:[],submissions:[],approvals:[],feedback:[],folders:[],documents:[],locations:[],audit:[],notifications:[],questions:[],tickets:[],okrs:[],okrCheckins:[],okrLogs:[],okrsDeleted:[],drafts:[]
 };
 function log(a,b,c){
   if(!a||!b)return;
@@ -65,7 +67,7 @@ function loadDB(){
     const r=localStorage.getItem(LS_KEY);
     if(!r)return false;
     const p=JSON.parse(r);if(!p.DB)return false;DB=p.DB;
-    ['users','departments','locations','checklists','submissions','approvals','feedback','folders','documents','audit','notifications','questions','checklists_deleted','questions_deleted','folders_deleted','documents_deleted','users_deleted','departments_deleted','locations_deleted','okrs','okrCheckins','okrLogs','drafts'].forEach(k=>{if(!DB[k])DB[k]=[];});
+    ['users','departments','locations','checklists','submissions','approvals','feedback','folders','documents','audit','notifications','questions','checklists_deleted','questions_deleted','folders_deleted','documents_deleted','users_deleted','departments_deleted','locations_deleted','okrs','okrCheckins','okrLogs','okrsDeleted','drafts'].forEach(k=>{if(!DB[k])DB[k]=[];});
     if(!DB.roleProfiles||typeof DB.roleProfiles!=='object')DB.roleProfiles={};
     try{DB.users.forEach(u=>_ensureHrm(u));_seedRoleProfiles();_permsV3Migrate();}catch(e){console.warn('[perms] cache init:',e.message);}
     DB.users.forEach(u=>{
@@ -85,6 +87,87 @@ function loadDB(){
 
 /* ===== STATE ===== */
 let S={uid:null,route:'dashboard',search:'',calDate:todayISO(),calWk:0,expandedCl:null,filters:{},filterOpen:false,tvUser:null,tvCalDate:null,tvCalWk:0,tvExpanded:null,afOpen:null};
+
+/* ═══════════════ v3.14 — FILTER MEMORY (per tab, survives refresh) ═══════════════
+   Until now App.go() did a flat `S.filters={}` on every route change, so setting up
+   a filter, stepping into another tab and coming back meant building it all again.
+   Each route now keeps its OWN filter bag, and the whole map is persisted to
+   localStorage, so filters survive a reload / reopening the browser too.
+
+   Two things are deliberately NOT remembered:
+   · open dropdown popovers (okrMSOpen / okrQtrOpen) — reopening the app with a
+     menu already hanging open looks broken;
+   · bulk-selection ticks (uSel) — coming back tomorrow to 40 silently selected
+     rows, one click away from a bulk edit, is worse than forgetting them.
+   Everything else — search text, multi-selects, sub-tabs, drill-down state — stays.
+
+   Also not remembered: `aclWk` / `aclDate` — a week OFFSET relative to today. Storing
+   "3 weeks back" and replaying it a month later drops you on an unrelated week with no
+   Today highlight, so the calendar always reopens on the current week.
+
+   The stored map is stamped with the user id that wrote it. Clearing on logout is not
+   enough on its own — people close the browser without signing out, and the next person
+   to sign in on that machine would inherit their filters (including other people's ids
+   in the owner chips). A uid mismatch discards the whole map.                        */
+const FILTERS_KEY='bridge_filters_v1';
+const FILTERS_TRANSIENT=['okrMSOpen','okrQtrOpen','uSel','aclWk','aclDate'];
+let _filtersByRoute={},_filtersUid=null,_filtersLastWritten='';
+try{
+  const _fp=JSON.parse(localStorage.getItem(FILTERS_KEY)||'{}')||{};
+  // v2 shape is {uid,routes}; anything older is discarded rather than guessed at.
+  if(_fp&&_fp.routes&&typeof _fp.routes==='object'){_filtersByRoute=_fp.routes;_filtersUid=_fp.uid||null;}
+}catch(e){_filtersByRoute={};_filtersUid=null;}
+/* Drop transient keys and empty values so the stored bag stays small and honest —
+   an empty array must not count as "a filter is on" when the bar decides to show Clear. */
+function _filtersClean(f){
+  const out={};
+  Object.keys(f||{}).forEach(k=>{
+    if(FILTERS_TRANSIENT.indexOf(k)>=0)return;
+    const v=f[k];
+    if(v===''||v===null||v===undefined||v===false)return;
+    if(Array.isArray(v)&&!v.length)return;
+    if(typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length)return;
+    out[k]=v;
+  });
+  return out;
+}
+/* Called on every render as well as on route change, so the filters you are looking at
+   right now are already on disk when you hit refresh — saving only when LEAVING a tab
+   meant the tab you were actually on never got persisted. The written-string check keeps
+   the common case (nothing changed) down to one JSON.stringify and no localStorage write. */
+function saveFilters(route){
+  if(!route||!S.uid)return;
+  try{
+    const clean=_filtersClean(S.filters);
+    if(Object.keys(clean).length)_filtersByRoute[route]=clean;
+    else delete _filtersByRoute[route];
+    _filtersUid=S.uid;
+    const str=JSON.stringify({uid:_filtersUid,routes:_filtersByRoute});
+    if(str===_filtersLastWritten)return;
+    localStorage.setItem(FILTERS_KEY,str);_filtersLastWritten=str;
+  }catch(e){}
+}
+function restoreFilters(route){
+  // Someone else's remembered filters must never be handed to the person signing in now.
+  if(S.uid&&_filtersUid&&_filtersUid!==S.uid){clearAllFilters();S.filters={};return;}
+  const saved=route&&_filtersByRoute[route];
+  try{S.filters=saved?JSON.parse(JSON.stringify(saved)):{};}catch(e){S.filters={};}
+}
+function clearAllFilters(){_filtersByRoute={};_filtersUid=null;_filtersLastWritten='';S.filters={};try{localStorage.removeItem(FILTERS_KEY);}catch(e){}}
+/* Expand/collapse state of the OKR tree rides along with the filters — losing which
+   branches were open on every refresh is the same complaint in a different shape.
+   Stamped with the user id for the same reason as the filters: the ids of branches one
+   person had open must not be written back to disk by whoever signs in next. */
+const OKREXP_KEY='bridge_okr_expanded_v1';
+function saveOkrExpanded(map){try{localStorage.setItem(OKREXP_KEY,JSON.stringify({uid:S.uid||null,map:map||{}}));}catch(e){}}
+function loadOkrExpanded(){
+  try{
+    const p=JSON.parse(localStorage.getItem(OKREXP_KEY)||'{}')||{};
+    if(!p.map||typeof p.map!=='object')return{};
+    if(S.uid&&p.uid&&p.uid!==S.uid)return{};
+    return p.map;
+  }catch(e){return{};}
+}
 const me=()=>DB.users.find(u=>u.id===S.uid);
 // ── Admin standing is DYNAMIC-FIRST (roles-first v3) ──
 // A user's admin standing comes from their assigned ROLE PROFILE (u.hrm.roleProfileId),

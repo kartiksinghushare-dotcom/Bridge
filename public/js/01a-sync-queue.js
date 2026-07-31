@@ -24,6 +24,35 @@ function _savePendingWrites(){try{localStorage.setItem(PENDING_WRITES_KEY,JSON.s
 /* Rows (by table) that still have queued local changes */
 function pendingWriteIds(table){const s=new Set();_pendingWrites.forEach(w=>{if(w.table===table&&w.id)s.add(w.id);});return s;}
 
+/* v3.14 — Drop queued writes that a later DELETE has made meaningless.
+   Without this, an upsert that failed earlier (expired token, offline blip) sits in the
+   queue; deleting the row succeeds immediately, and 30 seconds later flushPendingWrites()
+   replays that upsert and RE-CREATES the row on the server — the deleted objective
+   reappears, now stripped of its children and history. Cancelling the stale writes first
+   is the only way a delete can be final.
+     cancelPendingWrites('okrs',['o1','o2'])            → by row id
+     cancelPendingWrites('okr_checkins',ids,'okr_id')   → by any match column           */
+function cancelPendingWrites(table,ids,matchCol){
+  const set=(ids instanceof Set)?ids:new Set(ids||[]);
+  if(!set.size)return 0;
+  const before=_pendingWrites.length;
+  _pendingWrites=_pendingWrites.filter(w=>{
+    if(w.table!==table)return true;
+    if(matchCol){
+      // A queued DELETE carries the column in `match`; a queued INSERT/UPSERT carries it in
+      // `values` (okrLog queues {op:'insert',values:{okr_id:…}} with no match at all, so
+      // checking only `match` would leave exactly the writes that re-create the row).
+      if(w.match&&w.match.col===matchCol&&set.has(w.match.val))return false;
+      if(w.values&&!Array.isArray(w.values)&&set.has(w.values[matchCol]))return false;
+      return true;
+    }
+    return !(w.id&&set.has(w.id));
+  });
+  const dropped=before-_pendingWrites.length;
+  if(dropped){_savePendingWrites();_pendingBadge();}
+  return dropped;
+}
+
 /* Make sure the JWT is fresh before an important request */
 async function ensureSession(){
   try{

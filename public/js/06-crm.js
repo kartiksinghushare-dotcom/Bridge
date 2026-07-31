@@ -481,7 +481,14 @@ App._crmRemindRender=()=>{var d=CRM._rem;if(!d)return;var c=_crmConvo(d.cid);var
       +(upcoming.length?'<div style="margin-top:16px"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3);margin-bottom:6px">Upcoming on this conversation</div>'+upcoming.map(function(r){return'<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--c-surface-2);border-radius:9px;margin-bottom:5px"><span>\u23F0</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">'+_crmDT(r.remindAt)+'</div>'+(r.note?'<div style="font-size:11px;color:var(--c-text-2)">'+esc(r.note)+'</div>':'')+'</div><button onclick="App._crmRemindDel(\''+r.id+'\')" style="border:none;background:transparent;color:var(--c-danger);cursor:pointer;font-size:11px;font-weight:700">Remove</button></div>';}).join('')+'</div>':''),
     footer:btnG('Cancel','App.closeModal()')+btnP('Set reminder','App._crmRemindSave()')});};
 App._crmRemindSave=async()=>{var d=CRM._rem;if(!d)return;var dt=new Date(d.date+'T'+(d.time||'09:00'));if(isNaN(dt.getTime()))return toast('Pick a date and time','err');if(dt.getTime()<=Date.now())return toast('Pick a future time','err');var id=uid('rem');var iso=dt.toISOString();var rec={id:id,userId:S.uid,conversationId:d.cid,messageId:d.mid,remindAt:iso,note:(d.note||'').trim(),fired:false};if(!CRM.reminders)CRM.reminders=[];CRM.reminders.push(rec);CRM._rem=null;closeModal();rr();toast('\u23F0 Reminder set \u00B7 '+_crmDT(iso));try{await sb.from('crm_reminders').insert({id:id,user_id:S.uid,conversation_id:rec.conversationId,message_id:rec.messageId,remind_at:iso,note:rec.note,fired:false});}catch(e){toast('Saved locally, sync failed','warn');}};
-App._crmRemindDel=async(id)=>{CRM.reminders=(CRM.reminders||[]).filter(function(r){return r.id!==id;});if(CRM._rem)App._crmRemindRender();else rr();try{await sb.from('crm_reminders').delete().eq('id',id);}catch(e){}};
+App._crmRemindDel=async(id)=>{
+  // v3.14: was deleting with no prompt at all — every delete asks first now.
+  var _r=(CRM.reminders||[]).find(function(x){return x.id===id;});
+  if(!(await confirmP({title:'Delete reminder',
+    body:'This reminder will be removed and will not fire.',
+    items:[(_r&&_r.note)?('“'+esc(_r.note)+'”'):'',(_r&&_r.remindAt)?('due '+esc(_crmDT(_r.remindAt))):''].filter(Boolean),
+    confirmLabel:'Delete reminder',cancelLabel:'Keep it'})))return;
+  CRM.reminders=(CRM.reminders||[]).filter(function(r){return r.id!==id;});if(CRM._rem)App._crmRemindRender();else rr();try{await sb.from('crm_reminders').delete().eq('id',id);}catch(e){}};
 // ── Create a ticket from a single chat message ──
 App._crmTicketFromMsg=(cid,mid)=>{if(!can('crm','create'))return toast('No permission','err');var c=_crmConvo(cid);if(!c)return;var m=(c.messages||[]).find(function(x){return x.id===mid;});if(!m)return;CRM._tfm={cid:cid,mid:mid,text:(m.text||''),customer:(c.customer||''),srcBoard:c.boardId};App._crmTfmRender();};
 App._crmTfmRender=()=>{var d=CRM._tfm;if(!d)return;var srcB=_crmBoard(d.srcBoard);var hubId=srcB?srcB.hubId:null;var boards=CRM.boards.filter(function(b){return _crmBoardVisible(b)&&_crmBS(b).type!=='chat'&&(!hubId||b.hubId===hubId);});if(!boards.length)boards=CRM.boards.filter(function(b){return _crmBoardVisible(b)&&_crmBS(b).type!=='chat';});
@@ -1276,28 +1283,34 @@ App._crmMoveCol=async(boardId,colId,dir)=>{if(!can('crm','edit'))return;var b=_c
 App._crmMoveConvo=async(id,boardId)=>{if(!can('crm','edit'))return toast('No permission','err');var c=_crmConvo(id);if(!c)return;var tb=_crmBoard(boardId);if(!tb)return;var isTk=_crmBS(tb).type!=='chat';c.boardId=boardId;c.isTicket=isTk;if(isTk&&!c.ticketType)c.ticketType='Ticket';c.decision=null;c.decidedBy=null;c.decidedAt=null;var d=document.getElementById('crm-move');if(d)d.style.display='none';if(CRM.sel.convoId===id)CRM.sel.convoId=null;toast('Moved to '+tb.name+' ✓');rr();await _crmLog('moved',c,'to '+tb.name);sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{board_id:boardId,is_ticket:c.isTicket,ticket_type:c.ticketType,decision:null,decided_by:null,decided_at:null,updated_at:new Date().toISOString()}},{label:'Move conversation'});if(isTk){if(typeof _crmNotifyEvent==='function')_crmNotifyEvent(tb,'moved',c,'crm_ticket',{title:c.title,type:tb.name,customer:c.customer});_crmNotifyRule('created',c,tb,'crm_ticket',{title:c.title,type:tb.name,customer:c.customer});}try{_crmRunAutos(tb,'moved',c,{});}catch(e){}};
 App._crmSaveBoardSettings=async()=>{if(!(can('crm','edit')||can('crm','manage')))return toast('No permission','err');var b=_crmBoard(CRM._bsBoardId||CRM.sel.boardId);if(!b)return;function _chk(ev){var out=[];(DB.users||[]).forEach(function(u){var el=document.getElementById('crmn-'+ev+'-'+u.id);if(el&&el.checked)out.push(u.id);});_crmGroups().forEach(function(g){var el=document.getElementById('crmn-'+ev+'-grp-'+g.id);if(el&&el.checked)out.push('grp:'+g.id);});return out;}if(!b.settings)b.settings={};b.settings.notify=Object.assign({},b.settings.notify||{},{moved:_chk('moved'),approved:_chk('approved'),rejected:_chk('rejected')});CRM.boardSettingsOpen=false;toast('Board rules saved ✓');rr();sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Board rules'});};
 
+/* v3.14 — a permission fallback IS a navigation, so the filter bag has to move with it.
+   Previously these branches reassigned S.route mid-render while S.filters still held the
+   bag restoreFilters() had just loaded for the route that was refused. The next redraw
+   then called saveFilters() with S.route='dashboard' and the wrong contents, overwriting
+   (usually emptying) whatever the dashboard had genuinely saved. */
+function _reroute(r){S.route=r;try{if(typeof restoreFilters==='function')restoreFilters(r);}catch(e){}return _pageInner();}
 function _pageInner(){
   const r=S.route;
-  if(r==='dashboard'){if(can('analytics','view'))return dashboardPage();S.route='mychecklists';return myClsPage();}
-  if(r==='users'){if(can('employees','view'))return usersPage();S.route='dashboard';return _pageInner();}
-  if(r==='departments'){if(can('departments','view'))return deptsPage();S.route='dashboard';return _pageInner();}
-  if(r==='locations'){if(can('locations','view'))return locsPage();S.route='dashboard';return _pageInner();}
-  if(r==='checklists'){if(can('checklists','create'))return clsPage();S.route='dashboard';return _pageInner();}
-  if(r==='approvals'){if(can('approvals','view'))return approvalsPage();S.route='notifications';return notificationsPage();}
+  if(r==='dashboard'){if(can('analytics','view'))return dashboardPage();return _reroute('mychecklists');}
+  if(r==='users'){if(can('employees','view'))return usersPage();return _reroute('dashboard');}
+  if(r==='departments'){if(can('departments','view'))return deptsPage();return _reroute('dashboard');}
+  if(r==='locations'){if(can('locations','view'))return locsPage();return _reroute('dashboard');}
+  if(r==='checklists'){if(can('checklists','create'))return clsPage();return _reroute('dashboard');}
+  if(r==='approvals'){if(can('approvals','view'))return approvalsPage();return _reroute('notifications');}
   if(r==='notifications')return notificationsPage();
-  if(r==='tickets'){if(can('tickets','view'))return ticketsPage();S.route='mychecklists';return myClsPage();}
+  if(r==='tickets'){if(can('tickets','view'))return ticketsPage();return _reroute('mychecklists');}
   if(r==='hierarchy')return hierarchyPage();
-  if(r==='analytics'){S.route='dashboard';return _pageInner();} // Analytics tab removed — old links land on the Dashboard
-  if(r==='audit'){if(can('audit','view'))return auditPage();S.route='dashboard';return _pageInner();}
-  if(r==='settings'){if(can('settings','view'))return settingsPage();S.route='dashboard';return _pageInner();}
-  if(r==='questions'){if(can('questions','view'))return questionsPage();return myClsPage();}
+  if(r==='analytics'){return _reroute('dashboard');} // Analytics tab removed — old links land on the Dashboard
+  if(r==='audit'){if(can('audit','view'))return auditPage();return _reroute('dashboard');}
+  if(r==='settings'){if(can('settings','view'))return settingsPage();return _reroute('dashboard');}
+  if(r==='questions'){if(can('questions','view'))return questionsPage();return _reroute('mychecklists');}
   if(r==='mychecklists')return myClsPage();
-  if(r==='teamview'){if(can('teamview','view'))return teamViewPage();S.route='mychecklists';return myClsPage();}
-  if(r==='allcl'){if(can('allChecklists','view'))return allClsPage();if(can('teamview','view'))return teamViewPage();S.route='dashboard';return _pageInner();}
+  if(r==='teamview'){if(can('teamview','view'))return teamViewPage();return _reroute('mychecklists');}
+  if(r==='allcl'){if(can('allChecklists','view'))return allClsPage();if(can('teamview','view'))return _reroute('teamview');return _reroute('dashboard');}
   if(r==='profile')return profilePage();
-  if(r==='okr'){if(can('okr','view'))return okrPage();S.route='dashboard';return _pageInner();}
-  if(r==='accesscontrol'){if(can('accessControl','view'))return accessControlPage();S.route='dashboard';return _pageInner();}
-  if(r==='crm'){if(can('crm','view'))return crmPage();S.route='dashboard';return _pageInner();}
+  if(r==='okr'){if(can('okr','view'))return okrPage();return _reroute('dashboard');}
+  if(r==='accesscontrol'){if(can('accessControl','view'))return accessControlPage();return _reroute('dashboard');}
+  if(r==='crm'){if(can('crm','view'))return crmPage();return _reroute('dashboard');}
   return empty('grid','Not found','');
 }
 

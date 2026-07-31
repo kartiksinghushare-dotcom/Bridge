@@ -79,8 +79,69 @@ function openModal(html,size='max-w-lg',opts={}){
   m.onclick=e=>{if(e.target===m)closeModal();};
   if(opts&&opts.key&&opts.key===_prevKey){const _np=m.querySelector('.pop');if(_np){_np.scrollTop=_prevScroll;requestAnimationFrame(()=>{const p2=m&&m.querySelector('.pop');if(p2)p2.scrollTop=_prevScroll;});}}
 }
-const closeModal=()=>{const m=$('#modal');if(m&&m.remove)m.remove();};
+/* Pending confirmP() resolver + its Escape handler — declared here because closeModal()
+   has to settle the promise and detach the listener however the dialog gets dismissed. */
+let _confirmRes=null,_confirmKey=null;
+function _confirmDetach(){if(_confirmKey){try{document.removeEventListener('keydown',_confirmKey,true);}catch(e){}_confirmKey=null;}}
+const closeModal=()=>{
+  const m=$('#modal');if(m&&m.remove)m.remove();
+  // v3.14: if a confirmP() is still awaiting an answer, closing the dialog by ANY route
+  // (the X button, a backdrop click, Escape, or another feature calling closeModal)
+  // must resolve it as "no". Otherwise the caller awaits forever and the action is lost.
+  if(_confirmRes){const r=_confirmRes;_confirmRes=null;_confirmDetach();r(false);}
+  else _confirmDetach();
+};
 const App={};window.App=App;App.closeModal=closeModal;
+
+/* ═══════════════ v3.14 — SHARED CONFIRM DIALOG ═══════════════
+   One promise-based confirmation used by EVERY destructive action in the app,
+   replacing the browser's native confirm(). Native confirm() has three problems
+   here: it does not match the product, some browsers let a user tick "prevent
+   this page from creating more dialogs" (after which deletes fire with NO prompt
+   at all), and it cannot render the itemised list of what is about to disappear.
+
+     if(!(await confirmP({title:'Delete objective',
+                          body:'…',                 // HTML allowed — caller escapes
+                          items:['4 quarterly objectives','12 check-ins'],
+                          confirmLabel:'Delete',
+                          danger:true})))return;
+
+   Callers must be `async`. The promise resolves false on Cancel, on the X, on a
+   backdrop click and on Escape — the safe answer is always "don't do it".        */
+function confirmP(o){
+  o=o||{};
+  return new Promise(res=>{
+    // A dialog opened while another is still waiting would strand the first promise.
+    if(_confirmRes){const prev=_confirmRes;_confirmRes=null;prev(false);}
+    _confirmDetach();
+    _confirmRes=res;
+    const danger=o.danger!==false;
+    const icon=o.icon||(danger?'trash':'alert');
+    const tone=danger?{bg:'var(--c-danger-soft)',fg:'var(--c-danger)'}:{bg:'var(--c-surface-2)',fg:'var(--c-text-2)'};
+    const items=(o.items||[]).filter(Boolean);
+    const list=items.length?`<ul style="margin:10px 0 0;padding:0 0 0 18px;font-size:12.5px;color:var(--c-text-2);line-height:1.75">${items.map(x=>`<li>${x}</li>`).join('')}</ul>`:'';
+    const note=o.note?`<div style="margin-top:12px;font-size:11.5px;font-weight:700;color:var(--c-danger);background:var(--c-danger-soft);border-radius:9px;padding:8px 11px;line-height:1.5">${o.note}</div>`:'';
+    modalShell({title:o.title||'Are you sure?',sub:o.sub||'',size:o.size||'max-w-sm',key:'app-confirm',
+      body:`<div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:38px;height:38px;border-radius:11px;background:${tone.bg};color:${tone.fg};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</div>
+        <div style="flex:1;min-width:0;padding-top:2px">
+          <div style="font-size:13px;color:var(--c-text-2);line-height:1.6">${o.body||''}</div>
+          ${list}${note}
+        </div></div>`,
+      footer:`<button onclick="App._confirmEnd(0)" class="ui-btn ui-btn-ghost ui-btn-md">${esc(o.cancelLabel||'Cancel')}</button>`+
+             `<button onclick="App._confirmEnd(1)" class="ui-btn ${danger?'ui-btn-danger':'ui-btn-primary'} ui-btn-md">${esc(o.confirmLabel||'Delete')}</button>`});
+    // Escape means "no" too (backdrop and X already route through closeModal).
+    // The listener is detached by _confirmSettle on EVERY exit, not just the Escape one —
+    // detaching only inside this branch left a live capture-phase handler on `document`
+    // after each Cancel/Delete/X, and a later Escape (in the OKR editor, say) would then
+    // fire all of them and tear that unrelated modal out of the DOM with its unsaved work.
+    _confirmKey=ev=>{if(ev.key==='Escape')App._confirmEnd(0);};
+    document.addEventListener('keydown',_confirmKey,true);
+    // Focus the safe button so a stray Enter cancels rather than deletes.
+    setTimeout(()=>{try{const b=document.querySelector('#modal .ui-btn-ghost');if(b)b.focus();}catch(e){}},0);
+  });
+}
+App._confirmEnd=(yes)=>{const r=_confirmRes;_confirmRes=null;_confirmDetach();closeModal();if(r)r(!!yes);};
 
 let _notifCache={uid:null,count:0,ts:0};
 function _notifCount(){

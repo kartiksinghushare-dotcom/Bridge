@@ -96,6 +96,22 @@ function _syncBar(on){try{let b=document.getElementById('syncbar');if(!b){if(!on
    descendants the caller cannot see. They are merged as SHADOW rows: the roll-up
    math walks them, but okrVisible()/okrCanSee() exclude them so they never render
    and can never be opened, edited or exported. */
+/* ── v3.14 — TRUE hierarchy level, regardless of what you are allowed to SEE ──────────
+   okrLevel() walks up parent_id with okrById(), which only knows the objectives RLS lets
+   this user read, so the walk stops at the first hidden ancestor. Someone scoped to "only
+   their own" was shown an objective that really sits at L3 labelled L0 — and with 131 of
+   the tree's objectives at L3, that is most of it. bridge_okr_levels() returns a plain
+   {id: level} map computed over the FULL ancestor chain. A single integer per objective
+   the user can already see: nothing about the hidden ancestors themselves is exposed. */
+let OKR_TRUE_LVL={};
+async function _loadOkrLevels(){
+  try{
+    const{data,error}=await sb.rpc('bridge_okr_levels');
+    if(error||!data||typeof data!=='object')return;
+    OKR_TRUE_LVL=data;
+    if(typeof rr==='function'&&window.S&&S.route==='okr')rr();   // redraw with the real chips
+  }catch(e){console.warn('[okr levels]',e&&e.message);}
+}
 async function _loadOkrShadows(){
   try{
     const{data,error}=await sb.rpc('bridge_okr_rollup_facts');
@@ -125,12 +141,60 @@ async function _loadOkrShadows(){
     if(so.length&&typeof rr==='function'&&S&&S.route==='okr')rr();   // redraw once totals can be computed
   }catch(e){console.warn('[okr rollup facts]',e&&e.message);}
 }
+/* v3.14 — locally-deleted OKR overlay.
+   A cascade delete removes a whole subtree. If any of those delete requests does not reach
+   the server (expired token, offline, a transient failure) the server still holds the rows,
+   and the next pull would hand them straight back — the "I deleted it and it came back"
+   report. DB.okrsDeleted remembers the ids until the queued deletes actually land, exactly
+   as checklists/questions/tickets already do with their own *_deleted overlays.
+   `kind` is which id to test: the row's own id, or its okrId for check-ins and logs. */
+function _okrDropDeleted(kind,rows){
+  const del=new Set(DB.okrsDeleted||[]);
+  if(!del.size)return rows;
+  return (rows||[]).filter(r=>!del.has(kind==='okrs'?r.id:r.okrId));
+}
+/* v3.14 — ask the server which objectives are soft-deleted RIGHT NOW (ids only, so the
+   payload stays tiny). Two things depend on knowing this rather than guessing:
+   · _keepPending re-adds a local row that has an unsent write and is missing from the
+     server response. With deleted rows filtered out at the query, "missing" no longer means
+     "I deleted it" — it also means "somebody else did", and that row would be resurrected
+     into DB.okrs as a fully live objective: tree, totals, check-in tasks, exports.
+   · DB.okrsDeleted is this device's local tombstone list. Without reconciling it, an
+     objective restored from another device stays invisible on this one for ever.
+   Returns null when the probe fails, so callers fall back to the previous behaviour rather
+   than wrongly concluding that nothing is deleted. */
+async function _okrServerDeletedIds(){
+  try{
+    const{data,error}=await sb.from('okrs').select('id').not('deleted_at','is',null).limit(20000);
+    if(error||!data)return null;
+    return new Set(data.map(r=>r.id));
+  }catch(e){return null;}
+}
+/* Bring this device's tombstone list in line with the server: anything the server no longer
+   reports as deleted has been restored, so stop hiding it locally. */
+function _okrReconcileDeleted(serverDeleted){
+  if(!serverDeleted)return;
+  const before=(DB.okrsDeleted||[]).length;
+  DB.okrsDeleted=(DB.okrsDeleted||[]).filter(id=>serverDeleted.has(id));
+  if(before!==DB.okrsDeleted.length)try{saveDB();}catch(e){}
+}
 /* Server rows win, except where a local row still has an unsent queued write. */
-function _keepPending(table,serverRows,localRows){
+function _keepPending(table,serverRows,localRows,gone){
   const pend=typeof pendingWriteIds==='function'?pendingWriteIds(table):new Set();
   if(!pend.size)return serverRows;
+  // v3.14: rows the server says are soft-deleted are never protected or re-added, however
+  // many unsent local writes they carry — "missing from the response" must not be read as
+  // "I must be deleting it" when somebody else did.
+  if(gone&&gone.size)[...pend].forEach(id=>{if(gone.has(id))pend.delete(id);});
+  if(!pend.size)return serverRows;
   const byId=new Map((localRows||[]).map(r=>[r.id,r]));
-  const merged=serverRows.map(sv=>pend.has(sv.id)&&byId.has(sv.id)?byId.get(sv.id):sv);
+  // v3.14: a row that HAS a queued write but is no longer present locally is a QUEUED
+  // DELETE. Drop it instead of taking the server's copy — otherwise a delete that failed
+  // to reach the server (expired token, offline) has its rows resurrected on every
+  // refresh until the queue finally flushes, which reads to the user as "it came back".
+  const merged=serverRows
+    .filter(sv=>!(pend.has(sv.id)&&!byId.has(sv.id)))
+    .map(sv=>pend.has(sv.id)&&byId.has(sv.id)?byId.get(sv.id):sv);
   const seen=new Set(serverRows.map(r=>r.id));
   (localRows||[]).forEach(r=>{if(pend.has(r.id)&&!seen.has(r.id))merged.push(r);});   // queued insert not on the server yet
   return merged;
@@ -154,7 +218,17 @@ async function _lazyLoad(kind){
       if(!r[0].error&&r[0].data){const _delCls=new Set(DB.checklists_deleted||[]);DB.checklists=_mC(r[0].data).filter(c=>!_delCls.has(c.id));}
       if(!r[1].error&&r[1].data){const _delQs=new Set(DB.questions_deleted||[]);DB.questions=r[1].data.filter(q=>!_delQs.has(q.id)).map(_mQrow);}
     }
-    else if(kind==='okr'){const r=await Promise.all([sb.from('okrs').select('*').order('created_at',{ascending:true}),sb.from('okr_checkins').select('*').order('date',{ascending:true}),sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800)]);if(!r[0].error)DB.okrs=_keepPending('okrs',_mOKR(r[0].data),DB.okrs);if(!r[1].error)DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(r[1].data),DB.okrCheckins);if(!r[2].error)DB.okrLogs=_mOKRLog(r[2].data);await _loadOkrShadows();}
+    else if(kind==='okr'){
+      const r=await Promise.all([
+        sb.from('okrs').select('*').is('deleted_at',null).order('created_at',{ascending:true}),
+        sb.from('okr_checkins').select('*').order('date',{ascending:true}),
+        sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800),
+        _okrServerDeletedIds()]);
+      const _gone=r[3];_okrReconcileDeleted(_gone);
+      if(!r[0].error)DB.okrs=_okrDropDeleted('okrs',_keepPending('okrs',_mOKR(r[0].data),DB.okrs,_gone));
+      if(!r[1].error)DB.okrCheckins=_okrDropDeleted('checkins',_keepPending('okr_checkins',_mOKRCheckin(r[1].data),DB.okrCheckins));
+      if(!r[2].error)DB.okrLogs=_okrDropDeleted('logs',_mOKRLog(r[2].data));
+      await Promise.all([_loadOkrShadows(),_loadOkrLevels()]);}
     saveDB();rr();
   }catch(e){console.warn('[lazyLoad]',kind,e.message);}
   finally{clearTimeout(_loadTO);_tabLoading[kind]=false;_syncBar(_anyLoading());}
@@ -220,7 +294,7 @@ async function loadFromSB(){
       sb.from('doc_folders').select('*').order('created_at',{ascending:false}),
       sb.from('documents').select('*').gte('uploaded_at',_c30).order('uploaded_at',{ascending:false}),
       sb.from('questions').select('*').order('created_at',{ascending:false}),
-      sb.from('okrs').select('*').order('created_at',{ascending:true}),
+      sb.from('okrs').select('*').is('deleted_at',null).order('created_at',{ascending:true}),
       sb.from('okr_checkins').select('*').order('date',{ascending:true}),
       sb.from('okr_logs').select('*').order('created_at',{ascending:false}).limit(800),
       sb.from('workspace_settings').select('*').eq('key','role_profiles'),
@@ -303,7 +377,9 @@ async function loadFromSB(){
 
   // ── PORTED (Safe Backup): OKR data + role profiles + role migration ──
   DB.users.forEach(u=>_ensureHrm(u));
-  DB.okrs=_keepPending('okrs',_mOKR(okrRows),DB.okrs);DB.okrCheckins=_keepPending('okr_checkins',_mOKRCheckin(okrCiRows),DB.okrCheckins);DB.okrLogs=_mOKRLog(okrLogRows);_loadOkrShadows();
+  {const _gone=await _okrServerDeletedIds();_okrReconcileDeleted(_gone);
+   DB.okrs=_okrDropDeleted('okrs',_keepPending('okrs',_mOKR(okrRows),DB.okrs,_gone));}
+  DB.okrCheckins=_okrDropDeleted('checkins',_keepPending('okr_checkins',_mOKRCheckin(okrCiRows),DB.okrCheckins));DB.okrLogs=_okrDropDeleted('logs',_mOKRLog(okrLogRows));_loadOkrShadows();_loadOkrLevels();
   try{const _rpRow=(rpRows&&rpRows[0])||null;if(_rpRow&&_rpRow.value&&typeof _rpRow.value==='object')DB.roleProfiles={...(DB.roleProfiles||{}),..._rpRow.value};}catch(e){}
   _seedRoleProfiles();
   try{_permsV3Migrate();}catch(e){console.warn('[perms] migrate skipped:',e.message);}

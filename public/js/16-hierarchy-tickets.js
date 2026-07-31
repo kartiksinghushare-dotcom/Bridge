@@ -255,6 +255,18 @@ App._confirmResolve=(id)=>{
 
 App._delTicket=async(id)=>{
   if(!can('tickets','delete')){toast('You don’t have permission to delete tickets','err');return;}
+  // v3.14: this delete had NO confirmation at all — one mis-tap destroyed a ticket and its
+  // whole escalation history, with nothing to undo it. Every delete now asks first.
+  {const _t=(DB.tickets||[]).find(x=>x.id===id);
+   const _occ=((_t&&_t.occurrences)||[]).length;
+   if(!(await confirmP({
+     title:'Delete ticket',
+     body:'<b>'+esc((_t&&_t.title)||'This ticket')+'</b> will be permanently deleted for everyone.',
+     items:['its full activity trail and comments',
+            _occ?('its <b>'+_occ+'</b> recorded reoccurrence'+(_occ===1?'':'s')):'',
+            'if the underlying question fails again, a brand-new ticket opens'].filter(Boolean),
+     note:'Resolving it instead keeps the history. This cannot be undone.',
+     confirmLabel:'Delete ticket',cancelLabel:'Keep it'})))return;}
   // ── Delete on the server FIRST, then reflect locally and record the id in a deleted-overlay.
   //    Tickets are no longer mirrored by the background whole-table sync, so a stale second
   //    browser can no longer resurrect a ticket another admin just deleted (the "delete a

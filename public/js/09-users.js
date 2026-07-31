@@ -371,7 +371,12 @@ App.delUser=async(id)=>{
     alert("Can't delete "+name+" — they're still assigned to "+_asgCls.length+' checklist'+(_asgCls.length>1?'s':'')+':\n'+_names+".\n\nUnassign them from those checklists first, or use Disable to keep their data.");
     return;
   }
-  if(!confirm('Permanently delete '+name+'?\n\nThis will delete ALL their submissions and approvals. This cannot be undone.\n\nTo keep their data, use Disable instead.'))return;
+  if(!(await confirmP({
+    title:'Delete '+name,
+    body:'<b>'+esc(name)+'</b> and everything recorded against them will be permanently deleted.',
+    items:['all of their checklist submissions','all of their approvals','anyone reporting to them moves up to their manager'],
+    note:'To keep their history instead, cancel and use Disable.',
+    confirmLabel:'Delete permanently',cancelLabel:'Cancel'})))return;
   // Optimistic local cleanup first
   DB.users.filter(x=>x.managerId===id).forEach(x=>x.managerId=u.managerId);
   if(!DB.users_deleted)DB.users_deleted=[];

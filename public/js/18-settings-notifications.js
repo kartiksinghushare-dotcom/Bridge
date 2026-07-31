@@ -79,10 +79,17 @@ function _fmtSize(b){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return M
 
 App._docNav=(id)=>{S.filters.docFolder=id;rr();};  // alias kept for compatibility
 
-App._delFolder=(id)=>{
+App._delFolder=async(id)=>{
   const f=(DB.folders||[]).find(x=>x.id===id);
   if(!f)return;
-  if(!confirm('Delete folder "'+f.name+'" and all its files?'))return;
+  {const _sub=[];(function _c(fid){_sub.push(fid);(DB.folders||[]).filter(x=>x.parentId===fid).forEach(c=>_c(c.id));})(id);
+   const _nSub=_sub.length-1,_nDoc=(DB.documents||[]).filter(x=>_sub.includes(x.folderId)).length;
+   if(!(await confirmP({
+     title:'Delete folder',
+     body:'<b>'+esc(f.name)+'</b> and everything inside it will be permanently deleted.',
+     items:[_nSub?('<b>'+_nSub+'</b> sub-folder'+(_nSub===1?'':'s')):'',
+            _nDoc?('<b>'+_nDoc+'</b> file'+(_nDoc===1?'':'s')+' — including the stored uploads'):'no files inside'].filter(Boolean),
+     confirmLabel:'Delete folder',cancelLabel:'Keep it'})))return;}
   // Collect all folder IDs (recursive) and doc IDs BEFORE modifying DB
   const toDelete=[];
   function collectRec(fid){toDelete.push(fid);(DB.folders||[]).filter(x=>x.parentId===fid).forEach(c=>collectRec(c.id));}
@@ -214,8 +221,24 @@ App._previewDoc=async(id)=>{
   }
 };
 
-App._delDoc=(id)=>{
-  const doc=(DB.documents||[]).find(x=>x.id===id);if(!doc||!confirm('Delete "'+doc.name+'"?'))return;
+/* v3.14 — "Reset workspace" clears only THIS browser's cached copy and reloads; nothing is
+   deleted on the server. The old inline confirm() implied it wiped the workspace itself. */
+App._resetWorkspaceCache=async()=>{
+  if(!(await confirmP({
+    title:'Reset this device',
+    body:'Clears the copy of the workspace cached in <b>this browser</b> and reloads it fresh from the server.',
+    items:['nothing is deleted on the server','other people and your other devices are unaffected','remembered filters on this device are cleared'],
+    confirmLabel:'Reset and reload',cancelLabel:'Cancel',danger:false,icon:'refresh'})))return;
+  try{localStorage.removeItem(window.LS_KEY||'shiftly_v3');}catch(e){}
+  try{if(typeof clearAllFilters==='function')clearAllFilters();}catch(e){}
+  location.reload();
+};
+App._delDoc=async(id)=>{
+  const doc=(DB.documents||[]).find(x=>x.id===id);if(!doc)return;
+  if(!(await confirmP({
+    title:'Delete file',
+    body:'<b>'+esc(doc.name)+'</b> will be permanently deleted for everyone who can see this folder.',
+    confirmLabel:'Delete file',cancelLabel:'Keep it'})))return;
   if(!DB.documents_deleted)DB.documents_deleted=[];
   if(!DB.documents_deleted.includes(id))DB.documents_deleted.push(id);
   DB.documents=(DB.documents||[]).filter(x=>x.id!==id);
@@ -227,7 +250,10 @@ App._delDoc=(id)=>{
   if(doc.storagePath)sb.storage.from('documents').remove([doc.storagePath]).catch(()=>{});
 };
 
-App._clearOperational=()=>{
+/* `pre` (v3.14) re-ticks the given category keys — used when the delete confirmation is
+   cancelled, so the dialog comes back exactly as the user had it instead of blank. */
+App._clearOperational=(pre)=>{
+  const _pre=Array.isArray(pre)?pre:[];
   const cats=[
     {key:'submissions',  label:'Submissions',    icon:'✅', desc:'All checklist submission records',    count:()=>DB.submissions.length},
     {key:'checklists',   label:'Checklists',     icon:'☑️', desc:'All checklist configurations',        count:()=>DB.checklists.length},
@@ -242,8 +268,9 @@ App._clearOperational=()=>{
   ];
   const rows=cats.map(cat=>{
     const n=cat.count();
-    return '<label id="lbl-clr-'+cat.key+'" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;cursor:pointer;border:1.5px solid #F1F7F8;margin-bottom:6px;transition:all .12s" onmouseover="this.style.background=\'#F8FBFC\'" onmouseout="this.style.background=\'\'">'
-      +'<input type="checkbox" id="clr-'+cat.key+'" onchange="this.closest(\'label\').style.borderColor=this.checked?\'#EF4444\':\'#F1F7F8\'" style="width:17px;height:17px;accent-color:#EF4444;cursor:pointer;flex-shrink:0"/>'
+    const _on=_pre.indexOf(cat.key)>=0;
+    return '<label id="lbl-clr-'+cat.key+'" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;cursor:pointer;border:1.5px solid '+(_on?'#EF4444':'#F1F7F8')+';margin-bottom:6px;transition:all .12s" onmouseover="this.style.background=\'#F8FBFC\'" onmouseout="this.style.background=\'\'">'
+      +'<input type="checkbox" id="clr-'+cat.key+'"'+(_on?' checked':'')+' onchange="this.closest(\'label\').style.borderColor=this.checked?\'#EF4444\':\'#F1F7F8\'" style="width:17px;height:17px;accent-color:#EF4444;cursor:pointer;flex-shrink:0"/>'
       +'<span style="font-size:20px;flex-shrink:0">'+cat.icon+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:700;color:#10262E">'+cat.label+'</div>'
@@ -291,8 +318,15 @@ App._execClear=async()=>{
   };
   const sel=Object.keys(catMap).filter(k=>document.getElementById('clr-'+k)?.checked);
   if(!sel.length){toast('Select at least one category','warn');return;}
-  const labels=sel.map(k=>catMap[k].table).join(', ');
-  if(!confirm('Permanently delete: '+labels+'?\n\nThis cannot be undone.'))return;
+  // The confirm takes over the single modal slot this Clear-Data dialog is using, so on
+  // Cancel put the dialog back — otherwise saying "no" also throws away every category
+  // the user had just ticked and they have to start again.
+  if(!(await confirmP({
+    title:'Permanently clear workspace data',
+    body:'Everything in the selected categories will be deleted from the database, for every user.',
+    items:sel.map(k=>'<b>'+esc(catMap[k].table)+'</b>'),
+    note:'This cannot be undone and there is no backup.',
+    confirmLabel:'Delete it all',cancelLabel:'Cancel',size:'max-w-md'})))return App._clearOperational(sel);
   closeModal();
   // Local deletion
   sel.forEach(k=>catMap[k].local());
@@ -712,7 +746,7 @@ function settingsPage(){
       <div class="flex gap-3 flex-wrap">
         ${btnG('Export CSV','App._exportCSV()','download')}
         <button onclick="App._clearOperational()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FFD9B8;color:#B85200;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#FFF4EA'" onmouseout="this.style.background='#fff'">🧹 Clear data</button>
-        <button onclick="if(confirm('Reset ALL workspace data?')){localStorage.removeItem(window.LS_KEY||'shiftly_v3');location.reload();}" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FBCDCD;color:#C41E32;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#FEEEEF'" onmouseout="this.style.background='#fff'">Reset workspace</button>
+        <button onclick="App._resetWorkspaceCache()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FBCDCD;color:#C41E32;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#FEEEEF'" onmouseout="this.style.background='#fff'">Reset workspace</button>
       </div>
     </div>
     <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5">
