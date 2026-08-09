@@ -1,3 +1,23 @@
+# Bridge v87 — annual OKRs: choose how the quarters combine
+
+One file of logic (`public/js/19-okr-roles-acl.js`) + cache-buster `?v=87`. No database changes — the choice is stored in the existing `rollup_mode` column with a `q-` prefix, so every existing annual keeps its current behaviour until you pick something else.
+
+## "How is this annual calculated from its quarters?"
+
+The annual section of the editor now has a mode dropdown:
+
+- **Combined progress of the quarters** *(default — what every existing annual does today)*: each quarter counts equally; Q1 done 10% with three untouched quarters → 2.5%.
+- **Total — sum of the quarterly values**: quarterly current values are added up and measured against the annual's own start → target (set quarterly targets so they add up to the annual one, e.g. 4 × 3M = 12M).
+- **Average of the quarterly values**: right for rates/percentages ("hold 90% every quarter").
+- **Highest quarterly value** / **Lowest quarterly value**: best (or weakest) quarter is the annual's current value.
+- **Latest quarterly update**: the newest reported value is the annual's current value — right for running totals the quarters report cumulatively.
+
+The chosen rule drives the progress %, the Current value, the graph line and the readings that feed threshold judgement; the Progress & Updates panel and the maths explainer say which rule is active. Leaving an annual (toggle off) cleans the stored mode back to a plain roll-up value.
+
+Verified with a 19-case simulation (all modes, negative %, threshold daily-average incl. same-day duplicates, legacy annuals with the old roll-up flag) — **19/19 pass**.
+
+---
+
 # Bridge v86 — OKR scoring fixes + full re-theme (Light Teal · Cream · Gold)
 
 Cumulative. **24 files** (every `public/js/*.js` except `01-supabase-sync.js`/`99-boot.js`, plus `index.html`, `src/main.js`, `src/styles/main.css`, this file). Cache-buster `?v=86`. No database changes — everything below is client logic/presentation.

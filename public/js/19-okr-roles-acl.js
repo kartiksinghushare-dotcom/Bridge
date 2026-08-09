@@ -620,9 +620,36 @@ function _okrPctVs(o,t){
 function _okrLeafPct(o){return _okrPctVs(o,_okrTargetEff(o));}
 function okrProgressOrig(o){return _okrPctVs(o,(o.targetValue===null||o.targetValue===undefined)?null:Number(o.targetValue));}
 // Node progress %: children average (roll-up) if it has children, else its own check-ins. Cycle-safe.
-/* ── ANNUAL progress = combined progress of its QUARTERS, each counting equally ──
-   L0 Q1 at 10% with three untouched quarters → the annual reads 2.5% ("out of all progress").
-   Only quarter-tagged children feed an annual — regular L1 sub-objectives never do. */
+/* ── ANNUAL ← QUARTERS: how the annual number is built (v3.20) ──────────────────────────
+   Only quarter-tagged children ever feed an annual — regular sub-objectives never do.
+   The owner picks HOW in the editor (stored in rollup_mode with a 'q-' prefix so the
+   legacy values 'sum'/'avg' left behind by the old level-below era still mean the default):
+     'progress'  DEFAULT — combined progress of the quarters, each counting equally.
+                 Q1 done 10%, three untouched → annual reads 2.5% ("out of all progress").
+     'q-sum'     Total — the quarterly CURRENT VALUES added up, measured against the
+                 annual's own start → target (quarterly targets should add up to it).
+     'q-avg'     Average of the quarterly current values.
+     'q-max'     Highest quarterly current value.
+     'q-min'     Lowest quarterly current value.
+     'q-latest'  The most recent value reported on any quarter. */
+const OKR_ANNUAL_MODES=[
+  ['progress','Combined progress of the quarters (each counts equally)'],
+  ['q-sum','Total — sum of the quarterly values'],
+  ['q-avg','Average of the quarterly values'],
+  ['q-max','Highest quarterly value'],
+  ['q-min','Lowest quarterly value'],
+  ['q-latest','Latest quarterly update']
+];
+function okrAnnualMode(o){const m=(o&&o.rollupMode)||'';return(m==='q-sum'||m==='q-avg'||m==='q-max'||m==='q-min'||m==='q-latest')?m.slice(2):'progress';}
+function _okrAnnualModeLabel(o){
+  const m=okrAnnualMode(o);
+  return m==='progress'?'combined progress of its quarters'
+    :m==='sum'?'total (sum) of its quarterly values'
+    :m==='avg'?'average of its quarterly values'
+    :m==='max'?'highest quarterly value'
+    :m==='min'?'lowest quarterly value'
+    :'latest quarterly update';
+}
 function _okrQKids(o){return okrChildren(o.id).filter(k=>k.quarterLabel);}
 function _okrQProgressAvg(o){
   // Threshold and allowance quarters report no % - they must not be averaged in as 0.
@@ -638,12 +665,14 @@ function _okrQProgressAvg(o){
 function okrProgress(o,_seen){
   // v3.19 precedence when reading the number:
   //   threshold mode → no % at all (pass/fail against a line — status carries the verdict)
-  //   annual ON      → equal-weighted progress of its quarters, ALWAYS (quarters or nothing;
-  //                    the roll-up flag never overrides an annual any more)
+  //   annual ON      → its quarters, ALWAYS (quarters or nothing; the roll-up flag never
+  //                    overrides an annual) — combined per the owner's annual mode (v3.20):
+  //                    'progress' averages the quarters' progress; the value modes aggregate
+  //                    the quarterly values (okrCurrentOf) and measure vs start → target.
   //   roll-up ON     → level-below aggregation (non-annual objectives only)
   //   both OFF       → the objective's own check-ins
   if(okrIsThresh(o))return null;
-  if(o&&o.isAnnual)return _okrQProgressAvg(o);
+  if(o&&o.isAnnual)return okrAnnualMode(o)==='progress'?_okrQProgressAvg(o):_okrLeafPct(o);
   return _okrLeafPct(o);
 }
 function _okrExpectedPct(o){
@@ -721,7 +750,7 @@ function _okrFmtVal(o,v){
   return _fmtAbbr(n)+(o.unit?(' '+o.unit):'');
 }
 function _okrFreqLabel(o){
-  if(o&&o.isAnnual)return 'Auto · progress of its quarters';
+  if(o&&o.isAnnual){const m=okrAnnualMode(o);return 'Auto · '+(m==='progress'?'progress of its quarters':m==='sum'?'total of its quarters':m==='avg'?'average of its quarters':m==='max'?'highest quarter':m==='min'?'lowest quarter':'latest quarter update');}
   if(o&&o.rollup)return 'Auto · '+_okrModeLabel(o.rollupMode)+' of level below';
   const f=o.frequency||{};
   if(f.type==='weekly')return 'Weekly · every '+(f.day||'Mon');
@@ -1582,8 +1611,12 @@ function _okrProgressPanel(o,kids,pct,st){
     if(okrIsLimit(o)){const t1=_okrTargetEff(o),v1=okrCurrentOf(o);return wrap(`No % here \u2014 an allowance is <b>pass/fail</b>: stay under ${f(t1)} for the period and it is met, break it and it is not.${(v1===null||v1===undefined)?'':` So far <b>${f(v1)}</b> of the ${f(t1)} allowance.`}`);}
     if(okrIsThresh(o)){const r=_okrReadings(o),ok=r.filter(x=>okrThreshOK(o,x.value)===true).length,t0=_okrTargetEff(o),av=_okrThreshAvg(o);return wrap(`No % here — a threshold objective is <b>pass/fail</b> against the ${f(t0)} line, judged on the <b>average of each reported day</b> this period${av===null?'':` (currently ${f(Math.round(av*100)/100)})`}. <b>${ok} of ${r.length}</b> update${r.length===1?'':'s'} stayed ${okrDirOf(o)==='gte'?'at or above':'at or below'} the line.`);}
     const p=okrProgress(o);if(p===null)return '';
+    if(o.isAnnual){
+      if(okrAnnualMode(o)==='progress')return wrap(`<b>${p}%</b> = the average of its quarters' progress, each counting equally.`);
+      const vC=okrCurrentOf(o);
+      return wrap(`<b>${p}%</b> — current value${vC===null?'':` <b>${f(vC)}</b>`} = the ${_okrAnnualModeLabel(o)}, measured against this annual's own start → target.`);
+    }
     if(o.rollup)return wrap(`<b>${p}%</b> = ${esc(_okrModeLabel(o.rollupMode))} of its direct sub-objectives.`);
-    if(o.isAnnual)return wrap(`<b>${p}%</b> = the average of its quarters' progress, each counting equally.`);
     const t=_okrTargetEff(o),s2=Number(o.startValue||0),v=okrCurrentOf(o);
     if(v===null||t===null||!isFinite(Number(t)))return '';
     if(Number(t)===s2)return wrap(`<b>${p}%</b> — hold the line at ${f(t)}: meeting it reads 100%.`);
@@ -1605,7 +1638,7 @@ function _okrProgressPanel(o,kids,pct,st){
       <div style="font-size:11px;color:var(--c-text-3);margin-top:8px">Revised${o.revisedAt?' '+fmtS(String(o.revisedAt).slice(0,10)):''}${who?' by '+esc(who):''}${o.revisedNote?' — “'+esc(o.revisedNote)+'”':''} · same updates feed both numbers</div>
     </div>`;})():'';
   const rollupNote=(o.rollup||o.isAnnual)?dismissNote('okr-auto-'+(o.isAnnual?'annual':'rollup'),
-    (o.isAnnual?`This annual objective updates automatically — its progress is the <b>&nbsp;combined progress of its quarters&nbsp;</b> (each quarter counts equally; the level below doesn't feed it).`
+    (o.isAnnual?`This annual objective updates automatically from its quarterly objectives — ${okrAnnualMode(o)==='progress'?'its progress is the <b>&nbsp;combined progress of its quarters&nbsp;</b> (each quarter counts equally':'its current value is the <b>&nbsp;'+esc(_okrAnnualModeLabel(o))+'&nbsp;</b> (measured against its own start → target'}; the level below doesn't feed it).`
                :`This objective updates automatically — its current value is the <b>&nbsp;${esc(_okrModeLabel(o.rollupMode))}&nbsp;</b> of its direct sub-objectives.`),
     {icon:'refresh',style:'margin-top:10px',onDismiss:`App._okrProgressModal('${o.id}')`}):'';
   // check-in feed (latest first)
@@ -1766,7 +1799,7 @@ App._okrEdTogAnnual=()=>{
     const hasQKids=okrById(o.id)&&okrChildren(o.id).some(k=>k.quarterLabel);
     o._qRows=hasQKids?[]:_okrGenQRows(o);
     o._qEdit=hasQKids?_okrBuildQEdit(o.id):null;
-  }else{delete o._qRows;delete o._qEdit;}
+  }else{delete o._qRows;delete o._qEdit;if(/^q-/.test(o.rollupMode||''))o.rollupMode=o.rollupMode.slice(2);} // annual mode makes no sense off-annual — strip the prefix
   App._renderOKREdit();
 };
 App._okrEdReQ=()=>{const o=_OKRED;if(!o||!o.isAnnual)return;o._qRows=_okrGenQRows(o);App._renderOKREdit();};
@@ -1823,7 +1856,20 @@ function _okrEdAnnualSection(o,L){
       <button type="button" role="switch" aria-checked="${o.isAnnual?'true':'false'}" class="tog ${o.isAnnual?'on':'off'}" style="margin-top:2px" onclick="App._okrEdTogAnnual()"><span></span></button>
     </div>
     ${o.isAnnual?`
-      ${dismissNote('okr-ed-annual',`This annual's progress = the <b>combined progress of its quarters</b>, each counting equally — e.g. Q1 done 10% and the rest untouched → annual shows 2.5%. Regular sub-objectives never feed it, and the “auto-update from the level below” toggle does not apply to annuals.`,{style:'margin-top:10px;font-size:11px',onDismiss:'App._renderOKREdit()'})}
+      ${(()=>{ /* v3.20 — HOW the annual is calculated from its quarters */
+        const md=okrAnnualMode(o);
+        const hint=md==='progress'?'Each quarter counts equally — e.g. Q1 done 10% and the rest untouched → the annual shows 2.5%. Regular sub-objectives never feed it.'
+          :md==='sum'?'The quarterly <b>current values are added up</b> and measured against this annual’s own start → target — so set the quarterly targets to add up to the annual target (e.g. 4 × 3M = 12M).'
+          :md==='avg'?'The quarterly <b>current values are averaged</b> and measured against this annual’s own start → target — right for rates and percentages (e.g. keep satisfaction at 90% each quarter).'
+          :md==='max'?'The <b>highest</b> quarterly current value is the annual’s current value, measured against its own start → target.'
+          :md==='min'?'The <b>lowest</b> quarterly current value is the annual’s current value, measured against its own start → target — the annual is only as good as its weakest quarter.'
+          :'The <b>most recent value reported on any quarter</b> is the annual’s current value, measured against its own start → target — right for running totals the quarters keep cumulatively.';
+        return `<div style="margin-top:12px"><label style="${L}">How is this annual calculated from its quarters?</label>
+        <select class="ui-select rf" onchange="_OKRED.rollupMode=this.value==='progress'?'sum':this.value;App._renderOKREdit()">
+          ${OKR_ANNUAL_MODES.map(m=>`<option value="${m[0]}" ${(m[0]==='progress'?md==='progress':o.rollupMode===m[0])?'selected':''}>${esc(m[1])}</option>`).join('')}
+        </select>
+        <div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">${hint}</div></div>`;})()}
+      ${okrAnnualMode(o)==='progress'?dismissNote('okr-ed-annual',`This annual's progress = the <b>combined progress of its quarters</b>, each counting equally. Regular sub-objectives never feed it, and the “auto-update from the level below” toggle does not apply to annuals.`,{style:'margin-top:10px;font-size:11px',onDismiss:'App._renderOKREdit()'}):''}
       ${qEdit.length?`<div style="margin-top:12px"><label style="${L}">Quarterly objectives (${qEdit.length}) — edit them right here</label>
         ${gridHead}
         ${qEdit.map(eRow).join('')}
@@ -2006,6 +2052,7 @@ App._okrSave=()=>{
   const f=o.frequency||{};
   if(o.rollup&&o.metricType==='yesno')o.rollup=false;
   if(o.isAnnual&&o.metricType==='yesno')o.isAnnual=false;
+  if(!o.isAnnual&&/^q-/.test(o.rollupMode||''))o.rollupMode=o.rollupMode.slice(2); // v3.20: annual modes live only on annuals
   // ── Annual objective: enforce the auto-update link + validate the quarterly rows ──
   //    (qRows = NEW periods to create · qEdit = EXISTING quarterly objectives edited inline)
   const qRows=(o.isAnnual&&Array.isArray(o._qRows))?o._qRows:null;
@@ -2053,7 +2100,7 @@ App._okrSave=()=>{
   const idx=(DB.okrs||[]).findIndex(x=>x.id===o.id);
   if(idx>-1){
     const prev=DB.okrs[idx];
-    const fields=[['title','Title'],['description','Goal'],['departmentId','Department'],['subDepartmentId','Sub-department'],['owners','Owners'],['metricType','Metric'],['startValue','Start value'],['targetValue','Target'],['unit','Unit'],['direction','Which way is good?'],['rollup','Auto roll-up'],['rollupMode','Roll-up mode'],['isAnnual','Annual objective'],['periodStart','Period start'],['periodEnd','Period end']];
+    const fields=[['title','Title'],['description','Goal'],['departmentId','Department'],['subDepartmentId','Sub-department'],['owners','Owners'],['metricType','Metric'],['startValue','Start value'],['targetValue','Target'],['unit','Unit'],['direction','Which way is good?'],['rollup','Auto roll-up'],['rollupMode','Calculation mode'],['isAnnual','Annual objective'],['periodStart','Period start'],['periodEnd','Period end']];
     const changes=[];
     fields.forEach(([k,label])=>{const a=k==='owners'?okrOwners(prev):prev[k],b=k==='owners'?okrOwners(o):o[k];if(String(a===null||a===undefined?'':a)!==String(b===null||b===undefined?'':b)){
       let from=a,to=b;
@@ -2683,6 +2730,7 @@ App._okrBulkApply=()=>{
     }
     if(on.isAnnual&&o.metricType!=='yesno'&&!!o.isAnnual!==!!d.isAnnual){ch.push({field:'Annual objective',from:!!o.isAnnual,to:!!d.isAnnual});o.isAnnual=!!d.isAnnual;}
     if(o.isAnnual&&o.rollup){ch.push({field:'Auto roll-up',from:true,to:false});o.rollup=false;} // v3.19: annual ⇒ quarters-only
+    if(!o.isAnnual&&/^q-/.test(o.rollupMode||''))o.rollupMode=o.rollupMode.slice(2); // v3.20: annual modes live only on annuals
     /* v3.14: same rule as the single editor — roll-up ON (and not an annual, whose
        frequency is only the template for its quarters) means this objective is never
        asked for an update, so any schedule on it is cleared rather than left dormant.
@@ -3078,17 +3126,18 @@ function _okrClCard(due,date){
    Leaves plot metric values; parents plot roll-up progress % over time vs the 0→100% pace. ── */
 const _OKR_MODE_LABEL={sum:'total',avg:'average',max:'highest',min:'lowest',latest:'latest update'};
 function _okrModeLabel(m){return _OKR_MODE_LABEL[m]||'total';}
-/* Which children feed a roll-up node: the classic rule — ALL direct children. (The roll-up
-   toggle is a manual, explicit choice; if it's on, it means exactly what it says, even on an
-   annual objective. Annuals with roll-up OFF use their quarters' progress instead.) */
+/* Which children feed a roll-up node: the classic rule — ALL direct children. (Annuals never
+   roll up from the level below any more — they read their quarter-tagged children only, per
+   the annual mode; see okrAnnualMode().) */
 function _okrRollupKids(o){
   return okrChildren(o.id);
 }
 /* 'latest' roll-up: the value of the MOST RECENT update on any feeding sub-objective (≤ date).
-   Made for annual objectives fed by quarters — Q2's newest number supersedes Q1's. */
+   Made for annual objectives fed by quarters — Q2's newest number supersedes Q1's.
+   v3.20: on an ANNUAL only the quarter-tagged children feed it — never regular sub-objectives. */
 function _okrLatestChildValueAt(o,date){
   let best=null;
-  _okrRollupKids(o).forEach(k=>{
+  (o.isAnnual?_okrQKids(o):_okrRollupKids(o)).forEach(k=>{
     okrCheckinsOf(k.id).forEach(c=>{
       if(c.value===null||c.value===undefined||!isFinite(Number(c.value)))return;
       if(c.date>date)return;
@@ -3110,12 +3159,20 @@ function _okrValueAt(o,date,_seen){
   _seen=_seen||new Set();
   if(_seen.has(o.id))return null;
   _seen.add(o.id);
-  // v3.19 precedence: an ANNUAL always maps its quarters' combined progress as of `date` onto
-  // its own scale — quarters or nothing (roll-up never overrides an annual). Non-annual
-  // roll-ups aggregate their direct children; everything else reads its own check-ins.
+  // v3.19 precedence: an ANNUAL is always quarters-driven — quarters or nothing (roll-up never
+  // overrides an annual). v3.20: HOW the quarters combine follows the annual mode — the value
+  // modes aggregate the quarterly values as of `date`; the default maps the quarters' combined
+  // progress onto the annual's own scale. Non-annual roll-ups aggregate their direct children;
+  // everything else reads its own check-ins.
   if(o.isAnnual){
     const qs=okrChildren(o.id).filter(k=>k.quarterLabel);
     if(!qs.length)return null;
+    const md=okrAnnualMode(o);
+    if(md==='latest')return _okrLatestChildValueAt(o,date);
+    if(md!=='progress'){ // sum / avg / max / min of the quarterly values as of `date`
+      const vals=qs.map(k=>_okrValueAt(k,date,_seen)).filter(v=>v!==null&&v!==undefined&&isFinite(v));
+      return _okrAgg(vals,md);
+    }
     /* THRESHOLD annuals have no start → target scale to map a progress % onto, so they read the
        most recent quarterly figure instead: the newest number IS the current standing. */
     if(okrIsThresh(o))return _okrLatestChildValueAt(o,date);
@@ -3137,10 +3194,12 @@ function _okrValueAt(o,date,_seen){
   okrCheckinsOf(o.id).forEach(c=>{if(c.date<=date&&c.value!==null&&c.value!==undefined)v=Number(c.value);});
   return v;
 }
-/* Effective current value: annuals map their quarters' combined progress onto their own
-   start → target scale; other roll-up nodes aggregate; leaves use their latest check-in. */
+/* Effective current value: annuals read their quarters per the annual mode (value modes
+   aggregate the quarterly values; the default maps combined progress onto the annual's own
+   start → target scale); other roll-up nodes aggregate; leaves use their latest check-in. */
 function okrCurrentOf(o){
   if(o.isAnnual){ // v3.19: an annual is ALWAYS quarters-driven — quarters or nothing
+    if(okrAnnualMode(o)!=='progress')return _okrValueAt(o,'9999-12-31'); // v3.20: sum/avg/max/min/latest of the quarters
     if(okrIsThresh(o))return _okrLatestChildValueAt(o,'9999-12-31'); // no scale to map onto
     const qp=_okrQProgressAvg(o);
     if(qp===null)return null;
@@ -3227,7 +3286,7 @@ function _drawOKRCharts(){
         return arr;};
       // Roll-up nodes plot their AGGREGATED value on every date a child reported (v3.2 fix)
       const cs=(o.rollup||o.isAnnual)
-        ?(function(){const src=o.rollup?_okrRollupKids(o):okrChildren(o.id).filter(k=>k.quarterLabel);const set=new Set();src.forEach(k=>okrCheckinsOf(k.id).forEach(c=>{if(c.value!==null&&c.value!==undefined)set.add(c.date);}));return[...set].sort().map(d=>({date:d,value:_okrValueAt(o,d)})).filter(x=>x.value!==null);})()
+        ?(function(){const src=o.isAnnual?okrChildren(o.id).filter(k=>k.quarterLabel):_okrRollupKids(o);const set=new Set();src.forEach(k=>okrCheckinsOf(k.id).forEach(c=>{if(c.value!==null&&c.value!==undefined)set.add(c.date);}));return[...set].sort().map(d=>({date:d,value:_okrValueAt(o,d)})).filter(x=>x.value!==null);})()
         :okrCheckinsOf(o.id).filter(c=>c.value!==null&&c.value!==undefined);
       const _hasPeriod=!!(_eff.ps&&_eff.pe);
       if(!cs.length&&!_hasPeriod)return fail(kids.length?'No check-ins on this objective yet — use “Add note / update” to record its own numbers.':'No updates yet — set a period (start & end date) or add the first update to see the graph.');
