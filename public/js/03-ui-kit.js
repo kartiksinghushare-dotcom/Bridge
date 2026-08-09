@@ -43,9 +43,9 @@ function chipBar(items,activeKey,fnName,opts={}){
   return pill?`<div style="display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch">${inner}</div>`:`<div class="ui-tabs">${inner}</div>`;
 }
 const togV=id=>{const el=$(`#${id}`);if(!el)return false;return el.classList?.contains('on')||false;};
-const STAT_C={sky:'#0A80C4',brand:'#FF7F11',rose:'#DE2440',amber:'#C08400',orange:'#E86D00',emerald:'#C25A00'};
+const STAT_C={sky:'#128A84',brand:'#0F766E',rose:'#DE2440',amber:'#C08400',orange:'#0C5F59',emerald:'#0B6660'};
 const statCard=(t,v,c='sky',oc='')=>{
-  const col=STAT_C[c]||c||'#0A80C4';
+  const col=STAT_C[c]||c||'#128A84';
   const base='background:var(--c-surface);border-radius:var(--r-lg);border:1px solid var(--c-border);box-shadow:var(--sh-sm);padding:18px';
   const lbl='<div style="font-size:11px;font-weight:700;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">'+t+'</div>';
   const val='<div class="fd" style="font-size:30px;font-weight:800;line-height:1;color:'+col+'">'+v+'</div>';

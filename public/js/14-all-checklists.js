@@ -15,8 +15,8 @@ function _roResponses(c,sub,date){
     const qr=qResps.find(r=>r.questionId===q.id)||{};
     const resp=qr.response;const hasR=resp!==null&&resp!==undefined&&resp!=='';
     const esc1=_escSetRo.has(q.id);
-    const boxBg=esc1?'#EF4444':(hasR?'#FF8F33':'#DFEAEC');
-    const ansClr=esc1?'#C41E32':'#FF7F11';
+    const boxBg=esc1?'#EF4444':(hasR?'#D4A72C':'#DFEAEC');
+    const ansClr=esc1?'#C41E32':'#0F766E';
     return`<div style="padding:10px 14px;border-bottom:1px solid #F8FBFC;display:flex;align-items:center;gap:10px;${esc1?'background:#FEF3F3':''}">
       <div style="width:18px;height:18px;border-radius:5px;background:${boxBg};display:grid;place-items:center;flex-shrink:0">${esc1?'<span style="color:#fff;font-size:12px;font-weight:800;line-height:1">!</span>':(hasR?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>':'')}</div>
       <div style="flex:1;min-width:0">
@@ -67,7 +67,7 @@ function allClsPage(){
     return{sub,pend,late:pend&&dd<today};
   };
 
-  const BC={'Late':'#F2495B','Pending Approval':'#FF7F11','On Time':'#FF8F33','Submitted':'#FF8F33','Pending':'#E0A106','Rejected':'#A0182A','Editing':'#12A3E0'};
+  const BC={'Late':'#F2495B','Pending Approval':'#0F766E','On Time':'#D4A72C','Submitted':'#D4A72C','Pending':'#E0A106','Rejected':'#A0182A','Editing':'#22A79C'};
 
   // One read-only expandable card
   const roCard=(c,sub,key,metaExtra)=>{
@@ -77,7 +77,7 @@ function allClsPage(){
     return`<div style="background:#fff;border-radius:14px;border:1px solid #E7F0F2;border-left:4px solid ${BC[st]||'#C9D9DD'};overflow:hidden">
       <button onclick="S.filters.aclExp=S.filters.aclExp==='${key}'?null:'${key}';rr()" style="width:100%;text-align:left;padding:12px 14px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:10px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700">${esc(c.name)}${c.anyOne?' <span title="Any one assignee can complete" style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:#F0EDFE;color:#5B45D6">\ud83d\udc65 Any one</span>':''}</div>
+          <div style="font-size:14px;font-weight:700">${esc(c.name)}${c.anyOne?' <span title="Any one assignee can complete" style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:#F5EBCC;color:#8A6E14">\ud83d\udc65 Any one</span>':''}</div>
           <div style="font-size:12px;color:#90A5AB;margin-top:2px">${(c.questionIds||[]).length} question${(c.questionIds||[]).length!==1?'s':''}${c.department?' · '+esc(c.department):''}${metaExtra||''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
@@ -128,7 +128,7 @@ function allClsPage(){
           const uExp=S.filters.aclU===uKey;
           const allDone=done===ucls.length;
           const flaggedN=ucls.filter(c=>{const s=subForCl(c,uid2,d);return s&&_subEscalationCount(c,s)>0;}).length;
-          return`<div style="background:#fff;border-radius:16px;border:1.5px solid ${uExp?'#CFC6FA':'#E7F0F2'};overflow:hidden">
+          return`<div style="background:#fff;border-radius:16px;border:1.5px solid ${uExp?'#E6D9A8':'#E7F0F2'};overflow:hidden">
             <button onclick="S.filters.aclU=S.filters.aclU==='${uKey}'?null:'${uKey}';S.filters.aclExp=null;rr()" style="width:100%;text-align:left;padding:12px 14px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:10px">
               <span style="color:#B9CBCF;transform:rotate(${uExp?90:0}deg);transition:transform .2s">${ic('chevR','w-4 h-4')}</span>
               ${avatar(u,'w-9 h-9','text-xs')}
@@ -156,7 +156,7 @@ function allClsPage(){
   let anyContent=false;
   const locList=loc?DB.locations.filter(l=>l.id===loc):DB.locations.slice();
   const locHeader=(label,count,muted)=>`<div style="display:flex;align-items:center;gap:7px;margin:18px 0 10px">
-      <span style="color:${muted?'#90A5AB':'#7B6BF0'}">${ic('pin','w-4 h-4')}</span>
+      <span style="color:${muted?'#90A5AB':'#C9A227'}">${ic('pin','w-4 h-4')}</span>
       <span style="font-size:15px;font-weight:800;color:${muted?'#5E767D':'#10262E'}">${esc(label)}</span>
       <span style="font-size:11px;font-weight:700;color:#90A5AB;background:#F1F7F8;padding:2px 9px;border-radius:20px">${count}</span>
     </div>`;
@@ -211,7 +211,7 @@ function allClsPage(){
             <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${isSel?'rgba(255,255,255,.4)':'#93A6AC'}">${dn.slice(0,3)}</span>
             <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${isSel?'#fff':isT?'#fff':'#10262E'};background:${isT&&!isSel?'#10262E':'transparent'}">${num}</span>
             <div style="display:flex;gap:2px;height:6px">
-              ${dots.sub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#FF8F33'}"></span>`:''}
+              ${dots.sub?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,.8)':'#D4A72C'}"></span>`:''}
               ${dots.late?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,180,180,.9)':'#F2495B'}"></span>`:dots.pend?`<span style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,220,120,.9)':'#E0A106'}"></span>`:''}
             </div>
           </button>`;
@@ -275,13 +275,13 @@ function approvalsPage(){
               +'</div>'
               +(canDecide
                 ?'<div class="flex gap-2 mt-3">'
-                  +'<button onclick="App._decideApprove(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;background:#FF7F11;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Approve</button>'
+                  +'<button onclick="App._decideApprove(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;background:#0F766E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Approve</button>'
                   +'<button onclick="App._decideReject(this.dataset.id)" data-id="'+a.id+'" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #E7F0F2;background:#fff;color:#234049;font-weight:600;font-size:14px;cursor:pointer">Reject</button>'
                   +'</div>'
                 :'')
               +((canFeedback||isAdmin())
                 ?'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
-                  +(a.type==='Submission'?'<button onclick="App._viewSubFor(this)" data-cl="'+a.checklistId+'" data-uid="'+a.requesterId+'" data-dt="'+a.date+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#C25A00;background:#FFF1E4;border:1px solid #A7EBC2;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('eye','w-3.5 h-3.5')+'View</button>':'')
+                  +(a.type==='Submission'?'<button onclick="App._viewSubFor(this)" data-cl="'+a.checklistId+'" data-uid="'+a.requesterId+'" data-dt="'+a.date+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#0B6660;background:#E4F2F0;border:1px solid #A7EBC2;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('eye','w-3.5 h-3.5')+'View</button>':'')
                   +(canFeedback?'<button onclick="App._addFb(this.dataset.id)" data-id="'+a.id+'" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#234049;background:#F4F9FA;border:1px solid #E7F0F2;border-radius:8px;padding:5px 10px;cursor:pointer">'+ic('msg','w-3.5 h-3.5')+'Feedback</button>':'')
                   +'</div>'
                 :'')
@@ -292,7 +292,7 @@ function approvalsPage(){
       : ''
     )
     // ── Feedback tab (kept for backwards compat but not shown in TABS) ──
-    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#DFEAEC':'#BCD9FB')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#90A5AB">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#10262E;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
+    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#DFEAEC':'#BFE3DF')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#90A5AB">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#10262E;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
     +'</div></div>';
 }
 
@@ -366,12 +366,12 @@ App.viewSub=(subId)=>{
     const typeBg=Q_TYPE_BG[q.type]||'#F4F9FA';
     const typeClr=Q_TYPE_CLR[q.type]||'#5E767D';
     const typeLabel=TYPE_LABELS[q.type]||q.type;
-    return'<div style="border-radius:10px;border:1px solid '+(hasResp?'#FFE0C7':'#F1F7F8')+';padding:10px 12px;background:'+(hasResp?'#F6FBFB':'#F8FBFC')+'">'
+    return'<div style="border-radius:10px;border:1px solid '+(hasResp?'#F0E4BE':'#F1F7F8')+';padding:10px 12px;background:'+(hasResp?'#F6FBFB':'#F8FBFC')+'">'
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
       +'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:'+typeBg+';color:'+typeClr+'">'+typeLabel+'</span>'
       +'<span style="font-size:13px;font-weight:600">'+esc(q.text)+'</span>'
       +'</div>'
-      +(hasResp?'<div style="font-size:13px;font-weight:700;color:#FF7F11">'+esc(String(resp))+'</div>':'<div style="font-size:12px;color:#C9D9DD;font-style:italic">Not answered</div>')
+      +(hasResp?'<div style="font-size:13px;font-weight:700;color:#0F766E">'+esc(String(resp))+'</div>':'<div style="font-size:12px;color:#C9D9DD;font-style:italic">Not answered</div>')
       +(qr.comment?'<div style="font-size:12px;color:#5E767D;margin-top:4px;font-style:italic">"'+esc(qr.comment)+'"</div>':'')
       +(()=>{const pl=_qrPhotoList(qr);return pl.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #DFEAEC;cursor:pointer"/>').join('')+'</div>':'';})()
       +'</div>';

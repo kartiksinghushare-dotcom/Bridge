@@ -98,10 +98,10 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     const eb=(sub.editCount||0)>0?'<span style="font-size:10px;font-weight:700;background:#FDF3D9;color:#7A4E00;padding:1px 6px;border-radius:10px">edit #'+sub.editCount+'</span>':'';
     const left='<span style="font-size:12px;color:#93A6AC">Submitted '+st+eb+'</span>';
     let right='';
-    if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#FF7F11">Edit pending</span>';
+    if(hasEditReq)right='<span style="font-size:12px;font-weight:600;color:#0F766E">Edit pending</span>';
     else if(editApproved)right='<button onclick="App._resubmit(\''+cid+'\',\''+date+'\')" class="submit-pill go">Edit &amp; Resubmit</button>';
-    else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#FF7F11">Awaiting approval</span>';
-    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0F7A45;background:#FFF1E4;border:1px solid #6FE0A6;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
+    else if(sub.status==='Pending Approval'||sub.status==='Pending')right='<span style="font-size:12px;font-weight:600;color:#0F766E">Awaiting approval</span>';
+    else if(u?.rules?.edit&&u?.managerId)right='<button onclick="App._reqEdit(\''+cid+'\',\''+date+'\')" style="font-size:13px;font-weight:700;color:#0F7A45;background:#E4F2F0;border:1px solid #6FE0A6;border-radius:8px;cursor:pointer;padding:7px 16px">Request edit</button>';
     return left+right;
   }
   if(!sub){
@@ -109,12 +109,12 @@ function _clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved){
     if(isFuture&&!u?.rules?.future)return '<span style="font-size:12px;color:#90A5AB">Scheduled for this date</span><button class="submit-pill no" disabled style="opacity:.4;cursor:not-allowed">Not yet</button>';
     const _hasDraft=(DB.drafts||[]).some(d=>d.checklistId===cid&&d.userId===S.uid&&d.date===date);
     const _draftBtn='<button onclick="App._saveDraft(\''+cid+'\',\''+date+'\')" class="draft-pill" data-cl="'+cid+'" style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid #DFEAEC;background:#fff;color:#2F4C55;cursor:pointer">'+(_hasDraft?'Update draft':'Save as Draft')+'</button>';
-    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#FF7F11;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
+    const _leftBlk=_hasDraft?'<span style="display:inline-flex;align-items:center;gap:8px">'+_draftBtn+'<span style="font-size:11px;color:#0F766E;font-weight:700">\u2713 Draft saved</span></span>':_draftBtn;
     return _leftBlk+'<button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit</button>';
   }
   // Editing mode
   if(sub.status==='Editing'){
-    return '<span style="font-size:12px;font-weight:700;color:#12A3E0">Editing\u2026</span><button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit edit</button>';
+    return '<span style="font-size:12px;font-weight:700;color:#22A79C">Editing\u2026</span><button onclick="App._submitRun(\''+cid+'\',\''+date+'\')" class="submit-pill go" data-cl="'+cid+'">\u2713 Submit edit</button>';
   }
   return '';
 }
@@ -152,7 +152,7 @@ function _clCard(c,date){
   const hasEditReq=DB.approvals.some(a=>a.type==='Edit Request'&&a.requesterId===S.uid&&a.checklistId===c.id&&a.date===date&&a.status==='Pending');
   const editApproved=DB.approvals.some(a=>a.type==='Edit Request'&&a.requesterId===S.uid&&a.checklistId===c.id&&a.date===date&&a.status==='Approved');
   const stCls={'On Time':'st-on','Submitted':'st-sub','Pending':'st-pend','Late':'st-late','Pending Approval':'st-pa','Rejected':'st-late','Editing':'st-pend','Upcoming':'st-pend'};
-  const stBar={'On Time':'#22C55E','Submitted':'#22C55E','Pending':'#E0A106','Late':'#EF4444','Pending Approval':'#FF7F11','Rejected':'#EF4444','Editing':'#12A3E0','Upcoming':'#A855F7'};
+  const stBar={'On Time':'#22C55E','Submitted':'#22C55E','Pending':'#E0A106','Late':'#EF4444','Pending Approval':'#0F766E','Rejected':'#EF4444','Editing':'#22A79C','Upcoming':'#C9A227'};
 
   return`<div class="clc" style="border-top:3px solid ${stBar[st]||'#E4EDEF'}">
     <!-- Header -->
@@ -161,7 +161,7 @@ function _clCard(c,date){
         <div class="fd" style="font-size:15px;font-weight:800;color:#10262E">${esc(c.name)}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
           ${c.department?`<span style="font-size:12px;color:#93A6AC">${esc(c.department)}</span>`:''}
-          ${c.anyOne?`<span title="Any one assignee can complete this" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#F0EDFE;color:#5B45D6;flex-shrink:0">👥 Any one</span>`:''}
+          ${c.anyOne?`<span title="Any one assignee can complete this" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#F5EBCC;color:#8A6E14;flex-shrink:0">👥 Any one</span>`:''}
           ${c.description?`<span style="font-size:11px;color:#93A6AC;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(c.description)}</span>`:''}
           ${(()=>{
             const total=(c.questionIds||[]).length;if(!total)return'';
@@ -171,12 +171,12 @@ function _clCard(c,date){
               // After submit: show attempt + compliance badges (read-only, locked)
               return _subBadges(c,sub,{small:true});
             }
-            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#FF7F11':'#90A5AB'};flex-shrink:0">${answered}/${total} attempted</span>`;
+            return`<span style="font-size:11px;font-weight:600;color:${allAnswered?'#0F766E':'#90A5AB'};flex-shrink:0">${answered}/${total} attempted</span>`;
           })()}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        ${(!isSubmitted&&(DB.drafts||[]).some(d=>d.checklistId===c.id&&d.userId===S.uid&&d.date===date))?'<span title="You have a saved draft" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;background:#F0EDFE;color:#5B45D6">📝 Draft</span>':''}
+        ${(!isSubmitted&&(DB.drafts||[]).some(d=>d.checklistId===c.id&&d.userId===S.uid&&d.date===date))?'<span title="You have a saved draft" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;background:#F5EBCC;color:#8A6E14">📝 Draft</span>':''}
         <span style="font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;${stCls[st]?'':'background:#EDF4F5;color:#90A5AB'}" class="${stCls[st]||''}">${st}</span>
         <span style="color:#B9CBCF;transform:rotate(${exp?90:0}deg);transition:transform .2s">${ic('chevR','w-4 h-4')}</span>
       </div>
@@ -194,7 +194,7 @@ function _clCard(c,date){
           const TYPE_LABELS={answer:'Answer',number:'Number',passfail:'Pass/Fail',yesno:'Yes/No',tick:'Tick/Cross'};
           let inputHtml='';
           if(locked){
-            inputHtml='<span style="font-size:13px;font-weight:600;color:#FF7F11">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#C9D9DD">Not answered</em>')+'</span>';
+            inputHtml='<span style="font-size:13px;font-weight:600;color:#0F766E">'+(resp!==null&&resp!==undefined?esc(String(resp)):'<em style="color:#C9D9DD">Not answered</em>')+'</span>';
           } else if(q.type==='answer'){
             inputHtml='<div style="display:flex;flex-wrap:wrap;gap:6px">'+(q.options||[]).map((o,oi)=>`<button onclick="App._setQROpt('${c.id}','${q.id}',${oi})" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${resp===o.text?'#10262E':'#DFEAEC'};background:${resp===o.text?'#10262E':'#fff'};color:${resp===o.text?'#fff':'#2F4C55'};font-size:12px;font-weight:600;cursor:pointer">${esc(o.text)}</button>`).join('')+'</div>';
           } else if(q.type==='number'){
@@ -239,12 +239,12 @@ function _clCard(c,date){
       <div class="clc-ft">${_clFooter(c,date,sub,isPast,isFuture,u,hasEditReq,editApproved)}</div>
       ${sub?DB.feedback.filter(fb=>fb.checklistId===c.id&&fb.userId===S.uid&&fb.date===date).map(fb=>{
         const mgr=uById(fb.managerId);
-        return`<div style="background:#EAF2FE;border-top:1px solid #BCD9FB;padding:12px 18px">
+        return`<div style="background:#E6F3F1;border-top:1px solid #BFE3DF;padding:12px 18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:12px;font-weight:700;color:#1257B5">${ic('msg','w-3.5 h-3.5 inline')} From ${mgr?esc(fullName(mgr)):'Manager'}</span>
-            ${!fb.acknowledged?`<button onclick="App._ackFb('${fb.id}')" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;background:#1257B5;color:#fff;border:none;cursor:pointer">Acknowledge</button>`:`<span style="font-size:11px;color:#1257B5">✓ Acknowledged</span>`}
+            <span style="font-size:12px;font-weight:700;color:#0C6B65">${ic('msg','w-3.5 h-3.5 inline')} From ${mgr?esc(fullName(mgr)):'Manager'}</span>
+            ${!fb.acknowledged?`<button onclick="App._ackFb('${fb.id}')" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;background:#0C6B65;color:#fff;border:none;cursor:pointer">Acknowledge</button>`:`<span style="font-size:11px;color:#0C6B65">✓ Acknowledged</span>`}
           </div>
-          <p style="font-size:13px;color:#123F80;margin:0;line-height:1.5">${esc(fb.text)}</p>
+          <p style="font-size:13px;color:#0B5F5A;margin:0;line-height:1.5">${esc(fb.text)}</p>
         </div>`;}).join(''):''}
     </div>`:''}
   </div>`;

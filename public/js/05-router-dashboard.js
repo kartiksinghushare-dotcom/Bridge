@@ -23,10 +23,10 @@ function dashboardPage(){
   const chartCard=(key,title,sub)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3);margin-top:1px">${sub}</div></div><div style="height:210px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
   return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
-      ${kpi('On-time rate',rate===null?'—':rate+'%','#FF7F11','approve',"App.go('allcl')",'last 30 days')}
+      ${kpi('On-time rate',rate===null?'—':rate+'%','#0F766E','approve',"App.go('allcl')",'last 30 days')}
       ${kpi('Late',late,'#DC2626','alert',"App.go('allcl')",'submissions (30d)')}
-      ${kpi('Open tickets',openTk+progTk,'#FF7F11','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
-      ${kpi('Approvals waiting',apprN,'#0A80C4','approve',"App.go('approvals')",'in your inbox')}
+      ${kpi('Open tickets',openTk+progTk,'#0F766E','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
+      ${kpi('Approvals waiting',apprN,'#128A84','approve',"App.go('approvals')",'in your inbox')}
       ${okrs.length?kpi('OKRs',okrs.length,'#8B5CF6','chart',"App.go('okr')",'objectives you can see'):''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px">
@@ -53,7 +53,7 @@ function _drawDashCharts(){
   const T=_aChartTheme();
   const{subs,tickets}=_dashScope();
   const today=todayISO();
-  const C={brand:'#FF7F11',brandSoft:'rgba(255,127,17,.14)',green:'#2BBE71',greenSoft:'rgba(43,190,113,.16)',red:'#D92D20',amber:'#E0A106',sky:'#00C2C7',violet:'#8B5CF6',grey:'#90A5AB',ink:'#10262E'};
+  const C={brand:'#0F766E',brandSoft:'rgba(15,118,110,.14)',green:'#2BBE71',greenSoft:'rgba(43,190,113,.16)',red:'#D92D20',amber:'#E0A106',sky:'#00C2C7',violet:'#8B5CF6',grey:'#90A5AB',ink:'#10262E'};
   const mk=(key,cfg)=>{const cv=document.querySelector('canvas[data-dash-chart="'+key+'"]');if(!cv)return;cfg.options=cfg.options||{};cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;cfg.options.plugins=cfg.options.plugins||{};cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:T.tick,font:{size:10.5},boxWidth:14,padding:8}};_aCharts.push(new Chart(cv.getContext('2d'),cfg));};
   const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
   const fmtDay=(iso)=>{const d=new Date(iso+'T00:00:00');return d.toLocaleDateString(undefined,{day:'numeric',month:'short'});};

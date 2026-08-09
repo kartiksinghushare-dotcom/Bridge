@@ -140,7 +140,7 @@ function qCard(q){
     const clr=Q_TYPE_CLR[q.type]||'#5E767D';
     const bg=Q_TYPE_BG[q.type]||'#F4F9FA';
     const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
-    let h=`<div style="background:#fff;border-radius:14px;border:1.5px solid ${exp?'#CFC6FA':'#E7F0F2'};overflow:hidden">`;
+    let h=`<div style="background:#fff;border-radius:14px;border:1.5px solid ${exp?'#E6D9A8':'#E7F0F2'};overflow:hidden">`;
     h+=`<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="App._togExpandQ('${q.id}')">`;
     h+=`<span style="color:#B9CBCF;transition:transform .2s;transform:rotate(${exp?90:0}deg)">${ic('chevR','w-4 h-4')}</span>`;
     h+=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>`;
@@ -150,7 +150,7 @@ function qCard(q){
     const mine=canManageQ(q);
     h+=`<div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
     if(mine){
-      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7EBC2':'#FBE6A6'};background:${isPub?'#FFF1E4':'#FEFAEC'};font-size:11px;font-weight:700;color:${isPub?'#0F7A45':'#8A5F00'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
+      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7EBC2':'#FBE6A6'};background:${isPub?'#E4F2F0':'#FEFAEC'};font-size:11px;font-weight:700;color:${isPub?'#0F7A45':'#8A5F00'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
       h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #E7F0F2;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;
       h+=`<button onclick="App._delQuestion('${q.id}')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#C9D9DD;cursor:pointer" onmouseover="this.style.color='#C41E32'" onmouseout="this.style.color='#C9D9DD'">${ic('trash','w-4 h-4')}</button>`;
     } else {
@@ -167,7 +167,7 @@ function qCard(q){
           ?((NUM_CONDITIONS.find(x=>x.id===o.condition)||{label:o.condition}).label+' '+o.value+(o.condition==='between'?' – '+o.value2:''))
           :(o.text||o.label||'');
         h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F2F8F9">`;
-        h+=`<span style="width:20px;height:20px;border-radius:50%;background:#EAF2FE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#1257B5">${oi+1}</span>`;
+        h+=`<span style="width:20px;height:20px;border-radius:50%;background:#E6F3F1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0C6B65">${oi+1}</span>`;
         h+=`<span style="flex:1;font-size:13px;color:#2F4C55">${esc(lbl)}</span>`;
 
         h+=`</div>`;
@@ -185,8 +185,8 @@ function _qGroupHTML(list){
   const used=new Set();
   let html='';
   const chev=(open)=>`<span style="display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#F1F7F8;color:#5E767D;font-size:9px;flex-shrink:0;transform:rotate(${open?90:0}deg);transition:transform .15s">▶</span>`;
-  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#FFF1E4;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#10262E">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F1F7F8;color:#5E767D">${count}</span></button>`;
-  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#FF7F11"></span><div style="font-size:12px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#90A5AB">${count}</span></button>`;
+  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#E4F2F0;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#10262E">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F1F7F8;color:#5E767D">${count}</span></button>`;
+  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#0F766E"></span><div style="font-size:12px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#90A5AB">${count}</span></button>`;
   tops.forEach(dep=>{
     const direct=list.filter(q=>q.departmentId===dep.id&&!q.subDepartmentId);
     const subBlocks=subDepts(dep.id).map(sd=>({sd,qs:list.filter(q=>q.subDepartmentId===sd.id)}));
@@ -229,7 +229,7 @@ function questionsPage(){
         <div style="font-size:11px;color:#90A5AB">Download the template, fill it in, then upload to add multiple questions at once</div>
       </div>
       <button onclick="App._downloadQTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #E7F0F2;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#2F4C55;white-space:nowrap">${ic('download','w-3.5 h-3.5')} Download template</button>
-      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #FF7F11;background:#FFF1E4;font-size:12px;font-weight:600;cursor:pointer;color:#0F7A45;white-space:nowrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #0F766E;background:#E4F2F0;font-size:12px;font-weight:600;cursor:pointer;color:#0F7A45;white-space:nowrap">
         ${ic('upload','w-3.5 h-3.5')} Upload CSV
         <input type="file" accept=".csv" onchange="App._importQCSV(this)" style="display:none"/>
       </label>
@@ -313,7 +313,7 @@ App._renderQModal=()=>{
         <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#C9D9DD;cursor:pointer">${ic('x','w-3 h-3')}</button>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#FF7F11;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#0F766E;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
   }
   else if(q.type==='number'){
     let rows='';
@@ -328,7 +328,7 @@ App._renderQModal=()=>{
         </div>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#FF7F11;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#0F766E;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
   }
   else {
     const labels={passfail:['Pass','Fail'],yesno:['Yes','No'],tick:['Done','Not done']};
@@ -541,7 +541,7 @@ App._showClQEscalation=()=>{
         const key='opt_'+i;
         const cur=qCfg[key]||'';
         optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #EDF4F5">
-          <span style="width:20px;height:20px;border-radius:50%;background:#F0EDFE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#5B45D6;flex-shrink:0">${String.fromCharCode(65+i)}</span>
+          <span style="width:20px;height:20px;border-radius:50%;background:#F5EBCC;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#8A6E14;flex-shrink:0">${String.fromCharCode(65+i)}</span>
           <span style="flex:1;font-size:13px;color:#2F4C55">${o.text||''}</span>
           <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #DFEAEC;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
@@ -553,7 +553,7 @@ App._showClQEscalation=()=>{
         const condLabel=(NUM_CONDITIONS.find(c=>c.id===o.condition)||{label:o.condition}).label;
         const condText=condLabel+' '+o.value+(o.condition==='between'?' – '+o.value2:'');
         optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #EDF4F5">
-          <span style="width:20px;height:20px;border-radius:50%;background:#E2F2FC;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0A6394;flex-shrink:0">${i+1}</span>
+          <span style="width:20px;height:20px;border-radius:50%;background:#E3F1EF;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0B6660;flex-shrink:0">${i+1}</span>
           <span style="flex:1;font-size:13px;color:#2F4C55">${condText}</span>
           <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #DFEAEC;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
@@ -729,15 +729,15 @@ function _subBadges(c,sub,opts){
   const fs=small?'10px':'11px';
   const allAns=total>0&&answered>=total;
   // Attempt badge — green when all questions attempted, grey otherwise
-  const attBg=allAns?'#FFF1E4':'#F4F9FA';
-  const attClr=allAns?'#C25A00':'#5E767D';
+  const attBg=allAns?'#E4F2F0':'#F4F9FA';
+  const attClr=allAns?'#0B6660':'#5E767D';
   const attLabel=small?answered+'/'+total:answered+'/'+total+' attempted';
   const attempt=total>0
     ? '<span title="'+answered+' of '+total+' question'+(total>1?'s':'')+' attempted" style="font-size:'+fs+';font-weight:700;padding:'+pad+';border-radius:20px;background:'+attBg+';color:'+attClr+'">'+(allAns?'✓ ':'')+attLabel+'</span>'
     : '';
   // Compliance badge — green "Compliant" when no escalations, red "N escalated" when flagged
-  const compBg=flagged?'#FEEEEF':'#FFF1E4';
-  const compClr=flagged?'#C41E32':'#C25A00';
+  const compBg=flagged?'#FEEEEF':'#E4F2F0';
+  const compClr=flagged?'#C41E32':'#0B6660';
   const compLabel=flagged
     ? (small?'⚠ '+flagged:'⚠ '+flagged+' escalated')
     : (small?'✓':'✓ Compliant');
@@ -887,7 +887,7 @@ function _feedbackTabContent(uid){
   if(!myFb.length)return empty('msg','No feedback yet','Feedback from your manager appears here.');
   return'<div style="display:flex;flex-direction:column;gap:10px">'+myFb.map(fb=>{
     const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);
-    const bc=fb.acknowledged?'#DFEAEC':'#BCD9FB';
+    const bc=fb.acknowledged?'#DFEAEC':'#BFE3DF';
     const priClr=fb.priority==='High'||fb.priority==='Critical'?'#DC2626':'#7A4E00';
     const priBg=fb.priority==='High'||fb.priority==='Critical'?'#FDE4E4':'#FDF6CE';
     return'<div style="background:#fff;border-radius:16px;border:1px solid '+bc+';padding:16px">'
@@ -899,15 +899,33 @@ function _feedbackTabContent(uid){
       +(fb.priority&&fb.priority!=='Low'?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+priBg+';color:'+priClr+'">'+fb.priority+'</span>':'')
       +'</div>'
       +'<p style="font-size:13px;line-height:1.6;margin:0 0 10px">'+esc(fb.text)+'</p>'
-      +(fb.reply?'<div style="background:#F2FBF5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#C25A00;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#2F4C55;margin:0">'+esc(fb.reply)+'</p></div>':'')
+      +(fb.reply?'<div style="background:#F2FBF5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#0B6660;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#2F4C55;margin:0">'+esc(fb.reply)+'</p></div>':'')
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#1257B5;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#FF7F11">&#10003; Acknowledged</span>')
+      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#0C6B65;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#0F766E">&#10003; Acknowledged</span>')
       +(!fb.reply?'<button onclick="App._replyFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#F1F7F8;color:#2F4C55;font-size:12px;font-weight:600;border:none;cursor:pointer">Reply</button>':'')
       +'</div></div>';
   }).join('')+'</div>';
 }
 
 
+/* Shared notification list renderer — used by every tab so the rows always look the same. */
+function _notifTimeline(list,unreadIds,typeOf,CLR,BG,ICO){
+  return '<div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;overflow:hidden">'
+    +'<div style="display:flex;flex-direction:column">'
+    +list.map(function(n){
+      var type=typeOf(n.text);var clr=CLR[type];var bg=BG[type];var ico=ICO[type];
+      var isNew=unreadIds.has(n.id);
+      return '<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #F2F8F9;cursor:pointer;'+(isNew?'background:#F8FCFC':'background:#fff')+'" onclick="App._notifClick(this.dataset.id)" data-id="'+n.id+'">'
+        +'<div style="width:36px;height:36px;border-radius:10px;background:'+bg+';display:grid;place-items:center;flex-shrink:0;margin-top:1px;color:'+clr+'">'+ic(ico,'w-4 h-4')+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<p style="font-size:13px;color:#10262E;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
+        +'<p style="font-size:11px;color:#93A6AC;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' \u00B7 '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
+        +'</div>'
+        +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#0F766E;flex-shrink:0;margin-top:6px"></div>':'')
+      +'</div>';
+    }).join('')
+    +'</div></div>';
+}
 function notificationsPage(){
   const uid=S.uid;
   const notifs=DB.notifications.filter(n=>n.userId===uid).sort((a,b)=>(b.time||'').localeCompare(a.time||'')).slice(0,80);
@@ -927,11 +945,19 @@ function notificationsPage(){
   const unackFb=myFb.filter(fb=>!fb.acknowledged);
 
   const tab=S.filters.ntab||'All';
-  const TABS=['All','Approvals','Escalations','Feedback'];
+  const TABS=['All','Approvals','Escalations','Feedback','Workspace'];
 
   function notifType(text){
     if(!text)return'general';
-    if(text.includes('💬')||text.includes('replied')||text.includes('reply'))return'feedback';
+    /* v3.20 — WORKSPACE first. These carry their own markers (💬 mention, 🎫 ticket,
+       ↪ moved, ⚡ automation, ⏰ reminder, 🔔 update). 💬 used to be read as "feedback",
+       so every Workspace @-mention was filed under Feedback — a tab that only lists
+       manager feedback records, which is why it counted 3 and then showed nothing. */
+    if(/tagged you in/i.test(text))return'workspace';
+    if(text.indexOf('\u{1F4AC}')>=0||text.indexOf('\u{1F3AB}')>=0||text.indexOf('\u{1F514}')>=0)return'workspace';
+    if(text.indexOf('\u21AA')>=0||text.indexOf('\u26A1')>=0||text.indexOf('\u23F0')>=0)return'workspace';
+    if(/^\u2705 Approval needed:/.test(text))return'workspace';
+    if(text.includes('replied')||text.includes('reply'))return'feedback';
     if(text.includes('Feedback')||text.includes('feedback'))return'feedback';
     
     if(text.includes('Escalation')||text.includes('escalation'))return'escalation';
@@ -943,22 +969,28 @@ function notificationsPage(){
     if(text.includes('overdue')||text.includes('Late')||text.includes('late'))return'late';
     return'general';
   }
-  const TYPE_CLR={approval:'#8B5CF6',edit:'#12A3E0',escalation:'#FF7F11',feedback:'#2680EB',late:'#EF4444',general:'#5E767D'};
-  const TYPE_BG={approval:'#EDE7FE',edit:'#E2F2FC',escalation:'#FFF4EA',feedback:'#EAF2FE',late:'#FEF0F0',general:'#F4F9FA'};
-  const TYPE_ICON={approval:'approve',edit:'edit',escalation:'alert',feedback:'msg',late:'clock',general:'bell'};
+  const TYPE_CLR={approval:'#8B5CF6',edit:'#22A79C',escalation:'#0F766E',feedback:'#18948C',workspace:'#00A8AD',late:'#EF4444',general:'#5E767D'};
+  const TYPE_BG={approval:'#F5EBCC',edit:'#E3F1EF',escalation:'#F6F1E1',feedback:'#E6F3F1',workspace:'#E3FAFB',late:'#FEF0F0',general:'#F4F9FA'};
+  const TYPE_ICON={approval:'approve',edit:'edit',escalation:'alert',feedback:'msg',workspace:'msg',late:'clock',general:'bell'};
 
-  const filteredNotifs=tab==='All'?notifs
-    :tab==='Approvals'?notifs.filter(n=>['approval','edit'].includes(notifType(n.text)))
-    :tab==='Feedback'?notifs.filter(n=>notifType(n.text)==='feedback')
-    :tab==='Escalations'?notifs.filter(n=>notifType(n.text)==='escalation')
+  /* v3.20 — one source of truth per tab: the badge is counted from the very list the
+     tab renders, so a tab can never again advertise 3 and then show an empty page. */
+  const apprNotifs=notifs.filter(n=>['approval','edit'].includes(notifType(n.text)));
+  const escNotifs =notifs.filter(n=>notifType(n.text)==='escalation');
+  const fbNotifs  =notifs.filter(n=>notifType(n.text)==='feedback');
+  const wsNotifs  =notifs.filter(n=>notifType(n.text)==='workspace');
+
+  const filteredNotifs=tab==='Approvals'?apprNotifs
+    :tab==='Escalations'?escNotifs
+    :tab==='Workspace'?wsNotifs
     :notifs;
 
   const counts={
     All:notifs.length,
-    Approvals:notifs.filter(n=>['approval','edit'].includes(notifType(n.text))).length,
-    Escalations:notifs.filter(n=>notifType(n.text)==='escalation').length,
-    Feedback:notifs.filter(n=>notifType(n.text)==='feedback').length+myFb.filter(fb=>!fb.acknowledged).length,
-
+    Approvals:apprNotifs.length,
+    Escalations:escNotifs.length,
+    Feedback:myFb.length+fbNotifs.length,   // records + genuine feedback alerts = what renders
+    Workspace:wsNotifs.length,
   };
 
   return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')
@@ -970,29 +1002,14 @@ function notificationsPage(){
       return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#10262E':'transparent')+';color:'+(active?'#fff':'#5E767D')+'">'+t+badge+'</button>';
     }).join('')
     +'</div>'
-    // Feedback section (when tab=Feedback)
+    // Feedback tab = manager feedback records AND genuine feedback alerts (never one without the other)
     +(tab==='Feedback'
-      ? _feedbackTabContent(uid)
-      // Notification timeline for other tabs
+      ? ((myFb.length||fbNotifs.length)
+          ? (myFb.length?_feedbackTabContent(uid):'')+(fbNotifs.length?_notifTimeline(fbNotifs,unreadIds,notifType,TYPE_CLR,TYPE_BG,TYPE_ICON):'')
+          : empty('msg','No feedback yet','Feedback from your manager appears here.'))
       : (filteredNotifs.length
-        ? '<div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;overflow:hidden">'
-          +'<div style="display:flex;flex-direction:column">'
-          +filteredNotifs.map((n,idx)=>{
-              const type=notifType(n.text);
-              const clr=TYPE_CLR[type];const bg=TYPE_BG[type];const ico=TYPE_ICON[type];
-              const isNew=unreadIds.has(n.id);
-              // Parse deep-link target from notification text
-              return '<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #F2F8F9;cursor:pointer;'+(isNew?'background:#F8FCFC':'background:#fff')+'" onclick="App._notifClick(this.dataset.id)" data-id="'+n.id+'">'
-                +'<div style="width:36px;height:36px;border-radius:10px;background:'+bg+';display:grid;place-items:center;flex-shrink:0;margin-top:1px">'+ic(ico,'w-4 h-4 text-['+clr+']')+'</div>'
-                +'<div style="flex:1;min-width:0">'
-                +'<p style="font-size:13px;color:#10262E;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
-                +'<p style="font-size:11px;color:#93A6AC;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' · '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
-                +'</div>'
-                +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#FF7F11;flex-shrink:0;margin-top:6px"></div>':'')
-                +'</div>';
-            }).join('')
-          +'</div></div>'
-        : empty('bell','All clear','No notifications yet.')
+        ? _notifTimeline(filteredNotifs,unreadIds,notifType,TYPE_CLR,TYPE_BG,TYPE_ICON)
+        : empty('bell','All clear',tab==='Workspace'?'No Workspace mentions or ticket alerts yet.':'No notifications yet.')
       )
     )
     +'</div>';
@@ -1003,7 +1020,18 @@ App._notifClick=(id)=>{
   n.read=true;_invalidateNotifCache();saveDB();
   const t=n.text||'';
   // Navigate first with clean filters, then set the tab
-  if(t.includes('💬')||t.includes('replied')||t.includes('Feedback')){
+  /* v3.20 — a Workspace mention/ticket alert belongs in the Workspace. It used to match
+     on 💬 and dump you on the Feedback tab, which lists manager feedback only — so the
+     tab looked empty even though the badge had counted your mentions. */
+  if((n.link&&String(n.link).indexOf('crm:')===0)
+     ||/tagged you in/i.test(t)||t.indexOf('\u{1F4AC}')>=0||t.indexOf('\u{1F3AB}')>=0||t.indexOf('\u{1F514}')>=0
+     ||t.indexOf('\u21AA')>=0||t.indexOf('\u26A1')>=0||t.indexOf('\u23F0')>=0||/^\u2705 Approval needed:/.test(t)){
+    if(typeof can==='function'&&!can('crm','view'))return;
+    /* v3.21 — open the actual chat/ticket, not just the Workspace page. */
+    if(typeof App._crmOpenFromNotification==='function'&&App._crmOpenFromNotification(n.link,t))return;
+    App.go('crm');return;
+  }
+  if(t.includes('replied')||t.includes('Feedback')){
     App._goNotifFeedback();return;
   }
 

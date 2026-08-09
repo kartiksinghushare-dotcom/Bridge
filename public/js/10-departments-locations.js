@@ -32,8 +32,8 @@ function _scopeDocsTab(type, scopeKey){
   // Breadcrumb bar
   if(crumbs.length){
     html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
-      +'<button onclick="App._docNav(null)" style="font-size:13px;font-weight:600;color:#FF7F11;background:none;border:none;cursor:pointer;padding:0">'+esc(rootLabel)+'</button>'
-      +crumbs.map(f=>'<span style="color:#C9D9DD">›</span><button onclick="App._docNav(this.dataset.id)" data-id="'+f.id+'" style="font-size:13px;font-weight:600;color:'+(folderId===f.id?'#10262E':'#FF7F11')+';background:none;border:none;cursor:pointer;padding:0">'+esc(f.name)+'</button>').join('')
+      +'<button onclick="App._docNav(null)" style="font-size:13px;font-weight:600;color:#0F766E;background:none;border:none;cursor:pointer;padding:0">'+esc(rootLabel)+'</button>'
+      +crumbs.map(f=>'<span style="color:#C9D9DD">›</span><button onclick="App._docNav(this.dataset.id)" data-id="'+f.id+'" style="font-size:13px;font-weight:600;color:'+(folderId===f.id?'#10262E':'#0F766E')+';background:none;border:none;cursor:pointer;padding:0">'+esc(f.name)+'</button>').join('')
       +'</div>';
   }
   // Toolbar
@@ -65,7 +65,7 @@ function _scopeDocsTab(type, scopeKey){
           +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(d.name)+'</div>'
           +'<div style="font-size:11px;color:#90A5AB;margin-top:1px">'+(d.uploadedAt?fmtS(d.uploadedAt.slice(0,10)):'')+' · '+(d.uploaderName||'')+(d.fileSize?' · '+_fmtSize(d.fileSize):'')+'</div></div>'
           +'<div style="display:flex;gap:6px;flex-shrink:0">'
-          +(p.download||isAdm?'<button onclick="App._downloadDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#FFF1E4;color:#FF7F11;font-size:12px;font-weight:700;border:1px solid #A7EBC2;cursor:pointer">↓ Download</button>':'')
+          +(p.download||isAdm?'<button onclick="App._downloadDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#E4F2F0;color:#0F766E;font-size:12px;font-weight:700;border:1px solid #A7EBC2;cursor:pointer">↓ Download</button>':'')
           +(p.view||isAdm?'<button onclick="App._previewDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 10px;border-radius:7px;background:#F4F9FA;color:#2F4C55;font-size:12px;font-weight:700;border:1px solid #E7F0F2;cursor:pointer">View</button>':'')
           +(isAdm||p.edit?'<button onclick="App._delDoc(this.dataset.id)" data-id="'+d.id+'" style="padding:5px 8px;border-radius:7px;background:#FDE4E4;color:#DC2626;font-size:12px;font-weight:700;border:1px solid #FBCDCD;cursor:pointer">✕</button>':'')
           +'</div></div>';
@@ -216,7 +216,7 @@ function _subDeptsTabHTML(d){
   else{h+='<div class="space-y-2">'+subs.map(s=>{
     const qn=(DB.questions||[]).filter(q=>q.subDepartmentId===s.id).length;
     return '<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;border:1px solid #E7F0F2;padding:12px 14px">'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:#FFF1E4;display:grid;place-items:center;flex-shrink:0">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:#E4F2F0;display:grid;place-items:center;flex-shrink:0">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
       +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(s.name)+'</div><div style="font-size:12px;color:#90A5AB">'+qn+' question'+(qn===1?'':'s')+'</div></div>'
       +((can('subDepartments','edit')||can('subDepartments','delete'))?'<div style="display:flex;gap:4px">'+(can('subDepartments','edit')?'<button onclick="App.editDept(\''+s.id+'\')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#90A5AB;cursor:pointer">'+ic('edit','w-4 h-4')+'</button>':'')+(can('subDepartments','delete')?'<button onclick="App.delDept(\''+s.id+'\')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#C9D9DD;cursor:pointer">'+ic('trash','w-4 h-4')+'</button>':'')+'</div>':'')
       +'</div>';
@@ -238,7 +238,7 @@ function deptsPage(){
       // Back bar
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
       +'<button onclick="App._closeDept()" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #E7F0F2;background:#fff;cursor:pointer;display:grid;place-items:center;color:#5E767D">'+ic('back','w-4 h-4')+'</button>'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:#FFF1E4;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:#E4F2F0;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
       +'<div style="flex:1"><div class="fd" style="font-size:16px;font-weight:800">'+esc(d.name)+'</div>'
       +'<div style="font-size:12px;color:#90A5AB">'+dUsers.length+' users · '+dCls.length+' checklists'+(subDepts(d.id).length?' · '+subDepts(d.id).length+' sub-depts':'')+'</div></div>'
       +(can('departments','edit')?'<button onclick="App.editDept(this.dataset.id)" data-id="'+d.id+'" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:#F4F9FA;color:#2F4C55;font-size:13px;font-weight:600;border:1px solid #E7F0F2;cursor:pointer">'+ic('edit','w-4 h-4')+'Edit</button>':'')
@@ -281,18 +281,18 @@ function deptsPage(){
       const folders=(DB.folders||[]).filter(x=>x.type==='dept'&&x.scope===d.name&&!x.parentId).length;
       return'<div onclick="App._openDept(this.dataset.id)" data-id="'+d.id+'" class="dept-card" style="background:#fff;border-radius:16px;border:1.5px solid #E7F0F2;padding:16px;cursor:pointer;transition:all .15s;display:block;width:100%">'
         +'<div style="display:flex;justify-content:space-between;margin-bottom:12px">'
-        +'<div style="width:36px;height:36px;border-radius:10px;background:#FFF1E4;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
+        +'<div style="width:36px;height:36px;border-radius:10px;background:#E4F2F0;display:grid;place-items:center">'+ic('dept','w-4 h-4 text-brand-600')+'</div>'
         +((can('departments','edit')||can('departments','delete'))?'<div style="display:flex;gap:4px" onclick="event.stopPropagation()">'+(can('departments','edit')?'<button onclick="App.editDept(this.dataset.id)" data-id="'+d.id+'" style="width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:#90A5AB;border:none;background:transparent;cursor:pointer">'+ic('edit','w-3.5 h-3.5')+'</button>':'')+(can('departments','delete')?'<button onclick="App.delDept(this.dataset.id)" data-id="'+d.id+'" style="width:28px;height:28px;display:grid;place-items:center;border-radius:7px;color:#90A5AB;border:none;background:transparent;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'</div>':'')
         +'</div>'
         +'<div class="fd" style="font-size:15px;font-weight:800;margin-bottom:6px">'+esc(d.name)+'</div>'
         +'<div style="display:flex;gap:12px;font-size:12px;color:#90A5AB">'
         +'<span><b style="color:#10262E">'+us.length+'</b> users</span>'
         +'<span><b style="color:#10262E">'+cls.length+'</b> checklists</span>'+(subDepts(d.id).length?'<span><b style="color:#10262E">'+subDepts(d.id).length+'</b> sub-depts</span>':'')
-        +(docs||folders?'<span><b style="color:#FF7F11">'+(folders+' folders, '+docs+' files')+'</b></span>':'')
+        +(docs||folders?'<span><b style="color:#0F766E">'+(folders+' folders, '+docs+' files')+'</b></span>':'')
         +'</div>'
         +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'
         +'<div style="display:flex;-space-x-1.5">'+us.slice(0,5).map(u=>'<div style="border-radius:50%;ring:2px solid #fff;margin-right:-6px">'+avatar(u,'w-6 h-6','text-[9px]')+'</div>').join('')+'</div>'
-        +'<span style="font-size:11px;font-weight:600;color:#FF7F11">Open →</span>'
+        +'<span style="font-size:11px;font-weight:600;color:#0F766E">Open →</span>'
         +'</div></div>';
     }).join('')
     +(topDepts().length?'':empty('dept','No departments','Create your first department.'))
@@ -327,7 +327,7 @@ function locsPage(){
     return'<div class="fade">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
       +'<button onclick="App._closeLoc()" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #E7F0F2;background:#fff;cursor:pointer;display:grid;place-items:center;color:#5E767D">'+ic('back','w-4 h-4')+'</button>'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:#EAF2FE;display:grid;place-items:center">'+ic('pin','w-4 h-4')+'</div>'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:#E6F3F1;display:grid;place-items:center">'+ic('pin','w-4 h-4')+'</div>'
       +'<div style="flex:1"><div class="fd" style="font-size:16px;font-weight:800">'+esc(l.name)+'</div>'
       +'<div style="font-size:12px;color:#90A5AB">'+esc(l.address||'No address')+'</div></div>'
       +chip(l.status||'Active')
@@ -364,11 +364,11 @@ function locsPage(){
       const folders=(DB.folders||[]).filter(x=>x.type==='loc'&&x.scope===l.id&&!x.parentId).length;
       return'<div onclick="App._openLoc(this.dataset.id)" data-id="'+l.id+'" class="loc-card" style="background:#fff;border-radius:16px;border:1.5px solid #E7F0F2;padding:16px;cursor:pointer;transition:all .15s;display:block;width:100%">'
         +'<div style="display:flex;justify-content:space-between;margin-bottom:12px">'
-        +'<div style="width:36px;height:36px;border-radius:10px;background:#EAF2FE;display:grid;place-items:center">'+ic('pin','w-4 h-4')+'</div>'
+        +'<div style="width:36px;height:36px;border-radius:10px;background:#E6F3F1;display:grid;place-items:center">'+ic('pin','w-4 h-4')+'</div>'
         +chip(l.status||'Active')+'</div>'
         +'<div class="fd" style="font-size:15px;font-weight:800;margin-bottom:4px">'+esc(l.name)+'</div>'
         +'<div style="font-size:12px;color:#90A5AB;margin-bottom:8px">'+esc(l.address||l.department||'')+'</div>'
-        +(docs||folders?'<div style="font-size:11px;font-weight:600;color:#2680EB;margin-bottom:8px">'+folders+' folders · '+docs+' files</div>':'')
+        +(docs||folders?'<div style="font-size:11px;font-weight:600;color:#18948C;margin-bottom:8px">'+folders+' folders · '+docs+' files</div>':'')
         +'<div style="font-size:11px;font-weight:600;color:#5E767D;text-align:right">Open →</div>'
         +'</div>';
     }).join('')
@@ -391,8 +391,8 @@ const Q_TYPES=[
   {id:'yesno',    label:'Yes / No',    desc:'Yes or No response'},
   {id:'tick',     label:'Tick / Cross',desc:'Done or Not done'},
 ];
-const Q_TYPE_CLR={answer:'#5B45D6',number:'#0A6394',passfail:'#16A34A',yesno:'#C08400',tick:'#FF7F11'};
-const Q_TYPE_BG ={answer:'#F0EDFE',number:'#E2F2FC',passfail:'#DCF7E4',yesno:'#FDF6CE',tick:'#FFF1E4'};
+const Q_TYPE_CLR={answer:'#8A6E14',number:'#0B6660',passfail:'#16A34A',yesno:'#C08400',tick:'#0F766E'};
+const Q_TYPE_BG ={answer:'#F5EBCC',number:'#E3F1EF',passfail:'#DCF7E4',yesno:'#FDF6CE',tick:'#E4F2F0'};
 const NUM_CONDITIONS=[
   {id:'lt',     label:'Less than'},
   {id:'lte',    label:'Less than or equal'},

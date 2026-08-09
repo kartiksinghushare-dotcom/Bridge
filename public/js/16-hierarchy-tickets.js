@@ -17,9 +17,9 @@ function _tNode(u,d){
   // Tag comes from the ASSIGNED ROLE (Access Control role profiles) — not the legacy base role.
   const rp=(typeof _roleOf==='function')?_roleOf(u):null;
   const tag=rp?.id==='superadmin'?['SUPER ADMIN','#10262E','#fff']
-    :rp?.id==='admin'?['ADMIN','#F0EDFE','#5B45D6']
-    :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#E2F2FC','#0A6394']
-    :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F5F1FE','#6D28D9']
+    :rp?.id==='admin'?['ADMIN','#F5EBCC','#8A6E14']
+    :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#E3F1EF','#0B6660']
+    :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F5F1FE','#8A6E14']
     :null;
   const card=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px 14px;box-shadow:var(--sh-xs);min-width:118px;max-width:170px;position:relative">
       ${avatar(u,'w-9 h-9','text-[11px]')}
@@ -107,7 +107,7 @@ function ticketsPage(){
           '<div style="font-size:14px;font-weight:700;color:#10262E;margin-bottom:4px">'+esc(t.title)+'</div>'+
           '<div style="font-size:12px;color:#5E767D;line-height:1.5;white-space:pre-wrap">'+esc(t.description)+'</div>'+
           ((t.occurrences||[]).length?'<div style="margin-top:7px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#8A5F00;background:#FEFAEC;border:1px solid #FBE6A6;border-radius:8px;padding:3px 9px" title="'+esc((t.occurrences||[]).map(o=>fmtS(o.date||'')).join(', '))+'">\u{1F501} Reoccurred '+(t.occurrences||[]).length+'\u00D7 — last '+esc(fmtS((((t.occurrences||[]).slice(-1)[0])||{}).date||t.date||''))+'</div>':'')+
-          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#0F7A45;background:#FFF1E4;border:1px solid #A7EBC2;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
+          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#0F7A45;background:#E4F2F0;border:1px solid #A7EBC2;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
           // Show photo from the linked submission's question response
           (()=>{
             if(!t.questionId||!t.submitterId||!t.date)return'';
@@ -142,9 +142,9 @@ function ticketsPage(){
     hdr('Tickets','Escalation tickets from checklist responses')+
     // Stats row — tap a card to filter by that status (Clear resets)
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
-      statCard('Open',open,'#FF7F11',"App._tkFilter('status','Open')")+
-      statCard('In Progress',inprog,'#2680EB',"App._tkFilter('status','In Progress')")+
-      statCard('Resolved',resolved,'#FF7F11',"App._tkFilter('status','Resolved')")+
+      statCard('Open',open,'#0F766E',"App._tkFilter('status','Open')")+
+      statCard('In Progress',inprog,'#18948C',"App._tkFilter('status','In Progress')")+
+      statCard('Resolved',resolved,'#0F766E',"App._tkFilter('status','Resolved')")+
     '</div>'+
     // R12 Filters: search · assignee · priority · sort (+ Clear), status pills below (one-line scroll)
     (()=>{
@@ -182,7 +182,7 @@ App._showTeamStat=(uid,type)=>{
     rows=cls.map(c=>{
       const today=todayISO();
       const isOn=clOn(c,today);
-      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F1F7F8">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#90A5AB;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1E4;color:#C25A00">Active today</span>':'<span style="font-size:11px;color:#C9D9DD">Not today</span>')        +'</div>';
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F1F7F8">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#90A5AB;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B6660">Active today</span>':'<span style="font-size:11px;color:#C9D9DD">Not today</span>')        +'</div>';
     }).join('');
   } else if(type==='late'){
     title='Late submissions — '+esc(fullName(u));
@@ -231,7 +231,7 @@ App._resolveTicket=(id)=>{
     <textarea id="tk-note" rows="3" placeholder="What was done to resolve this?" style="width:100%;border:1.5px solid #DFEAEC;border-radius:10px;padding:10px;font-size:13px;resize:none;outline:none;box-sizing:border-box"></textarea>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #DFEAEC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#FF7F11;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
+      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#0F766E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
     </div>
   </div>`,'max-w-sm');
 };
@@ -283,10 +283,10 @@ App._delTicket=async(id)=>{
 
 // ── Analytics clickable stat card ──
 App._aStatCard=(label,val,color,type,data)=>{
-  const colMap={sky:'#12A3E0',brand:'#FF7F11',rose:'#EF4444',orange:'#FF7F11'};
+  const colMap={sky:'#22A79C',brand:'#0F766E',rose:'#EF4444',orange:'#0F766E'};
   const c=colMap[color]||color;
   return`<div onclick="App._aStatDrill('${type}')" style="background:#fff;border-radius:16px;border:1.5px solid #DFEAEC;padding:16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${c}';this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseout="this.style.borderColor='#DFEAEC';this.style.boxShadow=''">`
-  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#90A5AB;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#FF7F11;margin-top:6px">View details →</div></div>`;
+  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#90A5AB;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#0F766E;margin-top:6px">View details →</div></div>`;
 };
 
 App._aStatDrill=(type)=>{
@@ -358,7 +358,7 @@ App._aStatDrill=(type)=>{
       });
     });
     title='Missed ('+missed.length+')';
-    rows=missed.slice(0,100).map(({u,c,dt})=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+esc(c.name)+(c.anyOne?' <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:#F0EDFE;color:#5B45D6">👥 Group</span>':'')+'</div><div style="font-size:11px;color:#90A5AB">'+(u?esc(fullName(u)):'No one in group completed')+' · '+fmtS(dt)+'</div></div><span style="font-size:11px;font-weight:700;color:#FF7F11;background:#FFF4EA;padding:2px 8px;border-radius:20px">Missed</span></div>').join('');
+    rows=missed.slice(0,100).map(({u,c,dt})=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+esc(c.name)+(c.anyOne?' <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:#F5EBCC;color:#8A6E14">👥 Group</span>':'')+'</div><div style="font-size:11px;color:#90A5AB">'+(u?esc(fullName(u)):'No one in group completed')+' · '+fmtS(dt)+'</div></div><span style="font-size:11px;font-weight:700;color:#8A5F00;background:#FEF5E0;padding:2px 8px;border-radius:20px">Missed</span></div>').join('');
     emptyMsg='No missed checklists in this period.';
   } else if(type==='compliant'||type==='noncompliant'){
     const want=type==='noncompliant';
@@ -371,7 +371,7 @@ App._aStatDrill=(type)=>{
       +'<div style="font-size:11px;color:#90A5AB;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+'</div></div>'
       +(want
         ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEEEEF;color:#C41E32">⚠ '+n+' escalated</span>'
-        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1E4;color:#C25A00">✓ Compliant</span>')
+        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B6660">✓ Compliant</span>')
       +'</div>';}).join('');
     emptyMsg=want?'No non-compliant submissions in this period — all clear.':'No compliant submissions in this period.';
   } else {

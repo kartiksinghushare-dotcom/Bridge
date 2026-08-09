@@ -70,7 +70,7 @@ function analyticsPage(){
     const txt=sel.length===0?'All':sel.length===1?getLabel(items.find(x=>getId(x)===sel[0])||items[0])||'?':sel.length+' selected';
     return`<div data-af="1" style="position:relative;flex:1;min-width:120px">
       <button data-af="1" type="button" onclick="S.afOpen=S.afOpen==='${key}'?null:'${key}';rr()"
-        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#FF8F33':sel.length?'#10262E':'#DFEAEC'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#10262E':'#90A5AB'};cursor:pointer">
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;border:1.5px solid ${isOpen?'#D4A72C':sel.length?'#10262E':'#DFEAEC'};border-radius:10px;padding:7px 12px;font-size:13px;font-weight:${sel.length?600:400};color:${sel.length?'#10262E':'#90A5AB'};cursor:pointer">
         <span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(label+(sel.length?': '+txt:''))}</span>
         <span style="color:#90A5AB;transform:rotate(${isOpen?180:0}deg);transition:transform .15s;flex-shrink:0">${ic('chevD','w-4 h-4')}</span>
       </button>
@@ -78,7 +78,7 @@ function analyticsPage(){
         ${sel.length?`<button data-af="1" onclick="delete S.filters['${key}'];rr()" style="width:100%;text-align:left;padding:6px 10px;font-size:12px;font-weight:600;color:#DE2440;background:none;border:none;cursor:pointer;border-radius:8px">Clear selection</button><div style="height:1px;background:#F1F7F8;margin:4px 0"></div>`:''}
         ${items.map(item=>{const id=getId(item);const nm=getLabel(item)||'?';const on=sel.includes(id);return`<button data-af="1" type="button" onclick="App._togF('${key}','${id}')"
           style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;background:${on?'#F2F9FA':'transparent'};text-align:left">
-          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#FF8F33':'#C9D9DD'};background:${on?'#FF8F33':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${on?'#D4A72C':'#C9D9DD'};background:${on?'#D4A72C':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
             ${on?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>`:''}
           </div>
           <span style="font-size:13px;font-weight:${on?600:400};color:${on?'#10262E':'#5E767D'}">${esc(nm)}</span>
@@ -119,7 +119,7 @@ function analyticsPage(){
   </div>
   <!-- Stats row 2: tickets (all clickable) -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
-    ${App._aStatCard('Tickets',aTickets.length,'#FF7F11','tickets',aTickets)}
+    ${App._aStatCard('Tickets',aTickets.length,'#0F766E','tickets',aTickets)}
     ${App._aStatCard('Open',tkOpen,'#E0A106','tkopen',aTickets.filter(t=>t.status==='Open'))}
     ${App._aStatCard('High Priority',tkHigh,'#DC2626','tkhigh',aTickets.filter(t=>t.priority==='High'||t.priority==='Critical'))}
     ${App._aStatCard('Resolved',tkResolved,'#2BBE71','tkresolved',aTickets.filter(t=>t.status==='Resolved'||t.status==='Closed'))}
@@ -140,7 +140,7 @@ function analyticsPage(){
       ${[['On Time','#2BBE71'],['Late','#D92D20'],['Pending Approval','#E0A106'],['Rejected','#951B1B']].map(([k,c])=>{const v=byS[k]||0;const pct=Math.round(v/tot*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${k}</span><span style="color:#90A5AB">${v} · ${pct}%</span></div><div style="height:5px;background:#F1F7F8;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${c};border-radius:3px"></div></div></div>`;}).join('')}
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F1F7F8">
         <div style="font-size:12px;font-weight:600;color:#90A5AB;margin-bottom:6px">MISSED (past, no submission)</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600;color:#FF7F11">${totalMissed} missed</span><span style="color:#90A5AB">of ${totalAssigned} assigned in period</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600;color:#0F766E">${totalMissed} missed</span><span style="color:#90A5AB">of ${totalAssigned} assigned in period</span></div>
       </div>
     </div>
     <div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;padding:18px">
@@ -165,8 +165,8 @@ function analyticsPage(){
         <td style="padding:9px 16px;color:#90A5AB;font-size:12px">${esc(c.department)}</td>
         <td style="padding:9px 16px;color:#90A5AB;font-size:12px;white-space:nowrap">${fmtS(s.date)}</td>
         <td style="padding:9px 16px">${chip(s.status)}</td>
-        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#FF7F11">${qCount}/${_qTot}</span>`:'<span style="color:#DFEAEC">—</span>'}</td>
-        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1E4;color:#C25A00;white-space:nowrap">✓</span>`):'<span style="color:#DFEAEC">—</span>'}</td>
+        <td style="padding:9px 16px">${qCount?`<span style="font-size:12px;font-weight:700;color:#0F766E">${qCount}/${_qTot}</span>`:'<span style="color:#DFEAEC">—</span>'}</td>
+        <td style="padding:9px 16px">${_qTot?(_esc>0?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ ${_esc}</span>`:`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B6660;white-space:nowrap">✓</span>`):'<span style="color:#DFEAEC">—</span>'}</td>
       </tr>`;}).join('')}</tbody>
     </table>${recent.length?'':empty('chart','No submissions match','Adjust filters or date range')}</div>
   </div></div>`;
@@ -199,17 +199,17 @@ App._userDrill=(uid)=>{
     +'</div>'
     // Score
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    +[['Submitted',tot,'#10262E'],['On time',onTime,'#C25A00'],['Late',late,'#DC2626'],['Pending',pending,'#FF7F11'],['Non-compliant',nonComp,'#C41E32'],['Answered',issues,'#FF7F11']].map(([l,v,c])=>'<div style="background:#F8FBFC;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#90A5AB;margin-top:2px">'+l+'</div></div>').join('')
+    +[['Submitted',tot,'#10262E'],['On time',onTime,'#0B6660'],['Late',late,'#DC2626'],['Pending',pending,'#0F766E'],['Non-compliant',nonComp,'#C41E32'],['Answered',issues,'#0F766E']].map(([l,v,c])=>'<div style="background:#F8FBFC;border-radius:12px;padding:12px;text-align:center"><div class="fd" style="font-size:22px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:11px;font-weight:600;color:#90A5AB;margin-top:2px">'+l+'</div></div>').join('')
     +'</div>'
     // Completion rate bar
     +'<div style="background:#F8FBFC;border-radius:12px;padding:12px;margin-bottom:16px">'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#C25A00':pct>=60?'#FF7F11':'#DC2626')+'">'+pct+'%</span></div>'
-    +'<div style="height:6px;background:#DFEAEC;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#C25A00':pct>=60?'#FF7F11':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px"><span>On-time rate (last 30d)</span><span style="color:'+(pct>=80?'#0B6660':pct>=60?'#0F766E':'#DC2626')+'">'+pct+'%</span></div>'
+    +'<div style="height:6px;background:#DFEAEC;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct>=80?'#0B6660':pct>=60?'#0F766E':'#DC2626')+';border-radius:3px;transition:width .5s"></div></div>'
     +'</div>'
     // Recent submissions
     +'<div class="fd" style="font-size:13px;font-weight:700;margin-bottom:8px">Recent submissions</div>'
     +(recent.length
-      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FFF1E4;color:#C25A00">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F1F7F8;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#90A5AB;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
+      ? recent.map(s=>{const c=clById(s.checklistId);const _esc=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _comp=(c&&(c.questionIds||[]).length)?(_esc>0?'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#FEEEEF;color:#C41E32;white-space:nowrap">⚠ '+_esc+'</span>':'<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:#E4F2F0;color:#0B6660">✓</span>'):'';return'<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F1F7F8;cursor:pointer" onclick="App._viewSubById(this.dataset.id)" data-id="'+s.id+'">'+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c?.name||'—')+'</div><div style="font-size:11px;color:#90A5AB;margin-top:1px">'+fmtS(s.date)+'</div></div>'+_comp+chip(s.status)+'</div>';}).join('')
       : '<p style="font-size:13px;color:#90A5AB">No submissions in last 30 days</p>'
     )
     +'</div>',

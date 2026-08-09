@@ -56,11 +56,11 @@ function profilePage(){
     return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
       +'<h3 class="fd font-semibold text-sm">Recent Feedback</h3>'
-      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#FF7F11;background:none;border:none;cursor:pointer">View all</button>'
+      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#0F766E;background:none;border:none;cursor:pointer">View all</button>'
       +'</div>'
       +myFb.map(fb=>{
         const mgr=uById(fb.managerId);
-        const stClr=fb.status==='Responded'?'#C25A00':fb.status==='Acknowledged'?'#12A3E0':'#2680EB';
+        const stClr=fb.status==='Responded'?'#0B6660':fb.status==='Acknowledged'?'#22A79C':'#18948C';
         return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #F1F7F8">'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:13px;font-weight:600">'+(fb.title||fb.type+' Feedback')+'</div>'
@@ -118,7 +118,7 @@ App._uploadDoc=()=>{
   openModal(
     '<div class="p-6">'
     +'<div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Upload file</h2><button onclick="App.closeModal()" class="text-ink-400">'+ic('x')+'</button></div>'
-    +'<div id="ud-dropzone" style="border:2px dashed #C9D9DD;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#FF7F11\';this.style.background=\'#F2FBF5\'" ondragleave="this.style.borderColor=\'#C9D9DD\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
+    +'<div id="ud-dropzone" style="border:2px dashed #C9D9DD;border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px" onclick="document.getElementById(\'ud-file\').click()" ondragover="event.preventDefault();this.style.borderColor=\'#0F766E\';this.style.background=\'#F2FBF5\'" ondragleave="this.style.borderColor=\'#C9D9DD\';this.style.background=\'transparent\'" ondrop="App._handleFileDrop(event)">'
     +'<div style="font-size:32px;margin-bottom:8px">📎</div>'
     +'<div style="font-size:14px;font-weight:600;color:#2F4C55">Click to browse or drag & drop</div>'
     +'<div style="font-size:12px;color:#90A5AB;margin-top:4px">PDF, Word, Excel, PowerPoint, Images — max 50MB</div>'
@@ -127,7 +127,7 @@ App._uploadDoc=()=>{
     +'<div id="ud-preview" style="display:none;margin-bottom:14px"></div>'
     +'<div id="ud-progress" style="display:none;margin-bottom:14px">'
     +'<div style="font-size:13px;font-weight:600;color:#2F4C55;margin-bottom:6px">Uploading…</div>'
-    +'<div style="height:6px;background:#F1F7F8;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#FF7F11;border-radius:3px;width:0%;transition:width .3s"></div></div>'
+    +'<div style="height:6px;background:#F1F7F8;border-radius:3px;overflow:hidden"><div id="ud-bar" style="height:100%;background:#0F766E;border-radius:3px;width:0%;transition:width .3s"></div></div>'
     +'</div>'
     +'<button id="ud-btn" onclick="App._doUpload()" style="width:100%;padding:12px;border-radius:12px;background:#10262E;color:#fff;font-weight:700;font-size:15px;border:none;cursor:pointer;display:none">Upload</button>'
     +'</div>',
@@ -463,10 +463,10 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('analytics')?'View Analytics'
     :ctaUrl.includes('okr')?'Open OKRs'
     :'Open Bridge';
-  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F6FAFB;font-family:sans-serif">
+  return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#FAF9F3;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #E7F0F2;overflow:hidden">
     <div style="background:#10262E;padding:20px 28px;display:flex;align-items:center;gap:10px">
-      <div style="width:28px;height:28px;border-radius:8px;background:#FF7F11;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
+      <div style="width:28px;height:28px;border-radius:8px;background:#0F766E;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff">B</div>
       <span style="font-weight:700;font-size:16px;color:#fff">${safeName}</span>
     </div>
     <div style="padding:28px">
@@ -688,7 +688,7 @@ function settingsPage(){
     ${EMAIL_EVENTS.map(ev=>{
       const tpl={...(defaults[ev.key]||{}), ...(ns.templates?.[ev.key]||{})};
       const open=expandedTpl===ev.key;
-      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#FF7F11':'#E7F0F2'};overflow:hidden;transition:border-color .15s">
+      return`<div style="background:#fff;border-radius:14px;border:1.5px solid ${open?'#0F766E':'#E7F0F2'};overflow:hidden;transition:border-color .15s">
         <button onclick="S.filters.tplKey='${open?'':ev.key}';rr()"
           style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:transparent;border:none;cursor:pointer;text-align:left">
           <div>
@@ -696,7 +696,7 @@ function settingsPage(){
             <div style="font-size:11px;color:#93A6AC;margin-top:1px">${ev.vars}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FFF1E4;color:#0B5F37">Custom</span>`:''}
+            ${(ns.templates?.[ev.key])?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B5F37">Custom</span>`:''}
             <span style="color:#93A6AC;font-size:16px">${open?'▲':'▼'}</span>
           </div>
         </button>
@@ -745,7 +745,7 @@ function settingsPage(){
       <h3 class="fd font-semibold text-sm mb-3">Export & Reset</h3>
       <div class="flex gap-3 flex-wrap">
         ${btnG('Export CSV','App._exportCSV()','download')}
-        <button onclick="App._clearOperational()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FFD9B8;color:#B85200;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#FFF4EA'" onmouseout="this.style.background='#fff'">🧹 Clear data</button>
+        <button onclick="App._clearOperational()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FFD9B8;color:#0B6660;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#F6F1E1'" onmouseout="this.style.background='#fff'">🧹 Clear data</button>
         <button onclick="App._resetWorkspaceCache()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #FBCDCD;color:#C41E32;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#FEEEEF'" onmouseout="this.style.background='#fff'">Reset workspace</button>
       </div>
     </div>

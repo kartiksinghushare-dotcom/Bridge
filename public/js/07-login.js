@@ -6,19 +6,19 @@
 /* ===== LOGIN ===== */
 function loginView(){return`<div class="min-h-screen flex" style="background:var(--c-bg)">
   <div class="hidden lg:flex flex-col justify-between" style="width:44%;background:#10262E;color:#fff;padding:56px;position:relative;overflow:hidden">
-    <div style="position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,154,104,.28),transparent 70%);filter:blur(40px)"></div>
-    <div style="position:absolute;left:-80px;bottom:-100px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(255,154,104,.18),transparent 70%);filter:blur(50px)"></div>
-    <div class="relative" style="display:flex;flex-direction:column;gap:6px"><span class="fd" style="font-size:21px;font-weight:600;letter-spacing:.42em;color:#fff">BRIDGE</span><span style="font-size:10.5px;font-weight:600;letter-spacing:.34em;color:#FF9A68">BY BLOOMINGBOX</span></div>
-    <div class="relative"><h1 class="fd" style="font-size:33px;font-weight:500;line-height:1.32;letter-spacing:.07em">EVERY SHIFT,<br>EVERY CHECK,<br><span style="color:#FF9A68">ACCOUNTED FOR.</span></h1><div style="width:56px;height:1px;background:#FF9A68;margin-top:22px"></div><p style="color:rgba(255,255,255,.6);margin-top:20px;line-height:1.7;font-size:14px;max-width:380px;font-weight:300">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
+    <div style="position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(44,177,166,.28),transparent 70%);filter:blur(40px)"></div>
+    <div style="position:absolute;left:-80px;bottom:-100px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(44,177,166,.18),transparent 70%);filter:blur(50px)"></div>
+    <div class="relative" style="display:flex;flex-direction:column;gap:6px"><span class="fd" style="font-size:21px;font-weight:600;letter-spacing:.42em;color:#fff">BRIDGE</span><span style="font-size:10.5px;font-weight:600;letter-spacing:.34em;color:#2CB1A6">BY BLOOMINGBOX</span></div>
+    <div class="relative"><h1 class="fd" style="font-size:33px;font-weight:500;line-height:1.32;letter-spacing:.07em">EVERY SHIFT,<br>EVERY CHECK,<br><span style="color:#2CB1A6">ACCOUNTED FOR.</span></h1><div style="width:56px;height:1px;background:#C9A227;margin-top:22px"></div><p style="color:rgba(255,255,255,.6);margin-top:20px;line-height:1.7;font-size:14px;max-width:380px;font-weight:300">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
       <div style="display:flex;gap:24px;margin-top:34px">
-        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#FF9A68">CHECKLISTS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">every shift covered</div></div>
-        <div style="width:1px;background:rgba(255,154,104,.25)"></div>
-        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#FF9A68">APPROVALS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">one unified inbox</div></div>
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#2CB1A6">CHECKLISTS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">every shift covered</div></div>
+        <div style="width:1px;background:rgba(44,177,166,.25)"></div>
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#2CB1A6">APPROVALS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">one unified inbox</div></div>
       </div></div>
     <div style="font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.35)">© 2026 BLOOMINGBOX</div>
   </div>
   <div class="flex-1 flex items-center justify-center p-6"><div class="w-full max-w-sm fade">
-    <div class="lg:hidden flex flex-col items-center gap-1 mb-8"><span class="fd" style="font-size:17px;font-weight:600;letter-spacing:.4em;color:var(--c-ink)">BRIDGE</span><span style="font-size:9px;font-weight:600;letter-spacing:.3em;color:#FF7F11">BY BLOOMINGBOX</span></div>
+    <div class="lg:hidden flex flex-col items-center gap-1 mb-8"><span class="fd" style="font-size:17px;font-weight:600;letter-spacing:.4em;color:var(--c-ink)">BRIDGE</span><span style="font-size:9px;font-weight:600;letter-spacing:.3em;color:#0F766E">BY BLOOMINGBOX</span></div>
     <h2 class="fd" style="font-size:26px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px">Welcome back</h2>
     <p style="color:var(--c-text-2);font-size:14px;margin-bottom:24px">Sign in to your workspace.</p>
     <div style="display:flex;flex-direction:column;gap:14px">

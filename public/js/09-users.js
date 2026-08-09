@@ -18,10 +18,10 @@ function _uRoleChip(u){
   const rp=id?(DB.roleProfiles||{})[id]:null;
   if(!rp)return'<span class="text-xs text-ink-300">No role</span>';
   const st=id==='superadmin'?'background:#10262E;color:#fff'
-    :id==='admin'?'background:#F0EDFE;color:#5B45D6'
-    :id==='manager'?'background:#E2F2FC;color:#0A6394'
+    :id==='admin'?'background:#F5EBCC;color:#8A6E14'
+    :id==='manager'?'background:#E3F1EF;color:#0B6660'
     :id==='basic'?'background:#F1F7F8;color:#46626A'
-    :'background:#F5F1FE;color:#6D28D9';
+    :'background:#F5F1FE;color:#8A6E14';
   return`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;${st}">${esc(rp.name)}</span>`;
 }
 const _uIsSuperAdmin=u=>!!u&&(u.hrm?.roleProfileId==='superadmin'||u.role==='Admin');
@@ -65,7 +65,7 @@ function usersPage(){
   ${bulkBar}
   <div class="hidden md:block bg-white rounded-2xl border border-ink-100 shadow-soft overflow-hidden">
     <table class="w-full text-sm"><thead><tr class="text-[10px] text-ink-400 uppercase tracking-wide border-b border-ink-100 text-left">${canBulk?`<th class="px-4 py-3" style="width:34px">${cbx(allSel,'App._uSelAll()','Select all shown')}</th>`:''}<th class="px-5 py-3 font-semibold">Name</th><th class="px-5 py-3 font-semibold">Department</th><th class="px-5 py-3 font-semibold">Role</th><th class="px-5 py-3 font-semibold">Reports to</th><th class="px-5 py-3 font-semibold">Status</th><th class="px-5 py-3"></th></tr></thead>
-    <tbody class="divide-y divide-ink-50">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<tr class="hover:bg-ink-50/50"${on?' style="background:#F2F7FE"':''}>${canBulk?`<td class="px-4 py-3">${cbx(on,`App._uSelTog('${u.id}')`)}</td>`:''}<td class="px-5 py-3"><div class="flex items-center gap-3">${avatar(u,'w-9 h-9','text-xs')}<div><div class="font-semibold">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.email)}</div></div></div></td><td class="px-5 py-3">${esc(u.department)}<div class="text-xs text-ink-400">${esc(u.position)}</div></td><td class="px-5 py-3">${_uRoleChip(u)}</td><td class="px-5 py-3 text-sm">${mgr?esc(fullName(mgr)):'<span class="text-ink-300">—</span>'}</td><td class="px-5 py-3">${chip(u.status)}</td><td class="px-5 py-3"><div class="flex gap-1 justify-end">${(can('employees','edit')||can('employees','resetPassword')||can('employees','deactivate')||can('employees','delete'))?`${can('employees','edit')?`<button onclick="App.editUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'">${ic('edit','w-4 h-4')}</button>`:''}${can('employees','resetPassword')?`<button onclick="App.resetPw('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'" title="Reset password">${ic('key','w-4 h-4')}</button>`:''}${can('employees','deactivate')?_disableBtn(u):''}${(!_uIsSuperAdmin(u)&&can('employees','delete'))?`<button onclick="App.delUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FEEEEF';this.style.color='#C41E32'" onmouseout="this.style.background='transparent';this.style.color='#90A5AB'">${ic('trash','w-4 h-4')}</button>`:''}`:'<span class="text-ink-200">—</span>'}</div></td></tr>`;}).join('')}</tbody></table>
+    <tbody class="divide-y divide-ink-50">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<tr class="hover:bg-ink-50/50"${on?' style="background:#F0F6F1"':''}>${canBulk?`<td class="px-4 py-3">${cbx(on,`App._uSelTog('${u.id}')`)}</td>`:''}<td class="px-5 py-3"><div class="flex items-center gap-3">${avatar(u,'w-9 h-9','text-xs')}<div><div class="font-semibold">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.email)}</div></div></div></td><td class="px-5 py-3">${esc(u.department)}<div class="text-xs text-ink-400">${esc(u.position)}</div></td><td class="px-5 py-3">${_uRoleChip(u)}</td><td class="px-5 py-3 text-sm">${mgr?esc(fullName(mgr)):'<span class="text-ink-300">—</span>'}</td><td class="px-5 py-3">${chip(u.status)}</td><td class="px-5 py-3"><div class="flex gap-1 justify-end">${(can('employees','edit')||can('employees','resetPassword')||can('employees','deactivate')||can('employees','delete'))?`${can('employees','edit')?`<button onclick="App.editUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'">${ic('edit','w-4 h-4')}</button>`:''}${can('employees','resetPassword')?`<button onclick="App.resetPw('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'" title="Reset password">${ic('key','w-4 h-4')}</button>`:''}${can('employees','deactivate')?_disableBtn(u):''}${(!_uIsSuperAdmin(u)&&can('employees','delete'))?`<button onclick="App.delUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FEEEEF';this.style.color='#C41E32'" onmouseout="this.style.background='transparent';this.style.color='#90A5AB'">${ic('trash','w-4 h-4')}</button>`:''}`:'<span class="text-ink-200">—</span>'}</div></td></tr>`;}).join('')}</tbody></table>
     ${list.length?'':empty('users','No users','')}
   </div>
   <div class="md:hidden space-y-2">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4" style="${can('employees','edit')?'cursor:pointer;':''}${on?'border-color:#10262E':''}"${can('employees','edit')?` onclick="App.editUser('${u.id}')"`:''}>
@@ -221,7 +221,7 @@ App.editUser=(id=null)=>{
     <div class="grid grid-cols-2 gap-3">${fld('Position','u-pos',v('position'))}${selF('Department','u-dep',topDepts().map(d=>d.name),u?.department||'')}</div>
     <div class="grid grid-cols-2 gap-3">${selF('Status','u-status',['Active','Inactive'],u?.status||'Active')}<div><label for="u-mgr" class="block text-xs font-semibold text-ink-500 mb-1">Reports to</label><select id="u-mgr" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"><option value="">— None —</option>${mgrOpts.map(m=>`<option value="${m.id}"${u?.managerId===m.id?' selected':''}>${esc(fullName(m))}</option>`).join('')}</select></div></div>
     ${!u?fld('Password','u-pw','','password','Set a password'):''}
-    <div class="bg-ink-50 rounded-2xl p-4"><p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide mb-2">Notifications</p>${mkTog('u-email',u?.emailEnabled??true,'Receive email notifications')}</div>
+    <div class="bg-ink-50 rounded-2xl p-4"><p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide mb-2">Notifications</p>${mkTog('u-emailnotif',u?.emailEnabled??true,'Receive email notifications')}</div>
     <div style="font-size:11.5px;color:var(--c-text-3);background:var(--c-surface-2);border:1px dashed var(--c-border-2);border-radius:10px;padding:9px 12px">🛡️ Role, tab access, document permissions and submission rules are managed in <b>Access Control</b>.</div>
   </div>
   <div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button id="save-user-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=this.textContent==='Save'?'Saving…':'Creating…';App.saveUser('${id||''}').catch(()=>{}).finally(()=>{const b=document.getElementById('save-user-btn');if(b){b.disabled=false;b.textContent='${u?'Save':'Create'}';}})" style="flex:1;padding:12px;border-radius:12px;background:#10262E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${u?'Save':'Create'}</button></div>
@@ -258,7 +258,7 @@ App.saveUser=async(id)=>{
   const _ex=id?uById(id):null;
   const docAccess=_ex?(_ex.docAccess||{departments:{},locations:{}}):{departments:{},locations:{}};
   const questionsAccess=_ex?(_ex.questionsAccess??false):false;
-  const emailEnabled=togV('u-email');
+  const emailEnabled=togV('u-emailnotif');
   const rules=_ex?(_ex.rules||{past:true,future:true,edit:true}):{past:true,future:true,edit:true};
   const approval_settings=_ex?(_ex.approval||{past:false,future:false,edited:false}):{past:false,future:false,edited:false};
 
@@ -475,7 +475,7 @@ function _uImpPickHTML(){
       ${btn('Download template','App._usersTemplate()',{variant:'ghost',icon:'download'})}
       <span style="font-size:11.5px;color:var(--c-text-3)">Fill it in Excel, then drop it below (.xlsx or .csv)</span>
     </div>
-    <div onclick="document.getElementById('uimp-file').click()" ondragover="event.preventDefault();this.style.borderColor='#FF7F11'" ondragleave="this.style.borderColor='var(--c-border-2)'" ondrop="event.preventDefault();this.style.borderColor='var(--c-border-2)';App._uImpFile({files:event.dataTransfer.files})" style="border:2px dashed var(--c-border-2);border-radius:16px;padding:34px;text-align:center;cursor:pointer;transition:border-color .15s">
+    <div onclick="document.getElementById('uimp-file').click()" ondragover="event.preventDefault();this.style.borderColor='#0F766E'" ondragleave="this.style.borderColor='var(--c-border-2)'" ondrop="event.preventDefault();this.style.borderColor='var(--c-border-2)';App._uImpFile({files:event.dataTransfer.files})" style="border:2px dashed var(--c-border-2);border-radius:16px;padding:34px;text-align:center;cursor:pointer;transition:border-color .15s">
       <div style="font-size:30px;margin-bottom:8px">📄</div>
       <div style="font-size:14px;font-weight:700;color:var(--c-text)">Click to browse or drag &amp; drop</div>
       <div style="font-size:12px;color:var(--c-text-3);margin-top:4px">.xlsx or .csv — same columns as the template</div>
@@ -587,7 +587,7 @@ App._uImpRun=async()=>{
   const body=document.getElementById('uimp-body');if(!body)return;
   body.innerHTML=`<div style="padding:10px 0">
     <div style="font-size:13.5px;font-weight:800;color:var(--c-text);margin-bottom:10px">Creating ${rows.length} user${rows.length===1?'':'s'}…</div>
-    <div style="height:7px;background:var(--c-surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px"><div id="uimp-bar" style="height:100%;width:0%;background:#FF7F11;border-radius:4px;transition:width .25s"></div></div>
+    <div style="height:7px;background:var(--c-surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px"><div id="uimp-bar" style="height:100%;width:0%;background:#0F766E;border-radius:4px;transition:width .25s"></div></div>
     <div id="uimp-live" style="max-height:260px;overflow-y:auto;font-size:12px;color:var(--c-text-2)"></div>
     <div style="font-size:11px;color:var(--c-text-3);margin-top:10px">Keep this window open — each row creates a real login account.</div>
   </div>`;

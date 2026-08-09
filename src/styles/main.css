@@ -1,15 +1,15 @@
 /* ─ Bridge base ─ */
 html,body{height:100%}
-body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;background:#F6FAFB;color:#10262E;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;background:#FAF9F3;color:#10262E;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 .fd{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#CBDBDF;border-radius:4px}
 .fade{animation:fd .22s ease}@keyframes fd{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 input,select,textarea{outline:none}
-.rf:focus{box-shadow:0 0 0 3px rgba(255,127,17,.15);border-color:#FF8F33!important}
+.rf:focus{box-shadow:0 0 0 3px rgba(15,118,110,.15);border-color:#D4A72C!important}
 /* Toggles */
 .tog{position:relative;width:36px;height:22px;border-radius:11px;transition:background .15s;cursor:pointer;border:none;flex-shrink:0}
 .tog span{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.tog.on{background:#FF8F33}.tog.on span{transform:translateX(14px)}
+.tog.on{background:#D4A72C}.tog.on span{transform:translateX(14px)}
 /* Calendar strip */
 .cal4{background:#fff;border-radius:18px;border:1px solid #E8F1F3;display:flex;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .cal4-d{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;transition:background .12s;border:none;background:transparent;gap:2px}
@@ -38,25 +38,25 @@ input,select,textarea{outline:none}
 
 /* iz / issue-zone (legacy, kept for compatibility) */
 .bg-ink-100{background:#E7F0F2!important}.bg-ink-200{background:#CBDBDF!important}
-.fld-card:hover{border-color:#FF7F11!important;box-shadow:0 2px 12px rgba(255,127,17,.1)}
-.team-card-hover:hover{border-color:#FF7F11!important;box-shadow:0 4px 16px rgba(255,127,17,.12)!important}
-.dept-card:hover{border-color:#FF7F11!important;box-shadow:0 4px 16px rgba(255,127,17,.1)}
-.loc-card:hover{border-color:#2680EB!important;box-shadow:0 4px 16px rgba(38,128,235,.1)}
+.fld-card:hover{border-color:#0F766E!important;box-shadow:0 2px 12px rgba(15,118,110,.1)}
+.team-card-hover:hover{border-color:#0F766E!important;box-shadow:0 4px 16px rgba(15,118,110,.12)!important}
+.dept-card:hover{border-color:#0F766E!important;box-shadow:0 4px 16px rgba(15,118,110,.1)}
+.loc-card:hover{border-color:#18948C!important;box-shadow:0 4px 16px rgba(38,128,235,.1)}
 .shadow-soft{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04)}
 /* Progress bar — used in admin dashboard department performance */
 .pg{height:6px;background:#E7F0F2;border-radius:3px;overflow:hidden}
-.pgf{height:100%;background:#FF7F11;border-radius:3px;transition:width .3s}
+.pgf{height:100%;background:#0F766E;border-radius:3px;transition:width .3s}
 
 .text-ink-300{color:#9DB1B6!important}.text-ink-400{color:#5E767D!important}.text-ink-500{color:#35545C!important}
 .text-ink-600{color:#234049!important}
 .border-ink-100{border-color:#E7F0F2!important}.border-ink-200{border-color:#CBDBDF!important}
-.bg-brand-50{background:#FFF1E4!important}
-.text-brand-600{color:#FF8F33!important}.text-brand-700{color:#C25A00!important}
+.bg-brand-50{background:#E4F2F0!important}
+.text-brand-600{color:#D4A72C!important}.text-brand-700{color:#0B6660!important}
 .text-emerald-700{color:#0F7A45!important}
 .text-amber-700{color:#8A5F00!important}
 .text-rose-700{color:#C41E32!important}
-.text-orange-700{color:#B85200!important}
-.bg-sky-50{background:#F0F8FE!important}.text-sky-700{color:#0A6394!important}
+.text-orange-700{color:#0B6660!important}
+.bg-sky-50{background:#EEF6F0!important}.text-sky-700{color:#0B6660!important}
 
 @media(min-width:768px){#main-wrap{margin-left:224px!important}}
 
@@ -88,13 +88,13 @@ input,select,textarea{outline:none}
 /* Checklist card */
 .clc{border-radius:18px;overflow:hidden;border:1px solid #E4EDEF;background:#fff;transition:box-shadow .2s}
 .clc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;border:none;background:transparent;width:100%;gap:10px}
-.clc-hdr:active{background:#F6FAFB}
+.clc-hdr:active{background:#FAF9F3}
 /* Status styles */
 .st-on{background:#E8F7EE;color:#0F7A45}
 .st-late{background:#FEECEC;color:#CC2A2A}
 .st-pend{background:#FEF5E0;color:#8A5F00}
 .st-sub{background:#E8F7EE;color:#0F7A45}
-.st-pa{background:#FFF1E4;color:#B85200}
+.st-pa{background:#E4F2F0;color:#0B6660}
 /* Task row — THE KEY ELEMENT */
 
  /* positive active */
@@ -102,7 +102,7 @@ input,select,textarea{outline:none}
 /* Small icon button */
 
 /* Footer strip */
-.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F1F7F8;gap:10px;background:#F6FAFB}
+.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F1F7F8;gap:10px;background:#FAF9F3}
 .submit-pill{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
 .submit-pill.go{background:#10262E;color:#fff}.submit-pill.go:hover{background:#000;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .submit-pill.no{background:#E4EDEF;color:#B9CBCF;cursor:default}
@@ -129,19 +129,19 @@ button:active{opacity:.75;transform:scale(.97);transition:transform .1s}
 .stat-card-click:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)!important}
 .stat-card-click:active{transform:scale(.98);opacity:.9}
 /* ════════════ UI POLISH LAYER (v2) ════════════ */
-:root{--brand:#FF7F11;--brand-d:#C25A00;--ring:rgba(255,127,17,.18)}
+:root{--brand:#0F766E;--brand-d:#0B6660;--ring:rgba(15,118,110,.18)}
 *{ -webkit-tap-highlight-color:transparent }
 button{transition:transform .12s ease,opacity .12s ease,box-shadow .15s ease,background .15s ease,color .15s ease}
 button:active{opacity:.85;transform:scale(.97)}
 a,button,select,input,textarea,label[onclick],[onclick]{transition:all .14s ease}
 /* Inputs — consistent, refined focus */
 input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
-input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(255,127,17,.18);border-color:var(--brand)!important}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(15,118,110,.18);border-color:var(--brand)!important}
 /* Cards lift gently on hover */
 .shadow-soft{transition:box-shadow .2s ease,transform .2s ease,border-color .2s ease}
 .bg-white.rounded-2xl:hover, .bg-white.rounded-xl:hover{box-shadow:0 6px 22px -10px rgba(13,38,46,.20)}
 /* Primary button sheen */
-.btn-primary,button[style*="#FF7F11"],button[style*="#FF8F33"]{box-shadow:0 1px 2px rgba(194,90,0,.25),0 6px 16px -8px rgba(255,127,17,.45)}
+.btn-primary,button[style*="#0F766E"],button[style*="#D4A72C"]{box-shadow:0 1px 2px rgba(11,102,96,.25),0 6px 16px -8px rgba(15,118,110,.45)}
 /* Saving / busy buttons → spinner + disabled look */
 button[disabled]{cursor:not-allowed;opacity:.7}
 button[data-saving]{position:relative;color:transparent!important}
@@ -171,19 +171,19 @@ span[style*="border-radius:20px"],span[style*="border-radius:9999px"]{letter-spa
 button:focus-visible,a:focus-visible{outline-offset:3px;border-radius:8px}
 /* ════════════ VIBRANT THEME (v3) — modern & lively ════════════ */
 :root{
-  --g1:#FF7F11;--g2:#FF8F33;--g3:#FF9A68;
-  --grad-brand:linear-gradient(135deg,#FF8F33 0%,#FF7F11 55%,#C25A00 100%);
+  --g1:#0F766E;--g2:#D4A72C;--g3:#2CB1A6;
+  --grad-brand:linear-gradient(135deg,#D4A72C 0%,#0F766E 55%,#0B6660 100%);
   --grad-dark:linear-gradient(135deg,#123840 0%,#0A1B21 100%);
-  --grad-paper:radial-gradient(1200px 600px at 100% -10%,rgba(255,127,17,.09),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(0,194,199,.055),transparent 55%),linear-gradient(180deg,#F8FCFC 0%,#EFF7F8 100%);
+  --grad-paper:radial-gradient(1200px 600px at 100% -10%,rgba(15,118,110,.06),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(201,162,39,.05),transparent 55%),linear-gradient(180deg,#FCFBF6 0%,#F4F3EA 100%);
   --card-sh:0 1px 2px rgba(13,38,46,.04),0 10px 28px -14px rgba(13,38,46,.18);
-  --card-sh-hi:0 8px 22px -8px rgba(255,127,17,.22),0 18px 40px -16px rgba(13,38,46,.22);
+  --card-sh-hi:0 8px 22px -8px rgba(15,118,110,.22),0 18px 40px -16px rgba(13,38,46,.22);
 }
 /* App backdrop */
 body{background:var(--grad-paper)!important;background-attachment:fixed!important}
 /* Brand logo squares → gradient + glow (sidebar + topbar use .nav-brand) */
-.nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(255,127,17,.55);letter-spacing:-.5px}
-/* Sidebar → deep gradient with subtle inner glow */
-aside.sidebar{background-color:#0C222A!important;background-image:linear-gradient(180deg,#123840 0%,#10262E 60%,#0A1B21 100%)!important;border-right:1px solid rgba(255,255,255,.05)}
+.nav-brand{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--grad-brand);color:#fff;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:17px;box-shadow:0 6px 16px -4px rgba(15,118,110,.55);letter-spacing:-.5px}
+/* Sidebar → light cream panel */
+aside.sidebar{background-color:#FDFCF7!important;background-image:linear-gradient(180deg,#FFFFFF 0%,#F6F5EC 100%)!important;border-right:1px solid #E7E6DC}
 /* Page titles a touch larger + tighter */
 main#content h1.fd{letter-spacing:-.6px}
 /* ── Cards: more depth, bigger radius, lively hover lift ── */
@@ -211,12 +211,12 @@ button[style*="background:#10262E"]{
 }
 button[style*="background:#10262E"]:hover{filter:brightness(1.12)}
 /* ── Green buttons / pills → brand gradient ── */
-button[style*="background:#FF7F11"],
-button[style*="background:#FF8F33"],
+button[style*="background:#0F766E"],
+button[style*="background:#D4A72C"],
 .submit-pill.go,
 button[style*="background:#10262E"]{
   background:var(--grad-brand)!important;
-  box-shadow:0 2px 6px rgba(194,90,0,.30),0 10px 22px -10px rgba(255,127,17,.55)!important;
+  box-shadow:0 2px 6px rgba(11,102,96,.30),0 10px 22px -10px rgba(15,118,110,.55)!important;
 }
 .submit-pill.go:hover{filter:brightness(1.08)}
 /* ── Stat cards: vivid accent strip + bigger number ── */
@@ -237,7 +237,7 @@ span[style*="border-radius:20px"][style*="font-weight:700"]{
 }
 /* ── Progress bars → gradient fill ── */
 .pgf,
-[style*="background:#FF7F11"][style*="height:100%"]{
+[style*="background:#0F766E"][style*="height:100%"]{
   background:var(--grad-brand)!important;
 }
 /* ── Calendar selected day → gradient pop ── */
@@ -251,11 +251,11 @@ main#content input,main#content select,main#content textarea{border-radius:12px}
 /* Topbar glassy */
 header.topbar{background:rgba(246,250,251,.85)!important;backdrop-filter:blur(18px) saturate(140%)!important}
 /* Mobile bottom nav active accent */
-nav.md\:hidden button[style*="#FF7F11"]{position:relative}
+nav.md\:hidden button[style*="#0F766E"]{position:relative}
 /* Modal surface a touch warmer shadow */
 #modal>div{box-shadow:0 30px 90px -20px rgba(13,38,46,.45),0 10px 30px -12px rgba(13,38,46,.30)!important}
 /* Empty-state icons get a soft brand tint */
-main#content [style*="background:#F4F9FA"][style*="place-items:center"]{background:linear-gradient(135deg,#FFF1E4,#F2F9FA)!important}
+main#content [style*="background:#F4F9FA"][style*="place-items:center"]{background:linear-gradient(135deg,#E4F2F0,#F2F9FA)!important}
 /* Avatars: subtle ring */
 .rounded-full.grid.place-items-center{box-shadow:inset 0 0 0 1px rgba(0,0,0,.03)}
 /* Login hero panel richer */
@@ -269,15 +269,15 @@ button[title="Edit"],button[title="Duplicate"],button[title="Delete"]{
   background:#F1F7F8!important;color:#4E6970!important;
   border-radius:9px!important;
 }
-button[title="Edit"]:hover{background:#EAF2FE!important;color:#1257B5!important}
-button[title="Duplicate"]:hover{background:#EAF2FE!important;color:#2680EB!important}
+button[title="Edit"]:hover{background:#E6F3F1!important;color:#0C6B65!important}
+button[title="Duplicate"]:hover{background:#E6F3F1!important;color:#18948C!important}
 button[title="Delete"]:hover{background:#FEEEEF!important;color:#C41E32!important}
 /* Wrap the action-icon row in a subtle container so it reads as a group */
 .flex.gap-1{gap:6px}
 /* Dashboard: stop the left "Department performance" card stretching into empty space */
 main#content .grid.lg\:grid-cols-3>.lg\:col-span-2{align-self:start}
 /* Frequency badge on checklist cards — a touch more present */
-span.bg-brand-50.text-brand-700{background:#FFF1E4!important;color:#C25A00!important}
+span.bg-brand-50.text-brand-700{background:#E4F2F0!important;color:#0B6660!important}
 /* Stat-card label text slightly darker for legibility */
 main#content [style*="text-transform:uppercase"][style*="#90A5AB"]{color:#7C949B!important}
 /* Empty-state check icon container keeps brand tint already from v3; ensure contrast of helper copy */
@@ -286,8 +286,8 @@ main#content [style*="text-transform:uppercase"][style*="#90A5AB"]{color:#7C949B
 @media(min-width:768px){ main#content{padding:24px 28px 96px!important} }
 main#content h1.fd + p{ margin-top:3px }
 /* --- Sidebar: brand accent bar on the active item + smoother items --- */
-aside.sidebar nav button[style*="rgba(255,255,255,.12)"]{
-  position:relative; box-shadow:inset 3px 0 0 0 #FF9A68;
+aside.sidebar nav button[style*="rgba(15,118,110,.10)"]{
+  position:relative; box-shadow:inset 3px 0 0 0 #0F766E;
 }
 aside.sidebar nav button{ letter-spacing:.1px }
 /* --- Tables: header tint, row hover, legible action icons --- */
@@ -324,7 +324,7 @@ main#content [style*="border-radius:18px"][style*="border:1px solid #E4EDEF"]{ b
 /* --- Login screen hero: deepen the dark panel --- */
 .min-h-screen [style*="background:#10262E"]{ background:linear-gradient(160deg,#123840 0%,#10262E 70%)!important }
 /* --- Focus rings consistent on all controls --- */
-main#content input:focus,main#content select:focus,main#content textarea:focus{ box-shadow:0 0 0 3px rgba(255,127,17,.16)!important }
+main#content input:focus,main#content select:focus,main#content textarea:focus{ box-shadow:0 0 0 3px rgba(15,118,110,.16)!important }
 
 
 
@@ -353,10 +353,10 @@ main#content input:focus,main#content select:focus,main#content textarea:focus{ 
    Literals elsewhere in the file are legacy; new components reference these vars. */
 :root{
   /* surfaces / neutrals — clean, airy, faintly cool greys */
-  --c-bg:#F6FAFB;            /* app canvas */
+  --c-bg:#FAF9F3;            /* app canvas */
   --c-surface:#FFFFFF;       /* cards / sheets */
   --c-surface-2:#F0F6F7;     /* subtle raised / hover fills */
-  --c-paper:#F6FAFB;
+  --c-paper:#FAF9F3;
   --c-border:#E4EDEF;        /* hairline borders */
   --c-border-2:#D2E0E3;      /* stronger borders / inputs */
   /* ink / text */
@@ -366,13 +366,13 @@ main#content input:focus,main#content select:focus,main#content textarea:focus{ 
   --c-text-2:#5A7178;        /* secondary (AA on white) */
   --c-text-3:#5F777E;        /* muted captions */
   /* brand accent */
-  --c-brand:#FF7F11; --c-brand-hover:#C25A00; --c-brand-soft:#FFF1E4; --c-brand-ink:#8F4A05;
+  --c-brand:#0F766E; --c-brand-hover:#0B6660; --c-brand-soft:#E4F2F0; --c-brand-ink:#0A5A55;
   /* semantic */
   --c-success:#17A45C; --c-success-soft:#E8F7EE; --c-success-ink:#0F7A45;
   --c-warn:#C08400; --c-warn-soft:#FEF5E0; --c-warn-ink:#8A5F00;
   --c-danger:#DC2626; --c-danger-hover:#B91C1C; --c-danger-soft:#FEECEC; --c-danger-ink:#991B1B;
-  --c-info:#0A80C4; --c-info-soft:#E7F5FC; --c-info-ink:#0A557E;
-  --c-approve:#FF7F11;
+  --c-info:#128A84; --c-info-soft:#E6F4F2; --c-info-ink:#0B5F5A;
+  --c-approve:#0F766E;
   /* spacing scale */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
   /* radius — soft, modern */
@@ -387,7 +387,7 @@ main#content input:focus,main#content select:focus,main#content textarea:focus{ 
   /* type family — single Poppins family across the app (display + body) */
   --font-display:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;
   --font-sans:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;
-  --ring:0 0 0 3.5px rgba(255,127,17,.20);
+  --ring:0 0 0 3.5px rgba(15,118,110,.20);
 }
 /* ─ Bridge base ─ */
 html,body{height:100%}
@@ -403,8 +403,8 @@ body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font
 .ui-btn-sm{padding:7px 13px;min-height:34px;font-size:13px;border-radius:var(--r-sm)}
 .ui-btn-primary{background:var(--c-ink);color:#fff;box-shadow:0 1px 2px rgba(13,38,46,.16),0 2px 8px -2px rgba(13,38,46,.18)}
 .ui-btn-primary:hover{background:var(--c-ink-hover);box-shadow:0 2px 4px rgba(13,38,46,.2),0 6px 16px -4px rgba(13,38,46,.24)}
-.ui-btn-brand{background:var(--c-brand);color:#fff;box-shadow:0 1px 2px rgba(255,127,17,.25),0 4px 12px -3px rgba(255,127,17,.4)}
-.ui-btn-brand:hover{background:var(--c-brand-hover);box-shadow:0 2px 5px rgba(255,127,17,.3),0 8px 20px -4px rgba(255,127,17,.45)}
+.ui-btn-brand{background:var(--c-brand);color:#fff;box-shadow:0 1px 2px rgba(15,118,110,.25),0 4px 12px -3px rgba(15,118,110,.4)}
+.ui-btn-brand:hover{background:var(--c-brand-hover);box-shadow:0 2px 5px rgba(15,118,110,.3),0 8px 20px -4px rgba(15,118,110,.45)}
 .ui-btn-ghost{background:var(--c-surface);color:var(--c-text);border-color:var(--c-border-2)}
 .ui-btn-ghost:hover{background:var(--c-surface-2);border-color:var(--c-text-3)}
 .ui-btn-subtle{background:var(--c-surface-2);color:var(--c-text-2);border-color:transparent}
@@ -452,20 +452,20 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .ui-skel{background:linear-gradient(90deg,#EAF2F4 25%,#F3F8FA 37%,#EAF2F4 63%);background-size:400% 100%;animation:uiskel 1.3s ease infinite;border-radius:8px}
 @keyframes uiskel{0%{background-position:100% 0}100%{background-position:-100% 0}}
 /* Nav (sidebar) */
-.nav-item{position:relative;width:100%;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;border:none;cursor:pointer;transition:background .14s,color .14s;text-align:left;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.62);background:transparent}
-.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
-.nav-item.on{background:rgba(255,255,255,.1);color:#fff;font-weight:700}
+.nav-item{position:relative;width:100%;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;border:none;cursor:pointer;transition:background .14s,color .14s;text-align:left;font-size:13.5px;font-weight:600;color:#46626A;background:transparent}
+.nav-item:hover{background:rgba(15,118,110,.07);color:#10262E}
+.nav-item.on{background:rgba(15,118,110,.10);color:#0B4F4A;font-weight:700}
 .nav-item.on::before{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:3px;background:var(--c-brand)}
 .nav-item.on .nav-ico{color:var(--c-brand)}
-.nav-item:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
-.nav-ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(255,255,255,.55)}
-.nav-sec-hdr{width:100%;display:flex;align-items:center;gap:8px;padding:11px 12px 6px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,.42);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;transition:color .14s}
-.nav-sec-hdr:hover{color:rgba(255,255,255,.72)}
+.nav-item:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(15,118,110,.35)}
+.nav-ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C949B}
+.nav-sec-hdr{width:100%;display:flex;align-items:center;gap:8px;padding:11px 12px 6px;border:none;background:transparent;cursor:pointer;color:#8AA0A6;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;transition:color .14s}
+.nav-sec-hdr:hover{color:#4E6970}
 .nav-chev{margin-left:auto;transition:transform .2s ease}
 .nav-sec.collapsed .nav-chev{transform:rotate(-90deg)}
 .nav-sec.collapsed .nav-sec-body{display:none}
 /* Brand mark */
-.nav-brand{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--c-brand),#FFA94D);color:#fff;display:grid;place-items:center;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px -1px rgba(255,127,17,.5)}
+.nav-brand{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--c-brand),#E2C258);color:#fff;display:grid;place-items:center;font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px -1px rgba(15,118,110,.5)}
 /* Modal/toast pop-in */
 .pop{animation:uipop .2s cubic-bezier(.16,1,.3,1)}
 @keyframes uipop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
@@ -475,7 +475,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#CBDBDF;border-radius:4px}
 html{scrollbar-width:thin;scrollbar-color:#CBDBDF transparent}
 input,select,textarea{outline:none}
-.rf:focus{box-shadow:0 0 0 3px rgba(255,127,17,.15);border-color:#FF8F33!important}
+.rf:focus{box-shadow:0 0 0 3px rgba(15,118,110,.15);border-color:#D4A72C!important}
 /* Toggles */
 .tog{position:relative;width:40px;height:24px;border-radius:12px;background:var(--c-border-2);transition:background .18s;cursor:pointer;border:none;flex-shrink:0}
 .tog span{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s cubic-bezier(.16,1,.3,1);box-shadow:0 1px 3px rgba(0,0,0,.22)}
@@ -510,25 +510,25 @@ input,select,textarea{outline:none}
 /* iz / issue-zone (legacy, kept for compatibility) */
 .bg-ink-100{background:#E7F0F2!important}.bg-ink-200{background:#CBDBDF!important}
 .fld-card,.team-card-hover,.dept-card,.loc-card{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
-.fld-card:hover{border-color:#FF7F11!important;box-shadow:0 8px 22px -6px rgba(255,127,17,.18);transform:translateY(-2px)}
-.team-card-hover:hover{border-color:#FF7F11!important;box-shadow:0 10px 24px -8px rgba(255,127,17,.2)!important;transform:translateY(-2px)}
-.dept-card:hover{border-color:#FF7F11!important;box-shadow:0 10px 24px -8px rgba(255,127,17,.18);transform:translateY(-2px)}
-.loc-card:hover{border-color:#2680EB!important;box-shadow:0 10px 24px -8px rgba(38,128,235,.18);transform:translateY(-2px)}
+.fld-card:hover{border-color:#0F766E!important;box-shadow:0 8px 22px -6px rgba(15,118,110,.18);transform:translateY(-2px)}
+.team-card-hover:hover{border-color:#0F766E!important;box-shadow:0 10px 24px -8px rgba(15,118,110,.2)!important;transform:translateY(-2px)}
+.dept-card:hover{border-color:#0F766E!important;box-shadow:0 10px 24px -8px rgba(15,118,110,.18);transform:translateY(-2px)}
+.loc-card:hover{border-color:#18948C!important;box-shadow:0 10px 24px -8px rgba(38,128,235,.18);transform:translateY(-2px)}
 .shadow-soft{box-shadow:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04)}
 /* Progress bar — used in admin dashboard department performance */
 .pg{height:6px;background:#E7F0F2;border-radius:3px;overflow:hidden}
-.pgf{height:100%;background:#FF7F11;border-radius:3px;transition:width .3s}
+.pgf{height:100%;background:#0F766E;border-radius:3px;transition:width .3s}
 
 .text-ink-300{color:#9DB1B6!important}.text-ink-400{color:#5E767D!important}.text-ink-500{color:#35545C!important}
 .text-ink-600{color:#234049!important}
 .border-ink-100{border-color:#E7F0F2!important}.border-ink-200{border-color:#CBDBDF!important}
-.bg-brand-50{background:#FFF1E4!important}
-.text-brand-600{color:#FF8F33!important}.text-brand-700{color:#C25A00!important}
+.bg-brand-50{background:#E4F2F0!important}
+.text-brand-600{color:#D4A72C!important}.text-brand-700{color:#0B6660!important}
 .text-emerald-700{color:#0F7A45!important}
 .text-amber-700{color:#8A5F00!important}
 .text-rose-700{color:#C41E32!important}
-.text-orange-700{color:#B85200!important}
-.bg-sky-50{background:#F0F8FE!important}.text-sky-700{color:#0A6394!important}
+.text-orange-700{color:#0B6660!important}
+.bg-sky-50{background:#EEF6F0!important}.text-sky-700{color:#0B6660!important}
 
 @media(min-width:768px){#main-wrap{margin-left:224px!important}}
 
@@ -541,7 +541,7 @@ input,select,textarea{outline:none}
    the mobile chrome (hamburger, bell, mobile profile, bottom nav) leaks onto desktop.
    These rules make the shell fully self-sufficient at the 768px breakpoint. */
 /* Sidebar — fully positioned here so it does not depend on Tailwind's fixed/inset/w-56. */
-.sidebar{position:fixed;top:0;bottom:0;left:0;width:224px;z-index:30;flex-direction:column;overflow-y:auto;background-color:#0C222A}
+.sidebar{position:fixed;top:0;bottom:0;left:0;width:224px;z-index:30;flex-direction:column;overflow-y:auto;background-color:#FDFCF7}
 /* Sticky topbar (sticky/top-0/z-20). */
 .topbar{position:sticky;top:0;z-index:20}
 /* Main column. */
@@ -634,13 +634,13 @@ html,body{max-width:100%;overflow-x:clip}   /* clip, not hidden: hidden would ma
 /* Checklist card */
 .clc{border-radius:18px;overflow:hidden;border:1px solid #E4EDEF;background:#fff;transition:box-shadow .2s}
 .clc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;border:none;background:transparent;width:100%;gap:10px}
-.clc-hdr:active{background:#F6FAFB}
+.clc-hdr:active{background:#FAF9F3}
 /* Status styles */
 .st-on{background:#E8F7EE;color:#0F7A45}
 .st-late{background:#FEECEC;color:#CC2A2A}
 .st-pend{background:#FEF5E0;color:#8A5F00}
 .st-sub{background:#E8F7EE;color:#0F7A45}
-.st-pa{background:#FFF1E4;color:#B85200}
+.st-pa{background:#E4F2F0;color:#0B6660}
 /* Task row — THE KEY ELEMENT */
 
  /* positive active */
@@ -648,7 +648,7 @@ html,body{max-width:100%;overflow-x:clip}   /* clip, not hidden: hidden would ma
 /* Small icon button */
 
 /* Footer strip */
-.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F1F7F8;gap:10px;background:#F6FAFB}
+.clc-ft{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid #F1F7F8;gap:10px;background:#FAF9F3}
 .submit-pill{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
 .submit-pill.go{background:#10262E;color:#fff}.submit-pill.go:hover{background:#000;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .submit-pill.no{background:#E4EDEF;color:#B9CBCF;cursor:default}
@@ -721,20 +721,27 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
 
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   BRIDGE THEME v6 — "Energizing Orange + Secondary Teal"
+   BRIDGE THEME v7 — "Light Teal · Cream · Gold" (light everywhere, incl. sidebar)
    Appended last: the cascade wins over every legacy literal above.
    Type: Poppins (loaded from Google Fonts in index.html).
    ══════════════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── Core palette ───────────────────────────────────────────────── */
-  --c-brand:#FF7F11;          /* Energizing Orange — primary action + identity */
-  --c-brand-accent:#FF9A68;   /* Orange Accent   — soft fills, gradient stops   */
-  --c-brand-hover:#F2740A;
-  --c-brand-deep:#BF5100;     /* AA-safe orange behind white text (4.78:1)      */
-  --c-brand-ink:#B85200;      /* AA-safe orange TEXT on white     (4.95:1)      */
-  --c-brand-soft:#FFF1E4;
-  --c-brand-soft-2:#FFE0C7;
-  --c-on-brand:#10262E;       /* ink sits on vivid orange — 6.2:1, not 2.5:1    */
+  --c-brand:#0F766E;          /* Deep Teal — primary action + identity          */
+  --c-brand-accent:#2CB1A6;   /* Teal Accent — soft fills, gradient stops       */
+  --c-brand-hover:#0C5F59;
+  --c-brand-deep:#0A544F;     /* deepest teal behind white text                 */
+  --c-brand-ink:#0B6660;      /* AA-safe teal TEXT on white                     */
+  --c-brand-soft:#E4F2F0;
+  --c-brand-soft-2:#CBE6E2;
+  --c-on-brand:#FFFFFF;       /* white sits comfortably on deep teal            */
+
+  --c-gold:#C9A227;           /* Gold — celebration, highlights, achieved       */
+  --c-gold-light:#E2C258;
+  --c-gold-dot:#D4A72C;
+  --c-gold-ink:#8A6E14;       /* AA-safe gold TEXT on white                     */
+  --c-gold-soft:#F5EBCC;
+  --c-cream:#F6F1E1;          /* warm cream fill                                */
 
   --c-teal:#00C2C7;           /* Secondary Teal */
   --c-teal-subtle:#4DE0D2;    /* Teal Subtle    */
@@ -745,7 +752,7 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
   --c-teal-soft-2:#C6F4F5;
 
   /* ── Surfaces ───────────────────────────────────────────────────── */
-  --c-bg:#F6FAFB; --c-paper:#F6FAFB; --c-surface:#FFFFFF; --c-surface-2:#F0F6F7;
+  --c-bg:#FAF9F3; --c-paper:#FAF9F3; --c-surface:#FFFFFF; --c-surface-2:#F0F6F7;
   --c-border:#E4EDEF; --c-border-2:#D2E0E3;
   --c-ink:#10262E; --c-ink-hover:#0A1B21;
   --c-text:#1B333B; --c-text-2:#5A7178; --c-text-3:#5F777E;
@@ -758,15 +765,15 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
   --c-approve:var(--c-brand);
 
   /* ── Gradients ──────────────────────────────────────────────────── */
-  --grad-brand:linear-gradient(135deg,#FF9A68 0%,#FF7F11 52%,#F2740A 100%);
+  --grad-brand:linear-gradient(135deg,#2CB1A6 0%,#0F766E 52%,#0C5F59 100%);
   --grad-teal:linear-gradient(135deg,#4DE0D2 0%,#00C2C7 100%);
-  --grad-mark:linear-gradient(135deg,#FF9A68 0%,#FF7F11 46%,#00C2C7 140%);
+  --grad-mark:linear-gradient(135deg,#14A099 0%,#0F766E 48%,#C9A227 135%);
   --grad-dark:linear-gradient(140deg,#16323A 0%,#0C222A 62%,#0A1B21 100%);
   --grad-paper:
-     radial-gradient(1100px 560px at 100% -12%,rgba(255,127,17,.07),transparent 62%),
-     radial-gradient(880px 480px at -12% 108%,rgba(0,194,199,.075),transparent 58%),
-     linear-gradient(180deg,#FBFDFD 0%,#F2F9FA 100%);
-  --g1:#FF7F11;--g2:#FF9A68;--g3:#00C2C7;
+     radial-gradient(1100px 560px at 100% -12%,rgba(15,118,110,.055),transparent 62%),
+     radial-gradient(880px 480px at -12% 108%,rgba(201,162,39,.06),transparent 58%),
+     linear-gradient(180deg,#FCFBF6 0%,#F4F3EA 100%);
+  --g1:#0F766E;--g2:#2CB1A6;--g3:#00C2C7;
 
   /* ── Elevation + focus ──────────────────────────────────────────── */
   --sh-xs:0 1px 2px rgba(13,38,46,.04);
@@ -775,9 +782,9 @@ button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
   --sh-pop:0 28px 72px -18px rgba(13,38,46,.30),0 10px 28px -12px rgba(13,38,46,.16);
   --card-sh:0 1px 2px rgba(13,38,46,.04),0 10px 26px -14px rgba(13,38,46,.16);
   --card-sh-hi:0 10px 26px -10px rgba(0,194,199,.22),0 20px 44px -18px rgba(13,38,46,.20);
-  --ring:0 0 0 3.5px rgba(255,127,17,.22);
+  --ring:0 0 0 3.5px rgba(15,118,110,.22);
   --ring-teal:0 0 0 3.5px rgba(0,194,199,.26);
-  --brand:#FF7F11;--brand-d:#F2740A;
+  --brand:#0F766E;--brand-d:#0C5F59;
 }
 
 /* ── Type ──────────────────────────────────────────────────────────── */
@@ -787,33 +794,33 @@ body,.fd,.ui-btn,.ui-card-title,.nav-brand,input,select,textarea,button{
 body{background:var(--grad-paper)!important;background-attachment:fixed!important;color:var(--c-text)}
 ::selection{background:rgba(0,194,199,.24);color:var(--c-ink)}
 
-/* ── CONTRAST FIX: vivid orange carries ink, never white ───────────── */
-[style*="background:#FF7F11"][style*="color:#fff"],
-[style*="background:#FF8F33"][style*="color:#fff"],
-[style*="background:#FF9A68"][style*="color:#fff"],
-[style*="background: #FF7F11"][style*="color:#fff"],
+/* ── CONTRAST: deep teal carries white text (AA) ──────────────────── */
+[style*="background:#0F766E"][style*="color:#fff"],
+[style*="background:#D4A72C"][style*="color:#fff"],
+[style*="background:#2CB1A6"][style*="color:#fff"],
+[style*="background: #0F766E"][style*="color:#fff"],
 .submit-pill.go,.ui-btn-brand{ color:var(--c-on-brand)!important; }
-[style*="background:#FF7F11"][style*="color:#fff"] svg,
+[style*="background:#0F766E"][style*="color:#fff"] svg,
 .submit-pill.go svg,.ui-btn-brand svg{ color:var(--c-on-brand)!important; }
-.ui-btn-brand{background:var(--c-brand);box-shadow:0 1px 2px rgba(255,127,17,.30),0 6px 16px -5px rgba(255,127,17,.45)}
-.ui-btn-brand:hover{background:var(--c-brand-hover);box-shadow:0 2px 6px rgba(255,127,17,.34),0 10px 22px -6px rgba(255,127,17,.50)}
+.ui-btn-brand{background:var(--c-brand);box-shadow:0 1px 2px rgba(15,118,110,.30),0 6px 16px -5px rgba(15,118,110,.45)}
+.ui-btn-brand:hover{background:var(--c-brand-hover);box-shadow:0 2px 6px rgba(15,118,110,.34),0 10px 22px -6px rgba(15,118,110,.50)}
 /* teal secondary button */
-.ui-btn-teal{background:var(--c-teal);color:var(--c-on-brand);box-shadow:0 1px 2px rgba(0,194,199,.28),0 6px 16px -5px rgba(0,194,199,.42)}
+.ui-btn-teal{background:var(--c-teal);color:#0A2A28;box-shadow:0 1px 2px rgba(0,194,199,.28),0 6px 16px -5px rgba(0,194,199,.42)}
 .ui-btn-teal:hover{background:var(--c-teal-hover)}
 
 /* ── Brand mark ────────────────────────────────────────────────────── */
 .nav-brand{background:var(--grad-mark)!important;color:#fff!important;
-  box-shadow:0 6px 16px -5px rgba(255,127,17,.55),0 2px 6px -2px rgba(0,194,199,.35);letter-spacing:-.5px}
+  box-shadow:0 6px 16px -5px rgba(15,118,110,.55),0 2px 6px -2px rgba(0,194,199,.35);letter-spacing:-.5px}
 
-/* ── Sidebar ───────────────────────────────────────────────────────── */
-aside.sidebar,.sidebar{background-color:#0C222A!important;
-  background-image:linear-gradient(180deg,#16323A 0%,#0F2C34 44%,#0A1B21 100%)!important;
-  border-right:1px solid rgba(255,255,255,.06)}
-.nav-item:hover{background:rgba(0,194,199,.12);color:#fff}
-.nav-item.on{background:rgba(255,127,17,.15);color:#fff}
-.nav-item.on::before{background:var(--c-brand);box-shadow:0 0 12px rgba(255,127,17,.6)}
+/* ── Sidebar (light) ───────────────────────────────────────────────── */
+aside.sidebar,.sidebar{background-color:#FDFCF7!important;
+  background-image:linear-gradient(180deg,#FFFFFF 0%,#F9F8F0 44%,#F3F2E8 100%)!important;
+  border-right:1px solid #E7E6DC}
+.nav-item:hover{background:rgba(15,118,110,.07);color:#10262E}
+.nav-item.on{background:rgba(15,118,110,.10);color:#0B4F4A}
+.nav-item.on::before{background:var(--c-brand);box-shadow:0 0 10px rgba(15,118,110,.35)}
 .nav-item.on .nav-ico{color:var(--c-brand)}
-aside.sidebar nav button[style*="rgba(255,255,255,.12)"]{box-shadow:inset 3px 0 0 0 var(--c-brand)}
+aside.sidebar nav button[style*="rgba(15,118,110,.10)"]{box-shadow:inset 3px 0 0 0 var(--c-brand)}
 
 /* ── Topbar ────────────────────────────────────────────────────────── */
 header.topbar,.topbar{background:rgba(251,253,253,.86)!important;
@@ -843,14 +850,14 @@ main#content input:focus,main#content select:focus,main#content textarea:focus{
 
 /* ── Progress + sync ───────────────────────────────────────────────── */
 .pg{background:var(--c-surface-2)}
-.pgf,[style*="background:#FF7F11"][style*="height:100%"]{background:var(--grad-brand)!important}
+.pgf,[style*="background:#0F766E"][style*="height:100%"]{background:var(--grad-brand)!important}
 #syncbar::before{background:linear-gradient(90deg,var(--c-brand),var(--c-teal))}
 
 /* ── Status pills ──────────────────────────────────────────────────── */
 .st-on,.st-sub{background:var(--c-success-soft);color:var(--c-success-ink)}
 .st-late{background:var(--c-danger-soft);color:var(--c-danger-ink)}
 .st-pend{background:var(--c-warn-soft);color:var(--c-warn-ink)}
-.st-pa{background:var(--c-brand-soft);color:var(--c-brand-ink)}
+.st-pa{background:var(--c-gold-soft);color:var(--c-gold-ink)}
 .bg-brand-50{background:var(--c-brand-soft)!important}
 .text-brand-600{color:var(--c-brand-ink)!important}
 .text-brand-700{color:var(--c-brand-ink)!important}
@@ -893,8 +900,8 @@ html{scrollbar-color:var(--c-border-2) transparent}
 .ui-skel{background:linear-gradient(90deg,#E7F0F2 25%,#F4FAFB 37%,#E7F0F2 63%);background-size:400% 100%}
 a:not(.ui-btn):not([class*="btn"]){color:var(--c-teal-ink)}
 
-/* ── v6.1 — accent rhythm: teal earns a real job alongside the orange ──
-   Orange = action & identity.  Teal = information, category, "in flight".  */
+/* ── v7 — accent rhythm ──
+   Teal = action & identity.  Gold = celebration & waiting.  Grey/cream = calm surfaces. */
 .stat-card-click::before{
   content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;
   background:var(--c-brand);border-radius:0 3px 3px 0}
@@ -903,8 +910,8 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
 .grid3>.stat-card-click:nth-child(3n+2)::before{background:var(--c-teal)}
 .grid3>.stat-card-click:nth-child(3n+3)::before{background:var(--c-warn)}
 
-/* "in flight / awaiting someone" reads teal, so it never competes with an orange CTA */
-.st-pa{background:var(--c-teal-soft);color:var(--c-teal-ink)}
+/* "in flight / awaiting someone" reads gold — waiting, not yet done */
+.st-pa{background:var(--c-gold-soft);color:var(--c-gold-ink)}
 /* frequency / category chips are information, not action → teal */
 .bg-brand-50.text-brand-700,span.bg-brand-50.text-brand-700{
   background:var(--c-teal-soft)!important;color:var(--c-teal-ink)!important}
@@ -1050,12 +1057,62 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   /* v3.16: one horizontally-scrollable strip of stat tiles — costs one row, not three */
   .okr-stats{display:flex!important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding-bottom:2px}
   #content .okr-stats>div{flex:0 0 auto!important;min-width:118px!important;max-width:160px}
-  /* the numbers block (value/target, bar, %, status) drops below the title so the
-     title + owner names get the full row width instead of collapsing to 1 char/line */
-  .okr-nums{flex:1 1 100%!important;width:100%;margin-left:0!important;padding-left:0!important;margin-top:8px;justify-content:flex-start;gap:12px}
   /* the bulk-edit hint is desktop guidance — on a phone it cost a third of the screen */
   .okr-bulkhint{display:none!important}
+
+  /* ══ v3.19 — objective card, mobile ══════════════════════════════════════════
+     Before: the numbers block was forced onto its own full-width line under the
+     meta (flex:1 1 100%), which stretched the progress bar across the card and
+     left the value, the dash and the status pill floating at random x-positions —
+     no two cards lined up and each card cost ~110px of height.
+
+     Now: title on the left, numbers in a fixed right-hand column. The current
+     value is the headline, the target sits under it, and the bar / % / status
+     stack beneath — right-aligned, so every card reads down the same edge. */
+  #content .okr-card{margin-bottom:7px!important;border-radius:12px!important}
+  #content .okr-cardpad{padding:9px 10px!important}
+  #content .okr-row{gap:6px!important;align-items:flex-start!important;flex-wrap:nowrap!important}
+  /* v3.20 — the left gutter is GONE on phones. Keeping the chevron only on parent cards made
+     the title start at a different x on every other card (the exact misalignment on the
+     screenshot). Expansion moved to the "N sub-objectives" chip in the meta line, so every
+     title now shares one left edge: checkbox → title. */
+  #content .okr-selbox{width:22px!important;min-width:22px!important}
+  #content .okr-exp{display:none!important}
+  #content .okr-subtog{color:var(--c-brand-ink,#0B6660)!important;font-weight:800!important}
+  #content .okr-main{min-width:0!important}
+  #content .okr-titlerow{gap:5px!important;row-gap:3px!important}
+  #content .okr-card .fd.okr-title{font-size:13px!important;line-height:1.3!important;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  #content .okr-meta{gap:2px 9px!important;margin-top:4px!important;font-size:10px}
+  #content .okr-meta>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+  /* the right-hand numbers column */
+  #content .okr-nums{flex:0 0 auto!important;width:auto!important;margin-left:auto!important;
+    padding-left:8px!important;margin-top:0!important;flex-direction:column!important;
+    align-items:flex-end!important;justify-content:flex-start!important;gap:3px!important;
+    flex-wrap:nowrap!important;text-align:right;max-width:44%}
+  #content .okr-cur{font-size:11px!important;font-weight:700!important;line-height:1.1!important;
+    display:block;white-space:nowrap}
+  #content .okr-curv{font-size:14px;font-weight:800;color:var(--c-text);letter-spacing:-.2px}
+  #content .okr-tgt{display:block;margin-left:0!important;margin-top:2px;
+    font-size:10px;font-weight:700;color:var(--c-text-3)}
+  #content .okr-bar{width:62px!important;min-width:62px!important;flex:0 0 auto!important;margin-top:3px}
+  #content .okr-pct{font-size:11px!important;min-width:0!important;color:var(--c-text-2)!important}
+  #content .okr-stwrap{margin-top:2px}
+  #content .okr-stwrap>span{font-size:10px!important;padding:2px 8px!important}
+
+  /* v3.20 — the search/filter bar and the select-all bar each cost a fat card row.
+     Slimmer paddings, smaller type, and the two bars sit closer to the list. */
+  #content .okr-toolbar{padding:6px 8px!important;gap:6px!important;margin-bottom:8px!important}
+  #content .okr-toolbar .ui-input{height:34px!important;font-size:16px!important} /* 16px: no iOS zoom */
+  #content .okr-fpanel{padding:8px 10px!important;gap:6px!important;margin-bottom:8px!important}
+  #content .okr-bulkbar{padding:5px 10px!important;gap:8px!important;margin-bottom:8px!important}
+  #content .okr-bulkbar>button>span:last-child{font-size:11.5px!important}
+  #content .okr-bulkbar .ui-btn{min-height:32px!important;padding:4px 10px!important;font-size:11.5px!important}
 }
+/* the status chip used to sit bare in the row; the wrapper must not change desktop layout */
+.okr-stwrap{display:inline-flex}
+.okr-tgt{margin-left:4px}
 
 /* CRM ticket table — mobile readable columns (v3.15): keep column widths and scroll instead of cramming names to "Or" */
 @media(max-width:767px){
@@ -1064,6 +1121,17 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   #content .crm-fs .crm-scroll > table th,#content .crm-fs .crm-scroll > table td{min-width:120px!important}
   #content .crm-fs .crm-scroll > table th:first-child,#content .crm-fs .crm-scroll > table td:first-child{min-width:210px!important}
   #content .crm-fs .crm-scroll > table th:last-child,#content .crm-fs .crm-scroll > table td:last-child{min-width:40px!important}
+
+  /* v3.19 — the blunt "#content [style*=display:flex]{flex-wrap:wrap}" rule above matched the
+     chat column, and a wrapping flex line is sized to its content: the thread grew past the
+     viewport, so it never scrolled and the composer was laid out below the fold. These rows are
+     deliberately single-line. (06-crm.js repeats this; kept here so the rule that causes it and
+     the rule that cancels it live in the same file.) */
+  #content .crm-fs .crm-chatpane,
+  #content .crm-fs .crm-chatbody,
+  #content .crm-fs .crm-threadcol,
+  #content .crm-fs .crm-composer > div,
+  #content .crm-fs #crm-thread > div{flex-wrap:nowrap!important}
 }
 
 
@@ -1081,7 +1149,7 @@ main#content .grid>.stat-card-click:nth-child(3n+3)::before{background:var(--c-w
   /* board-tab row controls align with the tabs */
   #content .crm-fs .crm-tabsrow button{min-height:34px;min-width:34px}
   /* floating New-chat button (chat boards; hidden while a conversation is open) */
-  .crm-fab{display:inline-flex;align-items:center;gap:6px;position:absolute;right:14px;bottom:14px;z-index:36;border:none;border-radius:24px;background:#FF7F11;color:#fff;font-size:13.5px;font-weight:800;padding:12px 18px;box-shadow:0 8px 24px rgba(255,127,17,.45);cursor:pointer}
+  .crm-fab{display:inline-flex;align-items:center;gap:6px;position:absolute;right:14px;bottom:14px;z-index:36;border:none;border-radius:24px;background:#0F766E;color:#fff;font-size:13.5px;font-weight:800;padding:12px 18px;box-shadow:0 8px 24px rgba(15,118,110,.45);cursor:pointer}
   .crm-hasconvo .crm-fab{display:none!important}
   #crm-list{padding-bottom:76px}                    /* list scrolls clear of the FAB */
 }

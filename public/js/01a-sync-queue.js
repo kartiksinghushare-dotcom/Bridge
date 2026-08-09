@@ -131,7 +131,7 @@ function _pendingBadge(){
     if(!n){if(b)b.remove();return;}
     if(!b){
       b=document.createElement('div');b.id='pendingbar';
-      b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:99;background:#FFF4EA;color:#B85200;border:1.5px solid #FFD9B8;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.10);cursor:pointer';
+      b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:99;background:#F6F1E1;color:#0B6660;border:1.5px solid #FFD9B8;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.10);cursor:pointer';
       b.title='Some changes haven’t reached the server yet. Click to retry now.';
       b.onclick=()=>flushPendingWrites();
       document.body.appendChild(b);

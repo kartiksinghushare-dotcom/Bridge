@@ -162,28 +162,28 @@ function shell(content){
     const collapsed=(sec.label in S._navCollapsed)?!!S._navCollapsed[sec.label]:!hasActive;
     const show=!collapsed;
     return`<div class="nav-sec${show?'':' collapsed'}">
-      <button class="nav-sec-hdr" onclick="App.toggleNavSec('${sec.label}')"><span class="nav-ico" style="width:14px;height:14px;color:rgba(255,255,255,.45)">${ic(sec.icon,'w-3.5 h-3.5')}</span><span style="flex:1;text-align:left">${sec.label}</span><span class="nav-chev">${ic('chevD','w-3.5 h-3.5')}</span></button>
+      <button class="nav-sec-hdr" onclick="App.toggleNavSec('${sec.label}')"><span class="nav-ico" style="width:14px;height:14px;color:#8AA0A6">${ic(sec.icon,'w-3.5 h-3.5')}</span><span style="flex:1;text-align:left">${sec.label}</span><span class="nav-chev">${ic('chevD','w-3.5 h-3.5')}</span></button>
       <div class="nav-sec-body" style="display:${show?'flex':'none'};flex-direction:column;gap:2px">${sec.items.map(_navItemHTML).join('')}</div>
     </div>`;
   }).join('');
 
   return`<div style="min-height:100vh;display:flex">
-  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#0C222A;background-image:linear-gradient(177deg,#0F3038 0%,#0A1B21 100%);color:#fff;border-right:1px solid rgba(255,255,255,.05)">
-    <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#FDFCF7;background-image:linear-gradient(177deg,#FFFFFF 0%,#F6F5EC 100%);color:#1B333B;border-right:1px solid #E7E6DC">
+    <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #EDECE2;background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(15,118,110,.05)'" onmouseout="this.style.background='transparent'">
       <div class="nav-brand">B</div>
-      <span class="fd" style="font-weight:800;font-size:18px;letter-spacing:-.5px;color:#fff">Bridge</span>
+      <span class="fd" style="font-weight:800;font-size:18px;letter-spacing:-.5px;color:#10262E">Bridge</span>
     </button>
-    <nav style="flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px">${dailyHTML}<div style="height:1px;background:rgba(255,255,255,.07);margin:8px 6px"></div>${sectionsHTML}</nav>
-    <div style="padding:8px;border-top:1px solid rgba(255,255,255,.06)">
-      <button onclick="App.go('profile')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:transparent;border:none;cursor:pointer;color:#fff;margin-bottom:2px" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='transparent'">
+    <nav style="flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px">${dailyHTML}<div style="height:1px;background:#EDECE2;margin:8px 6px"></div>${sectionsHTML}</nav>
+    <div style="padding:8px;border-top:1px solid #EDECE2">
+      <button onclick="App.go('profile')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:transparent;border:none;cursor:pointer;color:#10262E;margin-bottom:2px" onmouseover="this.style.background='rgba(15,118,110,.06)'" onmouseout="this.style.background='transparent'">
         ${avatar(u,'w-8 h-8','text-[11px]')}
         <div style="min-width:0;text-align:left;flex:1">
           <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(fullName(u))}</div>
-          <div style="font-size:11px;color:#9DB1B6;margin-top:1px">${esc(u.position||u.department||'')}</div>
+          <div style="font-size:11px;color:#5F777E;margin-top:1px">${esc(u.position||u.department||'')}</div>
         </div>
-        <span style="font-size:10px;color:rgba(255,255,255,.3)">${ic('chevR','w-3 h-3')}</span>
+        <span style="font-size:10px;color:#A3B6BB">${ic('chevR','w-3 h-3')}</span>
       </button>
-      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#9DB1B6;font-size:12px;font-weight:500" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.color='#9DB1B6';this.style.background='transparent'">
+      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#5F777E;font-size:12px;font-weight:500" onmouseover="this.style.color='#0F766E';this.style.background='rgba(15,118,110,.06)'" onmouseout="this.style.color='#5F777E';this.style.background='transparent'">
         ${ic('logout','w-3.5 h-3.5')}Sign out
       </button>
     </div>
@@ -269,6 +269,7 @@ App.logout=()=>{
   // v3.14: filters are remembered per tab across refreshes — wipe the whole stored map on
   // logout so a shared browser never shows the next person the previous one's filtered view.
   clearAllFilters();try{if(typeof App._okrResetExpanded==='function')App._okrResetExpanded();}catch(e){}
+  try{if(typeof _crmClearSel==='function')_crmClearSel();if(typeof _crmLiveStop==='function')_crmLiveStop();}catch(e){}
   S.uid=null;S.route='dashboard';S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
   closeModal();render();
   // Sign out Supabase in background

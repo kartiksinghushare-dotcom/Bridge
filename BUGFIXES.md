@@ -56,3 +56,72 @@ The escalation path called `queueEmail(…)` twice for every escalation — assi
 - **Unread tracking** (synced across devices via new `crm_reads` table): unread dot + highlight on conversations, unread badges on board tabs and on the CRM entry in the sidebar.
 - **Assignment flow**: assigning a conversation now notifies the assignee (in-app + email) and is recorded in the activity log; status changes are logged too.
 - Tickets page: **search box** + assignee filter (for admins), resolution note shown on resolved tickets, reoccurrence history on cards.
+
+## v3.19 — Mobile: chat had no scroll and no composer; OKR cards were bulky
+
+**a. Chat thread didn't scroll and the message box was off-screen (phones).**
+`main.css` carries a blunt mobile rule:
+
+```css
+#content [style*="display:flex"]:not([style*="flex-direction:column"]):not(…){flex-wrap:wrap}
+```
+
+It matched `.crm-chatbody` (inline `display:flex`, a row). In a **wrapping** flex
+container the flex line is sized to its content, so `.crm-threadcol` grew to the full
+height of the message list instead of being clipped by its parent. Result: `#crm-thread`
+never became scrollable, and `.crm-composer` was laid out below the fold — under the
+bottom nav. The v3.18 `position:absolute` chat-pane fix was correct and was working; the
+wrap rule undid it one level lower, which is why the pane measured right but the column
+didn't. The same rule also wrapped the composer row (attach button on one line, textarea
+on the next, ~99px tall) and could drop a long bubble underneath its avatar.
+→ Fixed: `.crm-chatpane, .crm-chatbody, .crm-threadcol, .crm-composer>div, #crm-thread>div`
+are explicitly `flex-wrap:nowrap` (in `06-crm.js`, and repeated in `main.css` next to the
+rule that causes it). Verified in headless Chromium at 390×844: thread `scrollHeight`
+1780 vs `clientHeight` 658 (scrolls), composer bottom at y=784 = exactly the top of the
+60px bottom nav.
+
+**b. Chat density.** The phone view used desktop sizing. Header 9px→6px padding and
+15px→14px title, bubbles 13px→12.5px, thread padding 14px→10px, composer 8px→6px with a
+38px textarea. The textarea stays at 16px so iOS doesn't zoom the viewport on focus, and
+the placeholder shortens to "Message…" on mobile so it fits one line. Header is now 57px
+instead of 63px and roughly one extra message fits per screen.
+
+**c. OKR objective cards were bulky and unaligned.** The mobile rule
+`.okr-nums{flex:1 1 100%}` pushed the numbers block onto its own full-width line under the
+meta, stretching the progress bar across the card and leaving the value, the dash and the
+status pill at a different x-position on every card.
+→ Redesigned: title on the left, numbers in a fixed right-hand column — current value as
+the headline, target under it, then bar / % / status, all right-aligned so every card reads
+down the same edge. The leaf bullet is hidden and the checkbox/chevron gutter is 22px+18px
+instead of 24px+24px, giving the title ~30px more room. `curTgt` is now two spans
+(`.okr-curv` / `.okr-tgt`) so the desktop row still reads "39% ≤ 36%" inline and only the
+phone stacks them. Cards dropped from ~110px to ~65-85px.
+
+## v3.20 — @-mention UX + OKR alignment round 2
+
+**Why "still the same" on your phone:** the fixes live in the local Bridge folder; the phone
+loads shiftlly.vercel.app, which only updates after `git push` → Vercel build. Verify with
+View Source: script tags must say `?v=85`.
+
+**a. @-mention picker.** Was a 240px desktop popover with 30px rows, anchored 58px above the
+composer's bottom (wrong once the composer grew). Now anchored `bottom:calc(100% + 6px)` (always
+just above the composer at any height), and on phones it becomes a full-width sheet with 46px
+thumb-sized rows and 14px names.
+
+**b. Mention chips in bubbles.** The chip style was inline (`#EDF5F7` bg, dark-orange text) —
+unreadable inside the sender's own orange bubble. Now a `.crm-tag` class: pale chip in received
+bubbles, translucent-white chip with white text in `.crm-mine`.
+
+**c. Composer-density rule leak (self-inflicted in v3.19, caught in testing).**
+`.crm-composer>div>button{width:36px}` also matched the mention rows (the sheet lives inside the
+composer), collapsing every row to 36px wide. The rule is now scoped to a `.crm-sendrow` class on
+the attach/textarea/send row only.
+
+**d. OKR titles finally share ONE left edge.** Parent cards had a chevron gutter, leaf cards
+didn't — so titles started at different x-positions card by card. On phones the chevron column is
+gone entirely; expanding moved to the "N sub-objectives" chip in the meta line (now a real button,
+orange, with a rotating ▾ — it also works on desktop as a second affordance). Child indent capped
+at 10px/level on phones (was 16px, up to 80px of a 390px screen).
+
+**e. OKR bars slimmed.** Search/filter toolbar and the Select-all/Export bar: tighter padding,
+smaller type, 8px gaps to the list. Search input is 16px so iOS doesn't zoom on focus.

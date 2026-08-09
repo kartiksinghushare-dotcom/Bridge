@@ -12,8 +12,21 @@
    A conversation starts as a chat and can be "converted to a ticket" of a type.
    ============================================================================ */
 let CRM=null;
-function _crmInit(){if(CRM)return;CRM={_loaded:false,_loading:false,_err:null,hubs:[],boards:[],views:[],categories:[],convos:[],reminders:[],sel:{hubId:null,boardId:null,viewId:null,category:'Chats',convoId:null,threadId:null},sidebarCollapsed:false,collapsedHubs:{},channels:[],boardMembersOpen:false,activity:[],settings:{},activityOpen:false,boardSettingsOpen:false,globalSettingsOpen:false,_bsBoardId:null,_rowAdd:null,search:'',compose:{images:[]},editMsgId:null,fwdMsgId:null,listFilter:'all',reads:{},boardFilter:{}};if(!CRM._remInt)CRM._remInt=setInterval(function(){try{if(CRM&&CRM._loaded)_crmCheckReminders();}catch(e){}},60000);}
-const _crmSeeAll=()=>isAdmin()||can('crm','manage');
+function _crmInit(){if(CRM)return;CRM={hubMembers:{},_loaded:false,_loading:false,_err:null,hubs:[],boards:[],views:[],categories:[],convos:[],reminders:[],sel:{hubId:null,boardId:null,viewId:null,category:'Chats',convoId:null,threadId:null},sidebarCollapsed:false,collapsedHubs:{},channels:[],boardMembersOpen:false,activity:[],settings:{},activityOpen:false,boardSettingsOpen:false,globalSettingsOpen:false,_bsBoardId:null,_rowAdd:null,search:'',compose:{images:[]},editMsgId:null,fwdMsgId:null,listFilter:'all',reads:{},boardFilter:{}};try{_crmRestoreSel();}catch(e){}
+  if(!CRM._remInt)CRM._remInt=setInterval(function(){try{if(CRM&&CRM._loaded)_crmCheckReminders();}catch(e){}},60000);}
+/* ══ v3.19 — WORKSPACE ACCESS ═══════════════════════════════════════════════════
+   Two levels, both dynamic (toggled per role in Access Control):
+     · CHANNEL (hub) member → sees EVERY board in that channel
+     · BOARD member        → sees ONLY that board
+   'seeAll' bypasses both. isAdmin() stays as a fallback so existing admin role
+   profiles keep working before anyone re-saves them in Access Control.        ══ */
+const _crmSeeAll=()=>can('crm','seeAll')||can('crm','manage')||isAdmin();
+/* Who may hand out access. Falls back to the old gate so nothing locks up on upgrade. */
+const _crmCanHubMembers=()=>can('crm','hubMembers')||can('crm','manage')||_crmSeeAll();
+const _crmCanBoardMembers=()=>can('crm','members')||can('crm','manage')||can('crm','edit')||_crmCanHubMembers();
+function _crmHubMemberIds(hubId){var m=(CRM&&CRM.hubMembers)||{};return Array.isArray(m[hubId])?m[hubId]:[];}
+function _crmIsHubMember(hubId,uid2){return _crmHubMemberIds(hubId).indexOf(uid2||S.uid)>=0;}
+function _crmHubPeopleList(hubId){return _crmHubMemberIds(hubId).map(function(id){return uById(id);}).filter(function(u){return u&&u.status!=='Disabled';}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});}
 /* ── People scoping (v3.12: channels removed) — a board's people = its members ── */
 function _crmBoardPeople(board){var ids={};((board&&board.members)||[]).forEach(function(x){ids[x]=1;});return Object.keys(ids).map(function(x){return uById(x);}).filter(function(u){return u&&u.status!=='Disabled';}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});}
 /* ── People groups (workspace-wide, stored in CRM.settings.groups) ── */
@@ -36,7 +49,14 @@ function _crmConfirmP(title,body,btnLabel){return new Promise(function(res){CRM.
     footer:btnG('Cancel','App._crmConfirmEnd(0)')+'<button onclick="App._crmConfirmEnd(1)" class="ui-btn ui-btn-danger ui-btn-md">'+esc(btnLabel||'Delete')+'</button>'});});}
 App._crmConfirmEnd=(yes)=>{var r=CRM._confirmRes;CRM._confirmRes=null;closeModal();if(r)r(!!yes);};
 function _crmInappOn(ev){try{return typeof _ns==='undefined'||!_ns||_ns['inapp_'+ev]!==false;}catch(e){return true;}}
-function _crmBoardVisible(b){if(!b)return false;if(_crmSeeAll())return true;if((b.members||[]).indexOf(S.uid)>=0)return true;return b.createdBy===S.uid;}
+/* NOTE: "created it" is deliberately NOT a grant any more — that was the bug where
+   removing somebody from a board never actually took their access away. */
+function _crmBoardVisible(b){
+  if(!b)return false;
+  if(_crmSeeAll())return true;
+  if(_crmIsHubMember(b.hubId))return true;              // channel-level access
+  return (b.members||[]).indexOf(S.uid)>=0;             // board-level access
+}
 function _crmVisibleBoards(){return (CRM.boards||[]).filter(_crmBoardVisible);}
 /* ── v3.12.1: FILTERED VIEWS — a saved, member-scoped MIRROR OF THE WHOLE HUB: same board
    tabs as the hub itself, each ticket board narrowed by the view's saved per-board conditions.
@@ -46,7 +66,16 @@ function _crmView(id){return (CRM.views||[]).find(function(v){return v.id===id;}
 function _crmViewVisible(v){if(!v)return false;if(_crmSeeAll())return true;if(v.createdBy===S.uid)return true;return (v.members||[]).indexOf(S.uid)>=0;}
 function _crmVisibleViews(hubId){return (CRM.views||[]).filter(function(v){return v.hubId===hubId&&_crmViewVisible(v);});}
 function _crmViewCanEdit(v){return !!v&&(_crmSeeAll()||v.createdBy===S.uid)&&can('crm','views');}
-function _crmHubVisible(h){if(!h)return false;if(_crmSeeAll()||can('crm','create'))return true;return (CRM.boards||[]).some(function(b){return b.hubId===h.id&&_crmBoardVisible(b);})||(CRM.views||[]).some(function(v){return v.hubId===h.id&&_crmViewVisible(v);});}
+/* A channel shows up when you are a member of it, when one of its boards is yours,
+   or when a filtered view hands it to you. Being allowed to CREATE no longer reveals
+   every existing channel — that leaked the whole workspace to ordinary staff. */
+function _crmHubVisible(h){
+  if(!h)return false;
+  if(_crmSeeAll())return true;
+  if(_crmIsHubMember(h.id))return true;
+  return (CRM.boards||[]).some(function(b){return b.hubId===h.id&&_crmBoardVisible(b);})
+      ||(CRM.views||[]).some(function(v){return v.hubId===h.id&&_crmViewVisible(v);});
+}
 /* Board ids whose content the user may read: visible boards ∪ every board of hubs with a visible view
    (v3.12.1: a filtered view mirrors the WHOLE hub — all of its boards, narrowed by the view's filters) */
 function _crmVisibleBoardIds(){var s={};_crmVisibleBoards().forEach(b=>s[b.id]=1);(CRM.views||[]).forEach(function(v){if(!_crmViewVisible(v))return;(CRM.boards||[]).forEach(function(b){if(b.hubId===v.hubId&&!_crmViewHides(v,b.id))s[b.id]=1;});});return s;}
@@ -58,7 +87,7 @@ function _crmViewHidden(v){var f=(v&&v.filters)||{};return Array.isArray(f[_CRM_
 function _crmViewHides(v,boardId){return _crmViewHidden(v).indexOf(boardId)>=0;}
 /* The view's saved conditions for ONE board (filters is a per-board map: {boardId:[conds]}) */
 function _crmViewFilters(v,boardId){if(boardId===_CRM_VHIDE)return[];var f=(v&&v.filters)||{};return (f&&!Array.isArray(f)&&Array.isArray(f[boardId]))?f[boardId]:[];}
-const _crmPri={Low:['#5E767D','#F1F7F8'],Medium:['#8A5F00','#FFF4EA'],High:['#B91C1C','#FEF0F0'],Critical:['#6D28D9','#F5F1FE']};
+const _crmPri={Low:['#5E767D','#F1F7F8'],Medium:['#8A5F00','#F6F1E1'],High:['#B91C1C','#FEF0F0'],Critical:['#8A6E14','#F5F1FE']};
 const _crmTime=iso=>{try{return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}catch(e){return'';}};
 const _crmDT=iso=>{try{return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){return'';}};
 const _crmRel=iso=>{if(!iso)return'';const s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
@@ -73,7 +102,7 @@ function _crmMarkRead(id){var c=_crmConvo(id);if(!c||!S.uid)return;var now=new D
 /* ── v3: PER-BOARD CUSTOM STATUSES (ClickUp-style, fully dynamic) ──
    Stored in board.settings.statuses = [{name,color,done}] — no schema change needed.
    They drive the kanban columns, every status dropdown and the done/overdue logic. */
-const _CRM_DEF_STATUSES=[{name:'Open',color:'#FF7F11'},{name:'In Progress',color:'#2680EB'},{name:'Resolved',color:'#17A45C',done:true},{name:'Closed',color:'#5E767D',done:true}];
+const _CRM_DEF_STATUSES=[{name:'Open',color:'#0F766E'},{name:'In Progress',color:'#18948C'},{name:'Resolved',color:'#17A45C',done:true},{name:'Closed',color:'#5E767D',done:true}];
 function _crmStatuses(b){var st=b&&b.settings&&b.settings.statuses;return (Array.isArray(st)&&st.length)?st:_CRM_DEF_STATUSES;}
 function _crmStatusMeta(b,name){var st=_crmStatuses(b);return st.find(function(x){return x.name===name;})||{name:name||'Open',color:'#90A5AB'};}
 function _crmIsDone(b,name){var m=_crmStatusMeta(b,name);if(typeof m.done==='boolean')return m.done;return name==='Resolved'||name==='Closed';}
@@ -90,16 +119,22 @@ function _crmDueMeta(c){if(!c||!c.isTicket||!c.dueDate)return null;var _b=_crmBo
 function _crmCats(board){var c=board&&board.settings&&board.settings.categories;return (c&&c.length)?c:[];}
 const _crmFirst=u=>u?(fullName(u).split(' ')[0]||fullName(u)):'';
 const _CRM_EMO=['\u{1F44D}','❤️','\u{1F602}','\u{1F389}','\u{1F62E}'];
-function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#FF7F11','#1F6FE0','#C08400','#7C3AED','#DB2777','#0A96B8'][h%6];return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>';}
-function _crmAt(t){return esc(t||'').replace(/@(\w+)/g,'<span style="background:#EDF5F7;color:#8F4A05;font-weight:700;border-radius:4px;padding:0 3px">@$1</span>');}
+function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#0F766E','#18948C','#C08400','#7C3AED','#DB2777','#22A79C'][h%6];return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>';}
+/* v3.20 — the chip is a CLASS, not inline styles, so it can invert inside the sender's own
+   orange bubble (.crm-mine): a pale chip with dark-orange text was unreadable on #0F766E. */
+function _crmAt(t){return esc(t||'').replace(/@(\w+)/g,'<span class="crm-tag">@$1</span>');}
 function _crmImgs(imgs){if(!imgs||!imgs.length)return'';return'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+imgs.map(function(s){return'<img src="'+s+'" onclick="App._bigImg&&App._bigImg(this.src)" style="width:130px;height:96px;object-fit:cover;border-radius:10px;border:1px solid rgba(0,0,0,.08);cursor:pointer"/>';}).join('')+'</div>';}
-async function _crmProvisionDefault(){var hid=uid('hub'),bid=uid('brd');CRM.hubs.push({id:hid,name:'General',icon:'msg'});CRM.boards.push({id:bid,hubId:hid,name:'Chat',members:S.uid?[S.uid]:[],settings:{type:'chat'},createdBy:S.uid||null});CRM.sel.hubId=hid;CRM.sel.boardId=bid;try{await sb.from('crm_hubs').insert({id:hid,name:'General',icon:'msg',created_by:S.uid||null,sort:0});await sb.from('crm_boards').insert({id:bid,hub_id:hid,name:'Chat',created_by:S.uid||null,sort:0,settings:{type:'chat'}});if(S.uid)await sb.from('crm_board_members').insert({board_id:bid,user_id:S.uid});}catch(e){console.warn('[CRM default]',e&&e.message);}}
+async function _crmProvisionDefault(){var hid=uid('hub'),bid=uid('brd');CRM.hubs.push({id:hid,name:'General',icon:'msg'});if(S.uid)CRM.hubMembers[hid]=[S.uid];CRM.boards.push({id:bid,hubId:hid,name:'Chat',members:S.uid?[S.uid]:[],settings:{type:'chat'},createdBy:S.uid||null});CRM.sel.hubId=hid;CRM.sel.boardId=bid;try{await sb.from('crm_hubs').insert({id:hid,name:'General',icon:'msg',created_by:S.uid||null,sort:0});if(S.uid)await sb.from('crm_hub_members').insert({hub_id:hid,user_id:S.uid});await sb.from('crm_boards').insert({id:bid,hub_id:hid,name:'Chat',created_by:S.uid||null,sort:0,settings:{type:'chat'}});if(S.uid)await sb.from('crm_board_members').insert({board_id:bid,user_id:S.uid});}catch(e){console.warn('[CRM default]',e&&e.message);}}
 /* ── v3.12: every hub ALWAYS has a Chat board by default — created with the hub and healed
    here if ever missing (deleted, or a hub left empty). Deterministic id ('brd_chat_<hubId>')
    makes this idempotent: two clients loading at once can never double-create it. ── */
 function _crmEnsureChatBoards(){
   if(!S.uid||!can('crm','create'))return;
   (CRM.hubs||[]).forEach(function(h){
+    // v3.19: only inside channels this person actually belongs to. Previously this ran for
+    // every hub in the workspace and quietly created a board (with the runner as a member)
+    // in channels they had never been given.
+    if(!(_crmSeeAll()||_crmIsHubMember(h.id)))return;
     if((CRM.boards||[]).some(function(b){return b.hubId===h.id&&_crmBS(b).type==='chat';}))return;
     var bid='brd_chat_'+h.id;
     if((CRM.boards||[]).some(function(b){return b.id===bid;}))return;
@@ -123,7 +158,8 @@ async function _crmLoad(){
       sb.from('workspace_settings').select('*').eq('key','crm_settings'),
       sb.from('crm_reads').select('*').eq('user_id',S.uid||''),
       sb.from('crm_reminders').select('*').eq('user_id',S.uid||'').eq('fired',false),
-      sb.from('crm_views').select('*').order('sort',{ascending:true})
+      sb.from('crm_views').select('*').order('sort',{ascending:true}),
+      sb.from('crm_hub_members').select('*')
     ]);
     if(R[0].error)throw R[0].error;
     CRM.hubs=(R[0].data||[]).map(r=>({id:r.id,name:r.name,icon:r.icon||'folder'}));
@@ -132,13 +168,17 @@ async function _crmLoad(){
     CRM.categories=(R[3].data||[]).map(r=>r.name);
     const mc={};(R[5].data||[]).forEach(r=>{(mc[r.conversation_id]=mc[r.conversation_id]||[]).push({id:r.id,senderId:r.sender_id,fromCustomer:r.from_customer,name:r.name,text:r.body||'',images:r.images||[],at:r.created_at,reactions:r.reactions||{},parentId:r.parent_id||null,edited:!!r.edited_at});});
     CRM.convos=(R[4].data||[]).map(r=>({id:r.id,boardId:r.board_id,title:r.title,customer:r.customer,channel:r.channel,isTicket:r.is_ticket,ticketType:r.ticket_type,priority:r.priority||'Medium',status:r.status||'Open',assignedTo:r.assigned_to||null,createdBy:r.created_by||null,decision:r.decision||null,decidedBy:r.decided_by||null,decidedAt:r.decided_at||null,fields:r.fields||{},dueDate:r.due_date||null,createdAt:r.created_at,lastAt:r.last_at,messages:mc[r.id]||[]}));CRM.reminders=((R[9]&&R[9].data)||[]).map(function(r){return{id:r.id,userId:r.user_id,conversationId:r.conversation_id,messageId:r.message_id||null,remindAt:r.remind_at,note:r.note||'',fired:!!r.fired};});CRM.activity=(R[6].data||[]).map(function(r){return{id:r.id,conversationId:r.conversation_id,boardId:r.board_id,actor:r.actor,action:r.action,detail:r.detail||'',at:r.created_at};});try{var _gs=R[7].data&&R[7].data[0]&&R[7].data[0].value;if(_gs&&typeof _gs==='object')CRM.settings=_gs;}catch(e){}CRM.channels=[];CRM.views=((R[10]&&R[10].data)||[]).map(function(r){var fl=r.filters;if(fl&&typeof fl==='object'&&!Array.isArray(fl)){}else if(Array.isArray(fl)&&fl.length&&r.board_id){var _m={};_m[r.board_id]=fl;fl=_m;}else{fl={};}return{id:r.id,hubId:r.hub_id,name:r.name||'',filters:fl,members:Array.isArray(r.members)?r.members:[],createdBy:r.created_by||null,sort:r.sort||0};});CRM.reads={};((R[8]&&R[8].data)||[]).forEach(function(r){CRM.reads[r.conversation_id]=r.last_seen_at;});
+    CRM.hubMembers={};((R[11]&&R[11].data)||[]).forEach(function(r){(CRM.hubMembers[r.hub_id]=CRM.hubMembers[r.hub_id]||[]).push(r.user_id);});
     if(!CRM.hubs.length&&can('crm','create')&&S.uid)await _crmProvisionDefault();
     _crmEnsureChatBoards();
     if(CRM.sel.viewId&&!_crmViewVisible(_crmView(CRM.sel.viewId)))CRM.sel.viewId=null;
     const vb=_crmVisibleBoards();
     if(!CRM.sel.viewId&&(!CRM.sel.boardId||!vb.some(x=>x.id===CRM.sel.boardId))){var fb=vb[0];CRM.sel.boardId=fb?fb.id:null;CRM.sel.hubId=fb?fb.hubId:null;}
+    // v3.18: a board restored from the last session decides the hub, so a refresh lands on the same tab.
+    if(CRM.sel.boardId){var _rb=_crmBoard(CRM.sel.boardId);if(_rb)CRM.sel.hubId=_rb.hubId;}
   }catch(e){CRM._err=(e&&e.message)||'Failed to load';console.warn('[CRM load]',CRM._err);}
   CRM._loaded=true;CRM._loading=false;rr();try{_crmCheckReminders();}catch(e){}
+  try{_crmLiveInitTs();_crmLiveStart();}catch(e){}
 }
 const _crmStyle='<style>'
 +'.crm-only-mob{display:none!important}'
@@ -151,14 +191,23 @@ const _crmStyle='<style>'
 +'.crm-msg:hover .crm-macts{display:flex!important}'
 +'.crm-colh:hover .crm-colx{display:inline-flex!important}'
 +'.crm-scroll::-webkit-scrollbar{width:9px;height:9px}.crm-scroll::-webkit-scrollbar-thumb{background:#DDE8EA;border-radius:9px}.crm-scroll::-webkit-scrollbar-track{background:transparent}'
-+'.crm-cell:focus{border-color:#FF7F11!important;background:#fff!important}.crm-trow:hover{background:#F8FBFC}'
-+'.crm-rz{position:absolute;right:-4px;top:0;bottom:0;width:9px;cursor:col-resize;z-index:3}.crm-rz:hover,.crm-rz:active{background:rgba(255,127,17,.28);border-radius:3px}'
-+'.crm-grip{display:inline-flex;align-items:center;color:#C4D5D9;cursor:grab;margin-right:6px;vertical-align:middle;padding:2px;border-radius:4px}.crm-grip:hover{color:#FF7F11;background:#FFF1E4}.crm-grip:active{cursor:grabbing}'
-+'.crm-colh.crm-drop-l{box-shadow:inset 3px 0 0 #FF7F11}.crm-colh.crm-drop-r{box-shadow:inset -3px 0 0 #FF7F11}.crm-colh.crm-dragging{opacity:.45}'
++'.crm-cell:focus{border-color:#0F766E!important;background:#fff!important}.crm-trow:hover{background:#F8FBFC}'
+/* v3.20 @-mention chip: readable on BOTH bubble colours */
++'.crm-tag{background:#EDF5F7;color:#0A5A55;font-weight:700;border-radius:4px;padding:0 4px}'
++'.crm-msg.crm-mine .crm-tag{background:rgba(255,255,255,.24);color:#fff}'
++'#crm-mention .crm-mrow:active{background:#F1F7F8}'
++'.crm-rz{position:absolute;right:-4px;top:0;bottom:0;width:9px;cursor:col-resize;z-index:3}.crm-rz:hover,.crm-rz:active{background:rgba(15,118,110,.28);border-radius:3px}'
++'.crm-grip{display:inline-flex;align-items:center;color:#C4D5D9;cursor:grab;margin-right:6px;vertical-align:middle;padding:2px;border-radius:4px}.crm-grip:hover{color:#0F766E;background:#E4F2F0}.crm-grip:active{cursor:grabbing}'
++'.crm-colh.crm-drop-l{box-shadow:inset 3px 0 0 #0F766E}.crm-colh.crm-drop-r{box-shadow:inset -3px 0 0 #0F766E}.crm-colh.crm-dragging{opacity:.45}'
 /* ══ MOBILE ══ */
 +'@media(max-width:767px){'
   /* clear the bottom nav AND the iOS home indicator */
   +'.crm-fs{bottom:calc(60px + env(safe-area-inset-bottom))!important}'
+  /* iOS Safari sizes a position:fixed box against the LARGE viewport (toolbar hidden), so the
+     bottom edge - and with it the message composer - ends up underneath Safari's own toolbar.
+     100dvh tracks the visible viewport instead, so the composer always sits on the bottom nav.
+     Wrapped in @supports so older browsers keep the bottom-offset version above. */
+  +'@supports(height:100dvh){.crm-fs{top:0!important;bottom:auto!important;height:calc(100dvh - 60px - env(safe-area-inset-bottom))!important}}'
   /* hub drawer + its scrim */
   +'.crm-nav{position:absolute!important;left:0;top:0;bottom:0;z-index:41;width:82%!important;max-width:300px;transform:translateX(-100%);transition:transform .2s;box-shadow:4px 0 26px rgba(0,0,0,.22)}'
   +'.crm-nav.crmopen{transform:none!important}'
@@ -188,6 +237,45 @@ const _crmStyle='<style>'
   +'.crm-dscrim{position:fixed;inset:0;z-index:59;background:rgba(10,27,33,.42)}'
   /* the thread panel had no mobile rule at all - it left ~40px for the message list */
   +'.crm-thread-panel{position:fixed!important;left:0;right:0;top:0;bottom:calc(60px + env(safe-area-inset-bottom));width:auto!important;z-index:58;border-left:none!important}'
+  /* v3.18 THE COMPOSER FIX. iOS Safari does not reliably constrain a flex column nested this
+     deep, so #crm-thread grew to its full content height: the messages painted straight through
+     the bottom nav and the composer was pushed off-screen entirely. On mobile the chat pane is
+     therefore lifted OUT of the flex chain and pinned to .crm-fs (its nearest positioned
+     ancestor), which gives every row below it a definite height to divide up. */
+  +'.crm-hasconvo .crm-chatpane{position:absolute!important;top:0;left:0;right:0;bottom:0;flex-direction:column!important;overflow:hidden}'
+  +'.crm-chatbody{flex:1 1 auto!important;min-height:0!important;overflow:hidden}'
+  +'.crm-threadcol{flex:1 1 auto!important;min-height:0!important;overflow:hidden}'
+  +'#crm-thread{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important}'
+  +'.crm-composer{flex:0 0 auto!important;background:#fff;z-index:2}'
+  /* v3.19 THE ACTUAL BUG. main.css ships a blunt mobile rule —
+       #content [style*="display:flex"]:not([style*="flex-direction:column"]){flex-wrap:wrap}
+     — which matched .crm-chatbody (inline display:flex, row). In a WRAPPING flex container a
+     flex line is sized to its content, so .crm-threadcol grew to the full height of the message
+     list instead of being clipped by its parent: the thread never became scrollable and the
+     composer was laid out below the fold. The same rule wrapped the composer row (attach button
+     on one line, textarea on the next) and could drop long bubbles under their avatar.
+     Everything in the chat column is an explicit single-line row — say so. */
+  +'.crm-chatpane,.crm-chatbody,.crm-threadcol,.crm-composer>div,#crm-thread>div{flex-wrap:nowrap!important}'
+  /* a bubble may never be wider than the row minus the 24px avatar + 7px gap */
+  +'.crm-msg{max-width:calc(100% - 34px)!important}'
+  /* v3.19 density — the phone view was scaled for a desktop pane. ~10% tighter across the board:
+     slimmer header, tighter bubbles, a compact composer. Nothing shrinks below a 44px tap target
+     and the textarea stays at 16px so iOS does not zoom the viewport on focus. */
+  +'.crm-chathdr{padding:6px 10px!important;gap:8px!important}'
+  +'.crm-chathdr .fd{font-size:14px!important}'
+  +'.crm-chathdr .crm-chatsub{font-size:11px!important}'
+  +'#crm-thread{padding:8px 10px!important}'
+  +'.crm-msg .crm-bub{font-size:12.5px!important;line-height:1.38!important;padding:6px 9px!important}'
+  +'.crm-msg .crm-who{font-size:10px!important}'
+  +'.crm-composer{padding:6px 8px!important}'
+  +'.crm-composer textarea{min-height:38px!important;padding:8px 10px!important}'
+  +'.crm-composer .crm-sendrow>label,.crm-composer .crm-sendrow>button{width:36px!important;height:36px!important;min-height:36px!important}'
+  /* v3.20 — the @-mention picker was a 240px desktop popover; on a phone it becomes a
+     full-width sheet pinned above the composer, with thumb-sized rows. */
+  +'#crm-mention{left:6px!important;right:6px!important;width:auto!important;max-height:46vh!important;border-radius:14px!important;box-shadow:0 -8px 30px rgba(13,38,46,.22)!important;padding:8px!important}'
+  +'#crm-mention .crm-mrow{min-height:46px!important;padding:8px 10px!important;border-radius:10px!important}'
+  +'#crm-mention .crm-mname{font-size:14px!important}'
+  +'@supports(height:100dvh){.crm-thread-panel{bottom:auto!important;height:calc(100dvh - 60px - env(safe-area-inset-bottom))!important}}'
   /* every CRM control reaches a 44px tap target */
   +'.crm-fs button{min-height:38px}'
   +'.crm-fs .crm-tap,.crm-fs button[onclick*="_crmMob"],.crm-fs .crm-hdr-btn{min-width:44px!important;min-height:44px!important}'
@@ -200,25 +288,25 @@ const _crmStyle='<style>'
   +'.crm-scroll{-webkit-overflow-scrolling:touch}'
 +'}'
 +'</style>';
-function _crmEmpty(icon,title,sub,btn){return'<div style="flex:1;display:grid;place-items:center;padding:40px"><div style="text-align:center;max-width:360px"><div style="width:56px;height:56px;border-radius:16px;background:#F4FAFB;color:#FF7F11;display:grid;place-items:center;margin:0 auto 14px">'+ic(icon,'w-7 h-7')+'</div><div class="fd" style="font-size:16px;font-weight:800;color:#10262E">'+esc(title)+'</div><div style="font-size:13px;color:#90A5AB;margin-top:5px;line-height:1.5">'+esc(sub)+'</div>'+(btn||'')+'</div></div>';}
+function _crmEmpty(icon,title,sub,btn){return'<div style="flex:1;display:grid;place-items:center;padding:40px"><div style="text-align:center;max-width:360px"><div style="width:56px;height:56px;border-radius:16px;background:#F4FAFB;color:#0F766E;display:grid;place-items:center;margin:0 auto 14px">'+ic(icon,'w-7 h-7')+'</div><div class="fd" style="font-size:16px;font-weight:800;color:#10262E">'+esc(title)+'</div><div style="font-size:13px;color:#90A5AB;margin-top:5px;line-height:1.5">'+esc(sub)+'</div>'+(btn||'')+'</div></div>';}
 function _crmConvoRow(c,activeId,showBoard){
   var active=c.id===activeId;var last=(c.messages||[])[c.messages.length-1];var unread=_crmUnread(c);var due=_crmDueMeta(c);
   var snip=last?((last.fromCustomer?'':'You: ')+(last.text||((last.images&&last.images.length)?'\u{1F4F7} Photo':''))):'No messages yet';
-  var typeChip=c.isTicket?'<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#5B45D6;background:#F0EDFE;border-radius:5px;padding:1px 5px">'+esc(c.ticketType||'Ticket')+'</span>':'';
+  var typeChip=c.isTicket?'<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#8A6E14;background:#F5EBCC;border-radius:5px;padding:1px 5px">'+esc(c.ticketType||'Ticket')+'</span>':'';
   var asg=c.assignedTo&&uById(c.assignedTo)?'<span title="Assigned to '+esc(fullName(uById(c.assignedTo)))+'">'+avatar(uById(c.assignedTo),'w-[18px] h-[18px]','text-[8px]')+'</span>':'';
   var bd=showBoard&&_crmBoard(c.boardId)?'<span style="font-size:9.5px;font-weight:700;color:#5E767D;background:#EFF6F7;border-radius:5px;padding:1px 6px">'+esc(_crmBoard(c.boardId).name)+'</span>':'';
   var del=can('crm','delete')?'<button title="Delete" onclick="event.stopPropagation();App._crmDelConvo(\''+c.id+'\')" class="crm-del" style="position:absolute;top:9px;right:9px;width:22px;height:22px;border:none;background:#fff;color:#DC2626;cursor:pointer;border-radius:6px;display:none;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.12)">'+ic('trash','w-3.5 h-3.5')+'</button>':'';
-  return'<div class="crm-row" onclick="'+(showBoard?'App._crmOpenResult':'App._crmSelConvo')+'(\''+c.id+'\')" style="position:relative;cursor:pointer;padding:7px 10px;border-bottom:1px solid #F1F7F8;background:'+(active?'#F4FAFB':unread?'#F7FBFC':'#fff')+';border-left:3px solid '+(active?'#FF7F11':unread?'#FF9A68':'transparent')+'">'
+  return'<div class="crm-row" onclick="'+(showBoard?'App._crmOpenResult':'App._crmSelConvo')+'(\''+c.id+'\')" style="position:relative;cursor:pointer;padding:7px 10px;border-bottom:1px solid #F1F7F8;background:'+(active?'#F4FAFB':unread?'#F7FBFC':'#fff')+';border-left:3px solid '+(active?'#0F766E':unread?'#2CB1A6':'transparent')+'">'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+_crmCustAv(c.customer,24)
     +'<span style="font-size:13px;font-weight:700;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.customer||'—')+'</span>'
-    +(unread?'<span title="Unread" style="width:8px;height:8px;border-radius:50%;background:#FF7F11;flex-shrink:0"></span>':'')+'<span style="font-size:10px;color:'+(unread?'#FF7F11':'#93A6AC')+';font-weight:'+(unread?'800':'400')+';flex-shrink:0">'+_crmRel(c.lastAt)+'</span></div>'
+    +(unread?'<span title="Unread" style="width:8px;height:8px;border-radius:50%;background:#0F766E;flex-shrink:0"></span>':'')+'<span style="font-size:10px;color:'+(unread?'#0F766E':'#93A6AC')+';font-weight:'+(unread?'800':'400')+';flex-shrink:0">'+_crmRel(c.lastAt)+'</span></div>'
     +'<div style="font-size:12px;font-weight:600;color:#2F4C55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:32px">'+esc(c.title||'')+'</div>'
     +'<div style="display:flex;align-items:center;gap:6px;margin-left:32px;margin-top:2px">'+bd+'<span style="font-size:11px;color:#90A5AB;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(snip)+'</span>'+typeChip+(due?'<span style="font-size:9.5px;font-weight:800;color:'+due.color+';background:'+due.bg+';border-radius:5px;padding:1px 6px;flex-shrink:0">'+(due.overdue?'\u26A0 ':'')+due.label+'</span>':'')+'</div>'+del+'</div>';
 }
 function _crmReactChips(m,cid){
   var ks=Object.keys(m.reactions||{}).filter(function(e){return (m.reactions[e]||[]).length;});
   if(!ks.length)return'';
-  return'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">'+ks.map(function(e){var arr=m.reactions[e]||[];var mine=arr.indexOf(S.uid)>=0;return'<button onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;border:1px solid '+(mine?'#FF7F11':'#DFEAEC')+';background:'+(mine?'#F4FAFB':'#fff')+';border-radius:20px;padding:1px 7px;cursor:pointer">'+e+' '+arr.length+'</button>';}).join('')+'</div>';
+  return'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">'+ks.map(function(e){var arr=m.reactions[e]||[];var mine=arr.indexOf(S.uid)>=0;return'<button onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;border:1px solid '+(mine?'#0F766E':'#DFEAEC')+';background:'+(mine?'#F4FAFB':'#fff')+';border-radius:20px;padding:1px 7px;cursor:pointer">'+e+' '+arr.length+'</button>';}).join('')+'</div>';
 }
 function _crmMsgActions(m,cid,thread){
   if(m.fromCustomer)return'';
@@ -226,8 +314,8 @@ function _crmMsgActions(m,cid,thread){
   var b='';
   if(part)b+=_CRM_EMO.map(function(e){return'<button title="React" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;padding:2px 3px">'+e+'</button>';}).join('');
   if(part&&!thread&&!m.parentId)b+='<button title="Reply in thread" onclick="App._crmOpenThread(\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#5E767D;padding:2px 3px">'+ic('msg','w-3.5 h-3.5')+'</button>';
-  if(part)b+='<button title="Remind me about this (date & time)" onclick="App._crmRemindOpen(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#8F4A05;padding:2px 3px">'+ic('bell','w-3.5 h-3.5')+'</button>';
-  if(part)b+='<button title="Create ticket from this message" onclick="App._crmTicketFromMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#FF7F11;padding:2px 3px">'+ic('ticket','w-3.5 h-3.5')+'</button>';
+  if(part)b+='<button title="Remind me about this (date & time)" onclick="App._crmRemindOpen(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#0A5A55;padding:2px 3px">'+ic('bell','w-3.5 h-3.5')+'</button>';
+  if(part)b+='<button title="Create ticket from this message" onclick="App._crmTicketFromMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#0F766E;padding:2px 3px">'+ic('ticket','w-3.5 h-3.5')+'</button>';
   if(own&&part)b+='<button title="Edit" onclick="App._crmEditMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#5E767D;padding:2px 3px">'+ic('edit','w-3.5 h-3.5')+'</button>';
   if(own&&part)b+='<button title="Forward" onclick="App._crmForward(\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#5E767D;padding:2px 3px">'+ic('send','w-3.5 h-3.5')+'</button>';
   if((own&&part)||can('crm','delete'))b+='<button title="Delete" onclick="App._crmDelMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#DC2626;padding:2px 3px">'+ic('trash','w-3.5 h-3.5')+'</button>';
@@ -240,14 +328,14 @@ function _crmMsg(m,cid,thread,prev){
   var grouped=false;
   if(prev&&!editing){var same=(!!m.fromCustomer===!!prev.fromCustomer)&&(m.fromCustomer?(m.name===prev.name):(m.senderId===prev.senderId));var dtms=0;try{dtms=new Date(m.at)-new Date(prev.at);}catch(e){}grouped=same&&dtms>=0&&dtms<5*60000;}
   if(grouped||(mine&&_isChat))av='<div style="width:24px;flex-shrink:0"></div>';
-  var bub=mine?'background:#FF7F11;color:#fff;border-radius:13px 13px 4px 13px':'background:#fff;color:#10262E;border:1px solid #E7F0F2;border-radius:13px 13px 13px 4px';
+  var bub=mine?'background:#0F766E;color:#fff;border-radius:13px 13px 4px 13px':'background:#fff;color:#10262E;border:1px solid #E7F0F2;border-radius:13px 13px 13px 4px';
   var inner=editing
-    ?'<textarea id="crm-edit-'+m.id+'" rows="2" style="width:280px;max-width:60vw;border:1px solid #DFEAEC;border-radius:10px;padding:8px;font-size:13.5px;font-family:inherit;outline:none">'+esc(m.text)+'</textarea><div style="display:flex;gap:6px;margin-top:5px;justify-content:flex-end"><button onclick="App._crmCancelEdit()" style="font-size:11px;padding:4px 9px;border:1px solid #DFEAEC;background:#fff;border-radius:7px;cursor:pointer">Cancel</button><button onclick="App._crmSaveEdit(\''+cid+'\',\''+m.id+'\')" style="font-size:11px;padding:4px 9px;border:none;background:#FF7F11;color:#fff;border-radius:7px;cursor:pointer">Save</button></div>'
-    :'<div title="'+_crmDT(m.at)+'" style="'+bub+';padding:6px 10px;font-size:13px;line-height:1.4;word-break:break-word;box-shadow:0 1px 2px rgba(13,38,46,.04)">'+_crmAt(m.text)+(m.edited?' <span style="opacity:.55;font-size:10px">(edited)</span>':'')+_crmImgs(m.images)+'</div>';
+    ?'<textarea id="crm-edit-'+m.id+'" rows="2" style="width:280px;max-width:60vw;border:1px solid #DFEAEC;border-radius:10px;padding:8px;font-size:13.5px;font-family:inherit;outline:none">'+esc(m.text)+'</textarea><div style="display:flex;gap:6px;margin-top:5px;justify-content:flex-end"><button onclick="App._crmCancelEdit()" style="font-size:11px;padding:4px 9px;border:1px solid #DFEAEC;background:#fff;border-radius:7px;cursor:pointer">Cancel</button><button onclick="App._crmSaveEdit(\''+cid+'\',\''+m.id+'\')" style="font-size:11px;padding:4px 9px;border:none;background:#0F766E;color:#fff;border-radius:7px;cursor:pointer">Save</button></div>'
+    :'<div class="crm-bub" title="'+_crmDT(m.at)+'" style="'+bub+';padding:6px 10px;font-size:13px;line-height:1.4;word-break:break-word;box-shadow:0 1px 2px rgba(13,38,46,.04)">'+_crmAt(m.text)+(m.edited?' <span style="opacity:.55;font-size:10px">(edited)</span>':'')+_crmImgs(m.images)+'</div>';
   var replies=(!thread&&!m.parentId)?((_crmConvo(cid)||{messages:[]}).messages||[]).filter(x=>x.parentId===m.id):[];
-  var opener=replies.length?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#FF7F11;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px">'+ic('msg','w-3 h-3')+replies.length+' repl'+(replies.length===1?'y':'ies')+'</button>':'';
+  var opener=replies.length?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#0F766E;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px">'+ic('msg','w-3 h-3')+replies.length+' repl'+(replies.length===1?'y':'ies')+'</button>':'';
   var col='<div class="crm-msg'+(mine?' crm-mine':'')+'" onclick="App._crmMsgActs(event,this)" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'">'
-    +(grouped?'':'<div style="font-size:10.5px;font-weight:700;color:#90A5AB;margin:0 4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+((_isChat&&mine)?'':esc(who)+' <span style="color:#C4D5D9">\u00B7</span> ')+'<span style="font-weight:600;color:#C4D5D9">'+_crmTime(m.at)+'</span></div>')
+    +(grouped?'':'<div class="crm-who" style="font-size:10.5px;font-weight:700;color:#90A5AB;margin:0 4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+((_isChat&&mine)?'':esc(who)+' <span style="color:#C4D5D9">\u00B7</span> ')+'<span style="font-weight:600;color:#C4D5D9">'+_crmTime(m.at)+'</span></div>')
     +inner+_crmReactChips(m,cid)+opener
     +(editing?'':_crmMsgActions(m,cid,thread))+'</div>';
   return'<div style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:9):0)+'px">'+av+col+'</div>';
@@ -258,9 +346,9 @@ function _crmMentionItems(q){
   var memIds={};mem.forEach(function(u){memIds[u.id]=1;});
   // Groups are taggable too — only groups with at least one member of this board
   var glist=_crmGroups().filter(function(g){var n=String(g.name||'').toLowerCase();var t=_crmGroupToken(g).toLowerCase();return (!q||n.indexOf(q)>=0||t.indexOf(q)>=0)&&(g.members||[]).some(function(id){return memIds[id];});});
-  var rows='<button onmousedown="event.preventDefault();App._crmPickMention(\'ALL\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="width:24px;height:24px;border-radius:50%;background:#10262E;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800">@</span><span style="font-size:12.5px;font-weight:700;color:#10262E">Everyone</span><span style="font-size:10px;color:#90A5AB;margin-left:auto">notify all</span></button>';
-  rows+=glist.map(function(g){return'<button onmousedown="event.preventDefault();App._crmPickMention(\'grp:'+g.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="width:24px;height:24px;border-radius:50%;background:#FFF1E4;color:#8F4A05;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-3 h-3')+'</span><span style="font-size:12.5px;font-weight:700;color:#10262E">'+esc(g.name)+'</span><span style="font-size:10px;color:#90A5AB;margin-left:auto">group · '+((g.members||[]).length)+'</span></button>';}).join('');
-  rows+=list.map(u=>'<button onmousedown="event.preventDefault();App._crmPickMention(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span style="font-size:12.5px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>').join('');
+  var rows='<button class="crm-mrow" onmousedown="event.preventDefault();App._crmPickMention(\'ALL\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="width:24px;height:24px;border-radius:50%;background:#10262E;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800">@</span><span class="crm-mname" style="font-size:12.5px;font-weight:700;color:#10262E">Everyone</span><span style="font-size:10px;color:#90A5AB;margin-left:auto">notify all</span></button>';
+  rows+=glist.map(function(g){return'<button class="crm-mrow" onmousedown="event.preventDefault();App._crmPickMention(\'grp:'+g.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="width:24px;height:24px;border-radius:50%;background:#E4F2F0;color:#0A5A55;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-3 h-3')+'</span><span class="crm-mname" style="font-size:12.5px;font-weight:700;color:#10262E">'+esc(g.name)+'</span><span style="font-size:10px;color:#90A5AB;margin-left:auto">group · '+((g.members||[]).length)+'</span></button>';}).join('');
+  rows+=list.map(u=>'<button class="crm-mrow" onmousedown="event.preventDefault();App._crmPickMention(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span class="crm-mname" style="font-size:12.5px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>').join('');
   if(!list.length&&!glist.length)rows+='<div style="padding:8px;font-size:12px;color:#90A5AB">No matching teammate on this board</div>';
   return rows;
 }
@@ -277,8 +365,8 @@ function _crmDetailsPanel(convo,board){
   var cols=(board&&board.settings&&board.settings.columns)||[];
   var acts=_crmActFor(convo.id).slice(0,8);
   var myRems=(CRM.reminders||[]).filter(function(r){return r.conversationId===convo.id&&!r.fired;}).sort(function(a,b){return String(a.remindAt).localeCompare(String(b.remindAt));});
-  var remBlock='<div style="border-top:1px dashed #E4EDEF;padding-top:12px;margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#93A6AC">My reminders</span><button onclick="App._crmRemindOpen(\''+convo.id+'\')" style="border:none;background:#FFF1E4;color:#8F4A05;border-radius:7px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer">+ Add</button></div>'
-    +(myRems.length?myRems.map(function(r){return'<div style="display:flex;align-items:flex-start;gap:7px;padding:6px 8px;background:#F8FCFC;border:1px solid #FFF1E4;border-radius:9px;margin-bottom:5px"><span style="font-size:12px">\u23F0</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;color:#10262E">'+_crmDT(r.remindAt)+'</div>'+(r.note?'<div style="font-size:11px;color:#61797F;margin-top:1px">'+esc(r.note)+'</div>':'')+'</div><button onclick="App._crmRemindDel(\''+r.id+'\')" title="Cancel reminder" style="border:none;background:transparent;color:#C4D5D9;cursor:pointer;padding:0">'+ic('x','w-3 h-3')+'</button></div>';}).join(''):'<div style="font-size:11.5px;color:#A3B6BB;line-height:1.5">None yet \u2014 get an email + in-app ping at a date & time you pick.</div>')
+  var remBlock='<div style="border-top:1px dashed #E4EDEF;padding-top:12px;margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#93A6AC">My reminders</span><button onclick="App._crmRemindOpen(\''+convo.id+'\')" style="border:none;background:#E4F2F0;color:#0A5A55;border-radius:7px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer">+ Add</button></div>'
+    +(myRems.length?myRems.map(function(r){return'<div style="display:flex;align-items:flex-start;gap:7px;padding:6px 8px;background:#F8FCFC;border:1px solid #E4F2F0;border-radius:9px;margin-bottom:5px"><span style="font-size:12px">\u23F0</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;color:#10262E">'+_crmDT(r.remindAt)+'</div>'+(r.note?'<div style="font-size:11px;color:#61797F;margin-top:1px">'+esc(r.note)+'</div>':'')+'</div><button onclick="App._crmRemindDel(\''+r.id+'\')" title="Cancel reminder" style="border:none;background:transparent;color:#C4D5D9;cursor:pointer;padding:0">'+ic('x','w-3 h-3')+'</button></div>';}).join(''):'<div style="font-size:11.5px;color:#A3B6BB;line-height:1.5">None yet \u2014 get an email + in-app ping at a date & time you pick.</div>')
   +'</div>';
   return (CRM._mobDetails?'<div class="crm-dscrim crm-only-mob" onclick="App._crmMobDetails(false)"></div>':'')
     +'<div class="crm-hide-mob crm-details'+(CRM._mobDetails?' crm-dopen':'')+'" style="width:284px;flex-shrink:0;border-left:1px solid #EBF4F5;background:#F9FCFD;display:flex;flex-direction:column;min-height:0">'
@@ -298,32 +386,32 @@ function _crmChatPane(convo,board){
   if(!convo)return '<div class="crm-chatpane" style="flex:1;display:flex;min-width:0;min-height:0">'+_crmEmpty('msg','No conversation selected',(_crmFilteredConvos().length?'Pick a conversation from the list.':'Start a new conversation using the form on the left.'),'')+'</div>';
   var meta;
   if(convo.isTicket){
-    meta='<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#8F4A05;background:#FFF1E4;border-radius:6px;padding:3px 8px">'+esc(convo.ticketType||'Ticket')+'</span></div>';
+    meta='<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#0A5A55;background:#E4F2F0;border-radius:6px;padding:3px 8px">'+esc(convo.ticketType||'Ticket')+'</span></div>';
   }else{
     meta='';
   }
   var asgU=convo.assignedTo?uById(convo.assignedTo):null;var bmem=_crmBoardPeople(board);
-  var assignCtl=can('crm','assign')?'<div style="position:relative"><button onclick="App._crmTogAssign()" title="Assign" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #DFEAEC;border-radius:10px;padding:5px 9px;cursor:pointer;font-size:12px;font-weight:600;color:#2F4C55">'+(asgU?avatar(asgU,'w-5 h-5','text-[8px]')+'<span>'+esc(_crmFirst(asgU))+'</span>':ic('user','w-4 h-4')+'<span>Assign</span>')+'</button><div id="crm-assign" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:220px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;padding:4px 8px">Assign to</div><button onclick="App._crmAssign(\''+convo.id+'\',\'\')" style="width:100%;text-align:left;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;color:#5E767D">Unassigned</button>'+bmem.map(u=>'<button onclick="App._crmAssign(\''+convo.id+'\',\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span style="font-size:12.5px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>').join('')+'</div></div>':(asgU?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#5E767D">'+avatar(asgU,'w-5 h-5','text-[8px]')+esc(_crmFirst(asgU))+'</span>':'');
+  var assignCtl=can('crm','assign')?'<div style="position:relative"><button onclick="App._crmTogAssign()" title="Assign" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #DFEAEC;border-radius:10px;padding:5px 9px;cursor:pointer;font-size:12px;font-weight:600;color:#2F4C55">'+(asgU?avatar(asgU,'w-5 h-5','text-[8px]')+'<span>'+esc(_crmFirst(asgU))+'</span>':ic('user','w-4 h-4')+'<span>Assign</span>')+'</button><div id="crm-assign" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:220px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;padding:4px 8px">Assign to</div><button onclick="App._crmAssign(\''+convo.id+'\',\'\')" style="width:100%;text-align:left;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;color:#5E767D">Unassigned</button>'+bmem.map(u=>'<button onclick="App._crmAssign(\''+convo.id+'\',\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span class="crm-mname" style="font-size:12.5px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>').join('')+'</div></div>':(asgU?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#5E767D">'+avatar(asgU,'w-5 h-5','text-[8px]')+esc(_crmFirst(asgU))+'</span>':'');
   var top=(convo.messages||[]).filter(x=>!x.parentId);
   var thread=top.length?top.map(function(m,i){return _crmMsg(m,convo.id,false,top[i-1]);}).join(''):'<div style="flex:1;display:grid;place-items:center;color:#93A6AC;font-size:12.5px">No messages yet — say hello \u{1F44B}</div>';
   var canSend=can('crm','create');
   // thread panel
   var tpanel='';
   if(CRM.sel.threadId){var pm=(convo.messages||[]).find(x=>x.id===CRM.sel.threadId);var reps=(convo.messages||[]).filter(x=>x.parentId===CRM.sel.threadId);
-    tpanel='<div class="crm-thread-panel" style="width:320px;flex-shrink:0;border-left:1px solid #E7F0F2;display:flex;flex-direction:column;min-height:0;background:#fff"><div style="padding:9px 12px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:800;font-size:13.5px">Thread</span><button onclick="App._crmCloseThread()" style="border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x','w-4 h-4')+'</button></div><div id="crm-tthread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;min-height:0">'+(pm?_crmMsg(pm,convo.id,true):'<div style="color:#90A5AB;font-size:12px">Original message was deleted.</div>')+'<div style="height:1px;background:#EDF4F6;margin:2px 0"></div><div style="font-size:11px;color:#90A5AB;font-weight:700">'+reps.length+' repl'+(reps.length===1?'y':'ies')+'</div>'+reps.map(function(r,i){return _crmMsg(r,convo.id,true,reps[i-1]);}).join('')+'</div>'+(canSend?'<div style="border-top:1px solid #E7F0F2;padding:8px;display:flex;gap:7px;align-items:flex-end"><textarea id="crm-tinput" rows="1" placeholder="Reply…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSendReply();}" style="flex:1;resize:none;border:1px solid #DFEAEC;border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;max-height:100px"></textarea><button onclick="App._crmSendReply()" style="width:34px;height:34px;border-radius:9px;border:none;background:#FF7F11;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'')+'</div>';
+    tpanel='<div class="crm-thread-panel" style="width:320px;flex-shrink:0;border-left:1px solid #E7F0F2;display:flex;flex-direction:column;min-height:0;background:#fff"><div style="padding:9px 12px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:800;font-size:13.5px">Thread</span><button onclick="App._crmCloseThread()" style="border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x','w-4 h-4')+'</button></div><div id="crm-tthread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;min-height:0">'+(pm?_crmMsg(pm,convo.id,true):'<div style="color:#90A5AB;font-size:12px">Original message was deleted.</div>')+'<div style="height:1px;background:#EDF4F6;margin:2px 0"></div><div style="font-size:11px;color:#90A5AB;font-weight:700">'+reps.length+' repl'+(reps.length===1?'y':'ies')+'</div>'+reps.map(function(r,i){return _crmMsg(r,convo.id,true,reps[i-1]);}).join('')+'</div>'+(canSend?'<div style="border-top:1px solid #E7F0F2;padding:8px;display:flex;gap:7px;align-items:flex-end"><textarea id="crm-tinput" rows="1" placeholder="Reply…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSendReply();}" style="flex:1;resize:none;border:1px solid #DFEAEC;border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;max-height:100px"></textarea><button onclick="App._crmSendReply()" style="width:34px;height:34px;border-radius:9px;border:none;background:#0F766E;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'')+'</div>';
   }
   // forward overlay
   var _fl=CRM.convos.filter(c=>_crmVisibleBoardIds()[c.boardId]&&c.id!==CRM.sel.convoId);var fwd='';
   if(CRM.fwdMsgId){fwd='<div style="position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.15);display:grid;place-items:center" onclick="App._crmForwardClose()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:340px;max-height:74%;display:flex;flex-direction:column;overflow:hidden"><div style="padding:12px 14px;border-bottom:1px solid #E7F0F2;font-weight:800;display:flex;align-items:center;justify-content:space-between">Forward to…<button onclick="App._crmForwardClose()" style="border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x','w-4 h-4')+'</button></div><div class="crm-scroll" style="overflow-y:auto;padding:6px">'+(_fl.length?_fl.slice(0,80).map(c=>'<button onclick="App._crmDoForward(\''+c.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'">'+_crmCustAv(c.customer,24)+'<div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.customer||c.title||'—')+'</div><div style="font-size:11px;color:#90A5AB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((_crmBoard(c.boardId)?_crmBoard(c.boardId).name:'')+' · '+(c.title||''))+'</div></div></button>').join(''):'<div style="padding:18px;text-align:center;color:#90A5AB;font-size:12.5px">No other conversations to forward to.</div>')+'</div></div></div>';}
   return'<div class="crm-chatpane" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative">'+fwd
-    +'<div style="padding:9px 14px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0">'+'<button class="crm-only-mob crm-tap" aria-label="Back" onclick="App._crmMobBack()" style="width:34px;height:34px;border:1px solid #DFEAEC;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#2F4C55;flex-shrink:0;margin-right:2px">'+ic('back','w-5 h-5')+'</button>'+_crmCustAv(convo.customer,34)
-    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#10262E;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.title||'—')+'</div><div style="font-size:12px;color:#90A5AB;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')+'</div></div>'+meta+_crmHdrBtns(convo,board)+'</div>'
-    +'<div style="flex:1;display:flex;min-height:0">'
-      +'<div style="flex:1;display:flex;flex-direction:column;min-width:0;position:relative" ondragover="App._crmDragOver(event)" ondragleave="App._crmDragLeave(event)" ondrop="App._crmDrop(event)">'
-        +'<div id="crm-drop" style="display:none;position:absolute;inset:10px;z-index:40;background:rgba(255,127,17,.08);border:2px dashed #FF7F11;border-radius:12px;place-items:center;pointer-events:none"><div style="text-align:center;color:#8F4A05;font-weight:700">'+ic('upload','w-7 h-7')+'<div style="margin-top:6px">Drop images to attach</div></div></div>'
+    +'<div class="crm-chathdr" style="padding:9px 14px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0">'+'<button class="crm-only-mob crm-tap" aria-label="Back" onclick="App._crmMobBack()" style="width:34px;height:34px;border:1px solid #DFEAEC;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#2F4C55;flex-shrink:0;margin-right:2px">'+ic('back','w-5 h-5')+'</button>'+_crmCustAv(convo.customer,34)
+    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#10262E;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.title||'—')+'</div><div class="crm-chatsub" style="font-size:12px;color:#90A5AB;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')+'</div></div>'+meta+_crmHdrBtns(convo,board)+'</div>'
+    +'<div class="crm-chatbody" style="flex:1;display:flex;min-height:0">'
+      +'<div class="crm-threadcol" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative" ondragover="App._crmDragOver(event)" ondragleave="App._crmDragLeave(event)" ondrop="App._crmDrop(event)">'
+        +'<div id="crm-drop" style="display:none;position:absolute;inset:10px;z-index:40;background:rgba(15,118,110,.08);border:2px dashed #0F766E;border-radius:12px;place-items:center;pointer-events:none"><div style="text-align:center;color:#0A5A55;font-weight:700">'+ic('upload','w-7 h-7')+'<div style="margin-top:6px">Drop images to attach</div></div></div>'
         +'<div id="crm-thread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px 14px;background:#F8FBFC;display:flex;flex-direction:column;min-height:0">'+thread+'</div>'
-        +'<div style="border-top:1px solid #E7F0F2;padding:8px 12px;position:relative;flex-shrink:0"><div id="crm-preview" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div><div id="crm-mention" style="display:none;position:absolute;bottom:58px;left:14px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:240px;max-height:230px;overflow:auto"></div>'
-        +(canSend?'<div style="display:flex;align-items:flex-end;gap:8px"><label title="Attach image" style="width:36px;height:36px;border-radius:10px;border:1px solid #DFEAEC;background:#fff;cursor:pointer;color:#5E767D;display:grid;place-items:center;flex-shrink:0">'+ic('cam','w-4 h-4')+'<input type="file" accept="image/*" multiple onchange="App._crmPickImg(this)" style="display:none"/></label><textarea id="crm-input" rows="1" placeholder="Message… @ to tag · Enter to send" oninput="App._crmOnInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSend();}" style="flex:1;resize:none;border:1px solid #DFEAEC;border-radius:11px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;max-height:120px"></textarea><button onclick="App._crmSend()" style="width:38px;height:38px;border-radius:11px;border:none;background:#FF7F11;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'<div style="text-align:center;color:#93A6AC;font-size:12px;padding:8px">Read-only access.</div>')
+        +'<div class="crm-composer" style="border-top:1px solid #E7F0F2;padding:8px 12px;position:relative;flex-shrink:0"><div id="crm-preview" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div><div id="crm-mention" style="display:none;position:absolute;bottom:calc(100% + 6px);left:14px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:240px;max-height:230px;overflow:auto"></div>'
+        +(canSend?'<div class="crm-sendrow" style="display:flex;align-items:flex-end;gap:8px"><label title="Attach image" style="width:36px;height:36px;border-radius:10px;border:1px solid #DFEAEC;background:#fff;cursor:pointer;color:#5E767D;display:grid;place-items:center;flex-shrink:0">'+ic('cam','w-4 h-4')+'<input type="file" accept="image/*" multiple onchange="App._crmPickImg(this)" style="display:none"/></label><textarea id="crm-input" rows="1" placeholder="'+(_crmIsMob()?'Message…':'Message… @ to tag · Enter to send')+'" oninput="App._crmOnInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSend();}" style="flex:1;resize:none;border:1px solid #DFEAEC;border-radius:11px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;max-height:120px"></textarea><button onclick="App._crmSend()" style="width:38px;height:38px;border-radius:11px;border:none;background:#0F766E;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'<div style="text-align:center;color:#93A6AC;font-size:12px;padding:8px">Read-only access.</div>')
         +'</div></div>'+tpanel+_crmDetailsPanel(convo,board)+'</div></div>';
 }
 function _crmMine(c){return c.assignedTo===S.uid||c.createdBy===S.uid;}
@@ -352,12 +440,13 @@ function crmPage(){
       +'<span style="color:'+(hOn?'rgba(255,255,255,.7)':'#90A5AB')+'">'+ic(h.icon||'folder','w-3.5 h-3.5')+'</span>'
       +(collapsed?'':'<span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(h.name)+'</span>'
         +'<span style="font-size:9.5px;color:'+(hOn?'rgba(255,255,255,.55)':'#93A6AC')+'" title="'+bCount+' board'+(bCount===1?'':'s')+'">'+bCount+'</span>'
+        +(_crmCanHubMembers()?'<button title="Channel people — who can see every board in here" aria-label="Channel people" onclick="event.stopPropagation();App._crmHubPeople(\''+h.id+'\')" style="border:none;background:transparent;color:'+(hOn?'rgba(255,255,255,.85)':'#5E767D')+';cursor:pointer;padding:0;display:grid;place-items:center;min-width:26px;min-height:26px">'+ic('users','w-3.5 h-3.5')+'</button>':'')
         +((canCreate||can('crm','views'))?'<button title="New board / filtered view" onclick="event.stopPropagation();App._crmHubAdd(\''+h.id+'\')" style="border:none;background:transparent;color:'+(hOn?'rgba(255,255,255,.8)':'#90A5AB')+';cursor:pointer;padding:0">'+ic('plus','w-3 h-3')+'</button>':'')
         +(can('crm','rename')?'<button title="Rename" onclick="event.stopPropagation();App._crmRenameHub(\''+h.id+'\')" class="crm-hdel" style="border:none;background:transparent;color:'+(hOn?'#fff':'#5E767D')+';cursor:pointer;padding:0;display:none;place-items:center">'+ic('edit','w-3 h-3')+'</button>':'')
         +(can('crm','delete')?'<button title="Delete" onclick="event.stopPropagation();App._crmDelHub(\''+h.id+'\')" class="crm-hdel" style="border:none;background:transparent;color:#DC2626;cursor:pointer;padding:0;display:none;place-items:center">'+ic('trash','w-3 h-3')+'</button>':''))
       +'</div>'
       +(collapsed||hcol?'':views.map(function(v){var on=CRM.sel.viewId===v.id;var _tb=CRM.boards.filter(function(b){return b.hubId===v.hubId&&_crmBS(b).type!=='chat'&&!_crmViewHides(v,b.id);});var n=_tb.reduce(function(s2,b){return s2+_crmApplyFilters(CRM.convos.filter(function(c){return c.boardId===b.id;}),_crmViewFilters(v,b.id)).length;},0);
-        return'<div class="crm-chrow" style="position:relative;margin-left:6px"><button onclick="App._crmSelView(\''+v.id+'\')" title="Filtered view — all of '+esc(h.name)+'\u2019s boards, narrowed by its saved filters" style="width:100%;text-align:left;display:flex;align-items:center;gap:7px;padding:6px '+(_crmViewCanEdit(v)?46:6)+'px 6px 12px;border:none;border-radius:7px;cursor:pointer;background:'+(on?'#10262E':'transparent')+';color:'+(on?'#fff':'#2F4C55')+';font-size:12px;font-weight:'+(on?'700':'600')+';margin-bottom:1px"><span style="color:'+(on?'rgba(255,255,255,.5)':'#FF7F11')+';display:grid;place-items:center">'+ic('filter','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.name)+'</span><span style="font-size:9.5px;color:'+(on?'rgba(255,255,255,.55)':'#93A6AC')+'">'+n+'</span></button>'
+        return'<div class="crm-chrow" style="position:relative;margin-left:6px"><button onclick="App._crmSelView(\''+v.id+'\')" title="Filtered view — all of '+esc(h.name)+'\u2019s boards, narrowed by its saved filters" style="width:100%;text-align:left;display:flex;align-items:center;gap:7px;padding:6px '+(_crmViewCanEdit(v)?46:6)+'px 6px 12px;border:none;border-radius:7px;cursor:pointer;background:'+(on?'#10262E':'transparent')+';color:'+(on?'#fff':'#2F4C55')+';font-size:12px;font-weight:'+(on?'700':'600')+';margin-bottom:1px"><span style="color:'+(on?'rgba(255,255,255,.5)':'#0F766E')+';display:grid;place-items:center">'+ic('filter','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.name)+'</span><span style="font-size:9.5px;color:'+(on?'rgba(255,255,255,.55)':'#93A6AC')+'">'+n+'</span></button>'
         +(_crmViewCanEdit(v)?'<button title="Edit view" onclick="App._crmEditView(\''+v.id+'\')" class="crm-chx" style="position:absolute;top:6px;right:26px;width:18px;height:18px;border:none;background:transparent;color:'+(on?'#fff':'#5E767D')+';cursor:pointer;border-radius:5px;display:none;place-items:center">'+ic('edit','w-3 h-3')+'</button><button title="Delete view" onclick="App._crmDelView(\''+v.id+'\')" class="crm-chx" style="position:absolute;top:6px;right:6px;width:18px;height:18px;border:none;background:transparent;color:'+(on?'#fff':'#DC2626')+';cursor:pointer;border-radius:5px;display:none;place-items:center">'+ic('trash','w-3 h-3')+'</button>':'')
         +'</div>';}).join(''))
       +'</div>';
@@ -378,23 +467,23 @@ function crmPage(){
   var _dash='<button onclick="App.go(\'dashboard\')" title="Back to Dashboard" class="crm-dash" style="margin-left:6px;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #DFEAEC;background:#fff;border-radius:10px;font-size:12.5px;font-weight:600;color:#2F4C55;cursor:pointer;white-space:nowrap;flex-shrink:0">'+ic('grid','w-4 h-4')+'<span class="crm-hide-mob">Dashboard</span></button>';
   var _search='<div class="crm-search" style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:#90A5AB;pointer-events:none">'+ic('search','w-4 h-4')+'</span><input id="crm-search" autocomplete="off" oninput="App._crmSearch(this.value)" onfocus="App._crmSearch(this.value)" onblur="setTimeout(function(){var d=document.getElementById(\'crm-search-dd\');if(d)d.style.display=\'none\';},180)" placeholder="Search everywhere…" style="width:230px;max-width:44vw;padding:8px 10px 8px 32px;border:1px solid #DFEAEC;border-radius:10px;font-size:12.5px;outline:none"/><div id="crm-search-dd" class="crm-scroll" style="display:none;position:absolute;top:40px;right:0;z-index:80;width:330px;max-height:380px;overflow-y:auto;background:#fff;border:1px solid #DFEAEC;border-radius:14px;box-shadow:0 16px 44px rgba(13,38,46,.18);padding:6px"></div></div>';
   var mainInner;
-  if(!CRM.hubs.length){mainInner=_crmEmpty('msg','Welcome to your Workspace','Create your first Hub — it holds your boards (chats & ticket tables) and filtered views.',canCreate?'<button onclick="App._crmNewHub()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:11px;background:#FF7F11;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px">'+ic('plus','w-4 h-4')+'Create your first hub</button>':'<div style="margin-top:12px;font-size:12px;color:#93A6AC">Ask an admin for Workspace access.</div>');}
+  if(!CRM.hubs.length){mainInner=_crmEmpty('msg','Welcome to your Workspace','Create your first Hub — it holds your boards (chats & ticket tables) and filtered views.',canCreate?'<button onclick="App._crmNewHub()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:11px;background:#0F766E;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px">'+ic('plus','w-4 h-4')+'Create your first hub</button>':'<div style="margin-top:12px;font-size:12px;color:#93A6AC">Ask an admin for Workspace access.</div>');}
   else if(!hub){mainInner=_crmEmpty('folder','Nothing to show','You haven’t been added to any board or filtered view yet — ask an admin for access.','');}
   else{
-    var row1='<div class="crm-boardbar" style="padding:10px 16px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0"><button class="crm-only-mob crm-tap" aria-label="Open hubs" onclick="App._crmMobNav()" style="width:34px;height:34px;border:1px solid #DFEAEC;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#2F4C55;flex-shrink:0">'+ic('menu','w-5 h-5')+'</button><div class="crm-hubname" style="font-size:16px;font-weight:800;color:#10262E;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(hub.name)+(view?' <span style="font-weight:800;color:#FF7F11;font-size:13px">· '+esc(view.name)+'</span>':'')+'</div><div style="flex:1"></div>'+_search+_dash+'</div>';
-    var tabs=tabBoards.map(function(b){var on=b.id===CRM.sel.boardId;var _un=_crmUnreadCount(b.id);var _isC=_crmBS(b).type==='chat';var _brows=CRM.convos.filter(function(x){return x.boardId===b.id;});if(inView&&!_isC)_brows=_crmApplyFilters(_brows,_crmViewFilters(view,b.id));return'<button onclick="'+(inView?'App._crmSelVBoard':'App._crmSelBoard')+'(\''+b.id+'\')" class="crm-btab" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;background:transparent;border-bottom:2px solid '+(on?'#FF7F11':'transparent')+';color:'+(on?'#10262E':'#90A5AB')+';font-size:13px;font-weight:'+(on?'800':'600')+';cursor:pointer;white-space:nowrap">'+ic(_isC?'msg':'ticket','w-3.5 h-3.5')+esc(b.name)+' '+(_isC?'<span style="font-size:11px;color:'+(on?'#FF7F11':'#BFD1D5')+'">'+_brows.length+'</span>':_crmNotDoneBadge(b,_brows,on))+(_un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#FF7F11;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+_un+'</span>':'')+'</button>';}).join('');
-    var boardCtl=board?(((can('crm','manage')||can('crm','edit'))?'<button title="Board members — who can access this board" onclick="App._crmTogMembers()" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;font-size:12px;font-weight:700">'+ic('users','w-3.5 h-3.5')+members.length+'</button>':'')+(can('crm','rename')?'<button title="Rename board" onclick="App._crmRenameBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-4 h-4')+'</button>':'')+(inView
+    var row1='<div class="crm-boardbar" style="padding:10px 16px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0"><button class="crm-only-mob crm-tap" aria-label="Open hubs" onclick="App._crmMobNav()" style="width:34px;height:34px;border:1px solid #DFEAEC;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#2F4C55;flex-shrink:0">'+ic('menu','w-5 h-5')+'</button><div class="crm-hubname" style="font-size:16px;font-weight:800;color:#10262E;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(hub.name)+(view?' <span style="font-weight:800;color:#0F766E;font-size:13px">· '+esc(view.name)+'</span>':'')+'</div>'+_crmHubPeopleBtn(hub)+'<div style="flex:1"></div>'+_search+_dash+'</div>';
+    var tabs=tabBoards.map(function(b){var on=b.id===CRM.sel.boardId;var _un=_crmUnreadCount(b.id);var _isC=_crmBS(b).type==='chat';var _brows=CRM.convos.filter(function(x){return x.boardId===b.id;});if(inView&&!_isC)_brows=_crmApplyFilters(_brows,_crmViewFilters(view,b.id));return'<button onclick="'+(inView?'App._crmSelVBoard':'App._crmSelBoard')+'(\''+b.id+'\')" class="crm-btab" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;background:transparent;border-bottom:2px solid '+(on?'#0F766E':'transparent')+';color:'+(on?'#10262E':'#90A5AB')+';font-size:13px;font-weight:'+(on?'800':'600')+';cursor:pointer;white-space:nowrap">'+ic(_isC?'msg':'ticket','w-3.5 h-3.5')+esc(b.name)+' '+(_isC?'<span style="font-size:11px;color:'+(on?'#0F766E':'#BFD1D5')+'">'+_brows.length+'</span>':_crmNotDoneBadge(b,_brows,on))+(_un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#0F766E;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+_un+'</span>':'')+'</button>';}).join('');
+    var boardCtl=board?((_crmCanBoardMembers()?'<button title="Board members — who can access only this board" aria-label="Board members" onclick="App._crmTogMembers()" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;font-size:12px;font-weight:700">'+ic('users','w-3.5 h-3.5')+'<span class="crm-hide-mob">Board</span>'+members.length+'</button>':'')+(can('crm','rename')?'<button title="Rename board" onclick="App._crmRenameBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-4 h-4')+'</button>':'')+(inView
       ? (_crmViewCanEdit(view)?'<button title="Remove this board from the view — the board itself is not deleted" onclick="App._crmViewHideBoard(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;font-size:12px;font-weight:700">'+ic('x','w-3.5 h-3.5')+'Remove from view</button>':'')
       : (can('crm','delete')?'<button title="Delete board" onclick="App._crmDelBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #F9A9A9;background:#fff;color:#DC2626;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-4 h-4')+'</button>':''))):'';
-    var row2='<div class="crm-tabsrow" style="display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid #E7F0F2;overflow-x:auto;flex-shrink:0">'+tabs+(canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" title="New board" style="padding:8px 11px;border:none;background:transparent;color:#FF7F11;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+ic('plus','w-3.5 h-3.5')+'Board</button>':'')+'<div style="flex:1;min-width:8px"></div><div style="display:flex;align-items:center;gap:6px;padding:6px 2px">'+boardCtl+'</div></div>';
-    if(!board){mainInner=row1+row2+_crmEmpty('msg','No boards yet in this hub','Add a board — a chat, or a ticket table with its own columns, statuses, members & automations.',canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" style="margin-top:14px;padding:9px 18px;border:none;border-radius:10px;background:#FF7F11;color:#fff;font-weight:700;cursor:pointer">Create a board</button>':'');}
+    var row2='<div class="crm-tabsrow" style="display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid #E7F0F2;overflow-x:auto;flex-shrink:0">'+tabs+(canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" title="New board" style="padding:8px 11px;border:none;background:transparent;color:#0F766E;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+ic('plus','w-3.5 h-3.5')+'Board</button>':'')+'<div style="flex:1;min-width:8px"></div><div style="display:flex;align-items:center;gap:6px;padding:6px 2px">'+boardCtl+'</div></div>';
+    if(!board){mainInner=row1+row2+_crmEmpty('msg','No boards yet in this hub','Add a board — a chat, or a ticket table with its own columns, statuses, members & automations.',canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" style="margin-top:14px;padding:9px 18px;border:none;border-radius:10px;background:#0F766E;color:#fff;font-weight:700;cursor:pointer">Create a board</button>':'');}
     else{
       var isChat=_crmBS(board).type==='chat';var searching=!!(CRM.search||'').trim();if(isChat){var convo=_crmConvo(CRM.sel.convoId);var filtered=_crmFilteredConvos();
       if(!searching){var _valid=convo&&convo.boardId===CRM.sel.boardId&&filtered.some(function(c){return c.id===convo.id;});if(!_valid){var _mob=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(max-width:767px)').matches:false;if(_mob){convo=null;}else{convo=filtered[0]||null;}CRM.sel.threadId=null;}CRM.sel.convoId=convo?convo.id:null;}
       var _lf=CRM.listFilter||'all';var _bc=CRM.convos.filter(function(c){return c.boardId===CRM.sel.boardId;});
       var _lfCnt={all:_bc.length,unread:_bc.filter(_crmUnread).length,mine:_bc.filter(_crmMine).length};
       var lfRow='<div style="display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--c-border);background:#FAFDFD;flex-shrink:0">'+[['all','All'],['unread','Unread'],['mine','Mine']].map(function(x){var on=_lf===x[0];return '<button onclick="App._crmListFilter(\''+x[0]+'\')" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:'+(on?'#10262E':'transparent')+';color:'+(on?'#fff':'var(--c-text-2)')+';font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px">'+x[1]+(_lfCnt[x[0]]?'<span style="font-size:9.5px;font-weight:800;border-radius:8px;min-width:15px;padding:1px 4px;background:'+(on?'rgba(255,255,255,.22)':'var(--c-border)')+';color:'+(on?'#fff':'var(--c-text-2)')+'">'+_lfCnt[x[0]]+'</span>':'')+'</button>';}).join('')+'</div>';
-      var listCol='<div class="crm-listcol" style="width:22%;min-width:238px;max-width:340px;border-right:1px solid #E7F0F2;display:flex;flex-direction:column;min-height:0">'+lfRow+'<div class="crm-scroll" style="flex:1;overflow-y:auto" id="crm-list">'+_crmConvoListInner()+'</div>'+((canCreate&&!_crmIsMob())?'<div style="border-top:1px solid #E7F0F2;padding:11px;background:#F8FBFC;flex-shrink:0"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;margin-bottom:7px">New conversation</div><input id="crm-nc-name" placeholder="Customer / Order ID" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #DFEAEC;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><input id="crm-nc-title" placeholder="Subject" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #DFEAEC;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><button onclick="App._crmNewConvo()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#FF7F11;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">Start chat</button></div>':'')+((canCreate&&_crmIsMob())?'<button class="crm-fab" onclick="App._crmNewChatModal()" aria-label="New chat">'+ic('plus','w-4 h-4')+'New chat</button>':'')+'</div>';
+      var listCol='<div class="crm-listcol" style="width:22%;min-width:238px;max-width:340px;border-right:1px solid #E7F0F2;display:flex;flex-direction:column;min-height:0">'+lfRow+'<div class="crm-scroll" style="flex:1;overflow-y:auto" id="crm-list">'+_crmConvoListInner()+'</div>'+((canCreate&&!_crmIsMob())?'<div style="border-top:1px solid #E7F0F2;padding:11px;background:#F8FBFC;flex-shrink:0"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;margin-bottom:7px">New conversation</div><input id="crm-nc-name" placeholder="Customer / Order ID" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #DFEAEC;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><input id="crm-nc-title" placeholder="Subject" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #DFEAEC;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><button onclick="App._crmNewConvo()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#0F766E;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">Start chat</button></div>':'')+((canCreate&&_crmIsMob())?'<button class="crm-fab" onclick="App._crmNewChatModal()" aria-label="New chat">'+ic('plus','w-4 h-4')+'New chat</button>':'')+'</div>';
       mainInner=row1+row2+'<div style="flex:1;display:flex;min-height:0">'+listCol+_crmChatPane((searching?_crmConvo(CRM.sel.convoId):convo),board)+'</div>';}else{var openC=_crmConvo(CRM.sel.convoId);if(openC&&openC.boardId===board.id){mainInner=row1+'<div style="flex:1;display:flex;flex-direction:column;min-height:0"><div style="padding:7px 14px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="App._crmBackToTable()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid #DFEAEC;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#2F4C55">'+ic('back','w-4 h-4')+'Back to '+esc(inView?view.name:board.name)+'</button></div>'+_crmChatPane(openC,board)+'</div>';}else{CRM.sel.convoId=null;mainInner=row1+row2+(inView?_crmViewBarV(board,view):_crmViewBar(board))+_crmTable(board,inView?{filters:_crmViewFilters(view,board.id)}:{});}}
     }
   }
@@ -408,10 +497,11 @@ function crmPage(){
       ?'<button title="People groups" onclick="App._crmGroupsOpen()" style="width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('users','w-4 h-4')+'</button>'
       :'<div style="display:flex;align-items:center;gap:5px;padding:2px 7px"><span style="color:#90A5AB">'+ic('users','w-3.5 h-3.5')+'</span><button onclick="App._crmGroupsOpen()" title="Open people groups — @tag them in any board, notify them in automations" style="border:none;background:transparent;padding:0;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;flex:1;text-align:left;cursor:pointer">Groups'+(_gs.length?' <span style="font-weight:800;color:#93A6AC;text-transform:none;letter-spacing:0">('+_gs.length+')</span>':'')+'</button>'+(_canMg?'<button title="New group" onclick="App._crmGroupNewFromNav()" style="border:none;background:transparent;color:#90A5AB;cursor:pointer;padding:0">'+ic('plus','w-3 h-3')+'</button>':'')+'</div>')
     +'</div>';}
+  try{_crmSaveSel();}catch(e){}
   return _crmStyle+'<div class="crm-fs'+(CRM.sel.convoId?' crm-hasconvo':'')+'" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;z-index:5">'
     +'<div class="crm-scrim" onclick="App._crmMobNav(false)"></div>'
-    +'<div class="crm-nav" style="width:'+(collapsed?'56px':'220px')+';flex-shrink:0;border-right:1px solid #E7F0F2;background:#F6FAFB;display:flex;flex-direction:column;transition:width .15s"><div style="display:flex;align-items:center;gap:6px;padding:13px 10px;border-bottom:1px solid #E7F0F2;flex-shrink:0"><button onclick="App._crmTogSidebar()" title="Collapse" style="width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('menu','w-4 h-4')+'</button>'+(collapsed?'':'<span class="fd" '+(can('crm','rename')?'onclick="App._crmRenameHubsLabel()" title="Click to rename this label" style="cursor:pointer;font-weight:800;font-size:14px;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"':'style="font-weight:800;font-size:14px;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"')+'>'+esc(hubsLabel)+'</span>'+(canCreate?'<button title="New hub" onclick="App._crmNewHub()" style="width:26px;height:26px;border-radius:7px;border:none;background:#10262E;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('plus','w-3.5 h-3.5')+'</button>':''))+'</div><div class="crm-scroll" style="flex:1;overflow-y:auto;padding:8px 6px">'+(navHTML||(collapsed?'':'<div style="padding:16px 8px;font-size:12px;color:#90A5AB;text-align:center">No hubs yet</div>'))+'</div>'+grpFoot+'</div>'
-    +'<div style="flex:1;display:flex;flex-direction:column;min-width:0">'+mainInner+'</div>'+_crmModals()+'</div>';
+    +'<div class="crm-nav" style="width:'+(collapsed?'56px':'220px')+';flex-shrink:0;border-right:1px solid #E7F0F2;background:#FAF9F3;display:flex;flex-direction:column;transition:width .15s"><div style="display:flex;align-items:center;gap:6px;padding:13px 10px;border-bottom:1px solid #E7F0F2;flex-shrink:0"><button onclick="App._crmTogSidebar()" title="Collapse" style="width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('menu','w-4 h-4')+'</button>'+(collapsed?'':'<span class="fd" '+(can('crm','rename')?'onclick="App._crmRenameHubsLabel()" title="Click to rename this label" style="cursor:pointer;font-weight:800;font-size:14px;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"':'style="font-weight:800;font-size:14px;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"')+'>'+esc(hubsLabel)+'</span>'+(canCreate?'<button title="New hub" onclick="App._crmNewHub()" style="width:26px;height:26px;border-radius:7px;border:none;background:#10262E;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('plus','w-3.5 h-3.5')+'</button>':''))+'</div><div class="crm-scroll" style="flex:1;overflow-y:auto;padding:8px 6px">'+(navHTML||(collapsed?'':'<div style="padding:16px 8px;font-size:12px;color:#90A5AB;text-align:center">No hubs yet</div>'))+'</div>'+grpFoot+'</div>'
+    +'<div style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0">'+mainInner+'</div>'+_crmModals()+'</div>';
 }
 // ---- interactions ----
 App._crmRetry=()=>{CRM._loaded=false;CRM._err=null;_crmLoad();};
@@ -429,8 +519,8 @@ App._crmSearch=(v)=>{
   if(!q){dd.style.display='none';dd.innerHTML='';return;}
   var rs=_crmSearchResults(q).slice(0,14);
   dd.innerHTML=rs.length?rs.map(function(c){var b=_crmBoard(c.boardId);var un=_crmUnread(c);
-    return'<div onmousedown="App._crmSearchGo(\''+c.id+'\')" style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;cursor:pointer" onmouseover="this.style.background=\'#F6FAFB\'" onmouseout="this.style.background=\'transparent\'">'+_crmCustAv(c.customer||c.title,28)
-      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.title||c.customer||'—')+(un?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#FF7F11"></span>':'')+'</div><div style="font-size:10.5px;color:#5F777E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(_crmBoardLabel(b))+(c.isTicket?' · ticket':'')+'</div></div>'
+    return'<div onmousedown="App._crmSearchGo(\''+c.id+'\')" style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;cursor:pointer" onmouseover="this.style.background=\'#FAF9F3\'" onmouseout="this.style.background=\'transparent\'">'+_crmCustAv(c.customer||c.title,28)
+      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.title||c.customer||'—')+(un?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0F766E"></span>':'')+'</div><div style="font-size:10.5px;color:#5F777E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(_crmBoardLabel(b))+(c.isTicket?' · ticket':'')+'</div></div>'
       +'<span style="font-size:10px;color:#93A6AC;flex-shrink:0">'+_crmRel(c.lastAt)+'</span></div>';}).join('')
     :'<div style="padding:16px;text-align:center;color:#90A5AB;font-size:12px">No matches for “'+esc(q)+'”.</div>';
   dd.style.display='block';
@@ -438,7 +528,31 @@ App._crmSearch=(v)=>{
 App._crmSearchGo=(id)=>{var i=document.getElementById('crm-search');if(i)i.value='';var d=document.getElementById('crm-search-dd');if(d){d.style.display='none';d.innerHTML='';}CRM.search='';App._crmOpenResult(id);};
 App._crmTogConvert=()=>{var d=document.getElementById('crm-convert');if(d)d.style.display=d.style.display==='none'?'block':'none';};
 App._crmTogAssign=()=>{var d=document.getElementById('crm-assign');if(d)d.style.display=d.style.display==='none'?'block':'none';};
-App._crmTogMembers=()=>{CRM.boardMembersOpen=!CRM.boardMembersOpen;rr();};
+App._crmTogMembers=()=>{
+  CRM.boardMembersOpen=!CRM.boardMembersOpen;
+  /* v3.21 — staged like the channel dialog: edit freely, nothing is written until Save. */
+  if(CRM.boardMembersOpen){var _b=_crmBoard(CRM.sel.boardId);CRM._boardDraft=((_b&&_b.members)||[]).slice();}
+  else CRM._boardDraft=null;
+  rr();
+};
+App._crmBoardMembersCancel=()=>{CRM._boardDraft=null;CRM.boardMembersOpen=false;rr();};
+App._crmBoardMembersSave=async()=>{
+  if(!_crmCanBoardMembers())return toast('No permission','err');
+  var b=_crmBoard(CRM.sel.boardId);if(!b){CRM.boardMembersOpen=false;rr();return;}
+  var before=(b.members||[]).slice(),after=(CRM._boardDraft||[]).slice();
+  var added=after.filter(function(x){return before.indexOf(x)<0;});
+  var removed=before.filter(function(x){return after.indexOf(x)<0;});
+  b.members=after;CRM._boardDraft=null;CRM.boardMembersOpen=false;
+  if(added.length||removed.length){
+    var bits=[];if(added.length)bits.push(added.length+' added');if(removed.length)bits.push(removed.length+' removed');
+    toast('Board members updated — '+bits.join(', ')+' \u2713');
+  }
+  rr();
+  try{
+    if(added.length)await sb.from('crm_board_members').insert(added.map(function(id){return{board_id:b.id,user_id:id};}));
+    for(var i=0;i<removed.length;i++)await sb.from('crm_board_members').delete().eq('board_id',b.id).eq('user_id',removed[i]);
+  }catch(e){console.warn('[CRM boardMembers save]',e&&e.message);toast('Saved locally, sync failed','warn');}
+};
 App._crmOnInput=(el)=>{var v=el.value,pos=el.selectionStart||v.length;var m=v.slice(0,pos).match(/@(\w*)$/);var d=document.getElementById('crm-mention');if(!d)return;if(m){d.innerHTML=_crmMentionItems(m[1]);d.style.display='block';}else{d.style.display='none';}};
 App._crmPickMention=(who)=>{var el=document.getElementById('crm-input');if(!el)return;var v=el.value,pos=el.selectionStart||v.length;var before=v.slice(0,pos).replace(/@(\w*)$/,''),after=v.slice(pos);var name;if(who==='ALL')name='All';else if(String(who).indexOf('grp:')===0)name=_crmGroupToken(_crmGroup(String(who).slice(4)))||'group';else name=(_crmFirst(uById(who))||'user').replace(/[^\w]/g,'')||'user';var ins='@'+name+' ';el.value=before+ins+after;el.focus();var np=(before+ins).length;try{el.setSelectionRange(np,np);}catch(e){}var d=document.getElementById('crm-mention');if(d)d.style.display='none';};
 function _crmMentioned(text,board){
@@ -457,9 +571,18 @@ App._crmSend=async()=>{
   var tagged=_crmMentioned(text,board);rr();var t=document.getElementById('crm-thread');if(t)t.scrollTop=t.scrollHeight;var i2=document.getElementById('crm-input');if(i2)i2.focus();
   await sbWrite({table:'crm_messages',op:'insert',id:id,values:{id:id,conversation_id:c.id,sender_id:S.uid||null,from_customer:false,body:text,images:imgs,created_at:at}},{label:'Message'});sbWrite({table:'crm_conversations',op:'update',id:c.id,match:{col:'id',val:c.id},values:{last_at:at}},{label:'Conversation',silent:true});try{await _crmNotify(tagged,c,at);}catch(e){}
 };
-async function _crmNotify(tagged,c,at){if(!tagged||!tagged.length)return;var who=me()?fullName(me()):'Someone';var txt='\u{1F4AC} '+who+' tagged you in “'+(c.title||'a conversation')+'”';for(var k=0;k<tagged.length;k++){if(_crmInappOn('crm_mention')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:tagged[k],text:txt,time:at,read:false});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:tagged[k],text:txt,read:false,created_at:at});}catch(e){}}if(typeof queueEmail==='function'){try{queueEmail('crm_mention',tagged[k],null,null,{title:(c.title||''),actor:who,preview:''});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
+async function _crmNotify(tagged,c,at){if(!tagged||!tagged.length)return;var who=me()?fullName(me()):'Someone';var txt='\u{1F4AC} '+who+' tagged you in “'+(c.title||'a conversation')+'”';var _lnk='crm:'+c.id;for(var k=0;k<tagged.length;k++){if(_crmInappOn('crm_mention')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:tagged[k],text:txt,time:at,read:false,link:_lnk});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:tagged[k],text:txt,read:false,created_at:at,link:_lnk});}catch(e){}}if(typeof queueEmail==='function'){try{queueEmail('crm_mention',tagged[k],null,null,{title:(c.title||''),actor:who,preview:''});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
 function _crmAddFiles(files){files=[].slice.call(files||[]).filter(f=>f.type&&f.type.indexOf('image/')===0);files.forEach(function(f){var rd=new FileReader();rd.onload=function(e){CRM.compose.images.push(e.target.result);var pv=document.getElementById('crm-preview');if(pv){pv.style.display='flex';pv.insertAdjacentHTML('beforeend','<div><img src="'+e.target.result+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #DFEAEC"/></div>');}};rd.readAsDataURL(f);});}
 App._crmPickImg=(input)=>{_crmAddFiles(input.files);input.value='';};
+/* v3.18: the preview strip is built imperatively, so a live redraw would wipe pending
+   attachments from view while they were still queued to send. Rebuild it from state. */
+function _crmRenderPreview(){
+  var pv=document.getElementById('crm-preview');if(!pv)return;
+  var imgs=(CRM.compose&&CRM.compose.images)||[];
+  if(!imgs.length){pv.style.display='none';pv.innerHTML='';return;}
+  pv.style.display='flex';
+  pv.innerHTML=imgs.map(function(src){return'<div><img src="'+src+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #DFEAEC"/></div>';}).join('');
+}
 App._crmDragOver=(e)=>{e.preventDefault();var z=document.getElementById('crm-drop');if(z)z.style.display='grid';};
 App._crmDragLeave=(e)=>{if(e&&e.relatedTarget)return;var z=document.getElementById('crm-drop');if(z)z.style.display='none';};
 App._crmDrop=(e)=>{e.preventDefault();var z=document.getElementById('crm-drop');if(z)z.style.display='none';if(!can('crm','create'))return;_crmAddFiles(e.dataTransfer&&e.dataTransfer.files);};
@@ -519,9 +642,9 @@ App._crmConvert=async(id,type)=>{if(!can('crm','convert'))return toast('No permi
 App._crmSetDue=async(id,v)=>{if(!can('crm','edit'))return;var c=_crmConvo(id);if(!c)return;c.dueDate=v||null;rr();_crmLog('due date',c,v?('set to '+v):'cleared');sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{due_date:v||null,updated_at:new Date().toISOString()}},{label:'Due date'});};
 App._crmSetPriority=async(id,v)=>{if(!can('crm','edit'))return;var c=_crmConvo(id);if(!c)return;c.priority=v;rr();sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{priority:v,updated_at:new Date().toISOString()}},{label:'Priority'});try{_crmRunAutos(_crmBoard(c.boardId),'priority',c,{to:v});}catch(e){}};
 App._crmSetStatus=async(id,v)=>{if(!can('crm','edit'))return;var c=_crmConvo(id);if(!c)return;var prev=c.status;c.status=v;rr();if(prev!==v)_crmLog('status',c,prev+' → '+v);sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{status:v,updated_at:new Date().toISOString()}},{label:'Status'});try{_crmRunAutos(_crmBoard(c.boardId),'status',c,{to:v});}catch(e){}};
-App._crmAddMember=async(uid2)=>{if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');var b=_crmBoard(CRM.sel.boardId);if(!b)return;if(b.members.indexOf(uid2)<0)b.members.push(uid2);rr();try{await sb.from('crm_board_members').insert({board_id:b.id,user_id:uid2});}catch(e){console.warn('[CRM addMem]',e&&e.message);}};
-App._crmRemoveMember=async(uid2)=>{if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');var b=_crmBoard(CRM.sel.boardId);if(!b)return;b.members=b.members.filter(x=>x!==uid2);rr();try{await sb.from('crm_board_members').delete().eq('board_id',b.id).eq('user_id',uid2);}catch(e){}};
-App._crmNewHub=async()=>{if(!can('crm','create'))return toast('No permission to create','err');var n=await _crmPromptP('New hub','A hub is a city or team — it holds boards (chats & ticket tables) and filtered views.','e.g. Dubai','Create hub');if(!n)return;var id=uid('hub'),bid=uid('brd');CRM.hubs.push({id:id,name:n.trim(),icon:'folder'});CRM.boards.push({id:bid,hubId:id,name:'Chat',members:S.uid?[S.uid]:[],settings:{type:'chat'},createdBy:S.uid||null});CRM.sel.hubId=id;CRM.sel.viewId=null;CRM.sel.boardId=bid;CRM.sel.convoId=null;CRM.sel.threadId=null;rr();try{await sb.from('crm_hubs').insert({id:id,name:n.trim(),icon:'folder',created_by:S.uid||null,sort:CRM.hubs.length});await sb.from('crm_boards').insert({id:bid,hub_id:id,name:'Chat',created_by:S.uid||null,sort:0,settings:{type:'chat'}});if(S.uid)await sb.from('crm_board_members').insert({board_id:bid,user_id:S.uid});}catch(e){toast('Saved locally, sync failed','warn');}};
+App._crmAddMember=(uid2)=>{if(!_crmCanBoardMembers())return toast('No permission','err');CRM._boardDraft=CRM._boardDraft||[];if(CRM._boardDraft.indexOf(uid2)<0)CRM._boardDraft.push(uid2);rr();};
+App._crmRemoveMember=(uid2)=>{if(!_crmCanBoardMembers())return toast('No permission','err');CRM._boardDraft=(CRM._boardDraft||[]).filter(function(x){return x!==uid2;});rr();};
+App._crmNewHub=async()=>{if(!can('crm','create'))return toast('No permission to create','err');var n=await _crmPromptP('New hub','A hub is a city or team — it holds boards (chats & ticket tables) and filtered views.','e.g. Dubai','Create hub');if(!n)return;var id=uid('hub'),bid=uid('brd');CRM.hubs.push({id:id,name:n.trim(),icon:'folder'});if(S.uid)CRM.hubMembers[id]=[S.uid];CRM.boards.push({id:bid,hubId:id,name:'Chat',members:S.uid?[S.uid]:[],settings:{type:'chat'},createdBy:S.uid||null});CRM.sel.hubId=id;CRM.sel.viewId=null;CRM.sel.boardId=bid;CRM.sel.convoId=null;CRM.sel.threadId=null;rr();try{await sb.from('crm_hubs').insert({id:id,name:n.trim(),icon:'folder',created_by:S.uid||null,sort:CRM.hubs.length});if(S.uid)await sb.from('crm_hub_members').insert({hub_id:id,user_id:S.uid});await sb.from('crm_boards').insert({id:bid,hub_id:id,name:'Chat',created_by:S.uid||null,sort:0,settings:{type:'chat'}});if(S.uid)await sb.from('crm_board_members').insert({board_id:bid,user_id:S.uid});}catch(e){toast('Saved locally, sync failed','warn');}};
 App._crmDelHub=async(id)=>{if(!can('crm','delete'))return toast('No permission to delete','err');var h=CRM.hubs.find(x=>x.id===id);if(!h)return;if(!(await _crmConfirmP('Delete hub','“'+esc(h.name)+'” and <b>all</b> its boards, filtered views and conversations will be permanently deleted.','Delete hub')))return;var bids=CRM.boards.filter(b=>b.hubId===id).map(b=>b.id);var vids=(CRM.views||[]).filter(v=>v.hubId===id).map(v=>v.id);CRM.hubs=CRM.hubs.filter(x=>x.id!==id);CRM.boards=CRM.boards.filter(b=>b.hubId!==id);CRM.views=(CRM.views||[]).filter(v=>v.hubId!==id);CRM.convos=CRM.convos.filter(c=>bids.indexOf(c.boardId)<0);if(bids.indexOf(CRM.sel.boardId)>=0||vids.indexOf(CRM.sel.viewId)>=0){CRM.sel.boardId=null;CRM.sel.viewId=null;CRM.sel.convoId=null;CRM.sel.threadId=null;}rr();sbWrite({table:'crm_hubs',op:'delete',id:id,match:{col:'id',val:id}},{label:'Delete hub'});vids.forEach(function(vid){sbWrite({table:'crm_views',op:'delete',id:vid,match:{col:'id',val:vid}},{label:'Delete view',silent:true});});};
 /* ── Renaming (crm → rename permission): sidebar label + hubs / boards ── */
 App._crmRenameHubsLabel=async()=>{if(!can('crm','rename'))return toast('No permission to rename','err');var cur=(CRM.settings&&CRM.settings.hubsLabel)||'Hubs';var n=await _crmPromptP('Rename sidebar title','This is the label above your hubs list — e.g. “Workspaces”, “Cities”, “Teams”.','e.g. Workspaces','Rename',cur);if(!n||n.trim()===cur)return;CRM.settings=Object.assign({},CRM.settings,{hubsLabel:n.trim()});rr();_crmSaveSettings('Sidebar title');toast('Renamed to “'+n.trim()+'” ✓');};
@@ -535,7 +658,7 @@ App._crmGroupsRender=()=>{
   var canMg=can('crm','groups');var gs=_crmGroups();
   var list=gs.length?gs.map(function(g){var mem=(g.members||[]).map(uById).filter(Boolean);
     return'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--c-border);border-radius:12px;margin-bottom:8px;background:#fff">'
-      +'<span style="width:30px;height:30px;border-radius:9px;background:#F4FAFB;color:#FF7F11;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-4 h-4')+'</span>'
+      +'<span style="width:30px;height:30px;border-radius:9px;background:#F4FAFB;color:#0F766E;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-4 h-4')+'</span>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:var(--c-text)">'+esc(g.name||'—')+' <span style="font-size:10.5px;font-weight:700;color:var(--c-text-3)">@'+esc(_crmGroupToken(g))+'</span></div><div style="font-size:11.5px;color:var(--c-text-2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(mem.length?mem.slice(0,4).map(function(u){return esc(_crmFirst(u));}).join(', ')+(mem.length>4?' +'+(mem.length-4):''):'No members yet')+'</div></div>'
       +'<span style="display:flex;align-items:center;flex-shrink:0">'+mem.slice(0,4).map(function(u,i){return'<span style="margin-left:'+(i?-7:0)+'px;border:2px solid #fff;border-radius:50%;display:inline-flex">'+avatar(u,'w-6 h-6','text-[9px]')+'</span>';}).join('')+'</span>'
       +'<span style="font-size:11px;font-weight:800;color:var(--c-text-2);background:var(--c-surface-2);border-radius:9px;padding:2px 8px;flex-shrink:0">'+mem.length+'</span>'
@@ -563,7 +686,7 @@ App._crmGroupDel=async(id)=>{if(!can('crm','groups'))return toast('No permission
 App._crmNewBoard=(hubId)=>{if(!can('crm','create'))return toast('No permission to create','err');var h=_crmHub(hubId);if(!h)return;CRM._nbEdit={hubId:hubId,name:'',type:'ticket'};App._crmNewBoardRender();};
 App._crmNewBoardRender=()=>{
   var d=CRM._nbEdit;if(!d)return;var h=_crmHub(d.hubId);
-  var pill=function(v,label,desc,icon){var on=d.type===v;return'<button type="button" onclick="CRM._nbEdit.type=\''+v+'\';App._crmNewBoardRender()" style="flex:1;text-align:left;display:flex;align-items:flex-start;gap:9px;padding:11px;border:1.5px solid '+(on?'#FF7F11':'#DFEAEC')+';border-radius:12px;background:'+(on?'#FFF1E4':'#fff')+';cursor:pointer"><span style="width:30px;height:30px;border-radius:9px;background:'+(on?'#fff':'#F4F9FA')+';color:'+(on?'#FF7F11':'#90A5AB')+';display:grid;place-items:center;flex-shrink:0">'+ic(icon,'w-4 h-4')+'</span><span><span style="display:block;font-size:12.5px;font-weight:800;color:#10262E">'+label+'</span><span style="display:block;font-size:10.5px;color:#90A5AB;margin-top:1px;line-height:1.4">'+desc+'</span></span></button>';};
+  var pill=function(v,label,desc,icon){var on=d.type===v;return'<button type="button" onclick="CRM._nbEdit.type=\''+v+'\';App._crmNewBoardRender()" style="flex:1;text-align:left;display:flex;align-items:flex-start;gap:9px;padding:11px;border:1.5px solid '+(on?'#0F766E':'#DFEAEC')+';border-radius:12px;background:'+(on?'#E4F2F0':'#fff')+';cursor:pointer"><span style="width:30px;height:30px;border-radius:9px;background:'+(on?'#fff':'#F4F9FA')+';color:'+(on?'#0F766E':'#90A5AB')+';display:grid;place-items:center;flex-shrink:0">'+ic(icon,'w-4 h-4')+'</span><span><span style="display:block;font-size:12.5px;font-weight:800;color:#10262E">'+label+'</span><span style="display:block;font-size:10.5px;color:#90A5AB;margin-top:1px;line-height:1.4">'+desc+'</span></span></button>';};
   modalShell({title:'New board — '+esc(h?h.name:''),sub:'It appears as a tab on the hub, with its own members, columns, statuses & automations.',size:'max-w-md',key:'crm-nb',
     body:'<label class="ui-label">Board name</label><input id="crm-nb-name" value="'+esc(d.name||'')+'" oninput="CRM._nbEdit.name=this.value" placeholder="e.g. Complaints, Refunds, Chat" class="ui-input" style="margin-bottom:14px" onkeydown="if(event.key===\'Enter\')App._crmNewBoardGo()"/>'
       +'<label class="ui-label">Type</label><div style="display:flex;gap:8px">'+pill('ticket','Ticket table','Rows with Status, Assignee + your own columns','ticket')+pill('chat','Chat','Conversations with customers or the team','msg')+'</div>',
@@ -590,17 +713,17 @@ function _crmBS(board){var s=(board&&board.settings)||{};var g=CRM.settings||{};
 function _crmActFor(cid){return (CRM.activity||[]).filter(function(a){return a.conversationId===cid;});}
 async function _crmLog(action,convo,detail){var id=uid('act');var at=new Date().toISOString();var e={id:id,conversationId:convo?convo.id:null,boardId:convo?convo.boardId:CRM.sel.boardId,actor:S.uid,action:action,detail:detail||'',at:at};if(!CRM.activity)CRM.activity=[];CRM.activity.unshift(e);try{await sb.from('crm_activity').insert({id:id,conversation_id:e.conversationId,board_id:e.boardId,actor:S.uid||null,action:action,detail:e.detail,created_at:at});}catch(err){}}
 function _crmRecips(board,event){var bs=_crmBS(board);var g=CRM.settings||{};var set={};var gl=_crmExpandPeople((g.notify&&g.notify.list)||[]);var bl=_crmExpandPeople((bs.notify&&bs.notify.list)||[]);if(event==='approval'){_crmExpandPeople(bs.approvers||[]).forEach(function(u){set[u]=1;});}else{gl.forEach(function(u){set[u]=1;});bl.forEach(function(u){set[u]=1;});}delete set[S.uid];return Object.keys(set);}
-async function _crmNotifyRule(event,convo,board,emailType,vars){var recips=_crmRecips(board,event);if(!recips.length)return;var bs=_crmBS(board);var emailOn=!(bs.email&&bs.email[event]===false);var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var txt=(event==='created'?('\u{1F3AB} '+who+' created a ticket: "'+(convo.title||'')+'"'):event==='approval'?('✅ Approval needed: "'+(convo.title||'')+'"'):event==='decided'?(((vars&&vars.decision)||'Updated')+': "'+(convo.title||'')+'"'):('\u{1F514} '+(convo.title||'')));for(var i=0;i<recips.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:recips[i],text:txt,time:at,read:false});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:recips[i],text:txt,read:false,created_at:at});}catch(e){}}if(emailOn&&emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,recips[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
+async function _crmNotifyRule(event,convo,board,emailType,vars){var recips=_crmRecips(board,event);if(!recips.length)return;var bs=_crmBS(board);var emailOn=!(bs.email&&bs.email[event]===false);var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var txt=(event==='created'?('\u{1F3AB} '+who+' created a ticket: "'+(convo.title||'')+'"'):event==='approval'?('✅ Approval needed: "'+(convo.title||'')+'"'):event==='decided'?(((vars&&vars.decision)||'Updated')+': "'+(convo.title||'')+'"'):('\u{1F514} '+(convo.title||'')));var _lnk2=convo&&convo.id?('crm:'+convo.id):null;for(var i=0;i<recips.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:recips[i],text:txt,time:at,read:false,link:_lnk2});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:recips[i],text:txt,read:false,created_at:at,link:_lnk2});}catch(e){}}if(emailOn&&emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,recips[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
 App._crmDecide=async(id,decision)=>{var c=_crmConvo(id);if(!c)return;var board=_crmBoard(c.boardId);var bs=_crmBS(board);if(!(can('crm','manage')||(bs.approvers||[]).indexOf(S.uid)>=0||can('crm','convert')||can('crm','edit')))return toast('Only approvers can decide','err');var at=new Date().toISOString();c.decision=decision;c.decidedBy=S.uid;c.decidedAt=at;var step=decision==='Approved'?bs.approveTo:bs.rejectTo;var detail;if(step&&step.action==='move'&&step.boardId&&_crmBoard(step.boardId)){c.boardId=step.boardId;c.isTicket=true;detail='moved to '+_crmBoard(step.boardId).name;}else{var _doneSt=(_crmStatuses(board).find(function(x){return x.done;})||{name:'Resolved'}).name;c.status=_doneSt;detail='marked '+_doneSt;}await _crmLog(decision,c,detail);toast('Ticket '+decision.toLowerCase()+' ✓');rr();sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{decision:decision,decided_by:S.uid||null,decided_at:at,board_id:c.boardId,status:c.status,updated_at:at}},{label:'Ticket decision'});_crmNotifyRule('decided',c,board,'crm_decided',{title:c.title,decision:decision,actor:(me()?fullName(me()):''),customer:c.customer});if(typeof _crmNotifyEvent==='function')_crmNotifyEvent(board,decision==='Approved'?'approved':'rejected',c,decision==='Approved'?'crm_approval':'crm_decided',{title:c.title,decision:decision,actor:(me()?fullName(me()):''),customer:c.customer});};
-function _crmApprovalCtl(convo,board){return'';var bs=_crmBS(board);if(bs.type==='chat'||!convo.isTicket)return'';if(convo.decision){var col=convo.decision==='Approved'?['#0F7A45','#FFF1E4']:['#B91C1C','#FEF0F0'];var by=convo.decidedBy&&uById(convo.decidedBy)?fullName(uById(convo.decidedBy)):'';return'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:'+col[0]+';background:'+col[1]+';border-radius:8px;padding:4px 9px">'+esc(convo.decision)+(by?' · '+esc(by):'')+' · '+_crmDT(convo.decidedAt)+'</span>';}var ok=can('crm','manage')||(bs.approvers||[]).indexOf(S.uid)>=0||can('crm','convert');if(!ok)return'<span style="font-size:11.5px;color:#90A5AB">Awaiting approval</span>';return'<div style="display:flex;gap:6px"><button onclick="App._crmDecide(\''+convo.id+'\',\'Approved\')" style="display:inline-flex;align-items:center;gap:5px;background:#FF7F11;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;border:none;cursor:pointer">'+ic('check','w-3.5 h-3.5')+'Approve</button><button onclick="App._crmDecide(\''+convo.id+'\',\'Rejected\')" style="display:inline-flex;align-items:center;gap:5px;background:#fff;color:#DC2626;border:1px solid #F9A9A9;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer">'+ic('x','w-3.5 h-3.5')+'Reject</button></div>';}
-function _crmHdrBtns(convo,board){var others=CRM.boards.filter(function(b){return board&&b.hubId===board.hubId&&b.id!==convo.boardId&&_crmBoardVisible(b)&&_crmBS(b).type!=='chat';});var mv=(can('crm','edit')&&others.length)?'<div style="position:relative"><button class="crm-hdr-sec crm-hdr-btn" title="Move / escalate to another board" onclick="App._crmTogMove()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('send','w-4 h-4')+'</button><div id="crm-move" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:224px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;padding:4px 8px">Move / escalate to</div>'+others.map(function(b){var t=_crmBS(b).type;return'<button onclick="App._crmMoveConvo(\''+convo.id+'\',\''+b.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#10262E" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="color:#90A5AB">'+ic(t==='chat'?'msg':'ticket','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#93A6AC">'+esc(t)+'</span></button>';}).join('')+'</div></div>':'';var rem=S.uid?'<button class="crm-hdr-btn" title="Remind me (date & time)" onclick="App._crmRemindOpen(\''+convo.id+'\')" style="width:34px;height:34px;border-radius:9px;border:1px solid #FF9A68;background:#FFF1E4;color:#8F4A05;cursor:pointer;display:grid;place-items:center">'+ic('bell','w-4 h-4')+'</button>':'';return rem+mv+(convo.isTicket?'<button class="crm-hdr-btn" title="Details panel" onclick="App._crmTogDetails()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:'+(CRM.detailsOpen!==false?'#F4FAFB':'#fff')+';color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('info','w-4 h-4')+'</button>':'')+'<button title="Activity — who did what" class="crm-hdr-sec crm-hdr-btn" onclick="App._crmTogActivity()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:'+(CRM.activityOpen?'#F4FAFB':'#fff')+';color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('clock','w-4 h-4')+'</button>';}
+function _crmApprovalCtl(convo,board){return'';var bs=_crmBS(board);if(bs.type==='chat'||!convo.isTicket)return'';if(convo.decision){var col=convo.decision==='Approved'?['#0F7A45','#E4F2F0']:['#B91C1C','#FEF0F0'];var by=convo.decidedBy&&uById(convo.decidedBy)?fullName(uById(convo.decidedBy)):'';return'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:'+col[0]+';background:'+col[1]+';border-radius:8px;padding:4px 9px">'+esc(convo.decision)+(by?' · '+esc(by):'')+' · '+_crmDT(convo.decidedAt)+'</span>';}var ok=can('crm','manage')||(bs.approvers||[]).indexOf(S.uid)>=0||can('crm','convert');if(!ok)return'<span style="font-size:11.5px;color:#90A5AB">Awaiting approval</span>';return'<div style="display:flex;gap:6px"><button onclick="App._crmDecide(\''+convo.id+'\',\'Approved\')" style="display:inline-flex;align-items:center;gap:5px;background:#0F766E;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;border:none;cursor:pointer">'+ic('check','w-3.5 h-3.5')+'Approve</button><button onclick="App._crmDecide(\''+convo.id+'\',\'Rejected\')" style="display:inline-flex;align-items:center;gap:5px;background:#fff;color:#DC2626;border:1px solid #F9A9A9;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer">'+ic('x','w-3.5 h-3.5')+'Reject</button></div>';}
+function _crmHdrBtns(convo,board){var others=CRM.boards.filter(function(b){return board&&b.hubId===board.hubId&&b.id!==convo.boardId&&_crmBoardVisible(b)&&_crmBS(b).type!=='chat';});var mv=(can('crm','edit')&&others.length)?'<div style="position:relative"><button class="crm-hdr-sec crm-hdr-btn" title="Move / escalate to another board" onclick="App._crmTogMove()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:#fff;color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('send','w-4 h-4')+'</button><div id="crm-move" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #DFEAEC;border-radius:12px;box-shadow:0 12px 32px rgba(13,38,46,.18);padding:6px;width:224px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;padding:4px 8px">Move / escalate to</div>'+others.map(function(b){var t=_crmBS(b).type;return'<button onclick="App._crmMoveConvo(\''+convo.id+'\',\''+b.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#10262E" onmouseover="this.style.background=\'#F1F7F8\'" onmouseout="this.style.background=\'transparent\'"><span style="color:#90A5AB">'+ic(t==='chat'?'msg':'ticket','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#93A6AC">'+esc(t)+'</span></button>';}).join('')+'</div></div>':'';var rem=S.uid?'<button class="crm-hdr-btn" title="Remind me (date & time)" onclick="App._crmRemindOpen(\''+convo.id+'\')" style="width:34px;height:34px;border-radius:9px;border:1px solid #2CB1A6;background:#E4F2F0;color:#0A5A55;cursor:pointer;display:grid;place-items:center">'+ic('bell','w-4 h-4')+'</button>':'';return rem+mv+(convo.isTicket?'<button class="crm-hdr-btn" title="Details panel" onclick="App._crmTogDetails()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:'+(CRM.detailsOpen!==false?'#F4FAFB':'#fff')+';color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('info','w-4 h-4')+'</button>':'')+'<button title="Activity — who did what" class="crm-hdr-sec crm-hdr-btn" onclick="App._crmTogActivity()" style="width:34px;height:34px;border-radius:9px;border:1px solid #DFEAEC;background:'+(CRM.activityOpen?'#F4FAFB':'#fff')+';color:#5E767D;cursor:pointer;display:grid;place-items:center">'+ic('clock','w-4 h-4')+'</button>';}
 function _crmChecked(prefix){var out=[];(DB.users||[]).forEach(function(u){var el=document.getElementById(prefix+u.id);if(el&&el.checked)out.push(u.id);});return out;}
 App._crmTogActivity=()=>{CRM.activityOpen=!CRM.activityOpen;rr();};
 App._crmTogBoardSettings=(bid)=>{CRM._bsBoardId=bid||CRM.sel.boardId;CRM.boardSettingsOpen=!CRM.boardSettingsOpen;rr();};
 App._crmTogGlobalSettings=()=>{CRM.globalSettingsOpen=!CRM.globalSettingsOpen;CRM.boardSettingsOpen=false;rr();};
 App._crmSaveGlobalSettings=async()=>{if(!can('crm','manage'))return toast('No permission','err');var nl=_crmChecked('crmgs-notify-');_crmGroups().forEach(function(g){var el=document.getElementById('crmgs-notify-grp-'+g.id);if(el&&el.checked)nl.push('grp:'+g.id);});var email=!!(document.getElementById('crmgs-email')||{}).checked;CRM.settings=Object.assign({},CRM.settings,{notify:{list:nl},email:{created:email,approval:email,decided:email,mention:email}});CRM.globalSettingsOpen=false;toast('Workspace defaults saved ✓');rr();try{await sb.from('workspace_settings').upsert({key:'crm_settings',value:CRM.settings},{onConflict:'key'});}catch(e){}};
 function _crmModals(){var out='';var convo=_crmConvo(CRM.sel.convoId);
-  if(CRM.boardMembersOpen){var _b=_crmBoard(CRM.sel.boardId);var _bm=(_b&&_b.members||[]).map(function(id){return uById(id);}).filter(Boolean);var _bnm=(DB.users||[]).filter(function(u){return u&&u.status!=='Disabled'&&_b&&(_b.members||[]).indexOf(u.id)<0;});out+='<div style="position:fixed;inset:0;z-index:97;background:rgba(0,0,0,.28);display:grid;place-items:center" onclick="App._crmTogMembers()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:430px;max-width:94vw;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3)"><div class="fd" style="padding:15px 20px;border-bottom:1px solid #E7F0F2;font-weight:800;font-size:15px">Board members — '+esc(_b?_b.name:'')+'</div><div style="padding:8px 20px;font-size:12px;color:#5F777E;border-bottom:1px solid #F3F9FA;line-height:1.5">People added here can open <b>this board</b>. (Filtered views have their own people — assigned when the view is created.)</div><div class="crm-scroll" style="overflow-y:auto;padding:8px 14px;flex:1">'+(_bm.length?_bm.map(function(u){return'<div style="display:flex;align-items:center;gap:8px;padding:6px 4px"><span>'+avatar(u,'w-7 h-7','text-[9px]')+'</span><span style="font-size:13px;font-weight:600;color:#10262E;flex:1">'+esc(fullName(u))+'</span><button title="Remove from board" onclick="App._crmRemoveMember(\''+u.id+'\')" style="border:none;background:#FEF0F0;color:#DC2626;width:24px;height:24px;border-radius:7px;cursor:pointer;display:grid;place-items:center">'+ic('x','w-3.5 h-3.5')+'</button></div>';}).join(''):'<div style="padding:10px 4px;font-size:12.5px;color:#5F777E">No members yet — add people below so they can see this board.</div>')+'<div style="height:1px;background:#F0F7F8;margin:8px 0"></div><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5F777E;padding:2px 4px 6px">Add to this board</div>'+_crmGroupAddRows(_b&&_b.members||[],'App._crmAddGroupToBoard')+(_bnm.length?_bnm.slice(0,80).map(function(u){return'<button onclick="App._crmAddMember(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 4px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F6FAFB\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-7 h-7','text-[9px]')+'<span style="font-size:13px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>';}).join(''):'<div style="padding:8px 4px;font-size:12px;color:#5F777E">Everyone already has access.</div>')+'</div><div style="padding:12px 20px;border-top:1px solid #E7F0F2;display:flex;justify-content:flex-end"><button onclick="App._crmTogMembers()" style="padding:9px 18px;border:none;background:#10262E;color:#fff;border-radius:10px;font-weight:700;cursor:pointer">Done</button></div></div></div>';}
+  if(CRM.boardMembersOpen){var _b=_crmBoard(CRM.sel.boardId);var _draft=CRM._boardDraft||((_b&&_b.members)||[]);var _bm=_draft.map(function(id){return uById(id);}).filter(Boolean);var _bnm=(DB.users||[]).filter(function(u){return u&&u.status!=='Disabled'&&_draft.indexOf(u.id)<0;});out+='<div style="position:fixed;inset:0;z-index:97;background:rgba(0,0,0,.28);display:grid;place-items:center" onclick="App._crmBoardMembersCancel()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:430px;max-width:94vw;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3)"><div class="fd" style="padding:15px 20px;border-bottom:1px solid #E7F0F2;font-weight:800;font-size:15px">Board members — '+esc(_b?_b.name:'')+'</div><div style="padding:8px 20px;font-size:12px;color:#5F777E;border-bottom:1px solid #F3F9FA;line-height:1.5">People added here can open <b>this board</b>. (Filtered views have their own people — assigned when the view is created.)</div><div class="crm-scroll" style="overflow-y:auto;padding:8px 14px;flex:1">'+(_bm.length?_bm.map(function(u){return'<div style="display:flex;align-items:center;gap:8px;padding:6px 4px"><span>'+avatar(u,'w-7 h-7','text-[9px]')+'</span><span style="font-size:13px;font-weight:600;color:#10262E;flex:1">'+esc(fullName(u))+'</span><button title="Remove from board" onclick="App._crmRemoveMember(\''+u.id+'\')" style="border:none;background:#FEF0F0;color:#DC2626;width:24px;height:24px;border-radius:7px;cursor:pointer;display:grid;place-items:center">'+ic('x','w-3.5 h-3.5')+'</button></div>';}).join(''):'<div style="padding:10px 4px;font-size:12.5px;color:#5F777E">No members yet — add people below so they can see this board.</div>')+'<div style="height:1px;background:#F0F7F8;margin:8px 0"></div><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5F777E;padding:2px 4px 6px">Add to this board</div>'+_crmGroupAddRows(_draft,'App._crmAddGroupToBoard')+(_bnm.length?_bnm.slice(0,80).map(function(u){return'<button onclick="App._crmAddMember(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 4px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#FAF9F3\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-7 h-7','text-[9px]')+'<span style="font-size:13px;font-weight:600;color:#10262E">'+esc(fullName(u))+'</span></button>';}).join(''):'<div style="padding:8px 4px;font-size:12px;color:#5F777E">Everyone already has access.</div>')+'</div><div style="padding:12px 20px;border-top:1px solid #E7F0F2;display:flex;justify-content:flex-end;gap:8px"><button onclick="App._crmBoardMembersCancel()" style="padding:9px 16px;border:1px solid #DFEAEC;background:#fff;color:#2F4C55;border-radius:10px;font-weight:600;cursor:pointer">Cancel</button><button onclick="App._crmBoardMembersSave()" style="padding:9px 18px;border:none;background:#10262E;color:#fff;border-radius:10px;font-weight:700;cursor:pointer">Save changes</button></div></div></div>';}
   if(CRM.activityOpen&&convo){var items=_crmActFor(convo.id);out+='<div style="position:fixed;top:0;right:0;bottom:0;width:340px;max-width:92vw;z-index:90;background:#fff;border-left:1px solid #E7F0F2;box-shadow:-8px 0 30px rgba(13,38,46,.10);display:flex;flex-direction:column"><div style="padding:13px 16px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:800;font-size:14px">Activity</span><button onclick="App._crmTogActivity()" style="border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x','w-4 h-4')+'</button></div><div class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px 12px">'+(items.length?items.map(function(a){var u=a.actor&&uById(a.actor)?fullName(uById(a.actor)):'System';return'<div style="display:flex;gap:9px;padding:9px 4px;border-bottom:1px solid #F3F8FA"><div style="margin-top:1px">'+(a.actor&&uById(a.actor)?avatar(uById(a.actor),'w-6 h-6','text-[9px]'):_crmCustAv('S',24))+'</div><div style="min-width:0"><div style="font-size:12.5px;color:#10262E;line-height:1.4"><b>'+esc(u)+'</b> '+esc(a.action)+(a.detail?' <span style="color:#5E767D">— '+esc(a.detail)+'</span>':'')+'</div><div style="font-size:10.5px;color:#93A6AC;margin-top:1px">'+_crmDT(a.at)+'</div></div></div>';}).join(''):'<div style="padding:22px;text-align:center;color:#90A5AB;font-size:12.5px">No activity recorded yet.</div>')+'</div></div>';}
   if(CRM.boardSettingsOpen){var b=_crmBoard(CRM._bsBoardId||CRM.sel.boardId);var bs=(b&&b.settings)||{};var nt=bs.notify||{};var _uu=_crmBoardPeople(b);var _gg=_crmGroups();var _ul=function(ev){var h=_gg.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#90A5AB;padding:2px">Groups</div>'+_gg.map(function(g){return'<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer;padding:3px 2px"><input type="checkbox" id="crmn-'+ev+'-grp-'+g.id+'" '+(((nt[ev]||[]).indexOf('grp:'+g.id)>=0)?'checked':'')+'/>'+esc(g.name)+' <span style="font-weight:600;color:#90A5AB;font-size:11px">('+((g.members||[]).length)+')</span></label>';}).join('')+'<div style="height:1px;background:#EDF4F6;margin:4px 0"></div>':'';return h+(_uu.length?_uu.map(function(u){return'<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;padding:3px 2px"><input type="checkbox" id="crmn-'+ev+'-'+u.id+'" '+(((nt[ev]||[]).indexOf(u.id)>=0)?'checked':'')+'/>'+esc(fullName(u))+'</label>';}).join(''):'<div style="font-size:12px;color:#90A5AB;padding:4px">No members on this board yet — add board or channel members first.</div>');};out+='<div style="position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.28);display:grid;place-items:center" onclick="App._crmTogBoardSettings()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:440px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3)"><div style="padding:15px 20px;border-bottom:1px solid #E7F0F2;font-weight:800;font-size:15px">Board rules — '+esc(b?b.name:'')+'</div><div style="padding:8px 20px;font-size:12px;color:#90A5AB;border-bottom:1px solid #F3F8FA">Selected people get an <b>email + in-app</b> notification for each event on this board.</div><div class="crm-scroll" style="overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:14px"><div><div style="font-size:12px;font-weight:800;color:#2F4C55;margin-bottom:5px">Ticket moved here</div><div style="max-height:120px;overflow:auto;border:1px solid #EDF4F6;border-radius:8px;padding:6px">'+_ul('moved')+'</div></div><div><div style="font-size:12px;font-weight:800;color:#2F4C55;margin-bottom:5px">Ticket approved</div><div style="max-height:120px;overflow:auto;border:1px solid #EDF4F6;border-radius:8px;padding:6px">'+_ul('approved')+'</div></div><div><div style="font-size:12px;font-weight:800;color:#2F4C55;margin-bottom:5px">Ticket rejected</div><div style="max-height:120px;overflow:auto;border:1px solid #EDF4F6;border-radius:8px;padding:6px">'+_ul('rejected')+'</div></div></div><div style="padding:14px 20px;border-top:1px solid #E7F0F2;display:flex;justify-content:flex-end;gap:8px"><button onclick="App._crmTogBoardSettings()" style="padding:9px 16px;border:1px solid #DFEAEC;background:#fff;border-radius:10px;font-weight:600;cursor:pointer">Cancel</button><button onclick="App._crmSaveBoardSettings()" style="padding:9px 16px;border:none;background:#10262E;color:#fff;border-radius:10px;font-weight:700;cursor:pointer">Save rules</button></div></div></div>';}
   
@@ -611,8 +734,8 @@ function _crmModals(){var out='';var convo=_crmConvo(CRM.sel.convoId);
 /* (v3.12: the channel layer was removed — boards live directly on hubs; access = board members + filtered views) */
 /* ── Add a whole people-group to a board in one tap ── */
 function _crmGroupAddRows(existing,handler){var ex={};(existing||[]).forEach(function(id){ex[id]=1;});var gs=_crmGroups().map(function(g){var add=(g.members||[]).filter(function(id){var u=uById(id);return u&&u.status!=='Disabled'&&!ex[id];}).length;return{g:g,add:add};}).filter(function(x){return x.add>0;});if(!gs.length)return'';
-  return'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5F777E;padding:2px 4px 4px">Add a whole group</div>'+gs.map(function(x){return'<button onclick="'+handler+'(\''+x.g.id+'\')" title="Adds every member of this group" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 4px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F6FAFB\'" onmouseout="this.style.background=\'transparent\'"><span style="width:28px;height:28px;border-radius:9px;background:#FFF1E4;color:#FF7F11;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-3.5 h-3.5')+'</span><span style="font-size:13px;font-weight:700;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.g.name)+'</span><span style="font-size:11px;font-weight:800;color:#FF7F11;background:#FFF1E4;border-radius:8px;padding:2px 8px;flex-shrink:0">+ '+x.add+'</span></button>';}).join('')+'<div style="height:1px;background:#F0F7F8;margin:8px 0"></div>';}
-App._crmAddGroupToBoard=async(gid)=>{if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');var b=_crmBoard(CRM.sel.boardId);var g=_crmGroup(gid);if(!b||!g)return;var add=(g.members||[]).filter(function(id){var u=uById(id);return u&&u.status!=='Disabled'&&b.members.indexOf(id)<0;});if(!add.length)return toast('Everyone in \u201C'+g.name+'\u201D is already on this board');add.forEach(function(id){b.members.push(id);});rr();toast('Added '+add.length+' from \u201C'+g.name+'\u201D \u2713');try{await sb.from('crm_board_members').insert(add.map(function(id){return{board_id:b.id,user_id:id};}));}catch(e){console.warn('[CRM addGrp]',e&&e.message);}};
+  return'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5F777E;padding:2px 4px 4px">Add a whole group</div>'+gs.map(function(x){return'<button onclick="'+handler+'(\''+x.g.id+'\')" title="Adds every member of this group" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 4px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#FAF9F3\'" onmouseout="this.style.background=\'transparent\'"><span style="width:28px;height:28px;border-radius:9px;background:#E4F2F0;color:#0F766E;display:grid;place-items:center;flex-shrink:0">'+ic('users','w-3.5 h-3.5')+'</span><span style="font-size:13px;font-weight:700;color:#10262E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.g.name)+'</span><span style="font-size:11px;font-weight:800;color:#0F766E;background:#E4F2F0;border-radius:8px;padding:2px 8px;flex-shrink:0">+ '+x.add+'</span></button>';}).join('')+'<div style="height:1px;background:#F0F7F8;margin:8px 0"></div>';}
+App._crmAddGroupToBoard=(gid)=>{if(!_crmCanBoardMembers())return toast('No permission','err');var g=_crmGroup(gid);if(!g)return;CRM._boardDraft=CRM._boardDraft||[];var add=(g.members||[]).filter(function(id){var u=uById(id);return u&&u.status!=='Disabled'&&CRM._boardDraft.indexOf(id)<0;});if(!add.length)return toast('Everyone in \u201C'+g.name+'\u201D is already on this board');add.forEach(function(id){CRM._boardDraft.push(id);});rr();toast('Added '+add.length+' from \u201C'+g.name+'\u201D — press Save to apply');};
 
 App._crmMobNav=(open)=>{
   var n=document.querySelector('.crm-nav'),sc=document.querySelector('.crm-scrim');
@@ -726,7 +849,7 @@ function _crmFValueUI(board,f,i){
     else if(fd.type==='person'){choices=_crmBoardPeople(board).map(function(u){return[u.id,fullName(u)];});}
     else{choices=(fd.options||[]).map(function(o){return[String(o),String(o)];});}
     var sel=Array.isArray(f.value)?f.value:[];
-    return'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+(choices.length?choices.map(function(ch){var on=sel.indexOf(ch[0])>=0;return'<button type="button" onclick="App._crmFValTog('+i+',\''+String(ch[0]).replace(/'/g,"\\'")+'\')" style="padding:4px 11px;border-radius:20px;border:1.5px solid '+(on?'#FF7F11':'#DFEAEC')+';background:'+(on?'#FFF1E4':'#fff')+';color:'+(on?'#8F4A05':'#5E767D')+';font-size:11.5px;font-weight:700;cursor:pointer">'+esc(ch[1])+'</button>';}).join(''):'<span style="font-size:11.5px;color:#90A5AB">No options for this field.</span>')+'</div>';
+    return'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+(choices.length?choices.map(function(ch){var on=sel.indexOf(ch[0])>=0;return'<button type="button" onclick="App._crmFValTog('+i+',\''+String(ch[0]).replace(/'/g,"\\'")+'\')" style="padding:4px 11px;border-radius:20px;border:1.5px solid '+(on?'#0F766E':'#DFEAEC')+';background:'+(on?'#E4F2F0':'#fff')+';color:'+(on?'#0A5A55':'#5E767D')+';font-size:11.5px;font-weight:700;cursor:pointer">'+esc(ch[1])+'</button>';}).join(''):'<span style="font-size:11.5px;color:#90A5AB">No options for this field.</span>')+'</div>';
   }
   var it=(fd.type==='number'||fd.type==='currency')?'number':fd.type==='date'?'date':fd.type==='time'?'time':'text';
   return'<input type="'+it+'" value="'+esc(f.value!=null&&!Array.isArray(f.value)?f.value:'')+'" oninput="CRM._fDraft['+i+'].value=this.value" placeholder="value" class="ui-input" style="margin-top:6px;min-height:34px;padding:6px 9px;font-size:12.5px"/>';
@@ -791,7 +914,7 @@ App._crmViewEditRender=()=>{
   var us=(DB.users||[]).filter(function(u){return u&&u.status!=='Disabled';}).sort(function(a,b2){return fullName(a).localeCompare(fullName(b2));});
   modalShell({title:(d._new?'New filtered view':'Edit view')+(h?' — '+esc(h.name):''),sub:'The hub\u2019s boards (minus any you remove from this view) — but each board can carry a saved filter, and only the people you assign can open it. Edits made inside it update the boards themselves.',size:'max-w-lg',key:'crm-view',
     body:'<label class="ui-label">View name</label><input value="'+esc(d.name||'')+'" oninput="CRM._viewEdit.name=this.value" placeholder="e.g. Night shift — open tickets" class="ui-input" style="margin-bottom:12px"/>'
-      +'<div style="display:flex;gap:8px;align-items:flex-start;background:#F0EDFE;border:1px solid #CFC6FA;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#5B45D6;line-height:1.5">'+ic('filter','w-3.5 h-3.5')+'<span>The view opens with <b>all of '+(h?esc(h.name):'the hub')+'\u2019s boards as tabs</b>. Set each board\u2019s filter from inside the view — the <b>'+(d._new?'Set view filter':'View filter')+'</b> button on every ticket board saves onto this view.</span></div>'
+      +'<div style="display:flex;gap:8px;align-items:flex-start;background:#F5EBCC;border:1px solid #E6D9A8;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#8A6E14;line-height:1.5">'+ic('filter','w-3.5 h-3.5')+'<span>The view opens with <b>all of '+(h?esc(h.name):'the hub')+'\u2019s boards as tabs</b>. Set each board\u2019s filter from inside the view — the <b>'+(d._new?'Set view filter':'View filter')+'</b> button on every ticket board saves onto this view.</span></div>'
       +(function(){
           var hid=_crmViewHidden(d).map(_crmBoard).filter(Boolean);
           if(!hid.length)return'';
@@ -870,8 +993,8 @@ App._crmHubAdd=(hubId)=>{
   if(!canB&&!canV)return toast('No permission','err');
   var h=_crmHub(hubId);
   modalShell({title:'Add to '+esc(h?h.name:''),sub:'',size:'max-w-sm',key:'crm-hubadd',
-    body:'<button onclick="App.closeModal();App._crmNewBoard(\''+hubId+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--c-border);border-radius:13px;background:#fff;cursor:pointer;margin-bottom:9px"><span style="width:36px;height:36px;border-radius:10px;background:#FFF1E4;color:#FF7F11;display:grid;place-items:center;flex-shrink:0">'+ic('ticket','w-4 h-4')+'</span><span><span style="display:block;font-size:13.5px;font-weight:800;color:#10262E">New board</span><span style="display:block;font-size:11.5px;color:#90A5AB;margin-top:1px">A chat or a ticket table with its own columns & members</span></span></button>'
-      +'<button onclick="App.closeModal();App._crmNewView(\''+hubId+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--c-border);border-radius:13px;background:#fff;cursor:pointer"><span style="width:36px;height:36px;border-radius:10px;background:#F0EDFE;color:#5B45D6;display:grid;place-items:center;flex-shrink:0">'+ic('filter','w-4 h-4')+'</span><span><span style="display:block;font-size:13.5px;font-weight:800;color:#10262E">New filtered view</span><span style="display:block;font-size:11.5px;color:#90A5AB;margin-top:1px">Same boards as the hub, with saved filters — visible only to the people you assign</span></span></button>'});
+    body:'<button onclick="App.closeModal();App._crmNewBoard(\''+hubId+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--c-border);border-radius:13px;background:#fff;cursor:pointer;margin-bottom:9px"><span style="width:36px;height:36px;border-radius:10px;background:#E4F2F0;color:#0F766E;display:grid;place-items:center;flex-shrink:0">'+ic('ticket','w-4 h-4')+'</span><span><span style="display:block;font-size:13.5px;font-weight:800;color:#10262E">New board</span><span style="display:block;font-size:11.5px;color:#90A5AB;margin-top:1px">A chat or a ticket table with its own columns & members</span></span></button>'
+      +'<button onclick="App.closeModal();App._crmNewView(\''+hubId+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--c-border);border-radius:13px;background:#fff;cursor:pointer"><span style="width:36px;height:36px;border-radius:10px;background:#F5EBCC;color:#8A6E14;display:grid;place-items:center;flex-shrink:0">'+ic('filter','w-4 h-4')+'</span><span><span style="display:block;font-size:13.5px;font-weight:800;color:#10262E">New filtered view</span><span style="display:block;font-size:11.5px;color:#90A5AB;margin-top:1px">Same boards as the hub, with saved filters — visible only to the people you assign</span></span></button>'});
 };
 
 // ===== CRM ticket-board views: view switcher + KANBAN (v2) + TABLE (dynamic columns) =====
@@ -880,12 +1003,12 @@ function _crmViewBar(board){
   var flt=(CRM.boardFilter||{})[board.id]||[];
   var shown=flt.length?_crmApplyFilters(rows,flt).length:rows.length;
   return'<div class="crm-viewbar" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #E7F0F2;background:#FAFDFD;flex-shrink:0;flex-wrap:wrap">'
-    +(can('crm','create')?'<button onclick="App._crmRowAddOpen(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;border:none;background:#FF7F11;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0;box-shadow:0 2px 8px rgba(255,127,17,.32)">'+ic('plus','w-3.5 h-3.5')+'New ticket</button>':'')
+    +(can('crm','create')?'<button onclick="App._crmRowAddOpen(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;border:none;background:#0F766E;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0;box-shadow:0 2px 8px rgba(15,118,110,.32)">'+ic('plus','w-3.5 h-3.5')+'New ticket</button>':'')
     +(can('crm','edit')?'<button onclick="App._crmColModal(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #DFEAEC;background:#fff;color:#5E767D;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('plus','w-3.5 h-3.5')+'Column</button>':'')
     +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmStatusEditor(\''+board.id+'\')" title="Add, rename, recolor this board’s statuses" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #DFEAEC;background:#fff;color:#5E767D;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('approve','w-3.5 h-3.5')+'Statuses</button>':'')
-    +'<button onclick="App._crmBoardFilter(\''+board.id+'\')" title="Filter tickets — every column is filterable" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid '+(flt.length?'#FF7F11':'#DFEAEC')+';background:'+(flt.length?'#FFF1E4':'#fff')+';color:'+(flt.length?'#8F4A05':'#5E767D')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+(flt.length?'Filtered · '+flt.length:'Filter')+'</button>'
+    +'<button onclick="App._crmBoardFilter(\''+board.id+'\')" title="Filter tickets — every column is filterable" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid '+(flt.length?'#0F766E':'#DFEAEC')+';background:'+(flt.length?'#E4F2F0':'#fff')+';color:'+(flt.length?'#0A5A55':'#5E767D')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+(flt.length?'Filtered · '+flt.length:'Filter')+'</button>'
     +'<span style="flex:1"></span>'
-    +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmAutomations(\''+board.id+'\')" title="Automations & reminders" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #FF9A68;background:#FFF1E4;color:#8F4A05;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('flag','w-3.5 h-3.5')+'Automations</button>':'')
+    +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmAutomations(\''+board.id+'\')" title="Automations & reminders" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #2CB1A6;background:#E4F2F0;color:#0A5A55;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('flag','w-3.5 h-3.5')+'Automations</button>':'')
     +'<span style="font-size:11.5px;color:#5E767D;font-weight:600">'+(flt.length?shown+' of '+rows.length:rows.length)+' ticket'+(rows.length===1?'':'s')+(_crmNotDone(board,rows).length?' \u00b7 <span style="color:#DC2626;font-weight:800">'+_crmNotDone(board,rows).length+' not done</span>':'')+'</span>'
   +'</div>';
 }
@@ -897,15 +1020,15 @@ function _crmViewBarV(board,view){
   var shown=vf.length?_crmApplyFilters(rows,vf).length:rows.length;
   var canEdV=_crmViewCanEdit(view);
   return'<div class="crm-viewbar" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #E7F0F2;background:#FAFDFD;flex-shrink:0;flex-wrap:wrap">'
-    +(can('crm','create')?'<button onclick="App._crmRowAddOpen(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;border:none;background:#FF7F11;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0;box-shadow:0 2px 8px rgba(255,127,17,.32)">'+ic('plus','w-3.5 h-3.5')+'New ticket</button>':'')
+    +(can('crm','create')?'<button onclick="App._crmRowAddOpen(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;border:none;background:#0F766E;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0;box-shadow:0 2px 8px rgba(15,118,110,.32)">'+ic('plus','w-3.5 h-3.5')+'New ticket</button>':'')
     +(can('crm','edit')?'<button onclick="App._crmColModal(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #DFEAEC;background:#fff;color:#5E767D;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('plus','w-3.5 h-3.5')+'Column</button>':'')
     +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmStatusEditor(\''+board.id+'\')" title="Add, rename, recolor this board\u2019s statuses" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #DFEAEC;background:#fff;color:#5E767D;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('approve','w-3.5 h-3.5')+'Statuses</button>':'')
     +(canEdV
-      ?'<button onclick="App._crmViewFilterOpen(\''+view.id+'\',\''+board.id+'\')" title="Set this view\u2019s saved filter for this board — every column is filterable" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid '+(vf.length?'#5B45D6':'#DFEAEC')+';background:'+(vf.length?'#F0EDFE':'#fff')+';color:'+(vf.length?'#5B45D6':'#5E767D')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+(vf.length?'View filter \u00b7 '+vf.length:'Set view filter')+'</button>'
-      :(vf.length?'<span style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;background:#F0EDFE;color:#5B45D6;font-size:12px;font-weight:700;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+vf.length+' condition'+(vf.length===1?'':'s')+'</span>':''))
+      ?'<button onclick="App._crmViewFilterOpen(\''+view.id+'\',\''+board.id+'\')" title="Set this view\u2019s saved filter for this board — every column is filterable" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid '+(vf.length?'#8A6E14':'#DFEAEC')+';background:'+(vf.length?'#F5EBCC':'#fff')+';color:'+(vf.length?'#8A6E14':'#5E767D')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+(vf.length?'View filter \u00b7 '+vf.length:'Set view filter')+'</button>'
+      :(vf.length?'<span style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;background:#F5EBCC;color:#8A6E14;font-size:12px;font-weight:700;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+vf.length+' condition'+(vf.length===1?'':'s')+'</span>':''))
     +'<span style="flex:1"></span>'
     +(canEdV?'<button onclick="App._crmEditView(\''+view.id+'\')" title="Rename the view / change who sees it" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #DFEAEC;background:#fff;color:#5E767D;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('edit','w-3.5 h-3.5')+'Edit view</button><button onclick="App._crmDelView(\''+view.id+'\')" title="Delete this view (boards & tickets are not affected)" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:1.5px solid #F9A9A9;background:#fff;color:#DC2626;cursor:pointer;flex-shrink:0">'+ic('trash','w-3.5 h-3.5')+'</button>':'')
-    +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmAutomations(\''+board.id+'\')" title="Automations & reminders" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #FF9A68;background:#FFF1E4;color:#8F4A05;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('flag','w-3.5 h-3.5')+'Automations</button>':'')
+    +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmAutomations(\''+board.id+'\')" title="Automations & reminders" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #2CB1A6;background:#E4F2F0;color:#0A5A55;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('flag','w-3.5 h-3.5')+'Automations</button>':'')
     +'<span style="font-size:11.5px;color:#5E767D;font-weight:600">'+(vf.length?shown+' of '+rows.length:rows.length)+' ticket'+(rows.length===1?'':'s')+(_crmNotDone(board,rows).length?' \u00b7 <span style="color:#DC2626;font-weight:800">'+_crmNotDone(board,rows).length+' not done</span>':'')+'</span>'
   +'</div>';
 }
@@ -1122,7 +1245,7 @@ App._crmTogDetails=()=>{
 };
 /* Kanban board view removed — it was orphaned (never rendered); the table view is the only board renderer. */
 // ===== CRM ticket-board TABLE view (dynamic columns) =====
-async function _crmNotifyEvent(board,event,convo,emailType,vars){var list=_crmExpandPeople((board&&board.settings&&board.settings.notify&&board.settings.notify[event])||[]).filter(function(u){return u!==S.uid;});if(!list.length)return;var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var label=event==='approved'?'✅ Approved':event==='rejected'?'❌ Rejected':event==='moved'?'↪ Moved':'🔔 Update';var txt=label+': "'+(convo.title||'')+'" by '+who;for(var i=0;i<list.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:list[i],text:txt,time:at,read:false});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:list[i],text:txt,read:false,created_at:at});}catch(e){}}if(emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,list[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
+async function _crmNotifyEvent(board,event,convo,emailType,vars){var list=_crmExpandPeople((board&&board.settings&&board.settings.notify&&board.settings.notify[event])||[]).filter(function(u){return u!==S.uid;});if(!list.length)return;var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var label=event==='approved'?'✅ Approved':event==='rejected'?'❌ Rejected':event==='moved'?'↪ Moved':'🔔 Update';var txt=label+': "'+(convo.title||'')+'" by '+who;var _lnk3=convo&&convo.id?('crm:'+convo.id):null;for(var i=0;i<list.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:list[i],text:txt,time:at,read:false,link:_lnk3});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:list[i],text:txt,read:false,created_at:at,link:_lnk3});}catch(e){}}if(emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,list[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
 function _crmRowStatus(r,board){board=board||_crmBoard(r.boardId);if(can('crm','edit'))return _crmStatusSel(board,r);return _crmStatusChip(board,r.status||'Open');}
 /* ── Built-in Assignee cell for the table view (respects crm→assign; people = board members) ── */
 function _crmAsgCell(r,board){
@@ -1160,12 +1283,12 @@ function _crmCell(r,col){
   if(col.type==='currency')return'<input type="number" step="0.01" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="0.00"/>';
   if(col.type==='date')return'<input type="date" value="'+esc(v)+'" '+oc+' style="'+b+'"/>';
   if(col.type==='time')return'<input type="time" value="'+esc(v)+'" '+oc+' style="'+b+'"/>';
-  if(col.type==='checkbox')return'<div style="display:flex;justify-content:center"><input type="checkbox" '+((v==='1'||v===true)?'checked':'')+' onchange="App._crmSetCell(\''+r.id+'\',\''+col.id+'\',this.checked?\'1\':\'\')" style="width:16px;height:16px;accent-color:#FF7F11;cursor:pointer"/></div>';
+  if(col.type==='checkbox')return'<div style="display:flex;justify-content:center"><input type="checkbox" '+((v==='1'||v===true)?'checked':'')+' onchange="App._crmSetCell(\''+r.id+'\',\''+col.id+'\',this.checked?\'1\':\'\')" style="width:16px;height:16px;accent-color:#0F766E;cursor:pointer"/></div>';
   if(col.type==='person'){var us=_crmBoardPeople(_crmBoard(r.boardId));if(v&&!us.some(function(u){return String(u.id)===String(v);})&&uById(v))us=us.concat([uById(v)]);return'<select '+oc+' style="'+b+';cursor:pointer"><option value="">\u2014</option>'+us.map(function(u){return'<option value="'+u.id+'" '+(String(u.id)===String(v)?'selected':'')+'>'+esc(fullName(u))+'</option>';}).join('')+'</select>';}
   if(col.type==='dropdown'){var opts=(col.options||[]);return'<select '+oc+' style="'+b+';cursor:pointer"><option value="">\u2014</option>'+opts.map(function(o){return'<option '+(String(o)===String(v)?'selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';}
   if(col.type==='email')return'<input type="email" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="name@\u2026"/>';
   if(col.type==='phone')return'<input type="tel" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="+971\u2026"/>';
-  if(col.type==='url')return'<div style="display:flex;align-items:center;gap:4px"><input type="url" value="'+esc(v)+'" '+oc+' style="'+b+';flex:1" placeholder="https://\u2026"/>'+(v?'<a href="'+esc(v)+'" target="_blank" rel="noopener" title="Open link" style="color:#FF7F11;flex-shrink:0;display:grid;place-items:center">'+ic('send','w-3.5 h-3.5')+'</a>':'')+'</div>';
+  if(col.type==='url')return'<div style="display:flex;align-items:center;gap:4px"><input type="url" value="'+esc(v)+'" '+oc+' style="'+b+';flex:1" placeholder="https://\u2026"/>'+(v?'<a href="'+esc(v)+'" target="_blank" rel="noopener" title="Open link" style="color:#0F766E;flex-shrink:0;display:grid;place-items:center">'+ic('send','w-3.5 h-3.5')+'</a>':'')+'</div>';
   return'<input type="text" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="\u2014"/>';
 }
 function _crmTable(board,opts){
@@ -1180,7 +1303,7 @@ function _crmTable(board,opts){
   var _cw=(board.settings&&board.settings.colWidths)||{};
   var _w=function(k,d){var w=parseInt(_cw[k],10);return(w&&w>=70)?w:d;};
   var _wst=function(k,d){var w=_w(k,d);return'width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px';};
-  var hc='padding:9px 10px;font-size:11px;font-weight:800;color:#5E767D;border-bottom:1px solid #E7F0F2;background:#F6FAFB;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1';
+  var hc='padding:9px 10px;font-size:11px;font-weight:800;color:#5E767D;border-bottom:1px solid #E7F0F2;background:#FAF9F3;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1';
   var _rzOr=function(k){return canStruct?_crmRz(board.id,k):'';};
   var th='<th style="'+hc+';position:relative;'+_wst('_title',260)+'">Ticket'+_rzOr('_title')+'</th>'
     +'<th style="'+hc+';position:relative;'+_wst('_asg',170)+'">Assignee'+_rzOr('_asg')+'</th>'
@@ -1189,15 +1312,15 @@ function _crmTable(board,opts){
     th+='<th class="crm-colh" data-cid="'+col.id+'" '+(canStruct?'ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+col.id+'\')"':'')+' style="'+hc+';'+_wst(col.id,150)+';position:relative">'
       +(canStruct?'<span class="crm-grip" draggable="true" ondragstart="App._crmColDragStart(event,\''+board.id+'\',\''+col.id+'\')" ondragend="App._crmColDragEnd(event)" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="2.5" r="1.3"/><circle cx="7" cy="2.5" r="1.3"/><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="3" cy="11.5" r="1.3"/><circle cx="7" cy="11.5" r="1.3"/></svg></span>':'')
       +'<span onclick="'+(canStruct?'App._crmColModal(\''+board.id+'\',\''+col.id+'\')':'')+'" title="'+(canStruct?'Click to edit column':'')+'" style="cursor:'+(canStruct?'pointer':'default')+'">'+esc(col.name)+' <span style="font-size:9px;color:#93A6AC;font-weight:600">'+esc(col.type)+'</span></span>'
-      +(canStruct?'<span class="crm-colx" style="display:none;position:absolute;right:8px;top:8px;background:#F6FAFB;padding-left:3px"><button onclick="event.stopPropagation();App._crmDelCol(\''+board.id+'\',\''+col.id+'\')" title="Delete column" style="border:none;background:transparent;cursor:pointer;color:#DC2626">\u2715</button></span>':'')
+      +(canStruct?'<span class="crm-colx" style="display:none;position:absolute;right:8px;top:8px;background:#FAF9F3;padding-left:3px"><button onclick="event.stopPropagation();App._crmDelCol(\''+board.id+'\',\''+col.id+'\')" title="Delete column" style="border:none;background:transparent;cursor:pointer;color:#DC2626">\u2715</button></span>':'')
       +_rzOr(col.id)
     +'</th>';
   });
   th+='<th style="'+hc+';width:52px"></th>';
   var addRow='';
   if(canCr&&CRM._rowAdd===board.id){
-    addRow='<tr style="background:#F8FCFC"><td style="padding:7px 10px;border-bottom:1px solid #FFF1E4"><div style="display:flex;gap:6px"><input id="row-new-title" placeholder="Ticket title" onkeydown="if(event.key===\'Enter\')App._crmRowCreate(\''+board.id+'\');if(event.key===\'Escape\'){CRM._rowAdd=null;rr();}" style="flex:1;border:1.5px solid #FF9A68;border-radius:8px;padding:7px 9px;font-size:12.5px;outline:none;background:#fff"/><input id="row-new-cust" placeholder="Customer" onkeydown="if(event.key===\'Enter\')App._crmRowCreate(\''+board.id+'\')" style="width:130px;border:1px solid #FFE0C7;border-radius:8px;padding:7px 9px;font-size:12.5px;outline:none;background:#fff"/></div></td>'
-      +'<td colspan="99" style="padding:7px 10px;border-bottom:1px solid #FFF1E4"><div style="display:flex;gap:6px;align-items:center"><button onclick="App._crmRowCreate(\''+board.id+'\')" style="border:none;background:#FF7F11;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer">Add</button><button onclick="CRM._rowAdd=null;rr()" style="border:1px solid #DFEAEC;background:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;color:#5E767D">Cancel</button><span style="font-size:11px;color:#93A6AC">Enter to add \u00B7 Esc to close</span></div></td></tr>';
+    addRow='<tr style="background:#F8FCFC"><td style="padding:7px 10px;border-bottom:1px solid #E4F2F0"><div style="display:flex;gap:6px"><input id="row-new-title" placeholder="Ticket title" onkeydown="if(event.key===\'Enter\')App._crmRowCreate(\''+board.id+'\');if(event.key===\'Escape\'){CRM._rowAdd=null;rr();}" style="flex:1;border:1.5px solid #2CB1A6;border-radius:8px;padding:7px 9px;font-size:12.5px;outline:none;background:#fff"/><input id="row-new-cust" placeholder="Customer" onkeydown="if(event.key===\'Enter\')App._crmRowCreate(\''+board.id+'\')" style="width:130px;border:1px solid #F0E4BE;border-radius:8px;padding:7px 9px;font-size:12.5px;outline:none;background:#fff"/></div></td>'
+      +'<td colspan="99" style="padding:7px 10px;border-bottom:1px solid #E4F2F0"><div style="display:flex;gap:6px;align-items:center"><button onclick="App._crmRowCreate(\''+board.id+'\')" style="border:none;background:#0F766E;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer">Add</button><button onclick="CRM._rowAdd=null;rr()" style="border:1px solid #DFEAEC;background:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;color:#5E767D">Cancel</button><span style="font-size:11px;color:#93A6AC">Enter to add \u00B7 Esc to close</span></div></td></tr>';
   }
   var body=rows.map(function(r){
     var tds='<td style="padding:6px 10px;border-bottom:1px solid #F1F7F8;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer"><div style="font-size:13px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#90A5AB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div></td>';
@@ -1207,7 +1330,7 @@ function _crmTable(board,opts){
     tds+='<td style="padding:4px 8px;border-bottom:1px solid #F1F7F8;white-space:nowrap;text-align:right">'+(can('crm','delete')?'<button onclick="App._crmDelConvo(\''+r.id+'\')" title="Delete" style="border:none;background:transparent;color:#BFD1D5;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'</td>';
     return'<tr class="crm-trow">'+tds+'</tr>';
   }).join('');
-  if(!rows.length&&!addRow)body='<tr><td colspan="99" style="padding:44px;text-align:center;color:#90A5AB;font-size:13px">'+(flt.length?((opts.filters!=null)?'No tickets match this view\u2019s conditions right now.':'No tickets match the filter \u2014 <b style="color:#FF7F11">Filter</b> above adjusts or clears it.'):('No tickets yet.'+(canCr?' Hit <b style="color:#FF7F11">+ New ticket</b> above to add the first one'+(canEd?', and <b>+ Column</b> to shape the table':'')+'.':'')))+'</td></tr>';
+  if(!rows.length&&!addRow)body='<tr><td colspan="99" style="padding:44px;text-align:center;color:#90A5AB;font-size:13px">'+(flt.length?((opts.filters!=null)?'No tickets match this view\u2019s conditions right now.':'No tickets match the filter \u2014 <b style="color:#0F766E">Filter</b> above adjusts or clears it.'):('No tickets yet.'+(canCr?' Hit <b style="color:#0F766E">+ New ticket</b> above to add the first one'+(canEd?', and <b>+ Column</b> to shape the table':'')+'.':'')))+'</td></tr>';
   return'<div class="crm-scroll" style="flex:1;overflow:auto;background:#fff;min-height:0"><table style="width:100%;border-collapse:collapse"><thead><tr>'+th+'</tr></thead><tbody>'+addRow+body+'</tbody></table></div>';
 }
 App._crmRowAddOpen=(boardId)=>{CRM._rowAdd=boardId;rr();setTimeout(function(){var e=document.getElementById('row-new-title');if(e)e.focus();},40);};
@@ -1238,7 +1361,7 @@ App._crmColModal=(boardId,colId)=>{
 App._crmColModalRender=()=>{
   var d=CRM._colEdit;if(!d)return;
   var types=[['text','Text'],['longtext','Long text'],['number','Number'],['currency','Currency'],['date','Date'],['time','Time'],['dropdown','Dropdown'],['checkbox','Checkbox'],['person','Person'],['email','Email'],['phone','Phone'],['url','Link']];
-  var pills=types.map(function(t){var on=d.type===t[0];return'<button onclick="CRM._colEdit.type=\''+t[0]+'\';App._crmColModalRender()" style="padding:8px 14px;border-radius:9px;border:1.5px solid '+(on?'#FF7F11':'#DFEAEC')+';background:'+(on?'#FFF1E4':'#fff')+';color:'+(on?'#8F4A05':'#5E767D')+';font-size:12.5px;font-weight:700;cursor:pointer">'+t[1]+'</button>';}).join('');
+  var pills=types.map(function(t){var on=d.type===t[0];return'<button onclick="CRM._colEdit.type=\''+t[0]+'\';App._crmColModalRender()" style="padding:8px 14px;border-radius:9px;border:1.5px solid '+(on?'#0F766E':'#DFEAEC')+';background:'+(on?'#E4F2F0':'#fff')+';color:'+(on?'#0A5A55':'#5E767D')+';font-size:12.5px;font-weight:700;cursor:pointer">'+t[1]+'</button>';}).join('');
   modalShell({title:d.colId?'Edit column':'New column',sub:'Columns are this board\u2019s fields \u2014 automations can react to them.',size:'max-w-md',key:'crm-col',
     body:'<label class="ui-label">Column name</label><input value="'+esc(d.name)+'" oninput="CRM._colEdit.name=this.value" placeholder="e.g. Order #, Amount, Approval" class="ui-input" style="margin-bottom:14px"/>'
       +'<label class="ui-label">Type</label><div style="display:flex;gap:6px;flex-wrap:wrap">'+pills+'</div>'
@@ -1330,3 +1453,373 @@ function pageContent(){
   const hub=(typeof _hubOf==='function')?_hubOf(S.route):null;
   return hub?('<div class="fade">'+_hubStrip(hub)+'</div>'+html):html;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   v3.18 — STICKY WORKSPACE POSITION + LIVE CHAT
+   1. Where you were (hub · board · filtered view · conversation) survives a refresh.
+   2. Messages arrive by themselves: Supabase Realtime push, with a polling safety net.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Sticky position ─────────────────────────────────────────────────────
+   Stamped with the user id for the same reason the filter memory is: people close
+   the browser without signing out, and the next person on that machine must not
+   inherit a board they cannot even see. */
+const CRM_SEL_KEY='bridge_crm_sel_v1';
+let _crmSelLastWritten='';
+function _crmSaveSel(){
+  if(!S.uid||!CRM||!CRM.sel)return;
+  try{
+    var str=JSON.stringify({uid:S.uid,sel:{hubId:CRM.sel.hubId||null,boardId:CRM.sel.boardId||null,viewId:CRM.sel.viewId||null,convoId:CRM.sel.convoId||null}});
+    if(str===_crmSelLastWritten)return;               // no-op unless something actually moved
+    localStorage.setItem(CRM_SEL_KEY,str);_crmSelLastWritten=str;
+  }catch(e){}
+}
+function _crmRestoreSel(){
+  try{
+    var p=JSON.parse(localStorage.getItem(CRM_SEL_KEY)||'{}')||{};
+    if(!p.sel||!p.uid)return;
+    if(S.uid&&p.uid!==S.uid)return;                   // someone else's position — ignore
+    CRM.sel.hubId=p.sel.hubId||null;CRM.sel.boardId=p.sel.boardId||null;
+    CRM.sel.viewId=p.sel.viewId||null;CRM.sel.convoId=p.sel.convoId||null;
+  }catch(e){}
+}
+function _crmClearSel(){try{localStorage.removeItem(CRM_SEL_KEY);}catch(e){}_crmSelLastWritten='';}
+window._crmClearSel=_crmClearSel;
+
+/* ─── 2. Live feed ─────────────────────────────────────────────────────────── */
+var _crmRT={ch:null,status:'',poll:null,bound:false,tick:0,lastTs:null,busy:false};
+
+function _crmLiveInitTs(){
+  var mx='';
+  (CRM.convos||[]).forEach(function(c){(c.messages||[]).forEach(function(m){if(m.at&&String(m.at)>mx)mx=String(m.at);});});
+  _crmRT.lastTs=mx||new Date(Date.now()-864e5).toISOString();
+}
+function _crmRowToMsg(r){
+  return {id:r.id,senderId:r.sender_id,fromCustomer:r.from_customer,name:r.name,text:r.body||'',
+          images:r.images||[],at:r.created_at,reactions:r.reactions||{},parentId:r.parent_id||null,edited:!!r.edited_at};
+}
+function _crmRowToConvo(r){
+  return {id:r.id,boardId:r.board_id,title:r.title,customer:r.customer,channel:r.channel,isTicket:r.is_ticket,
+          ticketType:r.ticket_type,priority:r.priority||'Medium',status:r.status||'Open',assignedTo:r.assigned_to||null,
+          createdBy:r.created_by||null,decision:r.decision||null,decidedBy:r.decided_by||null,decidedAt:r.decided_at||null,
+          fields:r.fields||{},dueDate:r.due_date||null,createdAt:r.created_at,lastAt:r.last_at,messages:[]};
+}
+/* Apply one message row. Returns true when it actually changed something —
+   our own optimistic inserts come back over the wire and must be no-ops. */
+function _crmMergeMsgRow(r,evt){
+  if(!r||!r.id)return false;
+  var c=_crmConvo(r.conversation_id);
+  if(!c){_crmRT.needConvos=true;return false;}
+  if(!c.messages)c.messages=[];
+  var i=c.messages.findIndex(function(x){return x.id===r.id;});
+  if(evt==='DELETE'){
+    if(i<0)return false;
+    c.messages=c.messages.filter(function(x){return x.id!==r.id&&x.parentId!==r.id;});
+    if(CRM.sel.threadId===r.id)CRM.sel.threadId=null;
+    return true;
+  }
+  var m=_crmRowToMsg(r);
+  if(i<0){
+    c.messages.push(m);
+    c.messages.sort(function(a,b){return String(a.at||'').localeCompare(String(b.at||''));});
+    if(!c.lastAt||String(m.at)>String(c.lastAt))c.lastAt=m.at;
+    if(m.at&&(!_crmRT.lastTs||String(m.at)>_crmRT.lastTs))_crmRT.lastTs=String(m.at);
+    return true;
+  }
+  var old=c.messages[i];
+  if(old.text===m.text&&!!old.edited===!!m.edited&&JSON.stringify(old.reactions||{})===JSON.stringify(m.reactions||{})
+     &&JSON.stringify(old.images||[])===JSON.stringify(m.images||[]))return false;
+  c.messages[i]=Object.assign(old,{text:m.text,edited:m.edited,reactions:m.reactions,images:m.images});
+  return true;
+}
+function _crmMergeConvoRow(r,evt){
+  if(!r||!r.id)return false;
+  var i=(CRM.convos||[]).findIndex(function(x){return x.id===r.id;});
+  if(evt==='DELETE'){
+    if(i<0)return false;
+    CRM.convos.splice(i,1);
+    if(CRM.sel.convoId===r.id){CRM.sel.convoId=null;CRM.sel.threadId=null;}
+    return true;
+  }
+  if(i<0){
+    if(!_crmVisibleBoardIds()[r.board_id])return false;   // a board this user can't see
+    CRM.convos.unshift(_crmRowToConvo(r));
+    _crmRT.needMsgsFor=r.id;
+    return true;
+  }
+  var c=CRM.convos[i],n=_crmRowToConvo(r),ch=false;
+  ['boardId','title','customer','channel','isTicket','ticketType','priority','status','assignedTo','decision','decidedBy','decidedAt','dueDate','lastAt'].forEach(function(k){
+    if(JSON.stringify(c[k])!==JSON.stringify(n[k])){c[k]=n[k];ch=true;}
+  });
+  if(JSON.stringify(c.fields||{})!==JSON.stringify(n.fields||{})){c.fields=n.fields;ch=true;}
+  return ch;
+}
+/* Re-render WITHOUT stealing what the user is doing: the composer's text, caret and
+   focus, pending attachments, and both scroll positions are carried across. */
+function _crmLiveRR(){
+  if(S.route!=='crm'){return;}                       // off-tab: state is updated, paint later
+  if(CRM.editMsgId){CRM._liveDirty=true;return;}     // never yank a message being edited
+  var mDD=document.getElementById('crm-mention');
+  if(mDD&&mDD.style.display!=='none'&&mDD.innerHTML){CRM._liveDirty=true;return;} // @-picker open
+  var keep={};
+  ['crm-input','crm-tinput','crm-nc-name','crm-nc-title','crm-search'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(e)keep[id]={v:e.value,ss:e.selectionStart,se:e.selectionEnd,f:(document.activeElement===e)};
+  });
+  var th=document.getElementById('crm-thread');
+  var atBottom=true,thTop=0;
+  if(th){thTop=th.scrollTop;atBottom=(th.scrollHeight-th.scrollTop-th.clientHeight)<70;}
+  var ls=document.getElementById('crm-list');var lsTop=ls?ls.scrollTop:0;
+  rr();
+  Object.keys(keep).forEach(function(id){
+    var e=document.getElementById(id);if(!e)return;
+    e.value=keep[id].v;
+    if(keep[id].f){try{e.focus();e.setSelectionRange(keep[id].ss,keep[id].se);}catch(x){}}
+  });
+  try{_crmRenderPreview();}catch(e){}
+  var th2=document.getElementById('crm-thread');
+  if(th2)th2.scrollTop=atBottom?th2.scrollHeight:thTop;   // pinned to newest unless reading history
+  var ls2=document.getElementById('crm-list');if(ls2&&lsTop)ls2.scrollTop=lsTop;
+}
+/* Anything that lands from the server funnels through here. */
+function _crmLiveApplied(changed,touchedOpenConvo){
+  if(!changed)return;
+  if(touchedOpenConvo&&CRM.sel.convoId&&S.route==='crm'){try{_crmMarkRead(CRM.sel.convoId);}catch(e){}}
+  _crmLiveRR();
+}
+function _crmOnMsgEvent(p){
+  try{
+    var evt=p.eventType||p.event;
+    var row=(evt==='DELETE')?(p.old||{}):(p.new||{});
+    var changed=_crmMergeMsgRow(row,evt);
+    if(_crmRT.needConvos){_crmRT.needConvos=false;_crmPoll(true);}
+    _crmLiveApplied(changed,row.conversation_id===CRM.sel.convoId);
+  }catch(e){}
+}
+function _crmOnConvoEvent(p){
+  try{
+    var evt=p.eventType||p.event;
+    var row=(evt==='DELETE')?(p.old||{}):(p.new||{});
+    var changed=_crmMergeConvoRow(row,evt);
+    if(_crmRT.needMsgsFor){var cid=_crmRT.needMsgsFor;_crmRT.needMsgsFor=null;_crmFetchMsgsFor(cid);}
+    _crmLiveApplied(changed,row.id===CRM.sel.convoId);
+  }catch(e){}
+}
+function _crmFetchMsgsFor(cid){
+  sb.from('crm_messages').select('*').eq('conversation_id',cid).order('created_at',{ascending:true}).then(function(r){
+    if(!r||r.error||!r.data)return;
+    var ch=false;r.data.forEach(function(row){if(_crmMergeMsgRow(row,'INSERT'))ch=true;});
+    _crmLiveApplied(ch,cid===CRM.sel.convoId);
+  }).catch(function(){});
+}
+/* Safety net. Realtime is the fast path; this catches a dropped socket, a sleeping
+   phone waking up, or a project where replication was switched off again.
+   Only asks for rows NEWER than what we hold, so it stays tiny. */
+function _crmPoll(force){
+  if(!CRM||!CRM._loaded||_crmRT.busy)return;
+  if(!force){
+    if(document.visibilityState==='hidden')return;                  // nothing while backgrounded
+    if(S.route!=='crm')return;
+    var healthy=(_crmRT.status==='SUBSCRIBED');
+    _crmRT.tick++;
+    if(healthy&&(_crmRT.tick%6)!==0)return;                          // ~54s when push is working
+  }
+  _crmRT.busy=true;
+  var since=_crmRT.lastTs||new Date(Date.now()-864e5).toISOString();
+  var overlap=new Date(new Date(since).getTime()-30000).toISOString(); // clock-skew cushion
+  sb.from('crm_messages').select('*').gt('created_at',overlap).order('created_at',{ascending:true}).then(function(r){
+    _crmRT.busy=false;
+    if(!r||r.error||!r.data||!r.data.length)return;
+    var ch=false,touched=false;
+    r.data.forEach(function(row){
+      if(_crmMergeMsgRow(row,'INSERT')){ch=true;if(row.conversation_id===CRM.sel.convoId)touched=true;}
+    });
+    if(_crmRT.needConvos){
+      _crmRT.needConvos=false;
+      sb.from('crm_conversations').select('*').order('last_at',{ascending:false}).then(function(r2){
+        if(!r2||r2.error||!r2.data)return;
+        var ch2=false;r2.data.forEach(function(row){if(_crmMergeConvoRow(row,'INSERT'))ch2=true;});
+        if(ch2)_crmLiveApplied(true,false);
+      }).catch(function(){});
+    }
+    _crmLiveApplied(ch,touched);
+  }).catch(function(){_crmRT.busy=false;});
+}
+function _crmLiveStart(){
+  if(_crmRT.bound)return;_crmRT.bound=true;
+  try{
+    _crmRT.ch=sb.channel('bridge-crm-'+(S.uid||'anon'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'crm_messages'},_crmOnMsgEvent)
+      .on('postgres_changes',{event:'*',schema:'public',table:'crm_conversations'},_crmOnConvoEvent)
+      .on('postgres_changes',{event:'*',schema:'public',table:'crm_hub_members'},_crmOnHubMemberEvent)
+      .subscribe(function(st){_crmRT.status=st;});
+  }catch(e){_crmRT.status='ERROR';}
+  if(!_crmRT.poll)_crmRT.poll=setInterval(function(){try{_crmPoll();}catch(e){}},9000);
+  if(!_crmRT.visBound){
+    _crmRT.visBound=true;
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible'&&S.route==='crm'){try{_crmPoll(true);}catch(e){}}
+    });
+  }
+}
+function _crmLiveStop(){
+  try{if(_crmRT.ch&&sb.removeChannel)sb.removeChannel(_crmRT.ch);}catch(e){}
+  if(_crmRT.poll){clearInterval(_crmRT.poll);_crmRT.poll=null;}
+  _crmRT.ch=null;_crmRT.bound=false;_crmRT.status='';
+}
+App._crmLiveStatus=function(){return{status:_crmRT.status,bound:_crmRT.bound,lastTs:_crmRT.lastTs};};
+window._crmLiveStart=_crmLiveStart;window._crmLiveStop=_crmLiveStop;window._crmPoll=_crmPoll;
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   v3.19 — CHANNEL (hub) MEMBERSHIP UI
+   Add someone to a channel and they get every board inside it. Add them to a
+   single board instead and that board is all they see.
+   ══════════════════════════════════════════════════════════════════════════════ */
+function _crmHubPeopleBtn(hub){
+  if(!hub)return '';
+  var n=_crmHubPeopleList(hub.id).length;
+  if(!_crmCanHubMembers())return '';
+  /* Dark pill + the word "Channel": the board-members button right below the tabs is a
+     white 👥+count too, and two identical chips meant nobody could tell them apart. */
+  return '<button onclick="App._crmHubPeople(\''+hub.id+'\')" aria-label="Channel people" title="Channel access — who can see every board in this channel" class="crm-tap" style="display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 11px;border-radius:9px;border:none;background:#0F3038;color:#fff;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">'+ic('users','w-3.5 h-3.5')+'<span class="crm-hide-mob">Channel</span>'+n+'</button>';
+}
+App._crmHubPeople=(hubId)=>{
+  if(!_crmCanHubMembers())return toast('You don’t have permission to assign people','err');
+  CRM._hubPeopleId=hubId;
+  /* v3.21 — edits are STAGED. Nothing reaches the database (or anybody else's screen)
+     until Save is pressed, so Cancel / X / backdrop genuinely means "changed my mind". */
+  CRM._hubDraft=_crmHubMemberIds(hubId).slice();
+  App._crmHubPeopleRender();
+};
+App._crmHubPeopleRender=()=>{
+  var hubId=CRM._hubPeopleId;var h=_crmHub(hubId);if(!h)return;
+  var draft=CRM._hubDraft||_crmHubMemberIds(hubId).slice();
+  var mem=draft.map(function(id){return uById(id);}).filter(function(u){return u&&u.status!=='Disabled';}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
+  var memSet={};mem.forEach(function(u){memSet[u.id]=1;});
+  var boards=(CRM.boards||[]).filter(function(b){return b.hubId===hubId;});
+  /* People who reach a board in here WITHOUT channel access — shown so it is obvious
+     who is board-scoped and who is channel-wide. */
+  var boardOnly={};
+  boards.forEach(function(b){(b.members||[]).forEach(function(id){if(!memSet[id])(boardOnly[id]=boardOnly[id]||[]).push(b.name);});});
+  var others=(DB.users||[]).filter(function(u){return u&&u.status!=='Disabled'&&!memSet[u.id];})
+                           .sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
+  var row=function(u,right){return '<div style="display:flex;align-items:center;gap:9px;padding:7px 4px">'+avatar(u,'w-7 h-7','text-[9px]')+'<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fullName(u))+'</span>'+right+'</div>';};
+  var memHTML=mem.length?mem.map(function(u){
+    return row(u,'<button onclick="App._crmRemoveHubMember(\''+u.id+'\')" title="Remove channel access" style="border:none;background:var(--c-danger-soft);color:var(--c-danger);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('x','w-3.5 h-3.5')+'</button>');
+  }).join(''):'<div style="padding:10px 4px;font-size:12.5px;color:var(--c-text-3);line-height:1.55">Nobody has channel-wide access yet. People added to individual boards below still see those boards.</div>';
+  var boHTML=Object.keys(boardOnly).map(function(id){
+    var u=uById(id);if(!u)return '';
+    return row(u,'<span style="font-size:10.5px;font-weight:700;color:var(--c-text-3);background:var(--c-surface-2);border-radius:20px;padding:3px 9px;flex-shrink:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(boardOnly[id].join(', '))+'</span>');
+  }).join('');
+  var addHTML=others.length?others.slice(0,120).map(function(u){
+    return '<button onclick="App._crmAddHubMember(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:9px;padding:7px 4px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'var(--c-surface-2)\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-7 h-7','text-[9px]')+'<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fullName(u))+'</span><span style="font-size:11px;font-weight:800;color:var(--c-brand-ink);flex-shrink:0">+ Add</span></button>';
+  }).join(''):'<div style="padding:8px 4px;font-size:12px;color:var(--c-text-3)">Everyone already has channel access.</div>';
+  var sec=function(t,sub){return '<div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3);margin:14px 2px 4px">'+t+(sub?' <span style="font-weight:600;text-transform:none;letter-spacing:0">'+sub+'</span>':'')+'</div>';};
+  modalShell({title:'People in “'+h.name+'”',sub:'Channel access = every board in here. Board-only access is set on the board itself.',size:'max-w-md',key:'crm-hubpeople',
+    body:sec('Channel access','· sees all '+boards.length+' board'+(boards.length===1?'':'s'))+memHTML
+        +(boHTML?sec('Board-only access','· limited to the boards listed')+boHTML:'')
+        +sec('Add to this channel')+'<div class="crm-scroll" style="max-height:230px;overflow-y:auto">'+addHTML+'</div>',
+    footer:btnG('Cancel','App._crmHubPeopleCancel()')+btnP(_crmHubDraftDirty()?'Save changes':'Done','App._crmHubPeopleSave()')});
+};
+function _crmHubDraftDirty(){
+  var hubId=CRM._hubPeopleId;if(!hubId||!CRM._hubDraft)return false;
+  var a=_crmHubMemberIds(hubId).slice().sort().join(','),b=CRM._hubDraft.slice().sort().join(',');
+  return a!==b;
+}
+/* Draft edits — in-memory only. */
+App._crmAddHubMember=(uid2)=>{
+  if(!_crmCanHubMembers())return toast('No permission','err');
+  CRM._hubDraft=CRM._hubDraft||[];
+  if(CRM._hubDraft.indexOf(uid2)<0)CRM._hubDraft.push(uid2);
+  App._crmHubPeopleRender();
+};
+App._crmRemoveHubMember=(uid2)=>{
+  if(!_crmCanHubMembers())return toast('No permission','err');
+  CRM._hubDraft=(CRM._hubDraft||[]).filter(function(x){return x!==uid2;});
+  App._crmHubPeopleRender();
+};
+App._crmHubPeopleCancel=()=>{CRM._hubDraft=null;CRM._hubPeopleId=null;closeModal();};
+/* Save = one diff, applied to state, the database and everyone else's screen at once. */
+App._crmHubPeopleSave=async()=>{
+  if(!_crmCanHubMembers())return toast('No permission','err');
+  var hubId=CRM._hubPeopleId;if(!hubId)return;
+  var before=_crmHubMemberIds(hubId).slice(),after=(CRM._hubDraft||[]).slice();
+  var added=after.filter(function(x){return before.indexOf(x)<0;});
+  var removed=before.filter(function(x){return after.indexOf(x)<0;});
+  if(!added.length&&!removed.length){App._crmHubPeopleCancel();return;}
+  var h=_crmHub(hubId);
+  if(removed.indexOf(S.uid)>=0&&!_crmSeeAll()){
+    if(!(await _crmConfirmP('Remove your own access','You will lose access to “'+esc(h?h.name:'')+'” and every board in it.','Remove me'))){App._crmHubPeopleRender();return;}
+  }
+  CRM.hubMembers[hubId]=after;
+  CRM._hubDraft=null;CRM._hubPeopleId=null;closeModal();
+  var bits=[];if(added.length)bits.push(added.length+' added');if(removed.length)bits.push(removed.length+' removed');
+  toast('Channel access updated — '+bits.join(', ')+' \u2713');
+  rr();
+  try{
+    if(added.length)await sb.from('crm_hub_members').insert(added.map(function(id){return{hub_id:hubId,user_id:id};}));
+    for(var i=0;i<removed.length;i++)await sb.from('crm_hub_members').delete().eq('hub_id',hubId).eq('user_id',removed[i]);
+  }catch(e){console.warn('[CRM hubMembers save]',e&&e.message);toast('Saved locally, sync failed','warn');}
+};
+/* Membership changes propagate live, so revoking access takes effect on the other
+   person's screen without them reloading. */
+function _crmOnHubMemberEvent(p){
+  try{
+    var evt=p.eventType||p.event;
+    var row=(evt==='DELETE')?(p.old||{}):(p.new||{});
+    if(!row||!row.hub_id)return;
+    var list=_crmHubMemberIds(row.hub_id);
+    if(evt==='DELETE')CRM.hubMembers[row.hub_id]=list.filter(function(x){return x!==row.user_id;});
+    else if(list.indexOf(row.user_id)<0)CRM.hubMembers[row.hub_id]=list.concat([row.user_id]);
+    else return;
+    if(row.user_id===S.uid){                    // my own access just changed
+      var b=_crmBoard(CRM.sel.boardId);
+      if(b&&!_crmBoardVisible(b)){CRM.sel.boardId=null;CRM.sel.convoId=null;CRM.sel.threadId=null;}
+    }
+    if(S.route==='crm')_crmLiveRR();
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   v3.21 — OPEN THE THING THE NOTIFICATION IS ABOUT
+   New notifications carry link = 'crm:<conversationId>'. Older rows predate that
+   column, so we fall back to the quoted title the message already contains
+   ("… tagged you in “Return”" / '… created a ticket: "Refund"').
+   ══════════════════════════════════════════════════════════════════════════════ */
+function _crmFindConvoByTitle(text){
+  if(!text)return null;
+  var m=String(text).match(/[“"]([^”"]{1,120})[”"]/);
+  if(!m)return null;
+  var want=m[1].trim().toLowerCase();
+  var vis=_crmVisibleBoardIds();
+  var hits=(CRM.convos||[]).filter(function(c){
+    return vis[c.boardId]&&String(c.title||'').trim().toLowerCase()===want;
+  });
+  if(!hits.length)return null;
+  hits.sort(function(a,b){return String(b.lastAt||'').localeCompare(String(a.lastAt||''));});
+  return hits[0];
+}
+/* Open a conversation from anywhere: resolves its board + hub, switches route, marks read. */
+App._crmOpenFromNotification=(link,text)=>{
+  _crmInit();
+  if(!can('crm','view'))return false;
+  var c=null;
+  if(link&&String(link).indexOf('crm:')===0)c=_crmConvo(String(link).slice(4));
+  if(!c)c=_crmFindConvoByTitle(text);
+  S.route='crm';S.search='';
+  if(!c||!_crmVisibleBoardIds()[c.boardId]){
+    // no longer exists, or not ours to see — land on the Workspace rather than nowhere
+    render();window.scrollTo(0,0);
+    if(link||text)toast('That conversation isn’t available','warn');
+    return true;
+  }
+  var b=_crmBoard(c.boardId);
+  CRM.sel.boardId=c.boardId;CRM.sel.hubId=b?b.hubId:CRM.sel.hubId;CRM.sel.viewId=null;
+  CRM.sel.convoId=c.id;CRM.sel.threadId=null;CRM.search='';CRM.compose.images=[];
+  try{_crmMarkRead(c.id);}catch(e){}
+  render();window.scrollTo(0,0);
+  setTimeout(function(){var t=document.getElementById('crm-thread');if(t)t.scrollTop=t.scrollHeight;},60);
+  return true;
+};
