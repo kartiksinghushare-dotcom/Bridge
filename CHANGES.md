@@ -1,6 +1,6 @@
-# Bridge v88 — Workspace: assign to groups · views built in one dialog · ⏰ Remind-me on every row
+# Bridge v89 — Workspace: assign to groups · views built in one dialog · ⏰ Remind-me on every row
 
-One file of logic (`public/js/06-crm.js`) + cache-buster `?v=88`. **DB: one additive column** — `crm_conversations.assigned_group text` (nullable; nothing else touched, nothing deleted).
+One file of logic (`public/js/06-crm.js`) + cache-buster `?v=89`. **DB: one additive column** — `crm_conversations.assigned_group text` (nullable; nothing else touched, nothing deleted).
 
 ## Assignee can now be a group
 - Every Assignee editor — the table cell, the ticket details panel and the chat-header Assign button — now offers **Groups** (the reusable people-groups) above **People**. Groups offered on a board = groups with at least one active member of that board, the same scoping rule as `@group` tagging; a currently-assigned group always stays visible even if its members left the board.
@@ -17,6 +17,18 @@ One file of logic (`public/js/06-crm.js`) + cache-buster `?v=88`. **DB: one addi
 
 ## ⏰ Remind me — a column on every ticket row
 - Every row of every ticket table ends with a bell: pick a date & time (+ optional note) and get an **email + in-app ping** — a *personal* reminder, visible and audible only to you. The bell fills teal with a count when you have upcoming reminders on that ticket; click again to manage/cancel them. Same reminders you could already set from the chat header and details panel — now one click from the table.
+
+## Live for everyone — structure included
+- Until now only messages, tickets and hub membership synced live; **adding a column, renaming a board, editing statuses or automations, resizing columns, creating/deleting boards or hubs, changing a filtered view, board membership and people-groups** only appeared for others after a reload. All of it now broadcasts instantly to every open client (DB: those tables were added to the realtime publication — additive, no data touched), with the usual safety net: a periodic reconcile also catches missed events, while rows with queued unsent local writes — and rows created seconds ago whose insert is still on its way — are never clobbered.
+
+## Filtered views: groups can be members too
+- The "Who can see this view" picker now lists **Groups** above people — ticking one admits *whoever is in the group at the time*, so editing the group later updates the view's audience automatically. The counter shows the real number of people covered. Stored in the existing `crm_views.members` jsonb — no schema change.
+
+## Views are calmer now
+- Inside a filtered view the toolbar shows only what belongs to a view: **New ticket · View filter · Edit view · delete**, plus **Remove from view** next to the tabs. Board administration — **Board members, Rename, + Board, + Column, Statuses, Automations, Delete board** — now lives only on the hub itself, where those changes actually happen. Same permissions as before; one clear rule: *boards are managed on the hub, views only filter them.*
+
+## Remind column, polished
+- The header emoji is gone and the per-row button is a quiet ghost bell that tints teal on hover; when you have reminders on a ticket it becomes a soft teal pill with the count inside.
 
 ## Access-level fix along the way
 - Custom columns used to render **editable-looking cells to people without Workspace → Edit** (typing silently did nothing). They now render as clean read-only values — matching Status and Assignee, which were already properly gated (UI *and* handler).
