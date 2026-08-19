@@ -1,3 +1,13 @@
+# Bridge (v3.15)
+
+## v3.15 — Workspace: group assignees · filtered views built in one dialog · ⏰ Remind-me on every row
+
+- **Assign a ticket to a whole group.** Every Assignee editor (table cell, details panel, chat-header Assign) now lists **Groups** above **People** — the same reusable people-groups you @tag. Groups offered on a board are those with at least one active board member (same scoping as tagging); the currently-assigned group always stays selectable. Assigning a group notifies **every active member** in-app + email (exactly like assigning a person, personal toggles respected), the ticket counts as *mine* for each member, the list shows a 👥 chip, the **Assignee filter** ("is any of") lists groups next to people, and automations' *assign to…* action can target a group. Permission unchanged — Workspace → **Assign** gates both; without it the cell is read-only. DB (additive): `crm_conversations.assigned_group`.
+- **Filtered views: pick the boards and their filters while creating the view.** The New-view dialog now lists every board of the hub with a checkbox (chats included, shown as-is) and a **Set filter** button per ticket board with a live *n of m match* preview — boards, conditions and people all land with one **Create**. **Edit view** is the same dialog: tick to add a board back, untick to remove one (the real board is never touched; at least one must stay), adjust any filter, rename, reshare — one Save. The in-view controls remain: **View filter** on each tab, **Remove from view**, **Edit view**, and delete from sidebar/toolbar/dialog. Permission unchanged: Workspace → **Filtered views** + creator (or managers).
+- **⏰ Remind me on every ticket row.** A new trailing column: the bell opens the existing reminder dialog (date, time, note) and fires an **email + in-app ping** at that moment — a *personal* reminder only you see. The bell fills teal with a badge when you have upcoming reminders on that ticket; click to manage or cancel. Anyone who can see the row can set their own.
+- **Access fix:** custom columns rendered editable-looking inputs to people **without** Workspace → Edit (their typing was silently dropped). They now render as read-only values, matching the already-gated Status and Assignee columns.
+- Cache-busting bumped to `?v=88`; DB change is additive only (`assigned_group`), nothing deleted or altered.
+
 # Bridge (v3.14)
 
 ## v3.14 — Filters that stay put · roll-up objectives fully locked · cascade delete that actually reaches the server · one confirmation before every delete
