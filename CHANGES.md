@@ -1,3 +1,28 @@
+# Bridge v93 — the Remind column is opt-in now
+
+`public/js/06-crm.js` + cache-buster `?v=93`. No DB changes.
+
+- The built-in trailing **Remind** column is gone from ticket tables. Personal ⏰ reminders are now a **column type**: hit **+ Column → ⏰ Reminder** on any board that wants the bell — it behaves like any other column (drag to position, resize, rename, delete) and renders the same per-person bell (each person's own date & time reminder, in-app + email, fires with Bridge closed; the cell stores no data). Reminder columns don't appear in filters, automation column pickers or the details panel (which already has its My-reminders block). Setting reminders from the chat header, message hover and details panel is unchanged.
+
+---
+
+# Bridge v92 — Column reminder lives inside "+ New rule"
+
+`public/js/06-crm.js` + cache-buster `?v=92`. No DB changes.
+
+- The always-visible Column-reminder card is gone. **+ New rule** now asks what to create — **Automation rule** (the existing trigger → actions flow) or **Column reminder** (pick the Date and Time columns, one per board). Once added, the reminder sits **in the rules list** like any other rule, with its own on/off toggle, pencil to edit the columns, and a remove button (with confirmation — columns and values untouched). Everything else about how it fires is unchanged.
+
+---
+
+# Bridge v91 — empty date/time cells can no longer look filled (Safari) · "no assignee" badge
+
+`public/js/06-crm.js` + cache-buster `?v=91`. No DB changes.
+
+- **Safari showed a ghost value in EMPTY date/time cells** (today's date / a default time, in full ink) — an untouched cell looked saved, so rows silently never qualified for column reminders. Empty cells now render **grey** ("Empty — click to pick" on hover) and turn ink only once a value is actually committed. Commits happen on change **and** on blur (Safari sometimes skips change), deduped so column automations never run twice for one edit.
+- **Amber "!" badge** on the Time cell when a row has its date & time set but **no assignee** (and isn't done) — hover explains that nobody will be auto-reminded until an Assignee is picked.
+
+---
+
 # Bridge v90 — OKR "Achieved" waits for the end date · column-driven reminders for assignees
 
 Two files (`public/js/19-okr-roles-acl.js`, `public/js/06-crm.js`) + cache-buster `?v=90`. **DB additive only**: `crm_column_reminder_log` table, `crm-column-reminders-every-minute` pg_cron job, `colReminder` setting on one board.

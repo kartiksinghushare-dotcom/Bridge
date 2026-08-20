@@ -383,7 +383,7 @@ function _crmDetailsPanel(convo,board){
     +fRow('Assignee',canAsg?_crmAsgSelect(convo,board,selSt):(asgU?esc(fullName(asgU)):(asgG?_crmGroupChip(asgG):'\u2014')))
     +fRow('Status',canEd?_crmStatusSel(board,convo,selSt):_crmStatusChip(board,convo.status))
     +fRow('Customer','<span style="font-size:12.5px;font-weight:700">'+esc(convo.customer||'\u2014')+'</span>')
-    +(cols.length?'<div style="border-top:1px dashed #E4EDEF;padding-top:12px">'+cols.map(function(col){return fRow(esc(col.name),_crmCell(convo,col));}).join('')+'</div>':'')
+    +(function(){var _dc=cols.filter(function(c){return c.type!=='remind';});return _dc.length?'<div style="border-top:1px dashed #E4EDEF;padding-top:12px">'+_dc.map(function(col){return fRow(esc(col.name),_crmCell(convo,col));}).join('')+'</div>':'';})()
     +fRow('Created','<span style="font-size:12px;color:#61797F">'+_crmDT(convo.createdAt)+'</span>')
     +remBlock
     +(acts.length?'<div style="border-top:1px dashed #E4EDEF;padding-top:12px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#93A6AC;margin-bottom:6px">Activity</div>'+acts.map(function(a){var au=uById(a.actor);return '<div style="font-size:11.5px;color:#5A7178;padding:3px 0;line-height:1.45"><b style="color:#10262E">'+esc(au?_crmFirst(au):'Someone')+'</b> '+esc(a.action)+(a.detail?' \u2014 '+esc(a.detail):'')+' <span style="color:#A3B6BB">\u00B7 '+_crmRel(a.at)+'</span></div>';}).join('')+'</div>':'')
@@ -814,7 +814,7 @@ function _crmFilterFields(board){
     {id:'_title',name:'Ticket title',type:'text'},
     {id:'_due',name:'Due date',type:'date'}
   ];
-  (((board&&board.settings)||{}).columns||[]).forEach(function(c){f.push({id:c.id,name:c.name,type:c.type,options:c.options||[]});});
+  (((board&&board.settings)||{}).columns||[]).forEach(function(c){if(c.type==='remind')return;f.push({id:c.id,name:c.name,type:c.type,options:c.options||[]});});
   return f;
 }
 function _crmFOps(t){
@@ -1255,68 +1255,107 @@ function _crmCheckReminders(){try{var today=todayISO();var key='bridge_crm_rem';
   CRM.reminders=(CRM.reminders||[]).filter(function(r){return !r.fired;});}catch(e){console.warn('[CRM reminders]',e&&e.message);}}
 App._crmAutomations=(boardId)=>{if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');var b=_crmBoard(boardId||CRM.sel.boardId);if(!b)return;CRM._autoBoard=b.id;CRM._autoEdit=null;try{if(_crmColRemReconcile(b))sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column reminder',silent:true});}catch(e){}App._crmAutoRender();};
 /* ── v3.16 Column reminder: board.settings.colReminder = {enabled,dateCol,timeCol}.
-   A server job (every minute) reads it and pings the assignee — or every member of the
-   assigned group — at the row's Date+Time (Dubai time), in-app + email, skipping done
-   tickets and rows missing either value. Works with the app closed. ── */
+   Added via "+ New rule" → Column reminder, listed with the other rules. A server job
+   (every minute) reads it and pings the assignee — or every member of the assigned
+   group — at the row's Date+Time (Dubai time), in-app + email, skipping done tickets,
+   unassigned rows and rows missing either value. Works with the app closed. ── */
 App._crmColRemTog=()=>{
+  if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');
+  var b=_crmBoard(CRM._autoBoard);if(!b)return;
+  var cr=b.settings&&b.settings.colReminder;
+  if(!cr||!cr.dateCol||!cr.timeCol)return App._crmColRemEdit();   // not configured yet → set it up
+  cr.enabled=cr.enabled!==true;
+  App._crmAutoRender();
+  sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column reminder'});
+  toast(cr.enabled?'Column reminder on ✓':'Column reminder off');
+};
+App._crmColRemEdit=()=>{
   if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');
   var b=_crmBoard(CRM._autoBoard);if(!b)return;
   var cols=(b.settings&&b.settings.columns)||[];
   var dcs=cols.filter(function(c){return c.type==='date';}),tcs=cols.filter(function(c){return c.type==='time';});
-  if(!b.settings)b.settings={};
-  var cr=Object.assign({},b.settings.colReminder||{});
-  cr.enabled=cr.enabled!==true;
-  if(cr.enabled&&(!dcs.length||!tcs.length))return toast('Add a date column and a time column first','err');
-  if(cr.enabled){
-    if(!cr.dateCol||!cols.some(function(c){return c.id===cr.dateCol&&c.type==='date';}))cr.dateCol=dcs[0].id;
-    if(!cr.timeCol||!cols.some(function(c){return c.id===cr.timeCol&&c.type==='time';}))cr.timeCol=tcs[0].id;
-  }
-  b.settings.colReminder=cr;
-  App._crmAutoRender();
-  sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column reminder'});
-  toast(cr.enabled?'Column reminder on ✓ — assignees get pinged at the row’s date & time':'Column reminder off');
+  if(!dcs.length||!tcs.length)return toast('Add a date column and a time column to this board first','err');
+  var cr=(b.settings&&b.settings.colReminder)||{};
+  CRM._crEdit={
+    dateCol:dcs.some(function(c){return c.id===cr.dateCol;})?cr.dateCol:dcs[0].id,
+    timeCol:tcs.some(function(c){return c.id===cr.timeCol;})?cr.timeCol:tcs[0].id,
+    _new:!(cr.dateCol&&cr.timeCol)
+  };
+  App._crmColRemEditRender();
 };
-App._crmColRemSet=(k,v)=>{
+App._crmColRemEditRender=()=>{
+  var b=_crmBoard(CRM._autoBoard);var d=CRM._crEdit;if(!b||!d)return;
+  var cols=(b.settings&&b.settings.columns)||[];
+  var dcs=cols.filter(function(c){return c.type==='date';}),tcs=cols.filter(function(c){return c.type==='time';});
+  var sel=function(kind,list,cur){return'<select onchange="CRM._crEdit.'+kind+'=this.value" class="ui-select" style="flex:1;min-height:36px;padding:6px 26px 6px 10px;font-size:12.5px">'+list.map(function(c){return'<option value="'+c.id+'" '+(c.id===cur?'selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select>';};
+  modalShell({title:'Column reminder — '+esc(b.name),sub:'Ping the assignee when the row’s date & time arrives.',size:'max-w-md',key:'crm-auto',
+    body:'<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><span style="font-size:11px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">Date</span>'+sel('dateCol',dcs,d.dateCol)+'<span style="font-size:11px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">Time</span>'+sel('timeCol',tcs,d.timeCol)+'</div>'
+      +'<div style="font-size:12px;color:var(--c-text-2);line-height:1.6;background:var(--c-surface-2);border-radius:10px;padding:10px 12px">At that exact moment (Dubai time) the <b>assignee</b> — or every member of the assigned group — gets an in-app + email ping, even when nobody has Bridge open. Rows missing the date or the time are skipped, and so are tickets already in a done status and unassigned rows. Each moment fires once; changing the date or time re-arms it.</div>',
+    footer:btnG('← Back','App._crmColRemBack()')+btnP(d._new?'Add reminder':'Save','App._crmColRemSave()')});
+};
+App._crmColRemBack=()=>{CRM._crEdit=null;App._crmAutoRender();};
+App._crmColRemSave=()=>{
   if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');
-  var b=_crmBoard(CRM._autoBoard);if(!b||!v)return;
+  var b=_crmBoard(CRM._autoBoard);var d=CRM._crEdit;if(!b||!d)return;
+  if(!d.dateCol||!d.timeCol)return toast('Pick both columns','err');
   if(!b.settings)b.settings={};
-  var cr=Object.assign({},b.settings.colReminder||{});
-  cr[k]=v;b.settings.colReminder=cr;
+  var isNew=d._new;
+  b.settings.colReminder={enabled:true,dateCol:d.dateCol,timeCol:d.timeCol};
+  CRM._crEdit=null;
+  App._crmAutoRender();
+  sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column reminder'});
+  toast(isNew?'Column reminder added ✓ — assignees get pinged at the row’s date & time':'Column reminder saved ✓');
+};
+App._crmColRemDel=async()=>{
+  if(!(can('crm','manage')||can('crm','edit')))return toast('No permission','err');
+  var b=_crmBoard(CRM._autoBoard);if(!b||!b.settings||!b.settings.colReminder)return;
+  var cols=(b.settings.columns||[]);var cr=b.settings.colReminder;
+  var dn=(cols.find(function(c){return c.id===cr.dateCol;})||{}).name||'Date';
+  var tn=(cols.find(function(c){return c.id===cr.timeCol;})||{}).name||'Time';
+  if(!(await _crmConfirmP('Remove column reminder','Assignees will no longer be pinged from “'+esc(dn)+'” + “'+esc(tn)+'”. The columns and their values are untouched.','Remove'))){App._crmAutoRender();return;}
+  delete b.settings.colReminder;
   App._crmAutoRender();
   sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column reminder'});
 };
-App._crmAutoRender=()=>{var b=_crmBoard(CRM._autoBoard);if(!b)return;if(CRM._autoEdit)return App._crmAutoEditRender();var autos=_crmAutos(b);
+App._crmAutoRender=()=>{var b=_crmBoard(CRM._autoBoard);if(!b)return;if(CRM._autoEdit)return App._crmAutoEditRender();if(CRM._crEdit)return App._crmColRemEditRender();var autos=_crmAutos(b);
+  var crRow='';
+  (function(){
+    var cr=b.settings&&b.settings.colReminder;if(!cr||!cr.dateCol||!cr.timeCol)return;
+    var cc=(b.settings.columns||[]);
+    var dn=(cc.find(function(c){return c.id===cr.dateCol;})||{}).name||'?';
+    var tn=(cc.find(function(c){return c.id===cr.timeCol;})||{}).name||'?';
+    var on=cr.enabled===true;
+    crRow='<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid '+(on?'#2CB1A6':'var(--c-border)')+';border-radius:12px;margin-bottom:8px;background:'+(on?'#F4FBFA':'var(--c-surface-2)')+'">'
+      +'<button onclick="App._crmColRemTog()" class="tog'+(on?' on':'')+'" style="margin-top:2px"><span></span></button>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);display:flex;align-items:center;gap:6px"><span style="color:#0A5A55">'+ic('bell','w-3.5 h-3.5')+'</span>Column reminder</div>'
+      +'<div style="font-size:12px;color:var(--c-text-2);margin-top:2px;line-height:1.5">“'+esc(dn)+'” + “'+esc(tn)+'” arrives (Dubai time) → <b>remind the assignee</b> — or the whole assigned group — in-app + email, even with Bridge closed. Skips done & unassigned rows.</div></div>'
+      +'<button onclick="App._crmColRemEdit()" title="Edit" style="border:none;background:var(--c-surface-2);color:var(--c-text-2);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-3.5 h-3.5')+'</button>'
+      +'<button onclick="App._crmColRemDel()" title="Remove" style="border:none;background:var(--c-danger-soft);color:var(--c-danger);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-3.5 h-3.5')+'</button>'
+    +'</div>';
+  })();
   var list=autos.length?autos.map(function(a){return '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--c-border);border-radius:12px;margin-bottom:8px;background:'+(a.enabled===false?'var(--c-surface-2)':'#fff')+'">'
     +'<button onclick="App._crmAutoToggle(\''+a.id+'\')" class="tog'+(a.enabled===false?'':' on')+'" style="margin-top:2px"><span></span></button>'
     +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text)">'+esc(a.name||'Untitled rule')+'</div><div style="font-size:12px;color:var(--c-text-2);margin-top:2px;line-height:1.5">'+_crmTrigText(a.trigger)+' → <b>'+((a.actions||[]).map(_crmActText).join('</b>, <b>')||'—')+'</b></div></div>'
     +'<button onclick="App._crmAutoEdit(\''+a.id+'\')" title="Edit" style="border:none;background:var(--c-surface-2);color:var(--c-text-2);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-3.5 h-3.5')+'</button>'
-    +'<button onclick="App._crmAutoDel(\''+a.id+'\')" title="Delete" style="border:none;background:var(--c-danger-soft);color:var(--c-danger);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-3.5 h-3.5')+'</button></div>';}).join(''):'<div style="padding:22px;text-align:center;color:var(--c-text-3);font-size:12.5px">No automations yet. Add a rule to email people or update tickets automatically — including due-date reminders.</div>';
-  var _cols=(b.settings&&b.settings.columns)||[];
-  var _dcs=_cols.filter(function(c){return c.type==='date';}),_tcs=_cols.filter(function(c){return c.type==='time';});
-  var _cr=(b.settings&&b.settings.colReminder)||{};var _crOn=_cr.enabled===true;
-  var crCard;
-  if(!_dcs.length||!_tcs.length){
-    crCard='<div style="border:1.5px dashed var(--c-border);border-radius:12px;padding:12px 14px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--c-text)"><span style="width:26px;height:26px;border-radius:8px;background:var(--c-surface-2);color:var(--c-text-3);display:inline-grid;place-items:center">'+ic('bell','w-3.5 h-3.5')+'</span>Column reminder</div><div style="font-size:12px;color:var(--c-text-3);margin-top:6px;line-height:1.5">Give this board a <b>date</b> column and a <b>time</b> column, and Bridge can automatically remind the assignee when that moment arrives.</div>'+(_crOn?'<div style="display:flex;align-items:center;gap:8px;margin-top:8px;background:#FDF6E7;border:1px solid #E6D9A8;border-radius:9px;padding:7px 10px;font-size:11.5px;color:#8A6E14"><span>It is still switched <b>on</b> from earlier.</span><button onclick="App._crmColRemTog()" style="margin-left:auto;border:1px solid #E6D9A8;background:#fff;color:#8A6E14;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">Turn off</button></div>':'')+'</div>';
-  }else{
-    var _effD=_dcs.some(function(c){return c.id===_cr.dateCol;})?_cr.dateCol:_dcs[0].id;
-    var _effT=_tcs.some(function(c){return c.id===_cr.timeCol;})?_cr.timeCol:_tcs[0].id;
-    var _dsel='<select onchange="App._crmColRemSet(\'dateCol\',this.value)" class="ui-select" style="flex:1;min-height:34px;padding:5px 26px 5px 9px;font-size:12.5px">'+_dcs.map(function(c){return'<option value="'+c.id+'" '+(c.id===_effD?'selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select>';
-    var _tsel='<select onchange="App._crmColRemSet(\'timeCol\',this.value)" class="ui-select" style="flex:1;min-height:34px;padding:5px 26px 5px 9px;font-size:12.5px">'+_tcs.map(function(c){return'<option value="'+c.id+'" '+(c.id===_effT?'selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select>';
-    crCard='<div style="border:1.5px solid '+(_crOn?'#2CB1A6':'var(--c-border)')+';border-radius:12px;padding:12px 14px;margin-bottom:14px;background:'+(_crOn?'#F4FBFA':'#fff')+'">'
-      +'<div style="display:flex;align-items:center;gap:10px"><span style="width:26px;height:26px;border-radius:8px;background:'+(_crOn?'#E4F2F0':'var(--c-surface-2)')+';color:'+(_crOn?'#0A5A55':'var(--c-text-3)')+';display:inline-grid;place-items:center;flex-shrink:0">'+ic('bell','w-3.5 h-3.5')+'</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:var(--c-text)">Column reminder</div><div style="font-size:11.5px;color:var(--c-text-2);margin-top:1px">Ping the assignee when the row’s date & time arrives</div></div><button role="switch" aria-checked="'+(_crOn?'true':'false')+'" class="tog'+(_crOn?' on':'')+'" onclick="App._crmColRemTog()"><span></span></button></div>'
-      +(_crOn?'<div style="display:flex;gap:8px;margin-top:10px;align-items:center"><span style="font-size:11px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">Date</span>'+_dsel+'<span style="font-size:11px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">Time</span>'+_tsel+'</div>'
-        +'<div style="font-size:11px;color:var(--c-text-3);margin-top:8px;line-height:1.55">At that exact moment (Dubai time) the <b>assignee</b> — or every member of the assigned group — gets an in-app + email ping, even when nobody has Bridge open. Rows missing the date or the time are skipped, and so are tickets already in a done status and unassigned rows.</div>':'')
-    +'</div>';
-  }
-  modalShell({title:'Automations — '+esc(b.name),sub:'Run actions automatically when things happen on this board.',size:'max-w-lg',key:'crm-auto',body:crCard+list+'<button onclick="App._crmAutoNew()" class="ui-btn ui-btn-brand ui-btn-sm" style="margin-top:4px">+ New rule</button>',footer:btnP('Done','App.closeModal()')});};
-App._crmAutoNew=()=>{CRM._autoEdit={id:uid('auto'),name:'',enabled:true,trigger:{type:'created'},actions:[{type:'notify',users:[]}]};App._crmAutoEditRender();};
+    +'<button onclick="App._crmAutoDel(\''+a.id+'\')" title="Delete" style="border:none;background:var(--c-danger-soft);color:var(--c-danger);width:28px;height:28px;border-radius:8px;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-3.5 h-3.5')+'</button></div>';}).join(''):(crRow?'':'<div style="padding:22px;text-align:center;color:var(--c-text-3);font-size:12.5px">No rules yet. Add one to email people, update tickets automatically, or remind assignees from a date & time column.</div>');
+  modalShell({title:'Automations — '+esc(b.name),sub:'Run actions automatically when things happen on this board.',size:'max-w-lg',key:'crm-auto',body:crRow+list+'<button onclick="App._crmAutoNew()" class="ui-btn ui-btn-brand ui-btn-sm" style="margin-top:4px">+ New rule</button>',footer:btnP('Done','App.closeModal()')});};
+App._crmAutoNew=()=>{
+  var b=_crmBoard(CRM._autoBoard);if(!b)return;
+  var cr=b.settings&&b.settings.colReminder;var hasCR=!!(cr&&cr.dateCol&&cr.timeCol);
+  var opt=function(onclick,iconBg,iconFg,icon,title2,desc){return'<button onclick="'+onclick+'" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--c-border);border-radius:13px;background:#fff;cursor:pointer;margin-bottom:9px"><span style="width:36px;height:36px;border-radius:10px;background:'+iconBg+';color:'+iconFg+';display:grid;place-items:center;flex-shrink:0">'+ic(icon,'w-4 h-4')+'</span><span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:800;color:#10262E">'+title2+'</span><span style="display:block;font-size:11.5px;color:#90A5AB;margin-top:1px;line-height:1.45">'+desc+'</span></span></button>';};
+  modalShell({title:'New rule — '+esc(b.name),sub:'What should this board do automatically?',size:'max-w-md',key:'crm-auto',
+    body:opt('App._crmAutoNewRule()','#E4F2F0','#0F766E','flag','Automation rule','When something happens — created, status change, overdue, a column value… — notify people, assign, move, comment.')
+      +opt('App._crmColRemEdit()','#F5EBCC','#8A6E14','bell','Column reminder',hasCR?'Already on this board — opens it for editing (one per board).':'Remind the assignee automatically when the row’s date & time columns arrive — even with Bridge closed.'),
+    footer:btnG('← Back','App._crmAutoRender()')});
+};
+App._crmAutoNewRule=()=>{CRM._autoEdit={id:uid('auto'),name:'',enabled:true,trigger:{type:'created'},actions:[{type:'notify',users:[]}]};App._crmAutoEditRender();};
 App._crmAutoEdit=(id)=>{var b=_crmBoard(CRM._autoBoard);var a=_crmAutos(b).find(function(x){return x.id===id;});if(!a)return;CRM._autoEdit=JSON.parse(JSON.stringify(a));App._crmAutoEditRender();};
 App._crmAutoBack=()=>{CRM._autoEdit=null;App._crmAutoRender();};
 App._crmAutoTrig=(v)=>{var t={type:v};if(v==='column'){var _b=_crmBoard(CRM._autoBoard);var _c=((_b&&_b.settings&&_b.settings.columns)||[])[0];t.colId=_c?_c.id:null;t.op='change';}if(v==='status')t.to=(_crmStatuses(_crmBoard(CRM._autoBoard))[0]||{}).name;if(v==='priority')t.to='High';if(v==='due_soon'||v==='stale')t.days=1;CRM._autoEdit.trigger=t;App._crmAutoEditRender();};
 App._crmAutoActType=(i,v)=>{var a={type:v};if(v==='notify')a.users=[];CRM._autoEdit.actions[i]=a;App._crmAutoEditRender();};
 App._crmAutoActUser=(i,uid2,on)=>{var a=CRM._autoEdit.actions[i];a.users=a.users||[];var k=a.users.indexOf(uid2);if(on&&k<0)a.users.push(uid2);if(!on&&k>=0)a.users.splice(k,1);};
 App._crmAutoEditRender=()=>{var b=_crmBoard(CRM._autoBoard);if(!b)return;var d=CRM._autoEdit;var sts=_crmStatuses(b);var users=_crmBoardPeople(b);var boards=CRM.boards.filter(function(x){return x.id!==b.id&&_crmBoardVisible(x)&&_crmBS(x).type!=='chat';});
-  var cols=(b.settings&&b.settings.columns)||[];
+  var cols=((b.settings&&b.settings.columns)||[]).filter(function(c){return c.type!=='remind';});
   var trig=_CRM_TRIG.find(function(x){return x.v===d.trigger.type;})||_CRM_TRIG[0];var tp='';
   if(trig.p==='column'){
     if(!cols.length){tp='<div style="margin-top:8px;padding:10px 12px;background:var(--c-warn-soft);color:var(--c-warn-ink);border-radius:9px;font-size:12.5px">This board has no columns yet — add a column first, then automate it.</div>';}
@@ -1424,7 +1463,19 @@ App._crmColRzStart=(e,boardId,key)=>{
   };
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
 };
+/* v3.16.1 — Safari renders EMPTY date/time inputs with a ghost value (today's date / a default
+   time) in full ink, so an untouched cell looks saved. Empty cells now render grey; the value
+   turns ink only once actually committed. Commits on change AND blur (Safari sometimes skips
+   change), deduped via data-v so automations never run twice for one edit. */
+App._crmDTCell=(el,rid,cid)=>{
+  var v=el.value||'';
+  if(v===(el.getAttribute('data-v')||''))return;
+  el.setAttribute('data-v',v);
+  el.style.color=v?'#10262E':'#A9BABF';
+  App._crmSetCell(rid,cid,v);
+};
 function _crmCell(r,col){
+  if(col.type==='remind')return'<div style="display:flex;justify-content:center">'+_crmRemindCell(r)+'</div>';
   var v=(r.fields&&r.fields[col.id]!=null)?r.fields[col.id]:'';
   /* v3.15 access fix: without Workspace→Edit the cell used to LOOK editable but silently did
      nothing — now it renders read-only, matching how Status and Assignee already behave. */
@@ -1439,8 +1490,8 @@ function _crmCell(r,col){
   var oc='class="crm-cell" onchange="App._crmSetCell(\''+r.id+'\',\''+col.id+'\',this.value)"';
   if(col.type==='number')return'<input type="number" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="0"/>';
   if(col.type==='currency')return'<input type="number" step="0.01" value="'+esc(v)+'" '+oc+' style="'+b+'" placeholder="0.00"/>';
-  if(col.type==='date')return'<input type="date" value="'+esc(v)+'" '+oc+' style="'+b+'"/>';
-  if(col.type==='time')return'<input type="time" value="'+esc(v)+'" '+oc+' style="'+b+'"/>';
+  if(col.type==='date'||col.type==='time'){var dtc='data-v="'+esc(v)+'" onchange="App._crmDTCell(this,\''+r.id+'\',\''+col.id+'\')" onblur="App._crmDTCell(this,\''+r.id+'\',\''+col.id+'\')"';
+    return'<input type="'+col.type+'" value="'+esc(v)+'" class="crm-cell" '+dtc+' style="'+b+(String(v).trim()===''?';color:#A9BABF':'')+'" title="'+(String(v).trim()===''?'Empty — click to pick':'')+'"/>';}
   if(col.type==='checkbox')return'<div style="display:flex;justify-content:center"><input type="checkbox" '+((v==='1'||v===true)?'checked':'')+' onchange="App._crmSetCell(\''+r.id+'\',\''+col.id+'\',this.checked?\'1\':\'\')" style="width:16px;height:16px;accent-color:#0F766E;cursor:pointer"/></div>';
   if(col.type==='person'){var us=_crmBoardPeople(_crmBoard(r.boardId));if(v&&!us.some(function(u){return String(u.id)===String(v);})&&uById(v))us=us.concat([uById(v)]);return'<select '+oc+' style="'+b+';cursor:pointer"><option value="">\u2014</option>'+us.map(function(u){return'<option value="'+u.id+'" '+(String(u.id)===String(v)?'selected':'')+'>'+esc(fullName(u))+'</option>';}).join('')+'</select>';}
   if(col.type==='dropdown'){var opts=(col.options||[]);return'<select '+oc+' style="'+b+';cursor:pointer"><option value="">\u2014</option>'+opts.map(function(o){return'<option '+(String(o)===String(v)?'selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';}
@@ -1452,6 +1503,7 @@ function _crmCell(r,col){
 function _crmTable(board,opts){
   opts=opts||{};
   var cols=(board.settings&&board.settings.columns)||[];var canEd=can('crm','edit');var canCr=can('crm','create');
+  var _crB=(board.settings&&board.settings.colReminder&&board.settings.colReminder.enabled===true)?board.settings.colReminder:null;
   var canStruct=canEd; // v3.12.1: a filtered view IS the board — same actions everywhere, permissions decide
   var rows=CRM.convos.filter(function(c){return c.boardId===board.id;});
   // opts.filters (a view's saved conditions) beats the ad-hoc board filter
@@ -1467,14 +1519,13 @@ function _crmTable(board,opts){
     +'<th style="'+hc+';position:relative;'+_wst('_asg',170)+'">Assignee'+_rzOr('_asg')+'</th>'
     +'<th style="'+hc+';position:relative;'+_wst('_st',150)+'">Status'+_rzOr('_st')+'</th>';
   cols.forEach(function(col){
-    th+='<th class="crm-colh" data-cid="'+col.id+'" '+(canStruct?'ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+col.id+'\')"':'')+' style="'+hc+';'+_wst(col.id,150)+';position:relative">'
+    th+='<th class="crm-colh" data-cid="'+col.id+'" '+(canStruct?'ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+col.id+'\')"':'')+' style="'+hc+';'+_wst(col.id,col.type==='remind'?90:150)+';position:relative">'
       +(canStruct?'<span class="crm-grip" draggable="true" ondragstart="App._crmColDragStart(event,\''+board.id+'\',\''+col.id+'\')" ondragend="App._crmColDragEnd(event)" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="2.5" r="1.3"/><circle cx="7" cy="2.5" r="1.3"/><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="3" cy="11.5" r="1.3"/><circle cx="7" cy="11.5" r="1.3"/></svg></span>':'')
-      +'<span onclick="'+(canStruct?'App._crmColModal(\''+board.id+'\',\''+col.id+'\')':'')+'" title="'+(canStruct?'Click to edit column':'')+'" style="cursor:'+(canStruct?'pointer':'default')+'">'+esc(col.name)+' <span style="font-size:9px;color:#93A6AC;font-weight:600">'+esc(col.type)+'</span></span>'
+      +'<span onclick="'+(canStruct?'App._crmColModal(\''+board.id+'\',\''+col.id+'\')':'')+'" title="'+(canStruct?'Click to edit column':'')+'" style="cursor:'+(canStruct?'pointer':'default')+'">'+esc(col.name)+' <span style="font-size:9px;color:#93A6AC;font-weight:600">'+esc(col.type==='remind'?'reminder':col.type)+'</span></span>'
       +(canStruct?'<span class="crm-colx" style="display:none;position:absolute;right:8px;top:8px;background:#FAF9F3;padding-left:3px"><button onclick="event.stopPropagation();App._crmDelCol(\''+board.id+'\',\''+col.id+'\')" title="Delete column" style="border:none;background:transparent;cursor:pointer;color:#DC2626">\u2715</button></span>':'')
       +_rzOr(col.id)
     +'</th>';
   });
-  th+='<th style="'+hc+';width:84px;text-align:center" title="Personal reminders — pick a date & time and get an email + in-app ping. Only you see yours.">Remind</th>';
   th+='<th style="'+hc+';width:52px"></th>';
   var addRow='';
   if(canCr&&CRM._rowAdd===board.id){
@@ -1485,8 +1536,10 @@ function _crmTable(board,opts){
     var tds='<td style="padding:6px 10px;border-bottom:1px solid #F1F7F8;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer"><div style="font-size:13px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#90A5AB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div></td>';
     tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;overflow:hidden">'+_crmAsgCell(r,board)+'</td>';
     tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;overflow:hidden">'+_crmRowStatus(r,board)+'</td>';
-    cols.forEach(function(col){tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;overflow:hidden">'+_crmCell(r,col)+'</td>';});
-    tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;text-align:center;white-space:nowrap">'+_crmRemindCell(r)+'</td>';
+    cols.forEach(function(col){var cell=_crmCell(r,col);
+      if(_crB&&col.id===_crB.timeCol){var _dv=(r.fields||{})[_crB.dateCol],_tv=(r.fields||{})[col.id];
+        if(_dv&&String(_dv).trim()&&_tv&&String(_tv).trim()&&!r.assignedTo&&!r.assignedGroup&&!_crmIsDone(board,r.status))cell='<div style="display:flex;align-items:center;gap:6px">'+cell+'<span title="Date & time are set but there is no assignee — nobody will be auto-reminded. Pick an Assignee." style="min-width:15px;height:15px;border-radius:50%;background:#F59E0B;color:#fff;font-size:10px;font-weight:800;display:inline-grid;place-items:center;flex-shrink:0;cursor:help;line-height:1">!</span></div>';}
+      tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;overflow:hidden">'+cell+'</td>';});
     tds+='<td style="padding:4px 8px;border-bottom:1px solid #F1F7F8;white-space:nowrap;text-align:right">'+(can('crm','delete')?'<button onclick="App._crmDelConvo(\''+r.id+'\')" title="Delete" style="border:none;background:transparent;color:#BFD1D5;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'</td>';
     return'<tr class="crm-trow">'+tds+'</tr>';
   }).join('');
@@ -1520,12 +1573,13 @@ App._crmColModal=(boardId,colId)=>{
 };
 App._crmColModalRender=()=>{
   var d=CRM._colEdit;if(!d)return;
-  var types=[['text','Text'],['longtext','Long text'],['number','Number'],['currency','Currency'],['date','Date'],['time','Time'],['dropdown','Dropdown'],['checkbox','Checkbox'],['person','Person'],['email','Email'],['phone','Phone'],['url','Link']];
+  var types=[['text','Text'],['longtext','Long text'],['number','Number'],['currency','Currency'],['date','Date'],['time','Time'],['dropdown','Dropdown'],['checkbox','Checkbox'],['person','Person'],['email','Email'],['phone','Phone'],['url','Link'],['remind','⏰ Reminder']];
   var pills=types.map(function(t){var on=d.type===t[0];return'<button onclick="CRM._colEdit.type=\''+t[0]+'\';App._crmColModalRender()" style="padding:8px 14px;border-radius:9px;border:1.5px solid '+(on?'#0F766E':'#DFEAEC')+';background:'+(on?'#E4F2F0':'#fff')+';color:'+(on?'#0A5A55':'#5E767D')+';font-size:12.5px;font-weight:700;cursor:pointer">'+t[1]+'</button>';}).join('');
   modalShell({title:d.colId?'Edit column':'New column',sub:'Columns are this board\u2019s fields \u2014 automations can react to them.',size:'max-w-md',key:'crm-col',
     body:'<label class="ui-label">Column name</label><input value="'+esc(d.name)+'" oninput="CRM._colEdit.name=this.value" placeholder="e.g. Order #, Amount, Approval" class="ui-input" style="margin-bottom:14px"/>'
       +'<label class="ui-label">Type</label><div style="display:flex;gap:6px;flex-wrap:wrap">'+pills+'</div>'
-      +(d.type==='dropdown'?'<label class="ui-label" style="margin-top:14px">Options (one per line)</label><textarea oninput="CRM._colEdit.options=this.value" rows="4" class="ui-input" style="resize:vertical;font-family:inherit" placeholder="Pending\u000AApproved\u000ARejected">'+esc(d.options)+'</textarea>':''),
+      +(d.type==='dropdown'?'<label class="ui-label" style="margin-top:14px">Options (one per line)</label><textarea oninput="CRM._colEdit.options=this.value" rows="4" class="ui-input" style="resize:vertical;font-family:inherit" placeholder="Pending\u000AApproved\u000ARejected">'+esc(d.options)+'</textarea>':'')
+      +(d.type==='remind'?'<div style="display:flex;gap:8px;align-items:flex-start;background:#E4F2F0;border:1px solid #B9E3DE;border-radius:10px;padding:9px 12px;margin-top:14px;font-size:12px;color:#0A5A55;line-height:1.5">'+ic('bell','w-3.5 h-3.5')+'<span>A bell on every row — each person sets their <b>own</b> date & time reminder for that ticket and gets an in-app + email ping (even with Bridge closed). The cell stores no data.</span></div>':''),
     footer:(d.colId?'<button onclick="App._crmDelCol(\''+d.boardId+'\',\''+d.colId+'\');App.closeModal()" class="ui-btn ui-btn-danger ui-btn-sm" style="margin-right:auto">Delete</button>':'')+btnG('Cancel','App.closeModal()')+btnP(d.colId?'Save column':'Add column','App._crmColSave()')});
 };
 /* If colReminder points at a column that was deleted or retyped, re-point it to another
