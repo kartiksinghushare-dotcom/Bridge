@@ -1,3 +1,12 @@
+# Bridge (v3.16)
+
+## v3.16 — OKR: Achieved waits for the end date · Workspace: column-driven reminders for assignees
+
+- **"Achieved" now means the period is over.** An objective that hits 100% (or holds its threshold) before its end date reads **On track** until the end date has passed — only then does the chip turn **Achieved**. One rule, applied in the central status function, so cards, filters, summary counts and exports all follow. A manual status mark still wins, and closed objectives stay Closed. (Threshold and allowance modes were already end-gated; this closes the last path — plain target objectives.)
+- **Column reminder (per board).** Any ticket board with a **date** column and a **time** column can now remind people automatically: open **Automations** on the board — the new *Column reminder* card at the top — flip it on and pick the two columns. When a row's date & time arrives (Dubai time), the **assignee** — or every member of the assigned group — gets an **in-app + email** ping, *even when nobody has Bridge open* (an every-minute server job does the firing). Rows missing either value are skipped, so are tickets already in a done status and unassigned rows; each moment fires **at most once** (changing the date/time re-arms it), and enabling the feature never replays old dates (1-hour lookback cap). Preconfigured on **Pro x Inventory → Available Date and Time** (Date + Time columns). DB (additive): `crm_column_reminder_log` table + `crm-column-reminders-every-minute` cron job.
+- Personal ⏰ reminders (the bell on every row, in every chat header, on any message, and in the ticket details panel) already fire server-side every minute — app open or not — and remain unchanged.
+- Cache-busting bumped to `?v=90`. Nothing deleted or altered in the database — one new log table, one new scheduled job, one board setting.
+
 # Bridge (v3.15)
 
 ## v3.15 — Workspace: group assignees · filtered views built in one dialog · ⏰ Remind-me on every row

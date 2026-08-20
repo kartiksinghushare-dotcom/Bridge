@@ -683,7 +683,8 @@ function _okrExpectedPct(o){
   return e>s?Math.round(((n-s)/(e-s))*100):100;
 }
 // Status: a manual mark (statusMode 'manual') wins; otherwise derived from progress vs expected pace.
-//   ≥100% → Achieved · period over & <100% → Not achieved · within 10 pts of pace → On track · else Off track.
+//   ≥100% after the period ends → Achieved (before the end date it reads On track) ·
+//   period over & <100% → Not achieved · within 10 pts of pace → On track · else Off track.
 function _okrExpectedForNode(o,_seen){
   if(o.periodStart&&o.periodEnd)return _okrExpectedPct(o);
   const eff=_okrEffPeriod(o);
@@ -720,7 +721,9 @@ function okrStatusOf(o){
     if(expL===null)return pct<=50?'On track':'Off track';
     return pct<=expL+15?'On track':'Off track';             // under the pace line = on track
   }
-  if(pct>=100)return 'Achieved';
+  /* v3.16: hitting the target EARLY is not 'Achieved' yet — the chip stays 'On track' until the
+     period's end date has passed. Only a manual status mark can say Achieved sooner. */
+  if(pct>=100)return (o.periodEnd&&todayISO()<=o.periodEnd)?'On track':'Achieved';
   if(o.periodEnd&&todayISO()>o.periodEnd)return 'Not achieved';
   const exp=_okrExpectedForNode(o);
   if(exp===null)return pct>=50?'On track':'Off track';
@@ -1980,7 +1983,7 @@ App._renderOKREdit=()=>{
           const _set=(_t!==null&&isFinite(_t));
           const _plain=(txt)=>'<div style="font-size:11px;color:var(--c-text-3);line-height:1.55">'+txt+'</div>';
           const _amber=(txt)=>'<div style="font-size:11px;line-height:1.6;color:#7A4E00;background:#FEF5E0;border:1px solid #FBE6A6;border-radius:9px;padding:8px 10px">'+txt+'</div>';
-          if(_d==='up')return _plain('A journey from the start value up to the target. The % is <b>how far along that climb</b> the latest update is, and the graph draws the planned pace from start to target. Beating the target reads <b>100% · Achieved</b> — never more than 100%.');
+          if(_d==='up')return _plain('A journey from the start value up to the target. The % is <b>how far along that climb</b> the latest update is, and the graph draws the planned pace from start to target. Beating the target reads <b>100%</b> — never more than 100% — and the chip turns <b>Achieved</b> once the period’s end date has passed (until then it stays On track).');
           if(_d==='down'){
             if(!_set)return _amber('Set a target above — the number has to come down to it.');
             if(_t>_s)return _amber('Your target sits <b>above</b> the start, so this behaves as an <b>allowance</b>: the % reads <b>how much of it is used</b> ('+esc(_okrFmtVal(o,(_t-_s)*0.4))+' of the '+esc(_okrFmtVal(o,_t-_s))+' this period allows → 40%) and going over it reads <b>Not achieved</b>. If what you actually want is “just keep it under '+esc(_okrFmtVal(o,_t))+'”, pick <b>Less than</b> instead — no start value, and the graph shows every reading against that one line.');

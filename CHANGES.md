@@ -1,3 +1,19 @@
+# Bridge v90 — OKR "Achieved" waits for the end date · column-driven reminders for assignees
+
+Two files (`public/js/19-okr-roles-acl.js`, `public/js/06-crm.js`) + cache-buster `?v=90`. **DB additive only**: `crm_column_reminder_log` table, `crm-column-reminders-every-minute` pg_cron job, `colReminder` setting on one board.
+
+## OKR: Achieved only after the end date
+- `okrStatusOf` no longer returns **Achieved** the moment progress hits 100% — before the period's end date it reads **On track**, and flips to Achieved only once the end date has passed. Manual status marks and Closed still win. Threshold/allowance modes were already end-gated; this closes the plain-target path. Editor explainer updated to say so.
+
+## Workspace: Column reminder (assignee pinged at the row's date & time)
+- New card at the top of every ticket board's **Automations** dialog: toggle **Column reminder** on, pick the board's **Date** and **Time** columns. At that wall-clock moment (Asia/Dubai) the assignee — or every member of the assigned group — gets an in-app notification + email, fired by an every-minute server job, so it works with everyone's app closed.
+- Skips rows missing the date or the time (per choice: no default hour), tickets whose status is a done status, and unassigned rows. Each (ticket, moment) fires at most once — edit the date/time and it re-arms for the new moment; enabling never replays moments older than an hour.
+- Permission: same as Automations (Workspace → Edit/Manage). The setting lives in `board.settings.colReminder` and syncs live to all clients (v89 realtime).
+- Preconfigured on **Available Date and Time** (Pro x Inventory): Date + Time columns, enabled.
+- Note: personal ⏰ reminders were already server-fired every minute (`crm-reminders-every-minute`) — bell column, chat header, message hover, details panel — nothing changed there.
+
+---
+
 # Bridge v89 — Workspace: assign to groups · views built in one dialog · ⏰ Remind-me on every row
 
 One file of logic (`public/js/06-crm.js`) + cache-buster `?v=89`. **DB: one additive column** — `crm_conversations.assigned_group text` (nullable; nothing else touched, nothing deleted).
