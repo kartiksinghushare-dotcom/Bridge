@@ -1,3 +1,12 @@
+# Bridge v94 — New ticket is a full form
+
+`public/js/06-crm.js` + cache-buster `?v=94`. No DB changes.
+
+- **+ New ticket** now opens a form with every field up front — Ticket title (required), Customer, **Assignee** (people & groups), **Status**, **Due date**, and **all of the board's custom columns** — then one **Add ticket** button. The two-field inline row at the top of the table is gone.
+- Access rules match the table: title/customer come with Workspace → Create; Status, Due date and custom columns show only with Edit; the Assignee picker only with Assign. Creating with an assignee notifies them (or every group member) exactly like assigning from the table, and "created"/"assigned" automations both run. Date/time fields in the form use the same grey-until-committed treatment as the table (no Safari ghosts).
+
+---
+
 # Bridge v93 — the Remind column is opt-in now
 
 `public/js/06-crm.js` + cache-buster `?v=93`. No DB changes.
