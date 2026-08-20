@@ -1,3 +1,12 @@
+# Bridge v95 — the new-ticket form lives IN the row
+
+`public/js/06-crm.js` + cache-buster `?v=95`. No DB changes.
+
+- No popup: **+ New ticket** opens an entry row at the **top of the table**, one input under each column header — Title + Customer under Ticket, the Assignee picker (people & groups), the Status dropdown, and every custom column in its own cell — ending in an **Add** button (Enter also adds, Esc or × closes). The row stays open after adding, so several tickets can be entered back-to-back.
+- Same permissions and behaviour as the v94 form: Status/custom cells need Edit, Assignee needs Assign, assigning at creation notifies like a normal assignment, "created"/"assigned" automations run, and date/time inputs stay grey until committed.
+
+---
+
 # Bridge v94 — New ticket is a full form
 
 `public/js/06-crm.js` + cache-buster `?v=94`. No DB changes.

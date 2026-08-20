@@ -1528,6 +1528,34 @@ function _crmTable(board,opts){
   });
   th+='<th style="'+hc+';width:52px"></th>';
   var addRow='';
+  if(canCr&&CRM._rowAdd===board.id&&CRM._ntDraft&&CRM._ntDraft.boardId===board.id){
+    var _d=CRM._ntDraft;var canAsgN=can('crm','assign');
+    var ist='width:100%;box-sizing:border-box;border:1px solid #DFEAEC;border-radius:8px;padding:6px 8px;font-size:12.5px;outline:none;background:#fff;color:#10262E';
+    var _kd=' onkeydown="if(event.key===\'Enter\')App._crmNtCreate();if(event.key===\'Escape\')App._crmNtCancel();"';
+    var ntc='<td style="padding:6px 8px;border-bottom:1px solid #E4F2F0;vertical-align:top">'
+      +'<input id="nt-title" value="'+esc(_d.title)+'" oninput="CRM._ntDraft.title=this.value"'+_kd+' placeholder="Ticket title *" style="'+ist+';border-color:#2CB1A6;border-width:1.5px;font-weight:600;margin-bottom:4px"/>'
+      +'<input value="'+esc(_d.customer)+'" oninput="CRM._ntDraft.customer=this.value"'+_kd+' placeholder="Customer" style="'+ist+'"/></td>';
+    var ntAsg='<td style="padding:6px 8px;border-bottom:1px solid #E4F2F0;vertical-align:top">';
+    if(canAsgN){
+      var _us=_crmBoardPeople(board),_gs=_crmBoardGroups(board);
+      ntAsg+='<select onchange="CRM._ntDraft.assign=this.value" style="'+ist+';cursor:pointer"><option value="">Unassigned</option>'
+        +(_gs.length?'<optgroup label="Groups">'+_gs.map(function(g){return'<option value="grp:'+g.id+'" '+(_d.assign==='grp:'+g.id?'selected':'')+'>\u{1F465} '+esc(g.name)+' ('+((g.members||[]).length)+')</option>';}).join('')+'</optgroup>':'')
+        +(_gs.length?'<optgroup label="People">':'')+_us.map(function(u){return'<option value="'+u.id+'" '+(_d.assign===u.id?'selected':'')+'>'+esc(fullName(u))+'</option>';}).join('')+(_gs.length?'</optgroup>':'')+'</select>';
+    }else ntAsg+='<span style="color:#93A6AC;font-size:12px;line-height:30px">—</span>';
+    ntAsg+='</td>';
+    var ntSt='<td style="padding:6px 8px;border-bottom:1px solid #E4F2F0;vertical-align:top">'
+      +(canEd?'<select onchange="CRM._ntDraft.status=this.value" style="'+ist+';cursor:pointer">'+_crmStatuses(board).map(function(x){return'<option '+(x.name===_d.status?'selected':'')+'>'+esc(x.name)+'</option>';}).join('')+'</select>':'<div style="padding:3px 0">'+_crmStatusChip(board,_d.status)+'</div>')+'</td>';
+    var ntCols='';
+    cols.forEach(function(col){
+      ntCols+='<td style="padding:6px 8px;border-bottom:1px solid #E4F2F0;vertical-align:top">'
+        +(col.type==='remind'?'<span style="color:#C4D5D9;font-size:12px;line-height:30px;display:block;text-align:center">—</span>'
+          :(canEd?_crmNtField(col,board,ist):'<span style="color:#93A6AC;font-size:12px;line-height:30px">—</span>'))+'</td>';
+    });
+    var ntAct='<td style="padding:6px 6px;border-bottom:1px solid #E4F2F0;vertical-align:top">'
+      +'<button onclick="App._crmNtCreate()" title="Add ticket (Enter)" style="display:block;width:100%;border:none;background:#0F766E;color:#fff;border-radius:8px;padding:7px 0;font-size:12px;font-weight:800;cursor:pointer">Add</button>'
+      +'<button onclick="App._crmNtCancel()" title="Close (Esc)" style="display:block;width:100%;border:1px solid #DFEAEC;background:#fff;color:#5E767D;border-radius:8px;padding:4px 0;margin-top:4px;cursor:pointer;font-weight:700;font-size:12px">×</button></td>';
+    addRow='<tr style="background:#F8FCFC">'+ntc+ntAsg+ntSt+ntCols+ntAct+'</tr>';
+  }
   var body=rows.map(function(r){
     var tds='<td style="padding:6px 10px;border-bottom:1px solid #F1F7F8;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer"><div style="font-size:13px;font-weight:700;color:#10262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#90A5AB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div></td>';
     tds+='<td style="padding:2px 6px;border-bottom:1px solid #F1F7F8;overflow:hidden">'+_crmAsgCell(r,board)+'</td>';
@@ -1548,13 +1576,14 @@ function _crmTable(board,opts){
 App._crmRowAddOpen=(boardId)=>{
   if(!can('crm','create'))return toast('No permission to create','err');
   var b=_crmBoard(boardId);if(!b)return;
+  CRM._rowAdd=boardId;
   CRM._ntDraft={boardId:boardId,title:'',customer:'',assign:'',status:(_crmStatuses(b)[0]||{name:'Open'}).name,due:'',fields:{}};
-  App._crmNewTicketRender();
-  setTimeout(function(){var e=document.getElementById('nt-title');if(e)e.focus();},60);
+  rr();
+  setTimeout(function(){var e=document.getElementById('nt-title');if(e)e.focus();},40);
 };
-function _crmNtField(col,board){
+function _crmNtField(col,board,st2){
   var d=CRM._ntDraft;var v=(d.fields||{})[col.id];v=(v==null)?'':String(v);
-  var st='width:100%;box-sizing:border-box;border:1.5px solid #E4EDEF;border-radius:10px;padding:9px 11px;font-size:13px;background:#fff;outline:none;color:#10262E';
+  var st=st2||'width:100%;box-sizing:border-box;border:1.5px solid #E4EDEF;border-radius:10px;padding:9px 11px;font-size:13px;background:#fff;outline:none;color:#10262E';
   var oc='oninput="CRM._ntDraft.fields[\''+col.id+'\']=this.value"';
   var ocs='onchange="CRM._ntDraft.fields[\''+col.id+'\']=this.value"';
   if(col.type==='longtext')return'<textarea rows="3" '+oc+' style="'+st+';resize:vertical;font-family:inherit">'+esc(v)+'</textarea>';
@@ -1569,36 +1598,7 @@ function _crmNtField(col,board){
   if(col.type==='url')return'<input type="url" value="'+esc(v)+'" '+oc+' style="'+st+'" placeholder="https://…"/>';
   return'<input type="text" value="'+esc(v)+'" '+oc+' style="'+st+'" placeholder="—"/>';
 }
-App._crmNewTicketRender=()=>{
-  var d=CRM._ntDraft;if(!d)return;var b=_crmBoard(d.boardId);if(!b)return;
-  var canEd=can('crm','edit'),canAsg=can('crm','assign');
-  var cols=((b.settings&&b.settings.columns)||[]).filter(function(c){return c.type!=='remind';});
-  var st='width:100%;box-sizing:border-box;border:1.5px solid #E4EDEF;border-radius:10px;padding:9px 11px;font-size:13px;background:#fff;outline:none;color:#10262E';
-  var lbl=function(t,req){return'<label class="ui-label" style="display:block;margin-bottom:6px">'+t+(req?' <span style="color:#DC2626">*</span>':'')+'</label>';};
-  var wrap=function(inner){return'<div style="margin-bottom:13px">'+inner+'</div>';};
-  var asgSel='';
-  if(canAsg){
-    var us=_crmBoardPeople(b),gs=_crmBoardGroups(b);
-    asgSel='<select onchange="CRM._ntDraft.assign=this.value" style="'+st+';cursor:pointer"><option value="">Unassigned</option>'
-      +(gs.length?'<optgroup label="Groups">'+gs.map(function(g){return'<option value="grp:'+g.id+'" '+(d.assign==='grp:'+g.id?'selected':'')+'>\u{1F465} '+esc(g.name)+' ('+((g.members||[]).length)+')</option>';}).join('')+'</optgroup>':'')
-      +(gs.length?'<optgroup label="People">':'')+us.map(function(u){return'<option value="'+u.id+'" '+(d.assign===u.id?'selected':'')+'>'+esc(fullName(u))+'</option>';}).join('')+(gs.length?'</optgroup>':'')
-    +'</select>';
-  }
-  var stSel=canEd
-    ?'<select onchange="CRM._ntDraft.status=this.value" style="'+st+';cursor:pointer">'+_crmStatuses(b).map(function(x){return'<option '+(x.name===d.status?'selected':'')+'>'+esc(x.name)+'</option>';}).join('')+'</select>'
-    :'<div style="padding:6px 0">'+_crmStatusChip(b,d.status)+'</div>';
-  modalShell({title:'New ticket — '+esc(b.name),sub:'Fill what you know — everything can still be changed on the table afterwards.',size:'max-w-md',key:'crm-newticket',
-    body:wrap(lbl('Ticket title',true)+'<input id="nt-title" value="'+esc(d.title)+'" oninput="CRM._ntDraft.title=this.value" onkeydown="if(event.key===\'Enter\')App._crmNtCreate()" placeholder="What is this ticket about?" style="'+st+'"/>')
-      +wrap(lbl('Customer')+'<input value="'+esc(d.customer)+'" oninput="CRM._ntDraft.customer=this.value" placeholder="Customer / requester" style="'+st+'"/>')
-      +'<div style="display:flex;gap:10px">'
-        +(canAsg?'<div style="flex:1;min-width:0">'+wrap(lbl('Assignee')+asgSel)+'</div>':'')
-        +'<div style="flex:1;min-width:0">'+wrap(lbl('Status')+stSel)+'</div>'
-      +'</div>'
-      +(canEd?wrap(lbl('Due date')+'<input type="date" value="'+esc(d.due)+'" onchange="CRM._ntDraft.due=this.value;this.style.color=this.value?\'#10262E\':\'#A9BABF\'" style="'+st+(d.due?'':';color:#A9BABF')+'"/>'):'')
-      +(canEd&&cols.length?'<div style="display:flex;align-items:center;gap:8px;margin:2px 0 12px"><div style="height:1px;background:#EDF4F6;flex:1"></div><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#93A6AC">Board columns</span><div style="height:1px;background:#EDF4F6;flex:1"></div></div>'+cols.map(function(col){return wrap(lbl(esc(col.name))+_crmNtField(col,b));}).join(''):''),
-    footer:btnG('Cancel','App._crmNtCancel()')+btnP('Add ticket','App._crmNtCreate()')});
-};
-App._crmNtCancel=()=>{CRM._ntDraft=null;closeModal();};
+App._crmNtCancel=()=>{CRM._ntDraft=null;CRM._rowAdd=null;rr();};
 App._crmNtCreate=async()=>{
   if(!can('crm','create'))return toast('No permission to create','err');
   var d=CRM._ntDraft;if(!d)return;var b=_crmBoard(d.boardId);if(!b)return;
@@ -1614,8 +1614,9 @@ App._crmNtCreate=async()=>{
   var id=uid('cv');var now=new Date().toISOString();
   var c={id:id,boardId:b.id,title:title,customer:name,channel:'Manual',isTicket:true,ticketType:'Ticket',priority:'Medium',status:stName,assignedTo:asgU,assignedGroup:asgG,createdBy:S.uid||null,createdAt:now,lastAt:now,messages:[],fields:flds,dueDate:due};
   CRM.convos.push(c);
-  CRM._ntDraft=null;closeModal();
+  CRM._ntDraft={boardId:b.id,title:'',customer:'',assign:'',status:(_crmStatuses(b)[0]||{name:'Open'}).name,due:'',fields:{}};
   toast('Ticket added ✓');rr();
+  setTimeout(function(){var e=document.getElementById('nt-title');if(e)e.focus();},40);
   _crmLog('created',c,'in '+stName);
   sbWrite({table:'crm_conversations',op:'insert',id:id,values:{id:id,board_id:b.id,title:title,customer:name,channel:'Manual',is_ticket:true,ticket_type:'Ticket',priority:'Medium',status:stName,assigned_to:asgU,assigned_group:asgG,fields:flds,due_date:due,created_by:S.uid||null,created_at:now,last_at:now,updated_at:now}},{label:'New ticket'});
   _crmNotifyRule('created',c,b,'crm_ticket',{title:title,type:b.name,customer:name,actor:(me()?fullName(me()):'')});
