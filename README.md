@@ -1,3 +1,12 @@
+# Bridge (v3.21)
+
+## v3.21 — Automations on built-in columns · reminders are an automation action · quarterly roll-up reads the level below
+
+- **Automate the built-in columns.** The Workspace rule builder's "When a column…" trigger and "Set a column value…" action now include **Status · Assignee · Priority · Due date · Customer · Ticket (title)** in a *Built-in columns* group, each with the operators that fit it (Status/Priority *becomes…*, Assignee *becomes person/group*, Due date *has passed — checked daily*). Editing any of those fields fires the trigger, exactly like a custom column.
+- **Reminders redesigned — one system, inside automations.** All three old reminder features are gone: the personal ⏰ bells (rows, messages, chat header, details panel), the ⏰ Reminder column type (emoji and all), and the Column-reminder card. In their place every rule can **Set a reminder…** — pick a trigger, then: **who** (*Only me* — private to whoever saved the rule — or people & groups), and **when** (the row's date column + a time column or fixed time, or one fixed date & time — Dubai time). A server job fires the reminder in-app + email at that exact minute, Bridge open or closed; re-triggering the rule re-arms the reminder to the newest date & time; past dates never fire. Reminders people had already set with the old bells still fire once — nothing scheduled is lost.
+- **Quarterly OKRs: "Auto-update from the level below" finally sees the level below.** L0·Q1 now aggregates every matching L1·Q1 (the same label-matching the Quarterly view nests by) plus any sub-objectives created under the quarter itself — with double-count protection — and its Progress & Updates panel lists those feeding objectives with bars and status chips, just like an annual's quarterly panel. Graph, %, status and editor wording all follow.
+- DB (additive): `crm_rule_reminders` table + `crm-rule-reminders-every-minute` job. The old column-reminder job was unscheduled (feature replaced); the personal-reminder job stays to honour reminders already set. Cache-busting bumped to `?v=96`.
+
 # Bridge (v3.16)
 
 ## v3.16 — OKR: Achieved waits for the end date · Workspace: column-driven reminders for assignees

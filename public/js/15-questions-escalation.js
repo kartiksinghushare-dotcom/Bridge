@@ -137,38 +137,38 @@ function qCard(q){
     const _qdep=q.departmentId?(DB.departments||[]).find(d=>d.id===q.departmentId):null;
     const _qsub=q.subDepartmentId?(DB.departments||[]).find(d=>d.id===q.subDepartmentId):null;
     const exp=S.filters.expandedQ===q.id;
-    const clr=Q_TYPE_CLR[q.type]||'#5E767D';
-    const bg=Q_TYPE_BG[q.type]||'#F4F9FA';
+    const clr=Q_TYPE_CLR[q.type]||'#786A5F';
+    const bg=Q_TYPE_BG[q.type]||'#F7F3EE';
     const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
-    let h=`<div style="background:#fff;border-radius:14px;border:1.5px solid ${exp?'#E6D9A8':'#E7F0F2'};overflow:hidden">`;
+    let h=`<div style="background:#fff;border-radius:14px;border:1.5px solid ${exp?'#E7D9BC':'#EDE7DC'};overflow:hidden">`;
     h+=`<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="App._togExpandQ('${q.id}')">`;
-    h+=`<span style="color:#B9CBCF;transition:transform .2s;transform:rotate(${exp?90:0}deg)">${ic('chevR','w-4 h-4')}</span>`;
+    h+=`<span style="color:#C9BCAE;transition:transform .2s;transform:rotate(${exp?90:0}deg)">${ic('chevR','w-4 h-4')}</span>`;
     h+=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>`;
-    if(_qdep){h+=`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#F1F7F8;color:#5E767D;white-space:nowrap;flex-shrink:0">${esc(_qdep.name)}${_qsub?' › '+esc(_qsub.name):''}</span>`;}
+    if(_qdep){h+=`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#F4F0EA;color:#786A5F;white-space:nowrap;flex-shrink:0">${esc(_qdep.name)}${_qsub?' › '+esc(_qsub.name):''}</span>`;}
     h+=`<div style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</div>`;
     const isPub=q.isPublic!==false;
     const mine=canManageQ(q);
     h+=`<div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
     if(mine){
-      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#A7EBC2':'#FBE6A6'};background:${isPub?'#E4F2F0':'#FEFAEC'};font-size:11px;font-weight:700;color:${isPub?'#0F7A45':'#8A5F00'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
-      h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #E7F0F2;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;
-      h+=`<button onclick="App._delQuestion('${q.id}')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#C9D9DD;cursor:pointer" onmouseover="this.style.color='#C41E32'" onmouseout="this.style.color='#C9D9DD'">${ic('trash','w-4 h-4')}</button>`;
+      h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#BFDCC9':'#EEDEC0'};background:${isPub?'#EEE4D5':'#FBF7EB'};font-size:11px;font-weight:700;color:${isPub?'#346A47':'#7C5A26'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
+      h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #EDE7DC;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;
+      h+=`<button onclick="App._delQuestion('${q.id}')" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;color:#D5C9BC;cursor:pointer" onmouseover="this.style.color='#A63528'" onmouseout="this.style.color='#D5C9BC'">${ic('trash','w-4 h-4')}</button>`;
     } else {
-      h+=`<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid #DFEAEC;background:#F8FBFC;font-size:11px;font-weight:700;color:#5E767D">🌐 Public</span>`;
+      h+=`<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid #E6DED3;background:#FAF7F3;font-size:11px;font-weight:700;color:#786A5F">🌐 Public</span>`;
     }
     h+=`</div></div>`;
     if(exp){
-      h+=`<div style="padding:0 14px 12px 40px;border-top:1px solid #EDF4F5">`;
+      h+=`<div style="padding:0 14px 12px 40px;border-top:1px solid #F1ECE3">`;
       const opts=q.options||[];
-      if(!opts.length){h+=`<p style="font-size:12px;color:#C9D9DD;font-style:italic;padding:8px 0">No options — click Edit</p>`;}
+      if(!opts.length){h+=`<p style="font-size:12px;color:#D5C9BC;font-style:italic;padding:8px 0">No options — click Edit</p>`;}
       else opts.forEach((o,oi)=>{
 
         let lbl=q.type==='number'
           ?((NUM_CONDITIONS.find(x=>x.id===o.condition)||{label:o.condition}).label+' '+o.value+(o.condition==='between'?' – '+o.value2:''))
           :(o.text||o.label||'');
-        h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F2F8F9">`;
-        h+=`<span style="width:20px;height:20px;border-radius:50%;background:#E6F3F1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0C6B65">${oi+1}</span>`;
-        h+=`<span style="flex:1;font-size:13px;color:#2F4C55">${esc(lbl)}</span>`;
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F5F1EB">`;
+        h+=`<span style="width:20px;height:20px;border-radius:50%;background:#EEE5D6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#4A3B34">${oi+1}</span>`;
+        h+=`<span style="flex:1;font-size:13px;color:#3A312A">${esc(lbl)}</span>`;
 
         h+=`</div>`;
       });
@@ -184,9 +184,9 @@ function _qGroupHTML(list){
   const tops=topDepts();
   const used=new Set();
   let html='';
-  const chev=(open)=>`<span style="display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#F1F7F8;color:#5E767D;font-size:9px;flex-shrink:0;transform:rotate(${open?90:0}deg);transition:transform .15s">▶</span>`;
-  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#E4F2F0;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#10262E">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F1F7F8;color:#5E767D">${count}</span></button>`;
-  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#0F766E"></span><div style="font-size:12px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#90A5AB">${count}</span></button>`;
+  const chev=(open)=>`<span style="display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#F4F0EA;color:#786A5F;font-size:9px;flex-shrink:0;transform:rotate(${open?90:0}deg);transition:transform .15s">▶</span>`;
+  const deptHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="width:100%;display:flex;align-items:center;gap:8px;margin:18px 0 8px;background:transparent;border:none;cursor:pointer;text-align:left;padding:0">${chev(open)}<div style="width:30px;height:30px;border-radius:9px;background:#EEE4D5;display:grid;place-items:center;flex-shrink:0">${ic('dept','w-4 h-4')}</div><div style="font-size:14px;font-weight:800;color:#13171B">${esc(name)}</div><span style="font-size:11px;font-weight:800;padding:1px 8px;border-radius:10px;background:#F4F0EA;color:#786A5F">${count}</span></button>`;
+  const subHdr=(key,name,count,open)=>`<button onclick="App._qTogGroup('${key}')" style="display:flex;align-items:center;gap:7px;margin:10px 0 6px 8px;background:transparent;border:none;cursor:pointer;padding:0">${chev(open)}<span style="width:6px;height:6px;border-radius:50%;background:#54433C"></span><div style="font-size:12px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.04em">${esc(name)}</div><span style="font-size:10.5px;font-weight:800;color:#A59788">${count}</span></button>`;
   tops.forEach(dep=>{
     const direct=list.filter(q=>q.departmentId===dep.id&&!q.subDepartmentId);
     const subBlocks=subDepts(dep.id).map(sd=>({sd,qs:list.filter(q=>q.subDepartmentId===sd.id)}));
@@ -216,20 +216,20 @@ function questionsPage(){
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <input id="qSearchInput" type="text" placeholder="Search questions…" value="${esc(S.filters.qSearch||'')}"
         oninput="App._filterQuestions(this.value)"
-        style="flex:1;min-width:180px;border:1.5px solid #E7F0F2;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;background:#fff"/>
+        style="flex:1;min-width:180px;border:1.5px solid #EDE7DC;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;background:#fff"/>
       <select onchange="S.filters.qDept=this.value;S.filters.qSubDept='';rr()" class="ui-select" style="width:auto;min-width:150px;flex:0 0 auto"><option value="">All departments</option>${topDepts().map(d=>`<option value="${d.id}" ${(S.filters.qDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
       <select onchange="S.filters.qSubDept=this.value;rr()" class="ui-select" style="width:auto;min-width:160px;flex:0 0 auto" ${(S.filters.qDept&&(DB.departments||[]).some(d=>d.parentId===S.filters.qDept))?'':'disabled'}><option value="">All sub-departments</option>${(DB.departments||[]).filter(d=>d.parentId===(S.filters.qDept||'')).map(d=>`<option value="${d.id}" ${(S.filters.qSubDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
 
-      ${can('questions','create')?`<button onclick="App._editQuestion(null)" style="display:inline-flex;align-items:center;gap:6px;background:#10262E;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:none;cursor:pointer">${ic('plus','w-4 h-4')} New question</button>`:''}
+      ${can('questions','create')?`<button onclick="App._editQuestion(null)" style="display:inline-flex;align-items:center;gap:6px;background:#13171B;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:none;cursor:pointer">${ic('plus','w-4 h-4')} New question</button>`:''}
     </div>
     <!-- CSV Import / Export bar -->
-    ${can('questions','import')?`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#F8FBFC;border-radius:12px;border:1.5px solid #E7F0F2">
+    ${can('questions','import')?`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#FAF7F3;border-radius:12px;border:1.5px solid #EDE7DC">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700;color:#2F4C55;margin-bottom:1px">Bulk import via CSV</div>
-        <div style="font-size:11px;color:#90A5AB">Download the template, fill it in, then upload to add multiple questions at once</div>
+        <div style="font-size:12px;font-weight:700;color:#3A312A;margin-bottom:1px">Bulk import via CSV</div>
+        <div style="font-size:11px;color:#A59788">Download the template, fill it in, then upload to add multiple questions at once</div>
       </div>
-      <button onclick="App._downloadQTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #E7F0F2;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#2F4C55;white-space:nowrap">${ic('download','w-3.5 h-3.5')} Download template</button>
-      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #0F766E;background:#E4F2F0;font-size:12px;font-weight:600;cursor:pointer;color:#0F7A45;white-space:nowrap">
+      <button onclick="App._downloadQTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #EDE7DC;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#3A312A;white-space:nowrap">${ic('download','w-3.5 h-3.5')} Download template</button>
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1.5px solid #54433C;background:#EEE4D5;font-size:12px;font-weight:600;cursor:pointer;color:#346A47;white-space:nowrap">
         ${ic('upload','w-3.5 h-3.5')} Upload CSV
         <input type="file" accept=".csv" onchange="App._importQCSV(this)" style="display:none"/>
       </label>
@@ -307,28 +307,28 @@ App._renderQModal=()=>{
   if(q.type==='answer'){
     let rows='';
     (q.options||[]).forEach((o,i)=>{
-      rows+=`<div style="display:flex;align-items:center;gap:6px;background:#F8FBFC;border:1px solid #DFEAEC;border-radius:9px;padding:7px 10px">
-        <span style="font-size:11px;font-weight:700;color:#90A5AB;width:18px;text-align:center">${String.fromCharCode(65+i)}</span>
-        <input type="text" value="${o.text||''}" oninput="_QED.options[${i}].text=this.value" placeholder="Answer option…" style="flex:1;background:transparent;border:none;border-bottom:1px solid #DFEAEC;font-size:13px;outline:none;padding:2px 0"/>
-        <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#C9D9DD;cursor:pointer">${ic('x','w-3 h-3')}</button>
+      rows+=`<div style="display:flex;align-items:center;gap:6px;background:#FAF7F3;border:1px solid #E6DED3;border-radius:9px;padding:7px 10px">
+        <span style="font-size:11px;font-weight:700;color:#A59788;width:18px;text-align:center">${String.fromCharCode(65+i)}</span>
+        <input type="text" value="${o.text||''}" oninput="_QED.options[${i}].text=this.value" placeholder="Answer option…" style="flex:1;background:transparent;border:none;border-bottom:1px solid #E6DED3;font-size:13px;outline:none;padding:2px 0"/>
+        <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D5C9BC;cursor:pointer">${ic('x','w-3 h-3')}</button>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#0F766E;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({text:''});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#54433C;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add answer</button>`;
   }
   else if(q.type==='number'){
     let rows='';
     (q.options||[]).forEach((o,i)=>{
       const cSel=NUM_CONDITIONS.map(c=>`<option value="${c.id}" ${o.condition===c.id?'selected':''}>${c.label}</option>`).join('');
-      rows+=`<div style="background:#F8FBFC;border:1px solid #DFEAEC;border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;gap:6px">
+      rows+=`<div style="background:#FAF7F3;border:1px solid #E6DED3;border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;gap:6px">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <select onchange="_QED.options[${i}].condition=this.value;App._renderQModal()" style="font-size:12px;background:#fff;border:1px solid #DFEAEC;border-radius:6px;padding:4px 8px;outline:none">${cSel}</select>
-          <input type="number" value="${o.value!=null?o.value:''}" oninput="_QED.options[${i}].value=parseFloat(this.value)" placeholder="Value" style="width:70px;background:#fff;border:1px solid #DFEAEC;border-radius:6px;padding:4px 8px;font-size:12px;outline:none"/>
-          ${o.condition==='between'?`<span style="font-size:12px;color:#90A5AB">and</span><input type="number" value="${o.value2!=null?o.value2:''}" oninput="_QED.options[${i}].value2=parseFloat(this.value)" placeholder="Value 2" style="width:70px;background:#fff;border:1px solid #DFEAEC;border-radius:6px;padding:4px 8px;font-size:12px;outline:none"/>`:''}
-          <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#C9D9DD;cursor:pointer;margin-left:auto">${ic('x','w-3 h-3')}</button>
+          <select onchange="_QED.options[${i}].condition=this.value;App._renderQModal()" style="font-size:12px;background:#fff;border:1px solid #E6DED3;border-radius:6px;padding:4px 8px;outline:none">${cSel}</select>
+          <input type="number" value="${o.value!=null?o.value:''}" oninput="_QED.options[${i}].value=parseFloat(this.value)" placeholder="Value" style="width:70px;background:#fff;border:1px solid #E6DED3;border-radius:6px;padding:4px 8px;font-size:12px;outline:none"/>
+          ${o.condition==='between'?`<span style="font-size:12px;color:#A59788">and</span><input type="number" value="${o.value2!=null?o.value2:''}" oninput="_QED.options[${i}].value2=parseFloat(this.value)" placeholder="Value 2" style="width:70px;background:#fff;border:1px solid #E6DED3;border-radius:6px;padding:4px 8px;font-size:12px;outline:none"/>`:''}
+          <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D5C9BC;cursor:pointer;margin-left:auto">${ic('x','w-3 h-3')}</button>
         </div>
       </div>`;
     });
-    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#0F766E;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
+    optsHtml=rows+`<button onclick="_QED.options.push({condition:'lt',value:null,value2:null});App._renderQModal()" style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;background:#54433C;color:#fff;border:none;cursor:pointer">${ic('plus','w-3 h-3')}Add condition</button>`;
   }
   else {
     const labels={passfail:['Pass','Fail'],yesno:['Yes','No'],tick:['Done','Not done']};
@@ -336,79 +336,79 @@ App._renderQModal=()=>{
     if(!q.options||q.options.length!==2)_QED.options=[{label:lbs[0]},{label:lbs[1]}];
     optsHtml=(q.options||[]).map((o,i)=>{
       const good=i===0;
-      return`<div style="display:flex;align-items:center;gap:10px;background:${good?'#F2FBF5':'#FEF3F3'};border:1px solid ${good?'#B7F0C8':'#FBCDCD'};border-radius:9px;padding:8px 12px;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:700;color:${good?'#16A34A':'#DC2626'};min-width:50px">${lbs[i]}</span>
+      return`<div style="display:flex;align-items:center;gap:10px;background:${good?'#F2F7F1':'#FAF0EB'};border:1px solid ${good?'#C8E2D0':'#EFC9BE'};border-radius:9px;padding:8px 12px;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:700;color:${good?'#3F7D54':'#B3402E'};min-width:50px">${lbs[i]}</span>
       </div>`;
     }).join('');
   }
 
   // Preview
   let prev='';
-  if(q.type==='answer')prev=(q.options||[]).map((o,i)=>`<div style="padding:7px 12px;border-radius:8px;border:1.5px solid #DFEAEC;background:#fff;font-size:13px;margin-bottom:4px">${String.fromCharCode(65+i)}. ${o.text||'...'}</div>`).join('');
-  else if(q.type==='number')prev=`<input disabled placeholder="Enter a number…" style="width:100%;padding:9px;border-radius:9px;border:1.5px solid #DFEAEC;font-size:14px;background:#F8FBFC"/>`;
-  else if(q.type==='passfail')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#DCF7E4;color:#16A34A;font-weight:700;font-size:13px;text-align:center">Pass</div><div style="flex:1;padding:9px;border-radius:9px;background:#FDE4E4;color:#DC2626;font-weight:700;font-size:13px;text-align:center">Fail</div></div>`;
-  else if(q.type==='yesno')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#DCF7E4;color:#16A34A;font-weight:700;font-size:13px;text-align:center">Yes</div><div style="flex:1;padding:9px;border-radius:9px;background:#FDE4E4;color:#DC2626;font-weight:700;font-size:13px;text-align:center">No</div></div>`;
-  else if(q.type==='tick')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#DCF7E4;color:#16A34A;font-weight:700;font-size:18px;text-align:center">✓</div><div style="flex:1;padding:9px;border-radius:9px;background:#FDE4E4;color:#DC2626;font-weight:700;font-size:18px;text-align:center">✕</div></div>`;
+  if(q.type==='answer')prev=(q.options||[]).map((o,i)=>`<div style="padding:7px 12px;border-radius:8px;border:1.5px solid #E6DED3;background:#fff;font-size:13px;margin-bottom:4px">${String.fromCharCode(65+i)}. ${o.text||'...'}</div>`).join('');
+  else if(q.type==='number')prev=`<input disabled placeholder="Enter a number…" style="width:100%;padding:9px;border-radius:9px;border:1.5px solid #E6DED3;font-size:14px;background:#FAF7F3"/>`;
+  else if(q.type==='passfail')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#E0EDE0;color:#3F7D54;font-weight:700;font-size:13px;text-align:center">Pass</div><div style="flex:1;padding:9px;border-radius:9px;background:#F6E2DB;color:#B3402E;font-weight:700;font-size:13px;text-align:center">Fail</div></div>`;
+  else if(q.type==='yesno')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#E0EDE0;color:#3F7D54;font-weight:700;font-size:13px;text-align:center">Yes</div><div style="flex:1;padding:9px;border-radius:9px;background:#F6E2DB;color:#B3402E;font-weight:700;font-size:13px;text-align:center">No</div></div>`;
+  else if(q.type==='tick')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#E0EDE0;color:#3F7D54;font-weight:700;font-size:18px;text-align:center">✓</div><div style="flex:1;padding:9px;border-radius:9px;background:#F6E2DB;color:#B3402E;font-weight:700;font-size:18px;text-align:center">✕</div></div>`;
 
   const flags=[q.photo?'📷 Photo required':'',q.approval?'✓ Approval needed':'',q.comment?'💬 Comment required':''].filter(Boolean);
 
-  const togRow=(k,lbl,desc)=>`<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:9px;border:1.5px solid ${_QED[k]?'#B7F0C8':'#F1F7F8'};background:${_QED[k]?'#F2FBF5':'#F8FBFC'};cursor:pointer;margin-bottom:5px">
-    <div><div style="font-size:13px;font-weight:600">${lbl}</div><div style="font-size:11px;color:#90A5AB">${desc}</div></div>
+  const togRow=(k,lbl,desc)=>`<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:9px;border:1.5px solid ${_QED[k]?'#C8E2D0':'#F4F0EA'};background:${_QED[k]?'#F2F7F1':'#FAF7F3'};cursor:pointer;margin-bottom:5px">
+    <div><div style="font-size:13px;font-weight:600">${lbl}</div><div style="font-size:11px;color:#A59788">${desc}</div></div>
     <button type="button" role="switch" aria-checked="${_QED[k]?'true':'false'}" aria-label="${esc(lbl)}" class="tog ${_QED[k]?'on':'off'}" onclick="_QED['${k}']=!_QED['${k}'];App._renderQModal()"><span></span></button>
   </label>`;
 
-  const typeBtns=Q_TYPES.map(t=>`<button type="button" onclick="_QED.type='${t.id}';_QED.options=[];App._renderQModal()" style="padding:8px;border-radius:9px;border:1.5px solid ${q.type===t.id?Q_TYPE_CLR[t.id]:'#DFEAEC'};background:${q.type===t.id?Q_TYPE_BG[t.id]:'#fff'};cursor:pointer;text-align:left">
-    <div style="font-size:12px;font-weight:700;color:${q.type===t.id?Q_TYPE_CLR[t.id]:'#2F4C55'}">${t.label}</div>
-    <div style="font-size:10px;color:#90A5AB;margin-top:2px">${t.desc}</div>
+  const typeBtns=Q_TYPES.map(t=>`<button type="button" onclick="_QED.type='${t.id}';_QED.options=[];App._renderQModal()" style="padding:8px;border-radius:9px;border:1.5px solid ${q.type===t.id?Q_TYPE_CLR[t.id]:'#E6DED3'};background:${q.type===t.id?Q_TYPE_BG[t.id]:'#fff'};cursor:pointer;text-align:left">
+    <div style="font-size:12px;font-weight:700;color:${q.type===t.id?Q_TYPE_CLR[t.id]:'#3A312A'}">${t.label}</div>
+    <div style="font-size:10px;color:#A59788;margin-top:2px">${t.desc}</div>
   </button>`).join('');
 
   const isExisting=!!(DB.questions||[]).find(x=>x.id===q.id);
 
   openModal(`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #E7F0F2">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #EDE7DC">
       <h2 style="font-size:17px;font-weight:800;font-family:var(--font-display)">${isExisting?'Edit':'New'} Question</h2>
-      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#90A5AB">${ic('x')}</button>
+      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#A59788">${ic('x')}</button>
     </div>
     <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:70vh">
       <div>
-        <label for="qed-text" style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Question text *</label>
-        <input id="qed-text" type="text" value="${q.text||''}" oninput="_QED.text=this.value" placeholder="e.g. Is the area clean?" style="width:100%;box-sizing:border-box;border:1.5px solid #DFEAEC;border-radius:10px;padding:10px 12px;font-size:14px;outline:none" />
+        <label for="qed-text" style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Question text *</label>
+        <input id="qed-text" type="text" value="${q.text||''}" oninput="_QED.text=this.value" placeholder="e.g. Is the area clean?" style="width:100%;box-sizing:border-box;border:1.5px solid #E6DED3;border-radius:10px;padding:10px 12px;font-size:14px;outline:none" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Department</label>
-          <select onchange="_QED.departmentId=this.value||null;_QED.subDepartmentId=null;App._renderQModal()" style="width:100%;box-sizing:border-box;border:1.5px solid #DFEAEC;border-radius:10px;padding:9px 10px;font-size:13px;outline:none;background:#fff">${_qDeptOpts}</select>
+          <label style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Department</label>
+          <select onchange="_QED.departmentId=this.value||null;_QED.subDepartmentId=null;App._renderQModal()" style="width:100%;box-sizing:border-box;border:1.5px solid #E6DED3;border-radius:10px;padding:9px 10px;font-size:13px;outline:none;background:#fff">${_qDeptOpts}</select>
         </div>
         <div>
-          <label style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sub-department</label>
-          <select ${_qSubs.length?'':'disabled'} onchange="_QED.subDepartmentId=this.value||null" style="width:100%;box-sizing:border-box;border:1.5px solid #DFEAEC;border-radius:10px;padding:9px 10px;font-size:13px;outline:none;background:${_qSubs.length?'#fff':'#F1F7F8'}">${_qSubOpts}</select>
+          <label style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sub-department</label>
+          <select ${_qSubs.length?'':'disabled'} onchange="_QED.subDepartmentId=this.value||null" style="width:100%;box-sizing:border-box;border:1.5px solid #E6DED3;border-radius:10px;padding:9px 10px;font-size:13px;outline:none;background:${_qSubs.length?'#fff':'#F4F0EA'}">${_qSubOpts}</select>
         </div>
       </div>
       <div>
-        <label style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Response type</label>
+        <label style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Response type</label>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${typeBtns}</div>
       </div>
       <div>
-        <label style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${q.type==='answer'?'Answer options':q.type==='number'?'Conditions':'Response options'}</label>
+        <label style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${q.type==='answer'?'Answer options':q.type==='number'?'Conditions':'Response options'}</label>
         ${optsHtml}
       </div>
       <div>
-        <label style="display:block;font-size:11px;font-weight:700;color:#5E767D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Options</label>
+        <label style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Options</label>
         ${togRow('isPublic','🌐 Public question','Off = Private (default): only you and assigned users see it. On: everyone with Questions access sees it')}
         ${togRow('photo','📷 Photo mandatory','Upload button always shown — this makes it required')}
         ${togRow('approval','✓ Approval required','Response needs manager approval')}
         ${togRow('comment','💬 Comment mandatory','Comment box always shown — this makes it required')}
       </div>
-      <div style="background:#F8FBFC;border:1.5px solid #DFEAEC;border-radius:12px;padding:14px">
-        <div style="font-size:10px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Preview</div>
-        <div style="font-size:14px;font-weight:700;color:#10262E;margin-bottom:10px">${q.text||'Your question text…'}</div>
+      <div style="background:#FAF7F3;border:1.5px solid #E6DED3;border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#A59788;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Preview</div>
+        <div style="font-size:14px;font-weight:700;color:#13171B;margin-bottom:10px">${q.text||'Your question text…'}</div>
         ${prev}
-        ${flags.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${flags.map(f=>`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#F1F7F8;color:#2F4C55">${f}</span>`).join('')}</div>`:''}
+        ${flags.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${flags.map(f=>`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#F4F0EA;color:#3A312A">${f}</span>`).join('')}</div>`:''}
       </div>
     </div>
-    <div style="padding:12px 18px;border-top:1px solid #E7F0F2;display:flex;gap:8px;background:#fff">
-      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#10262E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
+    <div style="padding:12px 18px;border-top:1px solid #EDE7DC;display:flex;gap:8px;background:#fff">
+      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
+      <button onclick="App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
     </div>
   `,'max-w-lg');
 
@@ -464,37 +464,37 @@ App._showClQPicker=()=>{
   // Show questions the user can see, plus any already selected on this checklist (so existing private picks aren't lost)
   const allQ=(DB.questions||[]).filter(q=>q.isPublic!==false||q.createdBy===S.uid||isAdmin()||isSubAdmin()||sel.has(q.id));
   openModal(`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #E7F0F2">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #EDE7DC">
       <div>
         <h2 style="font-size:16px;font-weight:800;font-family:var(--font-display)">Add Questions</h2>
-        <p style="font-size:12px;color:#90A5AB;margin-top:1px">Select questions, then configure escalation</p>
+        <p style="font-size:12px;color:#A59788;margin-top:1px">Select questions, then configure escalation</p>
       </div>
-      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#90A5AB">${ic('x')}</button>
+      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#A59788">${ic('x')}</button>
     </div>
     <div style="padding:12px 16px;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:5px">
       ${!allQ.length
-        ?`<div style="text-align:center;padding:32px;color:#90A5AB;font-size:13px">No questions yet — create some in the Questions page first</div>`
+        ?`<div style="text-align:center;padding:32px;color:#A59788;font-size:13px">No questions yet — create some in the Questions page first</div>`
         :allQ.map(q=>{
           const on=sel.has(q.id);
           const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
-          const clr=Q_TYPE_CLR[q.type]||'#5E767D';
-          const bg=Q_TYPE_BG[q.type]||'#F4F9FA';
-          return`<label id="qpick-${q.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${on?'#10262E':'#DFEAEC'};background:${on?'#F8FBFC':'#fff'};cursor:pointer" onclick="App._togClQ('${q.id}',this,event)">
-            <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${on?'#10262E':'#C9D9DD'};background:${on?'#10262E':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          const clr=Q_TYPE_CLR[q.type]||'#786A5F';
+          const bg=Q_TYPE_BG[q.type]||'#F7F3EE';
+          return`<label id="qpick-${q.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${on?'#13171B':'#E6DED3'};background:${on?'#FAF7F3':'#fff'};cursor:pointer" onclick="App._togClQ('${q.id}',this,event)">
+            <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${on?'#13171B':'#D5C9BC'};background:${on?'#13171B':'#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
               ${on?`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>`:''}
             </div>
             <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${bg};color:${clr};flex-shrink:0">${tl}</span>
             ${q.isPublic===false?`<span style="font-size:10px;flex-shrink:0" title="Private question">🔒</span>`:''}
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.text}</div>
-              <div style="font-size:11px;color:#90A5AB">${(q.options||[]).length} option${(q.options||[]).length!==1?'s':''}</div>
+              <div style="font-size:11px;color:#A59788">${(q.options||[]).length} option${(q.options||[]).length!==1?'s':''}</div>
             </div>
           </label>`;
         }).join('')}
     </div>
-    <div style="padding:10px 16px;border-top:1px solid #E7F0F2;background:#fff;display:flex;gap:8px">
-      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._showClQEscalation()" style="flex:2;padding:11px;border-radius:11px;background:#10262E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Next: Set escalation →</button>
+    <div style="padding:10px 16px;border-top:1px solid #EDE7DC;background:#fff;display:flex;gap:8px">
+      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
+      <button onclick="App._showClQEscalation()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Next: Set escalation →</button>
     </div>
   `,'max-w-md');
 };
@@ -504,12 +504,12 @@ App._togClQ=(qid,el,e)=>{if(e&&e.preventDefault)e.preventDefault();
   const on=App._clQSel.has(qid);
   if(on)App._clQSel.delete(qid);else App._clQSel.add(qid);
   const now=!on;
-  el.style.border=`1.5px solid ${now?'#10262E':'#DFEAEC'}`;
-  el.style.background=now?'#F8FBFC':'#fff';
+  el.style.border=`1.5px solid ${now?'#13171B':'#E6DED3'}`;
+  el.style.background=now?'#FAF7F3':'#fff';
   const box=el.querySelector('div');
   if(box){
-    box.style.border=`1.5px solid ${now?'#10262E':'#C9D9DD'}`;
-    box.style.background=now?'#10262E':'#fff';
+    box.style.border=`1.5px solid ${now?'#13171B':'#D5C9BC'}`;
+    box.style.background=now?'#13171B':'#fff';
     box.innerHTML=now?`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>`:'';
   }
 };
@@ -528,8 +528,8 @@ App._showClQEscalation=()=>{
     const q=(DB.questions||[]).find(x=>x.id===qid);
     if(!q)return'';
     const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
-    const clr=Q_TYPE_CLR[q.type]||'#5E767D';
-    const bg=Q_TYPE_BG[q.type]||'#F4F9FA';
+    const clr=Q_TYPE_CLR[q.type]||'#786A5F';
+    const bg=Q_TYPE_BG[q.type]||'#F7F3EE';
     const qCfg=configs[qid]||{};
 
     // Build option rows with escalation dropdown per option
@@ -540,10 +540,10 @@ App._showClQEscalation=()=>{
       opts.forEach((o,i)=>{
         const key='opt_'+i;
         const cur=qCfg[key]||'';
-        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #EDF4F5">
-          <span style="width:20px;height:20px;border-radius:50%;background:#F5EBCC;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#8A6E14;flex-shrink:0">${String.fromCharCode(65+i)}</span>
-          <span style="flex:1;font-size:13px;color:#2F4C55">${o.text||''}</span>
-          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #DFEAEC;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
+        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F1ECE3">
+          <span style="width:20px;height:20px;border-radius:50%;background:#F2E9D4;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#7F6533;flex-shrink:0">${String.fromCharCode(65+i)}</span>
+          <span style="flex:1;font-size:13px;color:#3A312A">${o.text||''}</span>
+          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #E6DED3;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
       });
     } else if(q.type==='number'){
@@ -552,10 +552,10 @@ App._showClQEscalation=()=>{
         const cur=qCfg[key]||'';
         const condLabel=(NUM_CONDITIONS.find(c=>c.id===o.condition)||{label:o.condition}).label;
         const condText=condLabel+' '+o.value+(o.condition==='between'?' – '+o.value2:'');
-        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #EDF4F5">
-          <span style="width:20px;height:20px;border-radius:50%;background:#E3F1EF;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0B6660;flex-shrink:0">${i+1}</span>
-          <span style="flex:1;font-size:13px;color:#2F4C55">${condText}</span>
-          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #DFEAEC;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
+        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F1ECE3">
+          <span style="width:20px;height:20px;border-radius:50%;background:#ECE2D3;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#463830;flex-shrink:0">${i+1}</span>
+          <span style="flex:1;font-size:13px;color:#3A312A">${condText}</span>
+          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #E6DED3;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
       });
     } else {
@@ -566,42 +566,42 @@ App._showClQEscalation=()=>{
         const key='opt_'+i;
         const cur=qCfg[key]||'';
         const isGood=i===0;
-        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #EDF4F5">
-          <span style="font-size:12px;font-weight:700;color:${isGood?'#16A34A':'#DC2626'};min-width:50px">${lbl}</span>
+        optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F1ECE3">
+          <span style="font-size:12px;font-weight:700;color:${isGood?'#3F7D54':'#B3402E'};min-width:50px">${lbl}</span>
           <div style="flex:1"></div>
-          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #DFEAEC;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
+          <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #E6DED3;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
       });
     }
 
     if(!opts.length){
-      optRows=`<p style="font-size:12px;color:#C9D9DD;font-style:italic;padding:6px 0">No options defined for this question</p>`;
+      optRows=`<p style="font-size:12px;color:#D5C9BC;font-style:italic;padding:6px 0">No options defined for this question</p>`;
     }
 
-    return`<div style="background:#F8FBFC;border:1.5px solid #DFEAEC;border-radius:12px;padding:12px 14px;margin-bottom:10px">
+    return`<div style="background:#FAF7F3;border:1.5px solid #E6DED3;border-radius:12px;padding:12px 14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>
-        <span style="font-size:13px;font-weight:700;color:#10262E">${q.text}</span>
+        <span style="font-size:13px;font-weight:700;color:#13171B">${q.text}</span>
       </div>
-      <div style="font-size:11px;font-weight:700;color:#90A5AB;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Escalate answer to</div>
+      <div style="font-size:11px;font-weight:700;color:#A59788;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Escalate answer to</div>
       ${optRows}
     </div>`;
   }).join('');
 
   openModal(`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #E7F0F2">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #EDE7DC">
       <div>
         <h2 style="font-size:16px;font-weight:800;font-family:var(--font-display)">Set Escalation</h2>
-        <p style="font-size:12px;color:#90A5AB;margin-top:1px">Choose who gets notified for each answer</p>
+        <p style="font-size:12px;color:#A59788;margin-top:1px">Choose who gets notified for each answer</p>
       </div>
-      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#90A5AB">${ic('x')}</button>
+      <button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#A59788">${ic('x')}</button>
     </div>
     <div style="padding:14px 16px;overflow-y:auto;max-height:60vh">
       ${sectionsHtml}
     </div>
-    <div style="padding:10px 16px;border-top:1px solid #E7F0F2;background:#fff;display:flex;gap:8px">
-      <button onclick="App._showClQPicker()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">← Back</button>
-      <button onclick="App._confirmClQs()" style="flex:2;padding:11px;border-radius:11px;background:#10262E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Done</button>
+    <div style="padding:10px 16px;border-top:1px solid #EDE7DC;background:#fff;display:flex;gap:8px">
+      <button onclick="App._showClQPicker()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">← Back</button>
+      <button onclick="App._confirmClQs()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Done</button>
     </div>
   `,'max-w-lg');
 };
@@ -729,15 +729,15 @@ function _subBadges(c,sub,opts){
   const fs=small?'10px':'11px';
   const allAns=total>0&&answered>=total;
   // Attempt badge — green when all questions attempted, grey otherwise
-  const attBg=allAns?'#E4F2F0':'#F4F9FA';
-  const attClr=allAns?'#0B6660':'#5E767D';
+  const attBg=allAns?'#EEE4D5':'#F7F3EE';
+  const attClr=allAns?'#463830':'#786A5F';
   const attLabel=small?answered+'/'+total:answered+'/'+total+' attempted';
   const attempt=total>0
     ? '<span title="'+answered+' of '+total+' question'+(total>1?'s':'')+' attempted" style="font-size:'+fs+';font-weight:700;padding:'+pad+';border-radius:20px;background:'+attBg+';color:'+attClr+'">'+(allAns?'✓ ':'')+attLabel+'</span>'
     : '';
   // Compliance badge — green "Compliant" when no escalations, red "N escalated" when flagged
-  const compBg=flagged?'#FEEEEF':'#E4F2F0';
-  const compClr=flagged?'#C41E32':'#0B6660';
+  const compBg=flagged?'#F9EBE5':'#EEE4D5';
+  const compClr=flagged?'#A63528':'#463830';
   const compLabel=flagged
     ? (small?'⚠ '+flagged:'⚠ '+flagged+' escalated')
     : (small?'✓':'✓ Compliant');
@@ -887,22 +887,22 @@ function _feedbackTabContent(uid){
   if(!myFb.length)return empty('msg','No feedback yet','Feedback from your manager appears here.');
   return'<div style="display:flex;flex-direction:column;gap:10px">'+myFb.map(fb=>{
     const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);
-    const bc=fb.acknowledged?'#DFEAEC':'#BFE3DF';
-    const priClr=fb.priority==='High'||fb.priority==='Critical'?'#DC2626':'#7A4E00';
-    const priBg=fb.priority==='High'||fb.priority==='Critical'?'#FDE4E4':'#FDF6CE';
+    const bc=fb.acknowledged?'#E6DED3':'#E0CDB9';
+    const priClr=fb.priority==='High'||fb.priority==='Critical'?'#B3402E':'#6B4E1F';
+    const priBg=fb.priority==='High'||fb.priority==='Critical'?'#F6E2DB':'#F7EFD6';
     return'<div style="background:#fff;border-radius:16px;border:1px solid '+bc+';padding:16px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
       +'<div>'
       +'<div style="font-size:14px;font-weight:700">'+(cl?esc(cl.name):'General feedback')+'</div>'
-      +'<div style="font-size:12px;color:#90A5AB;margin-top:2px">From '+(mgr?esc(fullName(mgr)):'Manager')+(fb.date||fb.createdAt?' &middot; '+fmtD((fb.date||fb.createdAt||'').slice(0,10)):'')+'</div>'
+      +'<div style="font-size:12px;color:#A59788;margin-top:2px">From '+(mgr?esc(fullName(mgr)):'Manager')+(fb.date||fb.createdAt?' &middot; '+fmtD((fb.date||fb.createdAt||'').slice(0,10)):'')+'</div>'
       +'</div>'
       +(fb.priority&&fb.priority!=='Low'?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+priBg+';color:'+priClr+'">'+fb.priority+'</span>':'')
       +'</div>'
       +'<p style="font-size:13px;line-height:1.6;margin:0 0 10px">'+esc(fb.text)+'</p>'
-      +(fb.reply?'<div style="background:#F2FBF5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#0B6660;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#2F4C55;margin:0">'+esc(fb.reply)+'</p></div>':'')
+      +(fb.reply?'<div style="background:#F2F7F1;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#463830;margin-bottom:4px">Your reply</div><p style="font-size:13px;color:#3A312A;margin:0">'+esc(fb.reply)+'</p></div>':'')
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#0C6B65;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#0F766E">&#10003; Acknowledged</span>')
-      +(!fb.reply?'<button onclick="App._replyFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#F1F7F8;color:#2F4C55;font-size:12px;font-weight:600;border:none;cursor:pointer">Reply</button>':'')
+      +(!fb.acknowledged?'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#4A3B34;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>':'<span style="font-size:12px;font-weight:600;color:#54433C">&#10003; Acknowledged</span>')
+      +(!fb.reply?'<button onclick="App._replyFb(this.dataset.id)" data-id="'+fb.id+'" style="padding:6px 14px;border-radius:8px;background:#F4F0EA;color:#3A312A;font-size:12px;font-weight:600;border:none;cursor:pointer">Reply</button>':'')
       +'</div></div>';
   }).join('')+'</div>';
 }
@@ -910,18 +910,18 @@ function _feedbackTabContent(uid){
 
 /* Shared notification list renderer — used by every tab so the rows always look the same. */
 function _notifTimeline(list,unreadIds,typeOf,CLR,BG,ICO){
-  return '<div style="background:#fff;border-radius:16px;border:1px solid #DFEAEC;overflow:hidden">'
+  return '<div style="background:#fff;border-radius:16px;border:1px solid #E6DED3;overflow:hidden">'
     +'<div style="display:flex;flex-direction:column">'
     +list.map(function(n){
       var type=typeOf(n.text);var clr=CLR[type];var bg=BG[type];var ico=ICO[type];
       var isNew=unreadIds.has(n.id);
-      return '<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #F2F8F9;cursor:pointer;'+(isNew?'background:#F8FCFC':'background:#fff')+'" onclick="App._notifClick(this.dataset.id)" data-id="'+n.id+'">'
+      return '<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #F5F1EB;cursor:pointer;'+(isNew?'background:#FAF8F4':'background:#fff')+'" onclick="App._notifClick(this.dataset.id)" data-id="'+n.id+'">'
         +'<div style="width:36px;height:36px;border-radius:10px;background:'+bg+';display:grid;place-items:center;flex-shrink:0;margin-top:1px;color:'+clr+'">'+ic(ico,'w-4 h-4')+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<p style="font-size:13px;color:#10262E;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
-        +'<p style="font-size:11px;color:#93A6AC;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' \u00B7 '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
+        +'<p style="font-size:13px;color:#13171B;margin:0;line-height:1.5;font-weight:'+(isNew?'600':'400')+'">'+esc(n.text)+'</p>'
+        +'<p style="font-size:11px;color:#A8998A;margin-top:3px">'+(n.time?new Date(n.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+' \u00B7 '+type.charAt(0).toUpperCase()+type.slice(1)+'</p>'
         +'</div>'
-        +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#0F766E;flex-shrink:0;margin-top:6px"></div>':'')
+        +(isNew?'<div style="width:7px;height:7px;border-radius:50%;background:#54433C;flex-shrink:0;margin-top:6px"></div>':'')
       +'</div>';
     }).join('')
     +'</div></div>';
@@ -969,8 +969,8 @@ function notificationsPage(){
     if(text.includes('overdue')||text.includes('Late')||text.includes('late'))return'late';
     return'general';
   }
-  const TYPE_CLR={approval:'#8B5CF6',edit:'#22A79C',escalation:'#0F766E',feedback:'#18948C',workspace:'#00A8AD',late:'#EF4444',general:'#5E767D'};
-  const TYPE_BG={approval:'#F5EBCC',edit:'#E3F1EF',escalation:'#F6F1E1',feedback:'#E6F3F1',workspace:'#E3FAFB',late:'#FEF0F0',general:'#F4F9FA'};
+  const TYPE_CLR={approval:'#9C7386',edit:'#A5796A',escalation:'#54433C',feedback:'#96695B',workspace:'#A3705F',late:'#C25441',general:'#786A5F'};
+  const TYPE_BG={approval:'#F2E9D4',edit:'#ECE2D3',escalation:'#F5EFDF',feedback:'#EEE5D6',workspace:'#F6EAE3',late:'#FAEDE8',general:'#F7F3EE'};
   const TYPE_ICON={approval:'approve',edit:'edit',escalation:'alert',feedback:'msg',workspace:'msg',late:'clock',general:'bell'};
 
   /* v3.20 — one source of truth per tab: the badge is counted from the very list the
@@ -998,8 +998,8 @@ function notificationsPage(){
     +'<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'
     +TABS.map(t=>{
       const active=tab===t;
-      const badge=counts[t]?(' <span style="font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:'+(active?'rgba(255,255,255,0.25)':'#F1F7F8')+';color:'+(active?'#fff':'#5E767D')+'">'+counts[t]+'</span>'):'';
-      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#10262E':'transparent')+';color:'+(active?'#fff':'#5E767D')+'">'+t+badge+'</button>';
+      const badge=counts[t]?(' <span style="font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:'+(active?'rgba(255,255,255,0.25)':'#F4F0EA')+';color:'+(active?'#fff':'#786A5F')+'">'+counts[t]+'</span>'):'';
+      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#13171B':'transparent')+';color:'+(active?'#fff':'#786A5F')+'">'+t+badge+'</button>';
     }).join('')
     +'</div>'
     // Feedback tab = manager feedback records AND genuine feedback alerts (never one without the other)
@@ -1069,8 +1069,8 @@ App._replyFb=(id)=>{
     +'<div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">Reply to feedback</h2><button onclick="App.closeModal()" class="text-ink-400">'+ic('x')+'</button></div>'
     +'<textarea id="rfb-t" rows="4" placeholder="Write your reply…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea>'
     +'<div class="flex gap-2 mt-4">'
-    +'<button onclick="App.closeModal()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
-    +'<button onclick="App._saveReplyFb(this.dataset.id)" data-id="'+id+'" style="flex:1;padding:10px;border-radius:10px;background:#10262E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Send reply</button>'
+    +'<button onclick="App.closeModal()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
+    +'<button onclick="App._saveReplyFb(this.dataset.id)" data-id="'+id+'" style="flex:1;padding:10px;border-radius:10px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Send reply</button>'
     +'</div></div>',
     'max-w-sm'
   );
@@ -1100,32 +1100,32 @@ App._openSendFeedback=(userId)=>{
     +'<h2 class="fd" style="font-size:18px;font-weight:800">Send Feedback</h2>'
     +'<button onclick="App.closeModal()" class="text-ink-400">'+ic('x')+'</button></div>'
     // User chip
-    +'<div style="display:flex;align-items:center;gap:10px;background:#F2FBF5;border:1px solid #A7EBC2;border-radius:12px;padding:10px 14px;margin-bottom:16px">'
+    +'<div style="display:flex;align-items:center;gap:10px;background:#F2F7F1;border:1px solid #BFDCC9;border-radius:12px;padding:10px 14px;margin-bottom:16px">'
     +avatar(u,'w-10 h-10','text-xs')
     +'<div><div style="font-size:14px;font-weight:700">'+esc(fullName(u))+'</div>'
-    +'<div style="font-size:12px;color:#5E767D">'+esc(u.position||u.department)+'</div></div>'
+    +'<div style="font-size:12px;color:#786A5F">'+esc(u.position||u.department)+'</div></div>'
     +'</div>'
     // Type selector
-    +'<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin-bottom:6px">Feedback type</label>'
+    +'<div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin-bottom:6px">Feedback type</label>'
     +'<input type="hidden" id="sfb-type-val" value="General">'+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
-    +['General','Checklist','Performance'].map((t,i)=>'<button type="button" onclick="App._sfbSelectType(this)" data-type="'+t+'" style="padding:8px;border-radius:9px;border:1.5px solid '+(i===0?'#10262E':'#DFEAEC')+';background:'+(i===0?'#10262E':'#fff')+';color:'+(i===0?'#fff':'#5E767D')+';font-size:13px;font-weight:600;cursor:pointer">'+t+'</button>').join('')
+    +['General','Checklist','Performance'].map((t,i)=>'<button type="button" onclick="App._sfbSelectType(this)" data-type="'+t+'" style="padding:8px;border-radius:9px;border:1.5px solid '+(i===0?'#13171B':'#E6DED3')+';background:'+(i===0?'#13171B':'#fff')+';color:'+(i===0?'#fff':'#786A5F')+';font-size:13px;font-weight:600;cursor:pointer">'+t+'</button>').join('')
     +'</div></div>'
     // Checklist dropdown
-    +'<div id="sfb-cl-wrap" style="margin-bottom:14px"><label for="sfb-cl" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin-bottom:6px">Checklist <span style="color:#90A5AB;text-transform:none;font-weight:400">(optional)</span></label>'
+    +'<div id="sfb-cl-wrap" style="margin-bottom:14px"><label for="sfb-cl" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin-bottom:6px">Checklist <span style="color:#A59788;text-transform:none;font-weight:400">(optional)</span></label>'
     +'<select id="sfb-cl" onchange="App._sfbClChange(this.value)" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"><option value="">Select checklist…</option>'+clOptions+'</select></div>'
     // Task dropdown (updates dynamically)
 
     // Priority + title in one row
     +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:14px">'
-    +'<div><label for="sfb-title" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin-bottom:6px">Title</label>'
+    +'<div><label for="sfb-title" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin-bottom:6px">Title</label>'
     +'<input id="sfb-title" type="text" placeholder="e.g. Great work on opening" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"/></div>'
-    +'<div><label for="sfb-pri" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin-bottom:6px">Priority</label>'
+    +'<div><label for="sfb-pri" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin-bottom:6px">Priority</label>'
     +'<select id="sfb-pri" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"><option>Low</option><option>Medium</option><option>High</option></select></div>'
     +'</div>'
     // Comment
-    +'<div style="margin-bottom:16px"><label for="sfb-text" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin-bottom:6px">Comment</label>'
+    +'<div style="margin-bottom:16px"><label for="sfb-text" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin-bottom:6px">Comment</label>'
     +'<textarea id="sfb-text" rows="4" placeholder="Write your feedback…" class="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm rf"></textarea></div>'
-    +'<button onclick="App._saveSendFeedback(this.dataset.uid)" data-uid="'+userId+'" style="width:100%;background:#10262E;color:#fff;font-weight:700;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:15px">Send feedback</button>'
+    +'<button onclick="App._saveSendFeedback(this.dataset.uid)" data-uid="'+userId+'" style="width:100%;background:#13171B;color:#fff;font-weight:700;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:15px">Send feedback</button>'
     +'</div>',
     'max-w-md'
   );
@@ -1133,9 +1133,9 @@ App._openSendFeedback=(userId)=>{
 App._sfbSelectType=(btn)=>{
   document.querySelectorAll('[data-type]').forEach(b=>{
     const active=b===btn;
-    b.style.background=active?'#10262E':'#fff';
-    b.style.color=active?'#fff':'#5E767D';
-    b.style.borderColor=active?'#10262E':'#DFEAEC';
+    b.style.background=active?'#13171B':'#fff';
+    b.style.color=active?'#fff':'#786A5F';
+    b.style.borderColor=active?'#13171B':'#E6DED3';
   });
   const type=btn.dataset.type;
   // Store in hidden input for reliable reading

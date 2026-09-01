@@ -16,10 +16,10 @@ function _tNode(u,d){
   const col=COLL[u.id];
   // Tag comes from the ASSIGNED ROLE (Access Control role profiles) — not the legacy base role.
   const rp=(typeof _roleOf==='function')?_roleOf(u):null;
-  const tag=rp?.id==='superadmin'?['SUPER ADMIN','#10262E','#fff']
-    :rp?.id==='admin'?['ADMIN','#F5EBCC','#8A6E14']
-    :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#E3F1EF','#0B6660']
-    :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F5F1FE','#8A6E14']
+  const tag=rp?.id==='superadmin'?['SUPER ADMIN','#13171B','#fff']
+    :rp?.id==='admin'?['ADMIN','#F2E9D4','#7F6533']
+    :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#ECE2D3','#463830']
+    :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F3EDEA','#7F6533']
     :null;
   const card=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px 14px;box-shadow:var(--sh-xs);min-width:118px;max-width:170px;position:relative">
       ${avatar(u,'w-9 h-9','text-[11px]')}
@@ -87,8 +87,8 @@ function ticketsPage(){
   const inprog=base.filter(t=>t.status==='In Progress').length;
   const resolved=base.filter(t=>t.status==='Resolved'||t.status==='Closed').length;
 
-  const priClr={High:'#DC2626',Medium:'#E0A106',Low:'#5E767D',Critical:'#7C3AED'};
-  const priBg={High:'#FEF0F0',Medium:'#FEFAEC',Low:'#F8FBFC',Critical:'#F5F1FE'};
+  const priClr={High:'#B3402E',Medium:'#C9A76B',Low:'#786A5F',Critical:'#8A5D6B'};
+  const priBg={High:'#FAEDE8',Medium:'#FBF7EB',Low:'#FAF7F3',Critical:'#F3EDEA'};
 
   function tkCard(t){
     const assignee=uById(t.assignedTo);
@@ -96,18 +96,18 @@ function ticketsPage(){
     const cl=clById(t.checklistId);
     const canResolve=can('tickets','resolve')||can('tickets','manage')||(t.assignedTo===S.uid);
     const canDelete=can('tickets','delete');
-    return'<div style="background:var(--c-surface);border-radius:var(--r-lg);border:1px solid var(--c-border);box-shadow:var(--sh-sm);padding:16px;border-left:4px solid '+(priClr[t.priority]||'#90A5AB')+'">'+
+    return'<div style="background:var(--c-surface);border-radius:var(--r-lg);border:1px solid var(--c-border);box-shadow:var(--sh-sm);padding:16px;border-left:4px solid '+(priClr[t.priority]||'#A59788')+'">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">'+
         '<div style="flex:1;min-width:0">'+
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+
-            '<span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;background:'+(priBg[t.priority]||'#F8FBFC')+';color:'+(priClr[t.priority]||'#5E767D')+'">'+esc(t.priority)+'</span>'+
+            '<span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;background:'+(priBg[t.priority]||'#FAF7F3')+';color:'+(priClr[t.priority]||'#786A5F')+'">'+esc(t.priority)+'</span>'+
             chip(t.status)+
-            '<span style="font-size:11px;color:#90A5AB">'+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</span>'+
+            '<span style="font-size:11px;color:#A59788">'+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</span>'+
           '</div>'+
-          '<div style="font-size:14px;font-weight:700;color:#10262E;margin-bottom:4px">'+esc(t.title)+'</div>'+
-          '<div style="font-size:12px;color:#5E767D;line-height:1.5;white-space:pre-wrap">'+esc(t.description)+'</div>'+
-          ((t.occurrences||[]).length?'<div style="margin-top:7px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#8A5F00;background:#FEFAEC;border:1px solid #FBE6A6;border-radius:8px;padding:3px 9px" title="'+esc((t.occurrences||[]).map(o=>fmtS(o.date||'')).join(', '))+'">\u{1F501} Reoccurred '+(t.occurrences||[]).length+'\u00D7 — last '+esc(fmtS((((t.occurrences||[]).slice(-1)[0])||{}).date||t.date||''))+'</div>':'')+
-          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#0F7A45;background:#E4F2F0;border:1px solid #A7EBC2;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
+          '<div style="font-size:14px;font-weight:700;color:#13171B;margin-bottom:4px">'+esc(t.title)+'</div>'+
+          '<div style="font-size:12px;color:#786A5F;line-height:1.5;white-space:pre-wrap">'+esc(t.description)+'</div>'+
+          ((t.occurrences||[]).length?'<div style="margin-top:7px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#7C5A26;background:#FBF7EB;border:1px solid #EEDEC0;border-radius:8px;padding:3px 9px" title="'+esc((t.occurrences||[]).map(o=>fmtS(o.date||'')).join(', '))+'">\u{1F501} Reoccurred '+(t.occurrences||[]).length+'\u00D7 — last '+esc(fmtS((((t.occurrences||[]).slice(-1)[0])||{}).date||t.date||''))+'</div>':'')+
+          (t.resolveNote&&(t.status==='Resolved'||t.status==='Closed')?'<div style="margin-top:7px;font-size:11.5px;color:#346A47;background:#EEE4D5;border:1px solid #BFDCC9;border-radius:8px;padding:5px 9px"><b>Resolution:</b> '+esc(t.resolveNote)+'</div>':'')+
           // Show photo from the linked submission's question response
           (()=>{
             if(!t.questionId||!t.submitterId||!t.date)return'';
@@ -116,18 +116,18 @@ function ticketsPage(){
             const qr=(sub.questionResponses||[]).find(r=>r.questionId===t.questionId);
             const pl=_qrPhotoList(qr);
             if(!pl.length)return'';
-            return'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:160px;max-height:110px;border-radius:10px;object-fit:cover;border:1px solid #DFEAEC;cursor:pointer" title="Response photo"/>').join('')+'</div>';
+            return'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+pl.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(this.src)" style="max-width:160px;max-height:110px;border-radius:10px;object-fit:cover;border:1px solid #E6DED3;cursor:pointer" title="Response photo"/>').join('')+'</div>';
           })()+
         '</div>'+
-        (canDelete?'<button onclick="App._delTicket(\''+t.id+'\')" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:#FEF0F0;cursor:pointer;color:#DC2626;flex-shrink:0">'+ic('x','w-3.5 h-3.5')+'</button>':'')+
+        (canDelete?'<button onclick="App._delTicket(\''+t.id+'\')" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:#FAEDE8;cursor:pointer;color:#B3402E;flex-shrink:0">'+ic('x','w-3.5 h-3.5')+'</button>':'')+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:10px;border-top:1px solid #F1F7F8">'+
+      '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:10px;border-top:1px solid #F4F0EA">'+
         '<div style="display:flex;align-items:center;gap:6px">'+
-          '<span style="font-size:11px;font-weight:600;color:#90A5AB">Assigned to</span>'+
-          '<span style="font-size:12px;font-weight:700;color:#2F4C55">'+(assignee?esc(fullName(assignee)):'Unknown')+'</span>'+
+          '<span style="font-size:11px;font-weight:600;color:#A59788">Assigned to</span>'+
+          '<span style="font-size:12px;font-weight:700;color:#3A312A">'+(assignee?esc(fullName(assignee)):'Unknown')+'</span>'+
         '</div>'+
-        (submitter?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#90A5AB">From</span><span style="font-size:12px;font-weight:700;color:#2F4C55">'+esc(fullName(submitter))+'</span></div>':'')+
-        (cl?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#90A5AB">Checklist</span><span style="font-size:12px;font-weight:700;color:#2F4C55">'+esc(cl.name)+'</span></div>':'')+
+        (submitter?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#A59788">From</span><span style="font-size:12px;font-weight:700;color:#3A312A">'+esc(fullName(submitter))+'</span></div>':'')+
+        (cl?'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:600;color:#A59788">Checklist</span><span style="font-size:12px;font-weight:700;color:#3A312A">'+esc(cl.name)+'</span></div>':'')+
         '<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+
           (canResolve&&t.status==='Open'?btn('Start','App._tkSetStatus(this)',{variant:'subtle',size:'sm',attrs:`data-id="${t.id}" data-st="In Progress"`}):'')+
           (canResolve&&t.status==='In Progress'?btn('Resolve',`App._resolveTicket('${t.id}')`,{variant:'brand',size:'sm'}):'')+
@@ -142,9 +142,9 @@ function ticketsPage(){
     hdr('Tickets','Escalation tickets from checklist responses')+
     // Stats row — tap a card to filter by that status (Clear resets)
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
-      statCard('Open',open,'#0F766E',"App._tkFilter('status','Open')")+
-      statCard('In Progress',inprog,'#18948C',"App._tkFilter('status','In Progress')")+
-      statCard('Resolved',resolved,'#0F766E',"App._tkFilter('status','Resolved')")+
+      statCard('Open',open,'#54433C',"App._tkFilter('status','Open')")+
+      statCard('In Progress',inprog,'#96695B',"App._tkFilter('status','In Progress')")+
+      statCard('Resolved',resolved,'#54433C',"App._tkFilter('status','Resolved')")+
     '</div>'+
     // R12 Filters: search · assignee · priority · sort (+ Clear), status pills below (one-line scroll)
     (()=>{
@@ -182,7 +182,7 @@ App._showTeamStat=(uid,type)=>{
     rows=cls.map(c=>{
       const today=todayISO();
       const isOn=clOn(c,today);
-      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F1F7F8">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#90A5AB;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B6660">Active today</span>':'<span style="font-size:11px;color:#C9D9DD">Not today</span>')        +'</div>';
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F4F0EA">'        +'<div><div style="font-size:13px;font-weight:600">'+esc(c.name)+'</div>'        +'<div style="font-size:11px;color:#A59788;margin-top:2px">'+esc(c.frequency)+(c.department?' · '+esc(c.department):'')+'</div></div>'        +(isOn?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEE4D5;color:#463830">Active today</span>':'<span style="font-size:11px;color:#D5C9BC">Not today</span>')        +'</div>';
     }).join('');
   } else if(type==='late'){
     title='Late submissions — '+esc(fullName(u));
@@ -190,18 +190,18 @@ App._showTeamStat=(uid,type)=>{
     const lateSubs=DB.submissions.filter(s=>s.userId===uid&&s.status==='Late'&&!!clById(s.checklistId));
     rows=lateSubs.map(s=>{
       const c=clById(s.checklistId);
-      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F1F7F8">'        +'<div><div style="font-size:13px;font-weight:600">'+(c?esc(c.name):'[Deleted checklist]')+'</div>'        +'<div style="font-size:11px;color:#90A5AB;margin-top:2px">'+fmtS(s.date)+(s.submittedAt?' · '+new Date(s.submittedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'        +chip(s.status)+'</div>';
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F4F0EA">'        +'<div><div style="font-size:13px;font-weight:600">'+(c?esc(c.name):'[Deleted checklist]')+'</div>'        +'<div style="font-size:11px;color:#A59788;margin-top:2px">'+fmtS(s.date)+(s.submittedAt?' · '+new Date(s.submittedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'')+'</div></div>'        +chip(s.status)+'</div>';
     }).join('');
   } else if(type==='tickets'){
     title='Open tickets — '+esc(fullName(u));
     empty='No open tickets.';
     const tkts=(DB.tickets||[]).filter(t=>t.submitterId===uid&&t.status==='Open');
     rows=tkts.map(t=>{
-      const priClr={High:'#DC2626',Medium:'#E0A106',Low:'#5E767D'};
-      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F1F7F8">'        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(t.title)+'</div>'        +'<div style="font-size:11px;color:#90A5AB;margin-top:2px">'+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</div></div>'        +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF0F0;color:'+(priClr[t.priority]||'#5E767D')+'">'+esc(t.priority)+'</span>'        +'</div>';
+      const priClr={High:'#B3402E',Medium:'#C9A76B',Low:'#786A5F'};
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F4F0EA">'        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(t.title)+'</div>'        +'<div style="font-size:11px;color:#A59788;margin-top:2px">'+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</div></div>'        +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FAEDE8;color:'+(priClr[t.priority]||'#786A5F')+'">'+esc(t.priority)+'</span>'        +'</div>';
     }).join('');
   }
-  openModal('<div style="padding:20px;max-height:80vh;display:flex;flex-direction:column">'    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'    +'<h2 style="font-size:16px;font-weight:800;font-family:var(--font-display)">'+title+'</h2>'    +'<button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x')+'</button>'    +'</div>'    +'<div style="overflow-y:auto;flex:1;border:1px solid #F1F7F8;border-radius:10px">'    +(rows||'<div style="font-size:13px;color:#90A5AB;text-align:center;padding:24px">'+empty+'</div>')    +'</div></div>','max-w-md');
+  openModal('<div style="padding:20px;max-height:80vh;display:flex;flex-direction:column">'    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'    +'<h2 style="font-size:16px;font-weight:800;font-family:var(--font-display)">'+title+'</h2>'    +'<button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x')+'</button>'    +'</div>'    +'<div style="overflow-y:auto;flex:1;border:1px solid #F4F0EA;border-radius:10px">'    +(rows||'<div style="font-size:13px;color:#A59788;text-align:center;padding:24px">'+empty+'</div>')    +'</div></div>','max-w-md');
 };
 
 App._tkSetStatus=(el)=>{const id=el.dataset.id,status=el.dataset.st;App._ticketStatus(id,status);};
@@ -227,11 +227,11 @@ App._resolveTicket=(id)=>{
   if(!(can('tickets','resolve')||can('tickets','manage')||t.assignedTo===S.uid)){toast('You don’t have permission to resolve this ticket','err');return;}
   openModal(`<div style="padding:20px">
     <h2 style="font-size:18px;font-weight:800;font-family:var(--font-display);margin-bottom:4px">Resolve ticket</h2>
-    <p style="font-size:13px;color:#5E767D;margin-bottom:14px">Add a note explaining how this was resolved.</p>
-    <textarea id="tk-note" rows="3" placeholder="What was done to resolve this?" style="width:100%;border:1.5px solid #DFEAEC;border-radius:10px;padding:10px;font-size:13px;resize:none;outline:none;box-sizing:border-box"></textarea>
+    <p style="font-size:13px;color:#786A5F;margin-bottom:14px">Add a note explaining how this was resolved.</p>
+    <textarea id="tk-note" rows="3" placeholder="What was done to resolve this?" style="width:100%;border:1.5px solid #E6DED3;border-radius:10px;padding:10px;font-size:13px;resize:none;outline:none;box-sizing:border-box"></textarea>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #DFEAEC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#0F766E;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
+      <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #E6DED3;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
+      <button onclick="App._confirmResolve('${id}')" style="flex:2;padding:11px;border-radius:10px;background:#54433C;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">Mark Resolved</button>
     </div>
   </div>`,'max-w-sm');
 };
@@ -283,10 +283,10 @@ App._delTicket=async(id)=>{
 
 // ── Analytics clickable stat card ──
 App._aStatCard=(label,val,color,type,data)=>{
-  const colMap={sky:'#22A79C',brand:'#0F766E',rose:'#EF4444',orange:'#0F766E'};
+  const colMap={sky:'#A5796A',brand:'#54433C',rose:'#C25441',orange:'#54433C'};
   const c=colMap[color]||color;
-  return`<div onclick="App._aStatDrill('${type}')" style="background:#fff;border-radius:16px;border:1.5px solid #DFEAEC;padding:16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${c}';this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseout="this.style.borderColor='#DFEAEC';this.style.boxShadow=''">`
-  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#90A5AB;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#0F766E;margin-top:6px">View details →</div></div>`;
+  return`<div onclick="App._aStatDrill('${type}')" style="background:#fff;border-radius:16px;border:1.5px solid #E6DED3;padding:16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${c}';this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseout="this.style.borderColor='#E6DED3';this.style.boxShadow=''">`
+  +`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#A59788;margin-bottom:8px">${label}</div><div style="font-size:28px;font-weight:800;color:${c}">${val}</div><div style="font-size:11px;font-weight:700;color:#54433C;margin-top:6px">View details →</div></div>`;
 };
 
 App._aStatDrill=(type)=>{
@@ -312,10 +312,10 @@ App._aStatDrill=(type)=>{
   const subRow=s=>{
     const u=uById(s.userId),c=clById(s.checklistId);
     const extra=s.submittedAt?' · '+new Date(s.submittedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
-    return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8;cursor:pointer" onclick="App.viewSub(\''+s.id+'\')" onmouseover="this.style.background=\'#F8FBFC\'" onmouseout="this.style.background=\'\'">'
+    return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F4F0EA;cursor:pointer" onclick="App.viewSub(\''+s.id+'\')" onmouseover="this.style.background=\'#FAF7F3\'" onmouseout="this.style.background=\'\'">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+(c?esc(c.name):'<span style="color:#EF4444;font-style:italic">[Deleted checklist]</span>')+'</div>'
-      +'<div style="font-size:11px;color:#90A5AB;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+extra+'</div>'
+      +'<div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+(c?esc(c.name):'<span style="color:#C25441;font-style:italic">[Deleted checklist]</span>')+'</div>'
+      +'<div style="font-size:11px;color:#A59788;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+extra+'</div>'
       +'</div>'+chip(s.status)+'</div>';
   };
   if(type==='submitted'){
@@ -358,7 +358,7 @@ App._aStatDrill=(type)=>{
       });
     });
     title='Missed ('+missed.length+')';
-    rows=missed.slice(0,100).map(({u,c,dt})=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+esc(c.name)+(c.anyOne?' <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:#F5EBCC;color:#8A6E14">👥 Group</span>':'')+'</div><div style="font-size:11px;color:#90A5AB">'+(u?esc(fullName(u)):'No one in group completed')+' · '+fmtS(dt)+'</div></div><span style="font-size:11px;font-weight:700;color:#8A5F00;background:#FEF5E0;padding:2px 8px;border-radius:20px">Missed</span></div>').join('');
+    rows=missed.slice(0,100).map(({u,c,dt})=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F4F0EA"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+esc(c.name)+(c.anyOne?' <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:#F2E9D4;color:#7F6533">👥 Group</span>':'')+'</div><div style="font-size:11px;color:#A59788">'+(u?esc(fullName(u)):'No one in group completed')+' · '+fmtS(dt)+'</div></div><span style="font-size:11px;font-weight:700;color:#7C5A26;background:#F9F1DF;padding:2px 8px;border-radius:20px">Missed</span></div>').join('');
     emptyMsg='No missed checklists in this period.';
   } else if(type==='compliant'||type==='noncompliant'){
     const want=type==='noncompliant';
@@ -366,12 +366,12 @@ App._aStatDrill=(type)=>{
       .filter(x=>x&&((x.n>0)===want))
       .sort((a,b)=>want?(b.n-a.n)||((b.s.submittedAt||'').localeCompare(a.s.submittedAt||'')):(b.s.submittedAt||'').localeCompare(a.s.submittedAt||''));
     title=(want?'Non-compliant':'Compliant')+' ('+list.length+')';
-    rows=list.map(({s,c,n})=>{const u=uById(s.userId);return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8;cursor:pointer" onclick="App.viewSub(\''+s.id+'\')" onmouseover="this.style.background=\'#F8FBFC\'" onmouseout="this.style.background=\'\'">'
+    rows=list.map(({s,c,n})=>{const u=uById(s.userId);return'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F4F0EA;cursor:pointer" onclick="App.viewSub(\''+s.id+'\')" onmouseover="this.style.background=\'#FAF7F3\'" onmouseout="this.style.background=\'\'">'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(c.name)+'</div>'
-      +'<div style="font-size:11px;color:#90A5AB;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+'</div></div>'
+      +'<div style="font-size:11px;color:#A59788;margin-top:1px">'+(u?esc(fullName(u)):'?')+' · '+fmtS(s.date)+'</div></div>'
       +(want
-        ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEEEEF;color:#C41E32">⚠ '+n+' escalated</span>'
-        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E4F2F0;color:#0B6660">✓ Compliant</span>')
+        ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F9EBE5;color:#A63528">⚠ '+n+' escalated</span>'
+        : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEE4D5;color:#463830">✓ Compliant</span>')
       +'</div>';}).join('');
     emptyMsg=want?'No non-compliant submissions in this period — all clear.':'No compliant submissions in this period.';
   } else {
@@ -379,15 +379,15 @@ App._aStatDrill=(type)=>{
     const tkLabels={tickets:'All Tickets',tkopen:'Open Tickets',tkhigh:'High Priority Tickets',tkresolved:'Resolved Tickets'};
     const list=(tkMap[type]||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     title=(tkLabels[type]||'Tickets')+' ('+list.length+')';
-    const priClr={High:'#DC2626',Medium:'#E0A106',Low:'#5E767D',Critical:'#7C3AED'};
-    rows=list.map(t=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F1F7F8"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(t.title)+'</div><div style="font-size:11px;color:#90A5AB;margin-top:1px">'+(uById(t.submitterId)?'From '+esc(fullName(uById(t.submitterId))):'')+' → '+(uById(t.assignedTo)?esc(fullName(uById(t.assignedTo))):'?')+' · '+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</div></div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF0F0;color:'+(priClr[t.priority]||'#5E767D')+'">'+esc(t.priority)+'</span>'+chip(t.status)+'</div>').join('');
+    const priClr={High:'#B3402E',Medium:'#C9A76B',Low:'#786A5F',Critical:'#8A5D6B'};
+    rows=list.map(t=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F4F0EA"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc(t.title)+'</div><div style="font-size:11px;color:#A59788;margin-top:1px">'+(uById(t.submitterId)?'From '+esc(fullName(uById(t.submitterId))):'')+' → '+(uById(t.assignedTo)?esc(fullName(uById(t.assignedTo))):'?')+' · '+fmtS(t.date||t.createdAt?.slice(0,10)||'')+'</div></div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FAEDE8;color:'+(priClr[t.priority]||'#786A5F')+'">'+esc(t.priority)+'</span>'+chip(t.status)+'</div>').join('');
     emptyMsg='No tickets in this category.';
   }
   openModal('<div style="display:flex;flex-direction:column;max-height:80vh">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #F1F7F8;flex-shrink:0">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #F4F0EA;flex-shrink:0">'
     +'<h2 style="font-size:16px;font-weight:800;font-family:var(--font-display)">'+title+'</h2>'
-    +'<button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#90A5AB">'+ic('x')+'</button>'
+    +'<button onclick="App.closeModal()" style="width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x')+'</button>'
     +'</div>'
-    +'<div style="overflow-y:auto;flex:1">'+(rows||'<div style="padding:32px;text-align:center;color:#90A5AB;font-size:13px">'+emptyMsg+'</div>')+'</div></div>','max-w-lg');
+    +'<div style="overflow-y:auto;flex:1">'+(rows||'<div style="padding:32px;text-align:center;color:#A59788;font-size:13px">'+emptyMsg+'</div>')+'</div></div>','max-w-lg');
 };
 

@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
+<meta name="robots" content="noindex, nofollow"/>
 <meta name="description" content="Bridge — shift checklists, tickets and workspace for Shiftly."/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#13171B"/>
 <title>Bridge</title>
 <script>(()=>{const w=console.warn;console.warn=(...a)=>{if(typeof a[0]==='string'&&a[0].includes('cdn.tailwind'))return;w(...a)};window.addEventListener('error',e=>{if(!e.filename||e.filename.includes('cdn.tailwind')||e.filename.includes('fonts.google'))e.stopImmediatePropagation();},true);})();</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Type: Poppins everywhere — one family for display and body. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet">
-<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Poppins"','ui-sans-serif','system-ui','sans-serif'],sans:['"Poppins"','ui-sans-serif','system-ui','sans-serif']},colors:{ink:{DEFAULT:'#10262E',50:'#F4F9FA',100:'#E7F0F2',200:'#CBDBDF',300:'#9DB1B6',400:'#5E767D',500:'#35545C',600:'#234049',700:'#16323A',800:'#10262E'},brand:{DEFAULT:'#0F766E',50:'#E4F2F0',100:'#F0E4BE',200:'#EFE3BC',400:'#2CB1A6',500:'#D4A72C',600:'#0F766E',700:'#0B6660',800:'#0B6660'},teal:{DEFAULT:'#00C2C7',50:'#E3FAFB',100:'#C6F4F5',300:'#4DE0D2',500:'#00C2C7',600:'#00A8AD',700:'#087078'},paper:'#FAF9F3'},boxShadow:{soft:'0 1px 2px rgba(13,38,46,.04),0 4px 16px -6px rgba(13,38,46,.10)',pop:'0 8px 40px -8px rgba(13,38,46,.28)'}}}}</script>
-<link rel="stylesheet" href="/src/styles/main.css?v=95">
+<script>if(typeof tailwind!=='undefined')tailwind.config={theme:{extend:{fontFamily:{display:['"Poppins"','ui-sans-serif','system-ui','sans-serif'],sans:['"Poppins"','ui-sans-serif','system-ui','sans-serif']},colors:{ink:{DEFAULT:'#13171B',50:'#F7F3EE',100:'#EDE7DC',200:'#D8CCC0',300:'#B2A496',400:'#786A5F',500:'#443A32',600:'#2E2620',700:'#221C16',800:'#13171B'},brand:{DEFAULT:'#54433C',50:'#EEE4D5',100:'#F0E5CF',200:'#EBDCC2',400:'#AF7B6D',500:'#D1B68F',600:'#54433C',700:'#463830',800:'#463830'},teal:{DEFAULT:'#B7826F',50:'#F6EAE3',100:'#EFDCD2',300:'#C79A8B',500:'#B7826F',600:'#A3705F',700:'#4E4038'},paper:'#FAF7F1'},boxShadow:{soft:'0 1px 2px rgba(35,28,22,.04),0 4px 16px -6px rgba(35,28,22,.10)',pop:'0 8px 40px -8px rgba(35,28,22,.28)'}}}}</script>
+<link rel="stylesheet" href="/src/styles/main.css?v=99">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <!-- Charts pick up the app font too, so axis labels and legends match the UI. -->
@@ -20,28 +22,28 @@
 <div id="app"></div>
 
 <!-- ══ App modules — classic scripts, shared scope, ORDER MATTERS ══ -->
-<script defer src="js/00-helpers.js?v=95"></script>
-<script defer src="js/01-supabase-sync.js?v=95"></script>
-<script defer src="js/01a-sync-queue.js?v=95"></script>
-<script defer src="js/02-state-roles.js?v=95"></script>
-<script defer src="js/03-ui-kit.js?v=95"></script>
-<script defer src="js/04-nav-shell.js?v=95"></script>
-<script defer src="js/05-router-dashboard.js?v=95"></script>
-<script defer src="js/06-crm.js?v=95"></script>
-<script defer src="js/07-login.js?v=95"></script>
-<script defer src="js/08-dashboards.js?v=95"></script>
-<script defer src="js/09-users.js?v=95"></script>
-<script defer src="js/10-departments-locations.js?v=95"></script>
-<script defer src="js/11-checklists-admin.js?v=95"></script>
-<script defer src="js/12-my-checklists.js?v=95"></script>
-<script defer src="js/13-approvals.js?v=95"></script>
-<script defer src="js/14-all-checklists.js?v=95"></script>
-<script defer src="js/15-questions-escalation.js?v=95"></script>
-<script defer src="js/16-hierarchy-tickets.js?v=95"></script>
-<script defer src="js/17-analytics.js?v=95"></script>
-<script defer src="js/18-settings-notifications.js?v=95"></script>
-<script defer src="js/19-okr-roles-acl.js?v=95"></script>
-<script defer src="js/99-boot.js?v=95"></script>
+<script defer src="js/00-helpers.js?v=99"></script>
+<script defer src="js/01-supabase-sync.js?v=99"></script>
+<script defer src="js/01a-sync-queue.js?v=99"></script>
+<script defer src="js/02-state-roles.js?v=99"></script>
+<script defer src="js/03-ui-kit.js?v=99"></script>
+<script defer src="js/04-nav-shell.js?v=99"></script>
+<script defer src="js/05-router-dashboard.js?v=99"></script>
+<script defer src="js/06-crm.js?v=99"></script>
+<script defer src="js/07-login.js?v=99"></script>
+<script defer src="js/08-dashboards.js?v=99"></script>
+<script defer src="js/09-users.js?v=99"></script>
+<script defer src="js/10-departments-locations.js?v=99"></script>
+<script defer src="js/11-checklists-admin.js?v=99"></script>
+<script defer src="js/12-my-checklists.js?v=99"></script>
+<script defer src="js/13-approvals.js?v=99"></script>
+<script defer src="js/14-all-checklists.js?v=99"></script>
+<script defer src="js/15-questions-escalation.js?v=99"></script>
+<script defer src="js/16-hierarchy-tickets.js?v=99"></script>
+<script defer src="js/17-analytics.js?v=99"></script>
+<script defer src="js/18-settings-notifications.js?v=99"></script>
+<script defer src="js/19-okr-roles-acl.js?v=99"></script>
+<script defer src="js/99-boot.js?v=99"></script>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -162,41 +162,41 @@ function shell(content){
     const collapsed=(sec.label in S._navCollapsed)?!!S._navCollapsed[sec.label]:!hasActive;
     const show=!collapsed;
     return`<div class="nav-sec${show?'':' collapsed'}">
-      <button class="nav-sec-hdr" onclick="App.toggleNavSec('${sec.label}')"><span class="nav-ico" style="width:14px;height:14px;color:#8AA0A6">${ic(sec.icon,'w-3.5 h-3.5')}</span><span style="flex:1;text-align:left">${sec.label}</span><span class="nav-chev">${ic('chevD','w-3.5 h-3.5')}</span></button>
+      <button class="nav-sec-hdr" onclick="App.toggleNavSec('${sec.label}')"><span class="nav-ico" style="width:14px;height:14px;color:rgba(237,230,220,.4)">${ic(sec.icon,'w-3.5 h-3.5')}</span><span style="flex:1;text-align:left">${sec.label}</span><span class="nav-chev">${ic('chevD','w-3.5 h-3.5')}</span></button>
       <div class="nav-sec-body" style="display:${show?'flex':'none'};flex-direction:column;gap:2px">${sec.items.map(_navItemHTML).join('')}</div>
     </div>`;
   }).join('');
 
   return`<div style="min-height:100vh;display:flex">
-  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#FDFCF7;background-image:linear-gradient(177deg,#FFFFFF 0%,#F6F5EC 100%);color:#1B333B;border-right:1px solid #E7E6DC">
-    <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #EDECE2;background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(15,118,110,.05)'" onmouseout="this.style.background='transparent'">
+  <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#13171B;background-image:linear-gradient(177deg,#1A2026 0%,#101317 100%);color:#EDE6DC;border-right:1px solid rgba(255,255,255,.06)">
+    <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(209,182,143,.08)'" onmouseout="this.style.background='transparent'">
       <div class="nav-brand">B</div>
-      <span class="fd" style="font-weight:800;font-size:18px;letter-spacing:-.5px;color:#10262E">Bridge</span>
+      <span class="fd" style="font-weight:600;font-size:14px;letter-spacing:.32em;color:#F4EFE8;text-transform:uppercase;padding-left:1px">Bridge</span>
     </button>
-    <nav style="flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px">${dailyHTML}<div style="height:1px;background:#EDECE2;margin:8px 6px"></div>${sectionsHTML}</nav>
-    <div style="padding:8px;border-top:1px solid #EDECE2">
-      <button onclick="App.go('profile')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:transparent;border:none;cursor:pointer;color:#10262E;margin-bottom:2px" onmouseover="this.style.background='rgba(15,118,110,.06)'" onmouseout="this.style.background='transparent'">
+    <nav style="flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px">${dailyHTML}<div style="height:1px;background:rgba(255,255,255,.07);margin:8px 6px"></div>${sectionsHTML}</nav>
+    <div style="padding:8px;border-top:1px solid rgba(255,255,255,.07)">
+      <button onclick="App.go('profile')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:transparent;border:none;cursor:pointer;color:#F4EFE8;margin-bottom:2px" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='transparent'">
         ${avatar(u,'w-8 h-8','text-[11px]')}
         <div style="min-width:0;text-align:left;flex:1">
           <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(fullName(u))}</div>
-          <div style="font-size:11px;color:#5F777E;margin-top:1px">${esc(u.position||u.department||'')}</div>
+          <div style="font-size:11px;color:rgba(237,230,220,.55);margin-top:1px">${esc(u.position||u.department||'')}</div>
         </div>
-        <span style="font-size:10px;color:#A3B6BB">${ic('chevR','w-3 h-3')}</span>
+        <span style="font-size:10px;color:rgba(237,230,220,.35)">${ic('chevR','w-3 h-3')}</span>
       </button>
-      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:#5F777E;font-size:12px;font-weight:500" onmouseover="this.style.color='#0F766E';this.style.background='rgba(15,118,110,.06)'" onmouseout="this.style.color='#5F777E';this.style.background='transparent'">
+      <button onclick="App.logout()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:transparent;border:none;cursor:pointer;color:rgba(237,230,220,.6);font-size:12px;font-weight:500" onmouseover="this.style.color='#D1B68F';this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.color='rgba(237,230,220,.6)';this.style.background='transparent'">
         ${ic('logout','w-3.5 h-3.5')}Sign out
       </button>
     </div>
   </aside>
   <div class="flex flex-col" style="flex:1;min-width:0;margin-left:0" id="main-wrap">
-    <header class="topbar sticky top-0 z-20" style="${S.route==='crm'?'display:none !important;':''}background:rgba(246,250,251,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--c-border)">
+    <header class="topbar sticky top-0 z-20" style="${S.route==='crm'?'display:none !important;':''}background:rgba(250,247,241,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--c-border)">
       <div style="height:56px;padding:0 18px;display:flex;align-items:center;gap:10px">
         <button onclick="App.moreMenu()" class="md:hidden" aria-label="Open menu" style="${S.route==='crm'?'display:grid !important;':''}width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--c-text);display:grid;place-items:center;cursor:pointer">${ic('menu','w-5 h-5')}</button>
         <div class="md:hidden flex items-center gap-2">
           <div class="nav-brand" style="width:24px;height:24px;font-size:11px">B</div>
-          <span class="fd" style="font-weight:800;font-size:15px">Bridge</span>
+          <span class="fd" style="font-weight:600;font-size:12.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--c-ink)">Bridge</span>
         </div>
-        <div style="flex:1"></div><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(13,38,46,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
+        <div style="flex:1"></div><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(35,28,22,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
         <button onclick="App.go('notifications')" class="md:hidden" aria-label="Notifications" style="position:relative;width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--c-text);display:grid;place-items:center;cursor:pointer">${ic('bell','w-5 h-5')}${(()=>{const n=_notifCount();return n?`<span style="position:absolute;top:5px;right:5px">${countBadge(n,'danger')}</span>`:'';})()}</button>
         <button onclick="App.go('profile')" class="md:hidden" aria-label="Profile">${avatar(u,'w-8 h-8','text-[11px]')}</button>
       </div>
@@ -204,7 +204,7 @@ function shell(content){
     <div style="max-width:1152px;width:100%;margin:0 auto;padding:0 20px"></div>
     <main id="content" style="${S.route==='crm'?'flex:1;min-width:0;padding:0;max-width:none;width:100%;margin:0;height:calc(100dvh - 56px);overflow:hidden':'flex:1;padding:22px 20px;padding-bottom:96px;max-width:1152px;width:100%;margin:0 auto'}" class="${S.route==='crm'?'':'md:pb-10'}">${content}</main>
   </div>
-  <nav id="bottom-nav" class="mob-nav md:hidden fixed bottom-0 inset-x-0 z-30" style="background:var(--c-surface);border-top:1px solid var(--c-border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(13,38,46,.06)">
+  <nav id="bottom-nav" class="mob-nav md:hidden fixed bottom-0 inset-x-0 z-30" style="background:var(--c-surface);border-top:1px solid var(--c-border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(35,28,22,.06)">
     <div style="display:grid;grid-template-columns:repeat(${mob.length},1fr);height:60px">
       ${mob.map(r=>{
         if(r==='more')return`<button onclick="App.moreMenu()" aria-label="More" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--c-text-3);min-height:44px">${ic('menu','w-[22px] h-[22px]')}<span style="font-size:10px;font-weight:700">More</span></button>`;

@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
+<meta name="robots" content="noindex, nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Bridge mobile layout test</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F6FAFB;color:#10262E}
+html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F5F0;color:#13171B}
 
 /* ── the tab switcher (test harness only, not part of the app) ── */
-#tabs{position:fixed;top:0;left:0;right:0;height:44px;z-index:200;display:grid;grid-template-columns:1fr 1fr 1fr;background:#10262E}
-#tabs button{border:none;background:transparent;color:#9DB1B6;font-size:12px;font-weight:700;cursor:pointer}
-#tabs button.on{color:#fff;box-shadow:inset 0 -3px 0 #FF7F11}
+#tabs{position:fixed;top:0;left:0;right:0;height:44px;z-index:200;display:grid;grid-template-columns:1fr 1fr 1fr;background:#13171B}
+#tabs button{border:none;background:transparent;color:#B2A496;font-size:12px;font-weight:700;cursor:pointer}
+#tabs button.on{color:#fff;box-shadow:inset 0 -3px 0 #D1B68F}
 .pane{display:none}
 .pane.on{display:block}
 
@@ -20,8 +21,8 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 .crm-chatpane{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
 .crm-chatbody{flex:1;display:flex;min-height:0}
 .crm-threadcol{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
-#crm-thread{flex:1;overflow-y:auto;padding:10px 14px;background:#F8FBFC;display:flex;flex-direction:column;min-height:0}
-.crm-composer{border-top:1px solid #E7F0F2;padding:8px 12px;position:relative;flex-shrink:0;background:#fff}
+#crm-thread{flex:1;overflow-y:auto;padding:10px 14px;background:#FAF7F3;display:flex;flex-direction:column;min-height:0}
+.crm-composer{border-top:1px solid #EDE7DC;padding:8px 12px;position:relative;flex-shrink:0;background:#fff}
 
 @media(max-width:767px){
   .crm-fs{bottom:calc(60px + env(safe-area-inset-bottom))!important}
@@ -36,47 +37,47 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
   .crm-composer{flex:0 0 auto!important;background:#fff;z-index:2}
   .crm-fs input,.crm-fs textarea{font-size:16px!important}
 }
-.chat-hdr{padding:9px 14px;border-bottom:1px solid #E7F0F2;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.av{width:34px;height:34px;border-radius:50%;background:#7C3AED;color:#fff;display:grid;place-items:center;font-weight:800;flex-shrink:0}
+.chat-hdr{padding:9px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.av{width:34px;height:34px;border-radius:50%;background:#8A5D6B;color:#fff;display:grid;place-items:center;font-weight:800;flex-shrink:0}
 .msg{max-width:86%;padding:9px 13px;border-radius:14px;margin:4px 0;font-size:14px;line-height:1.4}
-.mine{align-self:flex-end;background:#FF7F11;color:#fff}
-.theirs{align-self:flex-start;background:#fff;border:1px solid #E7F0F2}
-.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid #E7F0F2;padding-bottom:env(safe-area-inset-bottom)}
-.bottomnav>div{display:grid;grid-template-columns:repeat(5,1fr);height:60px;align-items:center;text-align:center;font-size:10px;font-weight:700;color:#5E767D}
+.mine{align-self:flex-end;background:#D1B68F;color:#fff}
+.theirs{align-self:flex-start;background:#fff;border:1px solid #EDE7DC}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid #EDE7DC;padding-bottom:env(safe-area-inset-bottom)}
+.bottomnav>div{display:grid;grid-template-columns:repeat(5,1fr);height:60px;align-items:center;text-align:center;font-size:10px;font-weight:700;color:#786A5F}
 
 /* ══════════ 2 + 3. OKR CARD DESIGNS ══════════ */
 .okrwrap{padding:56px 12px calc(72px + env(safe-area-inset-bottom))}
-.lab{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5E767D;margin:14px 2px 7px}
+.lab{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#786A5F;margin:14px 2px 7px}
 
 /* — Design A: compact rows — */
-.a-card{background:#fff;border:1px solid #E7F0F2;border-radius:12px;padding:11px 12px;margin-bottom:8px}
+.a-card{background:#fff;border:1px solid #EDE7DC;border-radius:12px;padding:11px 12px;margin-bottom:8px}
 .a-top{display:flex;align-items:center;gap:6px;margin-bottom:5px}
 .chip{font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.03em}
-.c-l1{background:#E7F0F2;color:#16323A}.c-l2{background:#FFE9D6;color:#B85200}
-.c-an{background:#F0EDFE;color:#5B45D6}
+.c-l1{background:#EDE7DC;color:#221C16}.c-l2{background:#FFEAD7;color:#7C5A26}
+.c-an{background:#F3EDEA;color:#8A5D6B}
 .a-title{font-size:14px;font-weight:700;line-height:1.3;margin:0 0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .a-foot{display:flex;align-items:center;gap:8px}
-.a-val{font-size:12px;font-weight:800;color:#10262E;white-space:nowrap}
-.a-bar{flex:1;height:5px;background:#E7F0F2;border-radius:3px;overflow:hidden;min-width:34px}
+.a-val{font-size:12px;font-weight:800;color:#13171B;white-space:nowrap}
+.a-bar{flex:1;height:5px;background:#EDE7DC;border-radius:3px;overflow:hidden;min-width:34px}
 .a-bar>i{display:block;height:100%;border-radius:3px}
 .st{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap}
-.st-no{background:#EEF3F4;color:#5E767D}.st-off{background:#FDECEC;color:#C41E32}.st-on{background:#E6F6EC;color:#137A3C}
-.a-meta{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#7C9299;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.dot{width:3px;height:3px;border-radius:50%;background:#C4D5D9;flex-shrink:0}
+.st-no{background:#F2EEE6;color:#786A5F}.st-off{background:#F9E9E3;color:#A63528}.st-on{background:#E9F1E8;color:#346A47}
+.a-meta{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#94867A;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dot{width:3px;height:3px;border-radius:50%;background:#D2C5B7;flex-shrink:0}
 
 /* — Design B: two-column grid, numbers on the right — */
-.b-card{background:#fff;border:1px solid #E7F0F2;border-radius:12px;padding:11px 12px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.b-card{background:#fff;border:1px solid #EDE7DC;border-radius:12px;padding:11px 12px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
 .b-title{font-size:14px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .b-right{text-align:right}
 .b-num{font-size:15px;font-weight:800;line-height:1}
-.b-tgt{font-size:10px;color:#7C9299;margin-top:2px;white-space:nowrap}
-.b-meta{grid-column:1/-1;display:flex;align-items:center;gap:5px;font-size:10.5px;color:#7C9299;overflow:hidden;white-space:nowrap;margin-top:2px}
-.b-bar{grid-column:1/-1;height:4px;background:#E7F0F2;border-radius:2px;overflow:hidden;margin-top:5px}
+.b-tgt{font-size:10px;color:#94867A;margin-top:2px;white-space:nowrap}
+.b-meta{grid-column:1/-1;display:flex;align-items:center;gap:5px;font-size:10.5px;color:#94867A;overflow:hidden;white-space:nowrap;margin-top:2px}
+.b-bar{grid-column:1/-1;height:4px;background:#EDE7DC;border-radius:2px;overflow:hidden;margin-top:5px}
 .b-bar>i{display:block;height:100%;border-radius:2px}
 
 /* diagnostics */
-#diag{position:fixed;left:8px;right:8px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:150;background:#10262E;color:#9DE7C0;font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:9px;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.3)}
-#diag b{color:#FFB067}
+#diag{position:fixed;left:8px;right:8px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:150;background:#13171B;color:#BFDCC9;font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:9px;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#diag b{color:#DCC49A}
 </style>
 </head>
 <body>
@@ -95,7 +96,7 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
         <div class="av">A</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:800">Return</div>
-          <div style="font-size:12px;color:#90A5AB">Anam · Manual · started 2d ago</div>
+          <div style="font-size:12px;color:#A59788">Anam · Manual · started 2d ago</div>
         </div>
       </div>
       <div class="crm-chatbody">
@@ -103,9 +104,9 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
           <div id="crm-thread"></div>
           <div class="crm-composer">
             <div style="display:flex;align-items:flex-end;gap:8px">
-              <label style="width:36px;height:36px;border-radius:10px;border:1px solid #DFEAEC;display:grid;place-items:center;flex-shrink:0;font-size:17px">&#128247;</label>
-              <textarea rows="1" placeholder="Message… @ to tag" style="flex:1;resize:none;border:1px solid #DFEAEC;border-radius:11px;padding:9px 12px;font-size:16px;font-family:inherit;outline:none;max-height:120px"></textarea>
-              <button style="width:38px;height:38px;border-radius:11px;border:none;background:#FF7F11;color:#fff;font-size:15px;flex-shrink:0">&#10148;</button>
+              <label style="width:36px;height:36px;border-radius:10px;border:1px solid #E6DED3;display:grid;place-items:center;flex-shrink:0;font-size:17px">&#3F7D54;</label>
+              <textarea rows="1" placeholder="Message… @ to tag" style="flex:1;resize:none;border:1px solid #E6DED3;border-radius:11px;padding:9px 12px;font-size:16px;font-family:inherit;outline:none;max-height:120px"></textarea>
+              <button style="width:38px;height:38px;border-radius:11px;border:none;background:#D1B68F;color:#fff;font-size:15px;flex-shrink:0">&#10148;</button>
             </div>
           </div>
         </div>
@@ -139,7 +140,7 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
   <div class="a-card">
     <div class="a-top"><span class="chip c-l2">L2</span></div>
     <p class="a-title">Revenue: 0 &rarr; 500k</p>
-    <div class="a-foot"><span class="a-val">320k / 500k</span><span class="a-bar"><i style="width:64%;background:#137A3C"></i></span><span class="a-val">64%</span><span class="st st-on">On track</span></div>
+    <div class="a-foot"><span class="a-val">320k / 500k</span><span class="a-bar"><i style="width:64%;background:#346A47"></i></span><span class="a-val">64%</span><span class="st st-on">On track</span></div>
     <div class="a-meta">Lee Mascarenhas<span class="dot"></span>1 Jan &rarr; 31 Dec</div>
   </div>
 </div></div>
@@ -159,13 +160,13 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
   </div>
   <div class="b-card">
     <div><div class="a-top"><span class="chip c-l2">L2</span><span class="chip c-an">ANNUAL</span></div><div class="b-title">Flower Wastage &lt; 120k &mdash; Q1</div></div>
-    <div class="b-right"><div class="b-num" style="color:#C41E32">117.86k</div><div class="b-tgt">&le; 30k</div></div>
+    <div class="b-right"><div class="b-num" style="color:#A63528">117.86k</div><div class="b-tgt">&le; 30k</div></div>
     <div class="b-meta">Saif Ali<span class="dot"></span>1 Jan &rarr; 31 Mar<span class="dot"></span><span class="st st-off">Not achieved</span></div>
   </div>
   <div class="b-card">
     <div><div class="a-top"><span class="chip c-l2">L2</span></div><div class="b-title">Revenue: 0 &rarr; 500k</div></div>
     <div class="b-right"><div class="b-num">64%</div><div class="b-tgt">320k / 500k</div></div>
-    <div class="b-bar"><i style="width:64%;background:#137A3C"></i></div>
+    <div class="b-bar"><i style="width:64%;background:#346A47"></i></div>
     <div class="b-meta">Lee Mascarenhas<span class="dot"></span>1 Jan &rarr; 31 Dec<span class="dot"></span><span class="st st-on">On track</span></div>
   </div>
 </div></div>

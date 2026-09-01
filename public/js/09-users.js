@@ -6,8 +6,8 @@
 /* ===== USERS ===== */
 function _disableBtn(u){
   const isActive=u.status==='Active';
-  const bg=isActive?'transparent':'#FDF3D9';
-  const col=isActive?'#90A5AB':'#C08400';
+  const bg=isActive?'transparent':'#F8F0DE';
+  const col=isActive?'#A59788':'#A97C33';
   const tip=isActive?'Disable user':'Enable user';
   return '<button onclick="App.togUser(\''+u.id+'\')" title="'+tip+'" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:'+col+';background:'+bg+';border:none;cursor:pointer">'+ic(isActive?'lock':'unlock','w-4 h-4')+'</button>';
 }
@@ -17,11 +17,11 @@ function _uRoleChip(u){
   const id=u&&u.hrm&&u.hrm.roleProfileId;
   const rp=id?(DB.roleProfiles||{})[id]:null;
   if(!rp)return'<span class="text-xs text-ink-300">No role</span>';
-  const st=id==='superadmin'?'background:#10262E;color:#fff'
-    :id==='admin'?'background:#F5EBCC;color:#8A6E14'
-    :id==='manager'?'background:#E3F1EF;color:#0B6660'
-    :id==='basic'?'background:#F1F7F8;color:#46626A'
-    :'background:#F5F1FE;color:#8A6E14';
+  const st=id==='superadmin'?'background:#13171B;color:#fff'
+    :id==='admin'?'background:#F2E9D4;color:#7F6533'
+    :id==='manager'?'background:#ECE2D3;color:#463830'
+    :id==='basic'?'background:#F4F0EA;color:#55483E'
+    :'background:#F3EDEA;color:#7F6533';
   return`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;${st}">${esc(rp.name)}</span>`;
 }
 const _uIsSuperAdmin=u=>!!u&&(u.hrm?.roleProfileId==='superadmin'||u.role==='Admin');
@@ -42,8 +42,8 @@ function usersPage(){
   S.filters.uSel=_uSel().filter(id=>_U_LIST.includes(id)); // drop selections hidden by filters
   const sel=S.filters.uSel;
   const allSel=list.length>0&&sel.length===list.length;
-  const cbx=(checked,onclick,title)=>`<input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();${onclick}" ${title?`title="${title}"`:''} style="width:16px;height:16px;accent-color:#10262E;cursor:pointer;vertical-align:middle"/>`;
-  const bulkBar=canBulk&&sel.length?`<div class="ui-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;border:1.5px solid #10262E">
+  const cbx=(checked,onclick,title)=>`<input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();${onclick}" ${title?`title="${title}"`:''} style="width:16px;height:16px;accent-color:#13171B;cursor:pointer;vertical-align:middle"/>`;
+  const bulkBar=canBulk&&sel.length?`<div class="ui-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;border:1.5px solid #13171B">
       <span style="font-size:13px;font-weight:800;color:var(--c-text)">${sel.length} selected</span>
       <span style="font-size:11.5px;color:var(--c-text-3)">of ${list.length} shown — pick the fields to change once, they apply to everyone selected</span>
       <span style="flex:1"></span>
@@ -65,10 +65,10 @@ function usersPage(){
   ${bulkBar}
   <div class="hidden md:block bg-white rounded-2xl border border-ink-100 shadow-soft overflow-hidden">
     <table class="w-full text-sm"><thead><tr class="text-[10px] text-ink-400 uppercase tracking-wide border-b border-ink-100 text-left">${canBulk?`<th class="px-4 py-3" style="width:34px">${cbx(allSel,'App._uSelAll()','Select all shown')}</th>`:''}<th class="px-5 py-3 font-semibold">Name</th><th class="px-5 py-3 font-semibold">Department</th><th class="px-5 py-3 font-semibold">Role</th><th class="px-5 py-3 font-semibold">Reports to</th><th class="px-5 py-3 font-semibold">Status</th><th class="px-5 py-3"></th></tr></thead>
-    <tbody class="divide-y divide-ink-50">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<tr class="hover:bg-ink-50/50"${on?' style="background:#F0F6F1"':''}>${canBulk?`<td class="px-4 py-3">${cbx(on,`App._uSelTog('${u.id}')`)}</td>`:''}<td class="px-5 py-3"><div class="flex items-center gap-3">${avatar(u,'w-9 h-9','text-xs')}<div><div class="font-semibold">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.email)}</div></div></div></td><td class="px-5 py-3">${esc(u.department)}<div class="text-xs text-ink-400">${esc(u.position)}</div></td><td class="px-5 py-3">${_uRoleChip(u)}</td><td class="px-5 py-3 text-sm">${mgr?esc(fullName(mgr)):'<span class="text-ink-300">—</span>'}</td><td class="px-5 py-3">${chip(u.status)}</td><td class="px-5 py-3"><div class="flex gap-1 justify-end">${(can('employees','edit')||can('employees','resetPassword')||can('employees','deactivate')||can('employees','delete'))?`${can('employees','edit')?`<button onclick="App.editUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'">${ic('edit','w-4 h-4')}</button>`:''}${can('employees','resetPassword')?`<button onclick="App.resetPw('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F1F7F8'" onmouseout="this.style.background='transparent'" title="Reset password">${ic('key','w-4 h-4')}</button>`:''}${can('employees','deactivate')?_disableBtn(u):''}${(!_uIsSuperAdmin(u)&&can('employees','delete'))?`<button onclick="App.delUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#90A5AB;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#FEEEEF';this.style.color='#C41E32'" onmouseout="this.style.background='transparent';this.style.color='#90A5AB'">${ic('trash','w-4 h-4')}</button>`:''}`:'<span class="text-ink-200">—</span>'}</div></td></tr>`;}).join('')}</tbody></table>
+    <tbody class="divide-y divide-ink-50">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<tr class="hover:bg-ink-50/50"${on?' style="background:#F0F4EE"':''}>${canBulk?`<td class="px-4 py-3">${cbx(on,`App._uSelTog('${u.id}')`)}</td>`:''}<td class="px-5 py-3"><div class="flex items-center gap-3">${avatar(u,'w-9 h-9','text-xs')}<div><div class="font-semibold">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.email)}</div></div></div></td><td class="px-5 py-3">${esc(u.department)}<div class="text-xs text-ink-400">${esc(u.position)}</div></td><td class="px-5 py-3">${_uRoleChip(u)}</td><td class="px-5 py-3 text-sm">${mgr?esc(fullName(mgr)):'<span class="text-ink-300">—</span>'}</td><td class="px-5 py-3">${chip(u.status)}</td><td class="px-5 py-3"><div class="flex gap-1 justify-end">${(can('employees','edit')||can('employees','resetPassword')||can('employees','deactivate')||can('employees','delete'))?`${can('employees','edit')?`<button onclick="App.editUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#A59788;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F4F0EA'" onmouseout="this.style.background='transparent'">${ic('edit','w-4 h-4')}</button>`:''}${can('employees','resetPassword')?`<button onclick="App.resetPw('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#A59788;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F4F0EA'" onmouseout="this.style.background='transparent'" title="Reset password">${ic('key','w-4 h-4')}</button>`:''}${can('employees','deactivate')?_disableBtn(u):''}${(!_uIsSuperAdmin(u)&&can('employees','delete'))?`<button onclick="App.delUser('${u.id}')" style="width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:#A59788;background:transparent;border:none;cursor:pointer" onmouseover="this.style.background='#F9EBE5';this.style.color='#A63528'" onmouseout="this.style.background='transparent';this.style.color='#A59788'">${ic('trash','w-4 h-4')}</button>`:''}`:'<span class="text-ink-200">—</span>'}</div></td></tr>`;}).join('')}</tbody></table>
     ${list.length?'':empty('users','No users','')}
   </div>
-  <div class="md:hidden space-y-2">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4" style="${can('employees','edit')?'cursor:pointer;':''}${on?'border-color:#10262E':''}"${can('employees','edit')?` onclick="App.editUser('${u.id}')"`:''}>
+  <div class="md:hidden space-y-2">${list.map(u=>{const mgr=u.managerId?uById(u.managerId):null;const on=sel.includes(u.id);return`<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-4" style="${can('employees','edit')?'cursor:pointer;':''}${on?'border-color:#13171B':''}"${can('employees','edit')?` onclick="App.editUser('${u.id}')"`:''}>
     <div class="flex items-center gap-3">${canBulk?`<span onclick="event.stopPropagation()">${cbx(on,`App._uSelTog('${u.id}')`)}</span>`:''}${avatar(u,'w-10 h-10','text-sm')}<div class="min-w-0 flex-1"><div class="font-semibold truncate">${esc(fullName(u))}</div><div class="text-xs text-ink-400">${esc(u.position)} · ${esc(u.department)}</div><div style="margin-top:3px">${_uRoleChip(u)}</div></div>${chip(u.status)}</div>
     ${mgr?`<div class="text-xs text-ink-400 mt-2.5 pt-2.5 border-t border-ink-50">Reports to <strong>${esc(fullName(mgr))}</strong></div>`:''}</div>`;}).join('')}</div>
 </div>`;}
@@ -85,7 +85,7 @@ App._bulkEditUsers=()=>{
   const mgrOpts=DB.users.filter(x=>x.status==='Active'&&!sel.includes(x.id));
   const L='font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em';
   const row=(k,label,control,hint)=>`<div style="display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--c-border);align-items:start">
-      <input type="checkbox" id="bu-on-${k}" onchange="const c=document.getElementById('bu-c-${k}');if(c){c.style.opacity=this.checked?'1':'.45';c.style.pointerEvents=this.checked?'auto':'none'}" style="width:16px;height:16px;accent-color:#10262E;cursor:pointer;margin-top:2px"/>
+      <input type="checkbox" id="bu-on-${k}" onchange="const c=document.getElementById('bu-c-${k}');if(c){c.style.opacity=this.checked?'1':'.45';c.style.pointerEvents=this.checked?'auto':'none'}" style="width:16px;height:16px;accent-color:#13171B;cursor:pointer;margin-top:2px"/>
       <div><label for="bu-on-${k}" style="${L};cursor:pointer">${label}</label>
         <div id="bu-c-${k}" style="margin-top:6px;opacity:.45;pointer-events:none">${control}</div>
         ${hint?`<div style="font-size:11px;color:var(--c-text-3);margin-top:5px;line-height:1.45">${hint}</div>`:''}
@@ -172,16 +172,16 @@ App._bulkApplyUsers=()=>{
   if(skipped.length)setTimeout(()=>toast(skipped.slice(0,2).join(' · ')+(skipped.length>2?' · +'+(skipped.length-2)+' more':''),'warn'),1100);
 };
 function _docAccessSection(u){
-  if(!topDepts().length&&!DB.locations.length)return'<div style="background:#F8FBFC;border-radius:16px;padding:14px;margin-top:8px"><p style="font-size:12px;color:#90A5AB;text-align:center">Add departments and locations first to assign document access.</p></div>';
+  if(!topDepts().length&&!DB.locations.length)return'<div style="background:#FAF7F3;border-radius:16px;padding:14px;margin-top:8px"><p style="font-size:12px;color:#A59788;text-align:center">Add departments and locations first to assign document access.</p></div>';
   const da=u?.docAccess||{departments:{},locations:{}};
   const PERMS=['view','upload','download','edit'];
-  let html='<div style="border-top:1px solid #E7F0F2;margin-top:14px;padding-top:14px">'
-    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#90A5AB;margin-bottom:10px">Document Access</p>';
+  let html='<div style="border-top:1px solid #EDE7DC;margin-top:14px;padding-top:14px">'
+    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#A59788;margin-bottom:10px">Document Access</p>';
   if(topDepts().length){
-    html+='<p style="font-size:11px;font-weight:700;color:#2F4C55;margin-bottom:8px">Departments</p>';
+    html+='<p style="font-size:11px;font-weight:700;color:#3A312A;margin-bottom:8px">Departments</p>';
     html+=topDepts().map(d=>{
       const dp=da.departments?.[d.name]||{};
-      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#F8FBFC;border-radius:10px">'
+      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#FAF7F3;border-radius:10px">'
         +'<span style="font-size:12px;font-weight:600;min-width:100px;flex-shrink:0">'+esc(d.name)+'</span>'
         +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
         +PERMS.map(p=>'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">'
@@ -192,10 +192,10 @@ function _docAccessSection(u){
     }).join('');
   }
   if(DB.locations.length){
-    html+='<p style="font-size:11px;font-weight:700;color:#2F4C55;margin-bottom:8px;margin-top:10px">Locations</p>';
+    html+='<p style="font-size:11px;font-weight:700;color:#3A312A;margin-bottom:8px;margin-top:10px">Locations</p>';
     html+=DB.locations.map(l=>{
       const lp=da.locations?.[l.id]||{};
-      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#F8FBFC;border-radius:10px">'
+      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#FAF7F3;border-radius:10px">'
         +'<span style="font-size:12px;font-weight:600;min-width:100px;flex-shrink:0">'+esc(l.name)+'</span>'
         +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
         +PERMS.map(p=>'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">'
@@ -224,7 +224,7 @@ App.editUser=(id=null)=>{
     <div class="bg-ink-50 rounded-2xl p-4"><p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide mb-2">Notifications</p>${mkTog('u-emailnotif',u?.emailEnabled??true,'Receive email notifications')}</div>
     <div style="font-size:11.5px;color:var(--c-text-3);background:var(--c-surface-2);border:1px dashed var(--c-border-2);border-radius:10px;padding:9px 12px">🛡️ Role, tab access, document permissions and submission rules are managed in <b>Access Control</b>.</div>
   </div>
-  <div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button id="save-user-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=this.textContent==='Save'?'Saving…':'Creating…';App.saveUser('${id||''}').catch(()=>{}).finally(()=>{const b=document.getElementById('save-user-btn');if(b){b.disabled=false;b.textContent='${u?'Save':'Create'}';}})" style="flex:1;padding:12px;border-radius:12px;background:#10262E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${u?'Save':'Create'}</button></div>
+  <div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button id="save-user-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=this.textContent==='Save'?'Saving…':'Creating…';App.saveUser('${id||''}').catch(()=>{}).finally(()=>{const b=document.getElementById('save-user-btn');if(b){b.disabled=false;b.textContent='${u?'Save':'Create'}';}})" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${u?'Save':'Create'}</button></div>
   </div>`,'max-w-2xl');
 };
 App.saveUser=async(id)=>{
@@ -336,8 +336,8 @@ App.resetPw=(id)=>{
     +'<p class="text-sm text-ink-400 mb-4">New password for <strong>'+esc(fullName(u))+'</strong></p>'
     +fld('New password','rp-pw','','password','')
     +'<div class="flex gap-2 mt-4">'
-    +'<button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #E7F0F2;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
-    +'<button id="rp-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=\'Resetting…\';App._doResetPw(this.dataset.uid).finally(()=>{const b=document.getElementById(\'rp-btn\');if(b){b.disabled=false;b.textContent=\'Reset\';}})" data-uid="'+id+'" style="flex:1;padding:12px;border-radius:12px;background:#10262E;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Reset</button>'
+    +'<button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>'
+    +'<button id="rp-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent=\'Resetting…\';App._doResetPw(this.dataset.uid).finally(()=>{const b=document.getElementById(\'rp-btn\');if(b){b.disabled=false;b.textContent=\'Reset\';}})" data-uid="'+id+'" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Reset</button>'
     +'</div></div>',
     'max-w-sm'
   );
@@ -475,7 +475,7 @@ function _uImpPickHTML(){
       ${btn('Download template','App._usersTemplate()',{variant:'ghost',icon:'download'})}
       <span style="font-size:11.5px;color:var(--c-text-3)">Fill it in Excel, then drop it below (.xlsx or .csv)</span>
     </div>
-    <div onclick="document.getElementById('uimp-file').click()" ondragover="event.preventDefault();this.style.borderColor='#0F766E'" ondragleave="this.style.borderColor='var(--c-border-2)'" ondrop="event.preventDefault();this.style.borderColor='var(--c-border-2)';App._uImpFile({files:event.dataTransfer.files})" style="border:2px dashed var(--c-border-2);border-radius:16px;padding:34px;text-align:center;cursor:pointer;transition:border-color .15s">
+    <div onclick="document.getElementById('uimp-file').click()" ondragover="event.preventDefault();this.style.borderColor='#54433C'" ondragleave="this.style.borderColor='var(--c-border-2)'" ondrop="event.preventDefault();this.style.borderColor='var(--c-border-2)';App._uImpFile({files:event.dataTransfer.files})" style="border:2px dashed var(--c-border-2);border-radius:16px;padding:34px;text-align:center;cursor:pointer;transition:border-color .15s">
       <div style="font-size:30px;margin-bottom:8px">📄</div>
       <div style="font-size:14px;font-weight:700;color:var(--c-text)">Click to browse or drag &amp; drop</div>
       <div style="font-size:12px;color:var(--c-text-3);margin-top:4px">.xlsx or .csv — same columns as the template</div>
@@ -548,20 +548,20 @@ function _uImpPreview(){
   const bad=rows.filter(r=>r.errs.length);
   const wn=rows.filter(r=>!r.errs.length&&r.warns.length);
   const chip=(n,label,bg,fg)=>`<span style="font-size:12px;font-weight:800;background:${bg};color:${fg};padding:3px 11px;border-radius:20px">${n} ${label}</span>`;
-  const tr=r=>`<tr style="${r.errs.length?'background:#FEEEEF;':''}border-top:1px solid var(--c-border)">
+  const tr=r=>`<tr style="${r.errs.length?'background:#F9EBE5;':''}border-top:1px solid var(--c-border)">
       <td style="padding:6px 8px;color:var(--c-text-3)">${r.line}</td>
       <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(r.fn)} ${esc(r.ln)}</td>
       <td style="padding:6px 8px">${esc(r.email)}</td>
       <td style="padding:6px 8px">${esc(r.dep||'—')}</td>
       <td style="padding:6px 8px">${esc(r.roleId?((DB.roleProfiles[r.roleId]||{}).name||''):(r.role?r.role+' ⚠':'—'))}</td>
       <td style="padding:6px 8px;color:var(--c-text-3)">${r.genPw?'auto':'from file'}</td>
-      <td style="padding:6px 8px;font-size:11px;color:${r.errs.length?'#C41E32':'#8A5F00'}">${esc([...r.errs,...r.warns].join(' · '))||'✓'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:${r.errs.length?'#A63528':'#7C5A26'}">${esc([...r.errs,...r.warns].join(' · '))||'✓'}</td>
     </tr>`;
   body.innerHTML=`<div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-      ${chip(ok.length,'ready','#E8F7EE','#0F7A45')}
-      ${bad.length?chip(bad.length,'skipped (errors)','#FEEEEF','#C41E32'):''}
-      ${wn.length?chip(wn.length,'with warnings','#FEF5E0','#8A5F00'):''}
+      ${chip(ok.length,'ready','#E9F1E8','#346A47')}
+      ${bad.length?chip(bad.length,'skipped (errors)','#F9EBE5','#A63528'):''}
+      ${wn.length?chip(wn.length,'with warnings','#F9F1DF','#7C5A26'):''}
       <span style="flex:1"></span>
       <button onclick="document.getElementById('uimp-body').innerHTML=(_uImpPickHTML());_UIMP=null" class="ui-btn ui-btn-ghost ui-btn-sm">Pick another file</button>
     </div>
@@ -587,7 +587,7 @@ App._uImpRun=async()=>{
   const body=document.getElementById('uimp-body');if(!body)return;
   body.innerHTML=`<div style="padding:10px 0">
     <div style="font-size:13.5px;font-weight:800;color:var(--c-text);margin-bottom:10px">Creating ${rows.length} user${rows.length===1?'':'s'}…</div>
-    <div style="height:7px;background:var(--c-surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px"><div id="uimp-bar" style="height:100%;width:0%;background:#0F766E;border-radius:4px;transition:width .25s"></div></div>
+    <div style="height:7px;background:var(--c-surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px"><div id="uimp-bar" style="height:100%;width:0%;background:#54433C;border-radius:4px;transition:width .25s"></div></div>
     <div id="uimp-live" style="max-height:260px;overflow-y:auto;font-size:12px;color:var(--c-text-2)"></div>
     <div style="font-size:11px;color:var(--c-text-3);margin-top:10px">Keep this window open — each row creates a real login account.</div>
   </div>`;
@@ -642,19 +642,19 @@ App._uImpRun=async()=>{
 function _uImpResults(results){
   const body=document.getElementById('uimp-body');if(!body)return;
   const okR=results.filter(x=>x.ok),bad=results.filter(x=>!x.ok);
-  const tr=x=>`<tr style="${x.ok?'':'background:#FEEEEF;'}border-top:1px solid var(--c-border)">
+  const tr=x=>`<tr style="${x.ok?'':'background:#F9EBE5;'}border-top:1px solid var(--c-border)">
       <td style="padding:6px 8px">${x.ok?'✅':'❌'}</td>
       <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(x.r.fn)} ${esc(x.r.ln)}</td>
       <td style="padding:6px 8px">${esc(x.r.email)}</td>
       <td style="padding:6px 8px;font-family:monospace">${x.ok?esc(x.r.pw):'—'}</td>
-      <td style="padding:6px 8px;font-size:11px;color:${x.ok?'var(--c-text-3)':'#C41E32'}">${x.ok?(x.r.genPw?'auto-generated':'from file')+(x.r.warns.length?' · '+esc(x.r.warns.join(' · ')):''):esc(x.msg||'failed')}</td>
+      <td style="padding:6px 8px;font-size:11px;color:${x.ok?'var(--c-text-3)':'#A63528'}">${x.ok?(x.r.genPw?'auto-generated':'from file')+(x.r.warns.length?' · '+esc(x.r.warns.join(' · ')):''):esc(x.msg||'failed')}</td>
     </tr>`;
   body.innerHTML=`<div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-      <span style="font-size:12px;font-weight:800;background:#E8F7EE;color:#0F7A45;padding:3px 11px;border-radius:20px">${okR.length} created</span>
-      ${bad.length?`<span style="font-size:12px;font-weight:800;background:#FEEEEF;color:#C41E32;padding:3px 11px;border-radius:20px">${bad.length} failed</span>`:''}
+      <span style="font-size:12px;font-weight:800;background:#E9F1E8;color:#346A47;padding:3px 11px;border-radius:20px">${okR.length} created</span>
+      ${bad.length?`<span style="font-size:12px;font-weight:800;background:#F9EBE5;color:#A63528;padding:3px 11px;border-radius:20px">${bad.length} failed</span>`:''}
     </div>
-    ${okR.length?`<div style="font-size:12px;color:#8A5F00;background:#FEF5E0;border:1px solid #FBE6A6;border-radius:10px;padding:9px 12px;margin-bottom:10px">🔑 Passwords are shown below <b>only this once</b> — download the credentials sheet before closing.</div>`:''}
+    ${okR.length?`<div style="font-size:12px;color:#7C5A26;background:#F9F1DF;border:1px solid #EEDEC0;border-radius:10px;padding:9px 12px;margin-bottom:10px">🔑 Passwords are shown below <b>only this once</b> — download the credentials sheet before closing.</div>`:''}
     <div style="max-height:300px;overflow:auto;border:1px solid var(--c-border);border-radius:12px">
       <table style="width:100%;font-size:12px;border-collapse:collapse">
         <thead><tr style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--c-text-3)">

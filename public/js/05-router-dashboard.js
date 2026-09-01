@@ -23,11 +23,11 @@ function dashboardPage(){
   const chartCard=(key,title,sub)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3);margin-top:1px">${sub}</div></div><div style="height:210px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
   return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
-      ${kpi('On-time rate',rate===null?'—':rate+'%','#0F766E','approve',"App.go('allcl')",'last 30 days')}
-      ${kpi('Late',late,'#DC2626','alert',"App.go('allcl')",'submissions (30d)')}
-      ${kpi('Open tickets',openTk+progTk,'#0F766E','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
-      ${kpi('Approvals waiting',apprN,'#128A84','approve',"App.go('approvals')",'in your inbox')}
-      ${okrs.length?kpi('OKRs',okrs.length,'#8B5CF6','chart',"App.go('okr')",'objectives you can see'):''}
+      ${kpi('On-time rate',rate===null?'—':rate+'%','#54433C','approve',"App.go('allcl')",'last 30 days')}
+      ${kpi('Late',late,'#B3402E','alert',"App.go('allcl')",'submissions (30d)')}
+      ${kpi('Open tickets',openTk+progTk,'#54433C','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
+      ${kpi('Approvals waiting',apprN,'#936659','approve',"App.go('approvals')",'in your inbox')}
+      ${okrs.length?kpi('OKRs',okrs.length,'#9C7386','chart',"App.go('okr')",'objectives you can see'):''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px">
       ${chartCard('daily','Daily submissions','On time vs late — last 14 days')}
@@ -53,7 +53,7 @@ function _drawDashCharts(){
   const T=_aChartTheme();
   const{subs,tickets}=_dashScope();
   const today=todayISO();
-  const C={brand:'#0F766E',brandSoft:'rgba(15,118,110,.14)',green:'#2BBE71',greenSoft:'rgba(43,190,113,.16)',red:'#D92D20',amber:'#E0A106',sky:'#00C2C7',violet:'#8B5CF6',grey:'#90A5AB',ink:'#10262E'};
+  const C={brand:'#54433C',brandSoft:'rgba(84,67,60,.14)',green:'#5FA077',greenSoft:'rgba(43,190,113,.16)',red:'#B2412C',amber:'#C9A76B',sky:'#B7826F',violet:'#9C7386',grey:'#A59788',ink:'#13171B'};
   const mk=(key,cfg)=>{const cv=document.querySelector('canvas[data-dash-chart="'+key+'"]');if(!cv)return;cfg.options=cfg.options||{};cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;cfg.options.plugins=cfg.options.plugins||{};cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:T.tick,font:{size:10.5},boxWidth:14,padding:8}};_aCharts.push(new Chart(cv.getContext('2d'),cfg));};
   const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
   const fmtDay=(iso)=>{const d=new Date(iso+'T00:00:00');return d.toLocaleDateString(undefined,{day:'numeric',month:'short'});};
@@ -72,7 +72,7 @@ function _drawDashCharts(){
     {label:'Goal (100%)',data:wk.map(()=>100),borderColor:C.grey,borderDash:[6,5],pointRadius:0,fill:false,borderWidth:1.5}]},
     options:{scales:{x:{ticks:{color:T.tick,font:{size:9.5},maxRotation:0},grid:{display:false}},y:{beginAtZero:true,suggestedMax:110,ticks:{color:T.tick,font:{size:10},callback:v=>v+'%'},grid:{color:T.grid}}}}});
   // 3) outcomes doughnut
-  const stMap=[['On Time',C.green],['Late',C.red],['Pending Approval',C.amber],['Rejected','#951B1B'],['Editing',C.sky]];
+  const stMap=[['On Time',C.green],['Late',C.red],['Pending Approval',C.amber],['Rejected','#7B291B'],['Editing',C.sky]];
   const stData=stMap.map(([s])=>subs.filter(x=>x.status===s).length);
   mk('status',{type:'doughnut',data:{labels:stMap.map(([s])=>s),datasets:[{data:stData,backgroundColor:stMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
   // 4) dept compliance bars
@@ -87,7 +87,7 @@ function _drawDashCharts(){
   if(typeof okrVisible==='function'&&can('okr','view')){
     const okrs=okrVisible();
     if(okrs.length){
-      const oMap=[['Achieved',C.green],['On track',C.sky],['Off track',C.amber],['Not achieved','#951B1B'],['No data',C.grey]];
+      const oMap=[['Achieved',C.green],['On track',C.sky],['Off track',C.amber],['Not achieved','#7B291B'],['No data',C.grey]];
       const oData=oMap.map(([s])=>okrs.filter(o=>okrStatusOf(o)===s).length);
       mk('okr',{type:'doughnut',data:{labels:oMap.map(([s])=>s),datasets:[{data:oData,backgroundColor:oMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
     }
