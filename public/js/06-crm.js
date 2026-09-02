@@ -2489,25 +2489,29 @@ function _crmDingPlay(ctx){
   if(!ctx||ctx.state!=='running')return;
   try{
     var t0=ctx.currentTime+0.02;
-    /* hard-clip waveshaper: the rough, distorted edge */
-    var sh=ctx.createWaveShaper();var cur=new Float32Array(256);
-    for(var ci=0;ci<256;ci++){var xx=ci/128-1;cur[ci]=Math.max(-0.85,Math.min(0.85,xx*3.2));}
-    sh.curve=cur;sh.oversample='none';
-    var master=ctx.createGain();master.gain.value=1.0;
-    var comp=ctx.createDynamicsCompressor();
-    sh.connect(master);master.connect(comp);comp.connect(ctx.destination);
-    /* alternating two-tone klaxon — 8 rough bursts, detuned saw+square stack + low buzz */
-    for(var i=0;i<8;i++){
-      var t=t0+i*0.155;var f=(i%2?880:587);
-      var dets=[-14,0,13];
-      for(var di=0;di<dets.length;di++){
-        var o=ctx.createOscillator();o.type=dets[di]?'sawtooth':'square';o.frequency.setValueAtTime(f+dets[di],t);
-        var g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.006);g.gain.setValueAtTime(0.5,t+0.115);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-        o.connect(g);g.connect(sh);o.start(t);o.stop(t+0.152);
+    var master=ctx.createGain();master.gain.value=0.92;
+    var lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3900;
+    master.connect(lp);lp.connect(ctx.destination);
+    /* insistent bright triple-beep that rises and repeats — attention-grabbing, ~0.85s, not harsh */
+    var beeps=[
+      {f:988,t:0.00,d:0.09},   /* B5  */
+      {f:1319,t:0.12,d:0.09},  /* E6  */
+      {f:1760,t:0.24,d:0.12},  /* A6 (accent) */
+      {f:1319,t:0.46,d:0.09},  /* E6 (repeat) */
+      {f:1760,t:0.58,d:0.20}   /* A6 (hold, resolves) */
+    ];
+    for(var i=0;i<beeps.length;i++){
+      var t=t0+beeps[i].t,f=beeps[i].f,d=beeps[i].d;
+      /* square gives the alerting "beep" edge; sine adds body; both softened by the lowpass */
+      var mix=[[f,'square',0.34],[f,'sine',0.30]];
+      for(var v=0;v<mix.length;v++){
+        var o=ctx.createOscillator();o.type=mix[v][1];o.frequency.setValueAtTime(mix[v][0],t);
+        var g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);
+        g.gain.exponentialRampToValueAtTime(mix[v][2],t+0.004);
+        g.gain.setValueAtTime(mix[v][2],t+d*0.6);
+        g.gain.exponentialRampToValueAtTime(0.0006,t+d);
+        o.connect(g);g.connect(master);o.start(t);o.stop(t+d+0.02);
       }
-      var b=ctx.createOscillator();b.type='square';b.frequency.setValueAtTime(f/4,t);
-      var bg=ctx.createGain();bg.gain.setValueAtTime(0.0001,t);bg.gain.exponentialRampToValueAtTime(0.35,t+0.008);bg.gain.exponentialRampToValueAtTime(0.001,t+0.15);
-      b.connect(bg);bg.connect(sh);b.start(t);b.stop(t+0.152);
     }
   }catch(e){}
 }

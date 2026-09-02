@@ -1233,3 +1233,35 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   #content .oc li{flex-shrink:0!important}
   #content .oc li>div{flex-shrink:0!important}
 }
+
+/* ════════════ MOBILE COMPACTION (v12) — dense, app-native sizing ════════════ */
+@media(max-width:767px){
+  /* tighter page gutters */
+  #content{padding:15px 13px 92px!important}
+  /* Titles: keep the brand uppercase but tighter tracking + smaller so they don't dominate */
+  main#content h1.fd,main#content h1{font-size:17.5px!important;letter-spacing:.03em!important;line-height:1.2!important}
+  main#content h1.fd + p,#content h1 + p{font-size:11.5px!important;line-height:1.35!important}
+  /* Buttons: on-brand uppercase, tighter + smaller, still tappable */
+  .ui-btn{font-size:11.5px!important;letter-spacing:.03em!important;min-height:38px!important;padding:8px 13px!important;gap:6px!important}
+  .ui-btn-sm{min-height:31px!important;padding:6px 10px!important;font-size:10.5px!important}
+  .ui-btn-lg{min-height:42px!important}
+  /* Labels: less shouty */
+  .ui-label{letter-spacing:.04em!important;font-size:10.5px!important;margin-bottom:5px!important}
+  /* Filters + inputs: text inputs keep 16px (no iOS zoom); selects shrink (no zoom on select) */
+  #content .ui-select,#content select{font-size:13.5px!important;min-height:38px!important;padding:8px 30px 8px 12px!important}
+  #content input.ui-input,#content input[type="text"],#content input[type="search"],#content input[type="email"],#content input[type="number"],#content textarea{font-size:16px!important;min-height:38px!important;padding:8px 12px!important}
+  /* Toggles: smaller pill */
+  .tog{width:32px!important;height:19px!important}
+  .tog span{width:15px!important;height:15px!important;top:2px!important;left:2px!important}
+  .tog.on span{transform:translateX(13px)!important}
+  /* Cards + list rows: tighter */
+  .ui-card{border-radius:13px}
+  #content .stat-card-click{padding:12px!important}
+  #content .bb-kpis .stat-card-click{padding:11px!important}
+  /* KPI numbers: compact */
+  #content [style*="font-size:30px"],#content [style*="font-size:28px"][style*="font-weight:800"]{font-size:19px!important}
+  /* Ticket / list rows: normalise body text */
+  #content .crm-trow td,#content .crm-trow th{font-size:12.5px!important;padding:8px 9px!important}
+  /* Search boxes / segmented filters read smaller */
+  #content .hscroll button,#content .ui-tab,#content .ui-tab-pill{font-size:12px!important;min-height:31px!important;padding:6px 11px!important}
+}
