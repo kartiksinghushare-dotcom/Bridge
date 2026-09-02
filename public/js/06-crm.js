@@ -125,7 +125,7 @@ function _crmStatusSel(b,convo,style){if(!can('crm','edit'))return _crmStatusChi
 function _crmDueMeta(c){if(!c||!c.isTicket||!c.dueDate)return null;var _b=_crmBoard(c.boardId);var over=c.dueDate<todayISO()&&!_crmIsDone(_b,c.status);var today=c.dueDate===todayISO();return{overdue:over,today:today,label:fmtS(c.dueDate),color:over?'#B3402E':today?'#7C5A26':'#786A5F',bg:over?'#FAEDE8':today?'#FBF7EB':'#F4F0EA'};}
 function _crmCats(board){var c=board&&board.settings&&board.settings.categories;return (c&&c.length)?c:[];}
 const _crmFirst=u=>u?(fullName(u).split(' ')[0]||fullName(u)):'';
-const _CRM_EMO=['\u{1F44D}','❤️','\u{1F602}','\u{1F389}','\u{1F62E}'];
+const _CRM_EMO=['\u{1F44D}','❤️','\u{1F602}','\u{1F62E}','\u{1F622}','\u{1F64F}'];
 function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#54433C','#96695B','#A97C33','#8A5D6B','#BC6E62','#A5796A'][h%6];return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>';}
 /* v3.20 — the chip is a CLASS, not inline styles, so it can invert inside the sender's own
    orange bubble (.crm-mine): a pale chip with dark-orange text was unreadable on #54433C. */
@@ -302,23 +302,23 @@ function _crmConvoRow(c,activeId,showBoard){
   var asg=c.assignedTo&&uById(c.assignedTo)?'<span title="Assigned to '+esc(fullName(uById(c.assignedTo)))+'">'+avatar(uById(c.assignedTo),'w-[18px] h-[18px]','text-[8px]')+'</span>':(c.assignedGroup&&_crmGroup(c.assignedGroup)?'<span title="Assigned to group “'+esc(_crmGroup(c.assignedGroup).name)+'”" style="width:18px;height:18px;border-radius:50%;background:#EEE4D5;color:#3E322B;display:inline-grid;place-items:center;flex-shrink:0">'+ic('users','w-2.5 h-2.5')+'</span>':'');
   var bd=showBoard&&_crmBoard(c.boardId)?'<span style="font-size:9.5px;font-weight:700;color:#786A5F;background:#F3EFE7;border-radius:5px;padding:1px 6px">'+esc(_crmBoard(c.boardId).name)+'</span>':'';
   var del=can('crm','delete')?'<button title="Delete" onclick="event.stopPropagation();App._crmDelConvo(\''+c.id+'\')" class="crm-del" style="position:absolute;top:9px;right:9px;width:22px;height:22px;border:none;background:#fff;color:#B3402E;cursor:pointer;border-radius:6px;display:none;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.12)">'+ic('trash','w-3.5 h-3.5')+'</button>':'';
-  return'<div class="crm-row" onclick="'+(showBoard?'App._crmOpenResult':'App._crmSelConvo')+'(\''+c.id+'\')" style="position:relative;cursor:pointer;padding:7px 10px;border-bottom:1px solid #F4F0EA;background:'+(active?'#F7F4EF':unread?'#F9F6F2':'#fff')+';border-left:3px solid '+(active?'#54433C':unread?'#AF7B6D':'transparent')+'">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+_crmCustAv(c.customer,24)
+  return'<div class="crm-row" data-cid="'+c.id+'" onclick="'+(showBoard?'App._crmOpenResult':'App._crmSelConvo')+'(\''+c.id+'\')" style="position:relative;cursor:pointer;padding:8px 10px;border-bottom:1px solid #F4F0EA;background:'+(active?'#F7F4EF':unread?'#F9F6F2':'#fff')+';border-left:3px solid '+(active?'#54433C':unread?'#D1B68F':'transparent')+'">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+_crmCustAv(c.customer,30)
     +'<span style="font-size:13px;font-weight:700;color:#13171B;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.customer||'—')+'</span>'
-    +(unread?'<span title="Unread" style="width:8px;height:8px;border-radius:50%;background:#54433C;flex-shrink:0"></span>':'')+'<span style="font-size:10px;color:'+(unread?'#54433C':'#A8998A')+';font-weight:'+(unread?'800':'400')+';flex-shrink:0">'+_crmRel(c.lastAt)+'</span></div>'
-    +'<div style="font-size:12px;font-weight:600;color:#3A312A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:32px">'+esc(c.title||'')+'</div>'
-    +'<div style="display:flex;align-items:center;gap:6px;margin-left:32px;margin-top:2px">'+bd+'<span style="font-size:11px;color:#A59788;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(snip)+'</span>'+typeChip+(due?'<span style="font-size:9.5px;font-weight:800;color:'+due.color+';background:'+due.bg+';border-radius:5px;padding:1px 6px;flex-shrink:0">'+(due.overdue?'\u26A0 ':'')+due.label+'</span>':'')+'</div>'+del+'</div>';
+    +(unread?'<span class="crm-unb" title="Unread">'+_crmUnreadN(c)+'</span>':'')+'<span style="font-size:10px;color:'+(unread?'#54433C':'#A8998A')+';font-weight:'+(unread?'800':'400')+';flex-shrink:0">'+_crmRel(c.lastAt)+'</span></div>'
+    +'<div style="font-size:12px;font-weight:600;color:#3A312A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:38px">'+esc(c.title||'')+'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-left:38px;margin-top:2px">'+bd+'<span style="font-size:11px;color:#A59788;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(snip)+'</span>'+typeChip+(due?'<span style="font-size:9.5px;font-weight:800;color:'+due.color+';background:'+due.bg+';border-radius:5px;padding:1px 6px;flex-shrink:0">'+(due.overdue?'\u26A0 ':'')+due.label+'</span>':'')+'</div>'+del+'</div>';
 }
 function _crmReactChips(m,cid){
   var ks=Object.keys(m.reactions||{}).filter(function(e){return (m.reactions[e]||[]).length;});
   if(!ks.length)return'';
-  return'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">'+ks.map(function(e){var arr=m.reactions[e]||[];var mine=arr.indexOf(S.uid)>=0;return'<button onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;border:1px solid '+(mine?'#54433C':'#E6DED3')+';background:'+(mine?'#F7F4EF':'#fff')+';border-radius:20px;padding:1px 7px;cursor:pointer">'+e+' '+arr.length+'</button>';}).join('')+'</div>';
+  return'<div class="crm-reacts">'+ks.map(function(e){var arr=m.reactions[e]||[];var mine=arr.indexOf(S.uid)>=0;return'<button class="crm-rchip'+(mine?' on':'')+'" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')">'+e+(arr.length>1?' <b>'+arr.length+'</b>':'')+'</button>';}).join('')+'</div>';
 }
 function _crmMsgActions(m,cid,thread){
   if(m.fromCustomer)return'';
   var own=m.senderId===S.uid;var part=can('crm','create');if(!part&&!can('crm','delete'))return'';
   var b='';
-  if(part)b+=_CRM_EMO.map(function(e){return'<button title="React" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;padding:2px 3px">'+e+'</button>';}).join('');
+  if(part)b+=_CRM_EMO.map(function(e){return'<button title="React" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;padding:2px 3px">'+e+'</button>';}).join('')+'<button title="More reactions" onclick="App._crmEmoOpen(event,\'react\',\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;font-size:14px;font-weight:800;line-height:1;padding:2px 5px">+</button>';
   if(part&&!thread&&!m.parentId)b+='<button title="Reply in thread" onclick="App._crmOpenThread(\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;padding:2px 3px">'+ic('msg','w-3.5 h-3.5')+'</button>';
   if(part)b+='<button title="Create ticket from this message" onclick="App._crmTicketFromMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#54433C;padding:2px 3px">'+ic('ticket','w-3.5 h-3.5')+'</button>';
   if(own&&part)b+='<button title="Edit" onclick="App._crmEditMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;padding:2px 3px">'+ic('edit','w-3.5 h-3.5')+'</button>';
@@ -333,17 +333,21 @@ function _crmMsg(m,cid,thread,prev){
   var grouped=false;
   if(prev&&!editing){var same=(!!m.fromCustomer===!!prev.fromCustomer)&&(m.fromCustomer?(m.name===prev.name):(m.senderId===prev.senderId));var dtms=0;try{dtms=new Date(m.at)-new Date(prev.at);}catch(e){}grouped=same&&dtms>=0&&dtms<5*60000;}
   if(grouped||(mine&&_isChat))av='<div style="width:24px;flex-shrink:0"></div>';
-  var bub=mine?'background:#54433C;color:#fff;border-radius:13px 13px 4px 13px':'background:#fff;color:#13171B;border:1px solid #EDE7DC;border-radius:13px 13px 13px 4px';
+  var bigemo=!editing&&!(m.images||[]).length&&_crmEmojiOnly(m.text);
+  var anim=_crmAnimCls(m,mine);
+  var meta='<span class="crm-meta'+(bigemo?' crm-meta-out':'')+'">'+(m.edited?'<i class="crm-edited">edited</i>':'')+_crmTime(m.at)+(mine&&m.senderId===S.uid?_crmTicks(m,cid):'')+'</span>';
+  var bub=mine?'crm-bub-mine':'crm-bub-their';
   var inner=editing
     ?'<textarea id="crm-edit-'+m.id+'" rows="2" style="width:280px;max-width:60vw;border:1px solid #E6DED3;border-radius:10px;padding:8px;font-size:13.5px;font-family:inherit;outline:none">'+esc(m.text)+'</textarea><div style="display:flex;gap:6px;margin-top:5px;justify-content:flex-end"><button onclick="App._crmCancelEdit()" style="font-size:11px;padding:4px 9px;border:1px solid #E6DED3;background:#fff;border-radius:7px;cursor:pointer">Cancel</button><button onclick="App._crmSaveEdit(\''+cid+'\',\''+m.id+'\')" style="font-size:11px;padding:4px 9px;border:none;background:#54433C;color:#fff;border-radius:7px;cursor:pointer">Save</button></div>'
-    :'<div class="crm-bub" title="'+_crmDT(m.at)+'" style="'+bub+';padding:6px 10px;font-size:13px;line-height:1.4;word-break:break-word;box-shadow:0 1px 2px rgba(35,28,22,.04)">'+_crmAt(m.text)+(m.edited?' <span style="opacity:.55;font-size:10px">(edited)</span>':'')+_crmImgs(m.images)+'</div>';
+    :'<div class="crm-bub '+bub+(bigemo?' crm-bigemo':'')+((m.images||[]).length&&!m.text?' crm-media':'')+'" title="'+_crmDT(m.at)+'">'+_crmAt(m.text)+_crmImgs(m.images)+meta+'</div>';
   var replies=(!thread&&!m.parentId)?((_crmConvo(cid)||{messages:[]}).messages||[]).filter(x=>x.parentId===m.id):[];
   var opener=replies.length?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#54433C;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px">'+ic('msg','w-3 h-3')+replies.length+' repl'+(replies.length===1?'y':'ies')+'</button>':'';
-  var col='<div class="crm-msg'+(mine?' crm-mine':'')+'" onclick="App._crmMsgActs(event,this)" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'">'
-    +(grouped?'':'<div class="crm-who" style="font-size:10.5px;font-weight:700;color:#A59788;margin:0 4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+((_isChat&&mine)?'':esc(who)+' <span style="color:#D2C5B7">\u00B7</span> ')+'<span style="font-weight:600;color:#D2C5B7">'+_crmTime(m.at)+'</span></div>')
+  var col='<div class="crm-msg'+(mine?' crm-mine':'')+anim+'" data-mid="'+m.id+'"'+((!thread&&!m.parentId&&!editing)?' data-swipe="1"':'')+' onclick="App._crmMsgActs(event,this)" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'">'
+    +((grouped||mine)?'':'<div class="crm-who" style="font-size:10.5px;font-weight:700;color:#A59788;margin:0 4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+esc(who)+'</div>')
+    +'<span class="crm-swhint">'+ic('msg','w-3.5 h-3.5')+'</span>'
     +inner+_crmReactChips(m,cid)+opener
     +(editing?'':_crmMsgActions(m,cid,thread))+'</div>';
-  return'<div style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:9):0)+'px">'+av+col+'</div>';
+  return'<div class="crm-line" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+col+'</div>';
 }
 function _crmMentionItems(q){
   var b=_crmBoard(CRM.sel.boardId);var mem=_crmBoardPeople(b);q=(q||'').toLowerCase();
@@ -397,25 +401,26 @@ function _crmChatPane(convo,board){
     +(bgrps.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:6px 8px 2px">Groups</div>'+bgrps.map(function(g){var on=convo.assignedGroup===g.id;return'<button onclick="App._crmAssign(\''+convo.id+'\',\'grp:'+g.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:'+(on?'#EEE4D5':'transparent')+';border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\''+(on?'#EEE4D5':'transparent')+'\'"><span style="width:24px;height:24px;border-radius:50%;background:#EEE4D5;color:#3E322B;display:inline-grid;place-items:center;flex-shrink:0">'+ic('users','w-3 h-3')+'</span><span class="crm-mname" style="font-size:12.5px;font-weight:700;color:#13171B;flex:1">'+esc(g.name)+'</span><span style="font-size:10px;color:#A59788">'+((g.members||[]).length)+'</span></button>';}).join('')+'<div style="height:1px;background:#F1ECE4;margin:4px 6px"></div><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:2px 8px">People</div>':'')
     +bmem.map(u=>'<button onclick="App._crmAssign(\''+convo.id+'\',\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span class="crm-mname" style="font-size:12.5px;font-weight:600;color:#13171B">'+esc(fullName(u))+'</span></button>').join('')+'</div></div>':(asgU?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#786A5F">'+avatar(asgU,'w-5 h-5','text-[8px]')+esc(_crmFirst(asgU))+'</span>':(asgG2?_crmGroupChip(asgG2):''));
   var top=(convo.messages||[]).filter(x=>!x.parentId);
-  var thread=top.length?top.map(function(m,i){return _crmMsg(m,convo.id,false,top[i-1]);}).join(''):'<div style="flex:1;display:grid;place-items:center;color:#A8998A;font-size:12.5px">No messages yet — say hello \u{1F44B}</div>';
+  var thread=top.length?_crmMsgsWithDates(top,convo.id,false):'<div style="flex:1;display:grid;place-items:center;color:#A8998A;font-size:12.5px">No messages yet — say hello \u{1F44B}</div>';
   var canSend=can('crm','create');
   // thread panel
   var tpanel='';
   if(CRM.sel.threadId){var pm=(convo.messages||[]).find(x=>x.id===CRM.sel.threadId);var reps=(convo.messages||[]).filter(x=>x.parentId===CRM.sel.threadId);
-    tpanel='<div class="crm-thread-panel" style="width:320px;flex-shrink:0;border-left:1px solid #EDE7DC;display:flex;flex-direction:column;min-height:0;background:#fff"><div style="padding:9px 12px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:800;font-size:13.5px">Thread</span><button onclick="App._crmCloseThread()" style="border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x','w-4 h-4')+'</button></div><div id="crm-tthread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;min-height:0">'+(pm?_crmMsg(pm,convo.id,true):'<div style="color:#A59788;font-size:12px">Original message was deleted.</div>')+'<div style="height:1px;background:#F1ECE4;margin:2px 0"></div><div style="font-size:11px;color:#A59788;font-weight:700">'+reps.length+' repl'+(reps.length===1?'y':'ies')+'</div>'+reps.map(function(r,i){return _crmMsg(r,convo.id,true,reps[i-1]);}).join('')+'</div>'+(canSend?'<div style="border-top:1px solid #EDE7DC;padding:8px;display:flex;gap:7px;align-items:flex-end"><textarea id="crm-tinput" rows="1" placeholder="Reply…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSendReply();}" style="flex:1;resize:none;border:1px solid #E6DED3;border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;max-height:100px"></textarea><button onclick="App._crmSendReply()" style="width:34px;height:34px;border-radius:9px;border:none;background:#54433C;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'')+'</div>';
+    tpanel='<div class="crm-thread-panel" style="width:320px;flex-shrink:0;border-left:1px solid #EDE7DC;display:flex;flex-direction:column;min-height:0;background:#fff"><div style="padding:9px 12px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:800;font-size:13.5px">Thread</span><button onclick="App._crmCloseThread()" style="border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x','w-4 h-4')+'</button></div><div id="crm-tthread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;min-height:0">'+(pm?_crmMsg(pm,convo.id,true):'<div style="color:#A59788;font-size:12px">Original message was deleted.</div>')+'<div style="height:1px;background:#F1ECE4;margin:2px 0"></div><div style="font-size:11px;color:#A59788;font-weight:700">'+reps.length+' repl'+(reps.length===1?'y':'ies')+'</div>'+reps.map(function(r,i){return _crmMsg(r,convo.id,true,reps[i-1]);}).join('')+'</div>'+(canSend?'<div style="border-top:1px solid #EDE7DC;padding:8px;display:flex;gap:7px;align-items:flex-end"><div class="crm-pill crm-pill-sm"><button type="button" class="crm-emobtn" title="Emoji" onclick="App._crmEmoOpen(event,\'tinput\')">'+_CRM_SMILEY+'</button><textarea id="crm-tinput" rows="1" placeholder="Reply" oninput="App._crmGrow(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSendReply();}"></textarea></div><button class="crm-sendbtn crm-sendbtn-sm" onclick="App._crmSendReply()" aria-label="Send reply">'+ic('send','w-4 h-4')+'</button></div>':'')+'</div>';
   }
   // forward overlay
   var _fl=CRM.convos.filter(c=>_crmVisibleBoardIds()[c.boardId]&&c.id!==CRM.sel.convoId);var fwd='';
   if(CRM.fwdMsgId){fwd='<div style="position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.15);display:grid;place-items:center" onclick="App._crmForwardClose()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:340px;max-height:74%;display:flex;flex-direction:column;overflow:hidden"><div style="padding:12px 14px;border-bottom:1px solid #EDE7DC;font-weight:800;display:flex;align-items:center;justify-content:space-between">Forward to…<button onclick="App._crmForwardClose()" style="border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x','w-4 h-4')+'</button></div><div class="crm-scroll" style="overflow-y:auto;padding:6px">'+(_fl.length?_fl.slice(0,80).map(c=>'<button onclick="App._crmDoForward(\''+c.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+_crmCustAv(c.customer,24)+'<div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.customer||c.title||'—')+'</div><div style="font-size:11px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((_crmBoard(c.boardId)?_crmBoard(c.boardId).name:'')+' · '+(c.title||''))+'</div></div></button>').join(''):'<div style="padding:18px;text-align:center;color:#A59788;font-size:12.5px">No other conversations to forward to.</div>')+'</div></div></div>';}
   return'<div class="crm-chatpane" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative">'+fwd
     +'<div class="crm-chathdr" style="padding:9px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0">'+'<button class="crm-only-mob crm-tap" aria-label="Back" onclick="App._crmMobBack()" style="width:34px;height:34px;border:1px solid #E6DED3;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#3A312A;flex-shrink:0;margin-right:2px">'+ic('back','w-5 h-5')+'</button>'+_crmCustAv(convo.customer,34)
-    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#13171B;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.title||'—')+'</div><div class="crm-chatsub" style="font-size:12px;color:#A59788;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')+'</div></div>'+meta+_crmHdrBtns(convo,board)+'</div>'
+    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#13171B;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.title||'—')+'</div><div id="crm-chatsub" class="crm-chatsub" style="font-size:12px;color:#A59788;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')+'</div></div>'+meta+_crmHdrBtns(convo,board)+'</div>'
     +'<div class="crm-chatbody" style="flex:1;display:flex;min-height:0">'
       +'<div class="crm-threadcol" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative" ondragover="App._crmDragOver(event)" ondragleave="App._crmDragLeave(event)" ondrop="App._crmDrop(event)">'
         +'<div id="crm-drop" style="display:none;position:absolute;inset:10px;z-index:40;background:rgba(84,67,60,.08);border:2px dashed #54433C;border-radius:12px;place-items:center;pointer-events:none"><div style="text-align:center;color:#3E322B;font-weight:700">'+ic('upload','w-7 h-7')+'<div style="margin-top:6px">Drop images to attach</div></div></div>'
-        +'<div id="crm-thread" class="crm-scroll" style="flex:1;overflow-y:auto;padding:10px 14px;background:#FAF7F3;display:flex;flex-direction:column;min-height:0">'+thread+'</div>'
+        +'<div id="crm-thread" class="crm-scroll crm-wall" onscroll="App._crmThScroll(this)" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;min-height:0">'+thread+'</div>'
+        +'<button id="crm-jump" onclick="App._crmJump()" aria-label="Jump to latest">'+ic('chevD','w-4 h-4')+'</button>'
         +'<div class="crm-composer" style="border-top:1px solid #EDE7DC;padding:8px 12px;position:relative;flex-shrink:0"><div id="crm-preview" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div><div id="crm-mention" style="display:none;position:absolute;bottom:calc(100% + 6px);left:14px;z-index:60;background:#fff;border:1px solid #E6DED3;border-radius:12px;box-shadow:0 12px 32px rgba(35,28,22,.18);padding:6px;width:240px;max-height:230px;overflow:auto"></div>'
-        +(canSend?'<div class="crm-sendrow" style="display:flex;align-items:flex-end;gap:8px"><label title="Attach image" style="width:36px;height:36px;border-radius:10px;border:1px solid #E6DED3;background:#fff;cursor:pointer;color:#786A5F;display:grid;place-items:center;flex-shrink:0">'+ic('cam','w-4 h-4')+'<input type="file" accept="image/*" multiple onchange="App._crmPickImg(this)" style="display:none"/></label><textarea id="crm-input" rows="1" placeholder="'+(_crmIsMob()?'Message…':'Message… @ to tag · Enter to send')+'" oninput="App._crmOnInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSend();}" style="flex:1;resize:none;border:1px solid #E6DED3;border-radius:11px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;max-height:120px"></textarea><button onclick="App._crmSend()" style="width:38px;height:38px;border-radius:11px;border:none;background:#54433C;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('send','w-4 h-4')+'</button></div>':'<div style="text-align:center;color:#A8998A;font-size:12px;padding:8px">Read-only access.</div>')
+        +(canSend?'<div class="crm-sendrow" style="display:flex;align-items:flex-end;gap:7px"><div class="crm-pill"><button type="button" class="crm-emobtn" title="Emoji" onclick="App._crmEmoOpen(event,\'input\')">'+_CRM_SMILEY+'</button><textarea id="crm-input" rows="1" placeholder="'+(_crmIsMob()?'Message':'Message… @ to tag · Enter to send')+'" oninput="App._crmOnInput(this)" onpaste="App._crmPaste(event)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();App._crmSend();}"></textarea><label class="crm-attbtn" title="Attach image">'+ic('cam','w-[18px] h-[18px]')+'<input type="file" accept="image/*" multiple onchange="App._crmPickImg(this)" style="display:none"/></label></div><button class="crm-sendbtn" onclick="App._crmSend()" aria-label="Send">'+ic('send','w-[18px] h-[18px]')+'</button></div>':'<div style="text-align:center;color:#A8998A;font-size:12px;padding:8px">Read-only access.</div>')
         +'</div></div>'+tpanel+_crmDetailsPanel(convo,board)+'</div></div>';
 }
 function _crmMine(c){return c.assignedTo===S.uid||c.createdBy===S.uid||(!!c.assignedGroup&&_crmGroupHasMe(c.assignedGroup));}
@@ -555,7 +560,7 @@ App._crmBoardMembersSave=async()=>{
     for(var i=0;i<removed.length;i++)await sb.from('crm_board_members').delete().eq('board_id',b.id).eq('user_id',removed[i]);
   }catch(e){console.warn('[CRM boardMembers save]',e&&e.message);toast('Saved locally, sync failed','warn');}
 };
-App._crmOnInput=(el)=>{var v=el.value,pos=el.selectionStart||v.length;var m=v.slice(0,pos).match(/@(\w*)$/);var d=document.getElementById('crm-mention');if(!d)return;if(m){d.innerHTML=_crmMentionItems(m[1]);d.style.display='block';}else{d.style.display='none';}};
+App._crmOnInput=(el)=>{App._crmGrow(el);_crmTypingSend();var v=el.value,pos=el.selectionStart||v.length;var m=v.slice(0,pos).match(/@(\w*)$/);var d=document.getElementById('crm-mention');if(!d)return;if(m){d.innerHTML=_crmMentionItems(m[1]);d.style.display='block';}else{d.style.display='none';}};
 App._crmPickMention=(who)=>{var el=document.getElementById('crm-input');if(!el)return;var v=el.value,pos=el.selectionStart||v.length;var before=v.slice(0,pos).replace(/@(\w*)$/,''),after=v.slice(pos);var name;if(who==='ALL')name='All';else if(String(who).indexOf('grp:')===0)name=_crmGroupToken(_crmGroup(String(who).slice(4)))||'group';else name=(_crmFirst(uById(who))||'user').replace(/[^\w]/g,'')||'user';var ins='@'+name+' ';el.value=before+ins+after;el.focus();var np=(before+ins).length;try{el.setSelectionRange(np,np);}catch(e){}var d=document.getElementById('crm-mention');if(d)d.style.display='none';};
 function _crmMentioned(text,board){
   var mem=_crmBoardPeople(board).map(function(u){return u.id;}); // board members only (v3.12)
@@ -569,9 +574,23 @@ App._crmSend=async()=>{
   App._crmCloseMsgActs();
   if(!can('crm','create'))return;var inp=document.getElementById('crm-input');var text=(inp?inp.value:'').trim();var imgs=(CRM.compose.images||[]).slice();
   if(!text&&!imgs.length)return;var c=_crmConvo(CRM.sel.convoId);if(!c)return;var board=_crmBoard(c.boardId);var id=uid('msg');var at=new Date().toISOString();
-  c.messages.push({id:id,senderId:S.uid,fromCustomer:false,text:text,images:imgs,at:at,reactions:{},parentId:null});c.lastAt=at;CRM.compose.images=[];
-  var tagged=_crmMentioned(text,board);rr();var t=document.getElementById('crm-thread');if(t)t.scrollTop=t.scrollHeight;var i2=document.getElementById('crm-input');if(i2)i2.focus();
-  await sbWrite({table:'crm_messages',op:'insert',id:id,values:{id:id,conversation_id:c.id,sender_id:S.uid||null,from_customer:false,body:text,images:imgs,created_at:at}},{label:'Message'});sbWrite({table:'crm_conversations',op:'update',id:c.id,match:{col:'id',val:c.id},values:{last_at:at}},{label:'Conversation',silent:true});try{await _crmNotify(tagged,c,at);}catch(e){}
+  var tops=(c.messages||[]).filter(function(x){return !x.parentId;});var pv=tops[tops.length-1]||null;
+  var m={id:id,senderId:S.uid,fromCustomer:false,text:text,images:imgs,at:at,reactions:{},parentId:null};
+  c.messages.push(m);c.lastAt=at;CRM.compose.images=[];
+  CRM._pend=CRM._pend||{};CRM._pend[id]=1;
+  var tagged=_crmMentioned(text,board);
+  var t=document.getElementById('crm-thread');
+  if(t&&CRM.sel.convoId===c.id){
+    var html=(pv&&_crmDayKey(pv.at)===_crmDayKey(at)?'':_crmDatePill(at))+_crmMsg(m,c.id,false,pv);
+    var emptyNote=t.querySelector('[style*="place-items:center"]');if(emptyNote&&!t.querySelector('.crm-line'))t.innerHTML='';
+    t.insertAdjacentHTML('beforeend',html);t.scrollTop=t.scrollHeight;
+    if(inp){inp.value='';inp.style.height='auto';inp.focus();}
+    _crmRenderPreview();_crmTouchListRow(c);
+  }else{rr();var t2=document.getElementById('crm-thread');if(t2)t2.scrollTop=t2.scrollHeight;var i2=document.getElementById('crm-input');if(i2)i2.focus();}
+  try{if(navigator.vibrate)navigator.vibrate(8);}catch(e){}
+  await sbWrite({table:'crm_messages',op:'insert',id:id,values:{id:id,conversation_id:c.id,sender_id:S.uid||null,from_customer:false,body:text,images:imgs,created_at:at}},{label:'Message'});
+  delete CRM._pend[id];_crmTickFlip(id);
+  sbWrite({table:'crm_conversations',op:'update',id:c.id,match:{col:'id',val:c.id},values:{last_at:at}},{label:'Conversation',silent:true});try{await _crmNotify(tagged,c,at);}catch(e){}
 };
 async function _crmNotify(tagged,c,at){if(!tagged||!tagged.length)return;var who=me()?fullName(me()):'Someone';var txt='\u{1F4AC} '+who+' tagged you in “'+(c.title||'a conversation')+'”';var _lnk='crm:'+c.id;for(var k=0;k<tagged.length;k++){if(_crmInappOn('crm_mention')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:tagged[k],text:txt,time:at,read:false,link:_lnk});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:tagged[k],text:txt,read:false,created_at:at,link:_lnk});}catch(e){}}if(typeof queueEmail==='function'){try{queueEmail('crm_mention',tagged[k],null,null,{title:(c.title||''),actor:who,preview:''});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
 function _crmAddFiles(files){files=[].slice.call(files||[]).filter(f=>f.type&&f.type.indexOf('image/')===0);files.forEach(function(f){var rd=new FileReader();rd.onload=function(e){CRM.compose.images.push(e.target.result);var pv=document.getElementById('crm-preview');if(pv){pv.style.display='flex';pv.insertAdjacentHTML('beforeend','<div><img src="'+e.target.result+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E6DED3"/></div>');}};rd.readAsDataURL(f);});}
@@ -609,7 +628,15 @@ App._crmTfmCreate=async()=>{var d=CRM._tfm;if(!d)return;var g=function(id){var e
 App._crmDoForward=async(tid)=>{if(!can('crm','create'))return;var mid=CRM.fwdMsgId,m=null;for(var i=0;i<CRM.convos.length&&!m;i++){var mm=(CRM.convos[i].messages||[]).find(x=>x.id===mid);if(mm)m=mm;}if(!m)return;var tgt=_crmConvo(tid);if(!tgt)return;var id=uid('msg'),at=new Date().toISOString();var fm={id:id,senderId:S.uid,fromCustomer:false,text:(m.text?('↪ '+m.text):''),images:(m.images||[]).slice(),at:at,reactions:{},parentId:null};tgt.messages.push(fm);tgt.lastAt=at;CRM.fwdMsgId=null;toast('Forwarded ✓');rr();try{await sb.from('crm_messages').insert({id:id,conversation_id:tid,sender_id:S.uid||null,from_customer:false,body:fm.text,images:fm.images,created_at:at});await sb.from('crm_conversations').update({last_at:at}).eq('id',tid);}catch(e){}};
 App._crmOpenThread=(mid)=>{CRM.sel.threadId=mid;rr();var t=document.getElementById('crm-tthread');if(t)t.scrollTop=t.scrollHeight;};
 App._crmCloseThread=()=>{CRM.sel.threadId=null;rr();};
-App._crmSendReply=async()=>{App._crmCloseMsgActs();if(!can('crm','create'))return;var el=document.getElementById('crm-tinput');var text=el?el.value.trim():'';if(!text)return;var c=_crmConvo(CRM.sel.convoId);if(!c)return;var pid=CRM.sel.threadId;var id=uid('msg'),at=new Date().toISOString();c.messages.push({id:id,senderId:S.uid,fromCustomer:false,text:text,images:[],at:at,reactions:{},parentId:pid});c.lastAt=at;rr();var t=document.getElementById('crm-tthread');if(t)t.scrollTop=t.scrollHeight;var i2=document.getElementById('crm-tinput');if(i2)i2.focus();try{await sb.from('crm_messages').insert({id:id,conversation_id:c.id,sender_id:S.uid||null,from_customer:false,body:text,images:[],parent_id:pid,created_at:at});await sb.from('crm_conversations').update({last_at:at}).eq('id',c.id);}catch(e){}};
+App._crmSendReply=async()=>{App._crmCloseMsgActs();if(!can('crm','create'))return;var el=document.getElementById('crm-tinput');var text=el?el.value.trim():'';if(!text)return;var c=_crmConvo(CRM.sel.convoId);if(!c)return;var pid=CRM.sel.threadId;var id=uid('msg'),at=new Date().toISOString();
+  var reps=(c.messages||[]).filter(function(x){return x.parentId===pid;});var pv=reps[reps.length-1]||null;
+  var m={id:id,senderId:S.uid,fromCustomer:false,text:text,images:[],at:at,reactions:{},parentId:pid};
+  c.messages.push(m);c.lastAt=at;CRM._pend=CRM._pend||{};CRM._pend[id]=1;
+  var t=document.getElementById('crm-tthread');
+  if(t){t.insertAdjacentHTML('beforeend',_crmMsg(m,c.id,true,pv));t.scrollTop=t.scrollHeight;if(el){el.value='';el.style.height='auto';el.focus();}}
+  else{rr();var t2=document.getElementById('crm-tthread');if(t2)t2.scrollTop=t2.scrollHeight;var i2=document.getElementById('crm-tinput');if(i2)i2.focus();}
+  try{if(navigator.vibrate)navigator.vibrate(8);}catch(e){}
+  try{await sb.from('crm_messages').insert({id:id,conversation_id:c.id,sender_id:S.uid||null,from_customer:false,body:text,images:[],parent_id:pid,created_at:at});delete CRM._pend[id];_crmTickFlip(id);await sb.from('crm_conversations').update({last_at:at}).eq('id',c.id);}catch(e){delete CRM._pend[id];_crmTickFlip(id);}};
 /* v3.15: assign to a person (user-id) OR a group ('grp:<id>') — permission crm→assign covers both.
    Group assignment notifies every active member (in-app + email, personal toggles respected). */
 App._crmAssign=async(id,val)=>{if(!can('crm','assign'))return toast('No permission to assign','err');var c=_crmConvo(id);if(!c)return;
@@ -2051,8 +2078,10 @@ function _crmLiveStart(){
       .on('postgres_changes',{event:'*',schema:'public',table:'crm_views'},_crmOnStructEvent(_crmMergeViewRow))
       .on('postgres_changes',{event:'*',schema:'public',table:'crm_board_members'},_crmOnStructEvent(_crmMergeBoardMemberRow))
       .on('postgres_changes',{event:'*',schema:'public',table:'workspace_settings'},_crmOnStructEvent(_crmMergeSettingsRow))
+      .on('postgres_changes',{event:'*',schema:'public',table:'crm_reads'},_crmOnReadEvent)
       .subscribe(function(st){_crmRT.status=st;});
   }catch(e){_crmRT.status='ERROR';}
+  try{_crmTypingJoin();_crmLoadReadsAll();}catch(e){}
   if(!_crmRT.poll)_crmRT.poll=setInterval(function(){try{_crmPoll();}catch(e){}},9000);
   if(!_crmRT.visBound){
     _crmRT.visBound=true;
@@ -2221,3 +2250,202 @@ App._crmOpenFromNotification=(link,text)=>{
   setTimeout(function(){var t=document.getElementById('crm-thread');if(t)t.scrollTop=t.scrollHeight;},60);
   return true;
 };
+
+
+/* ═════════════════════════ CHAT+ — WhatsApp-grade layer ═════════════════════════
+   Adds: in-bubble time + sent/read ticks, date pills, entrance animations, big
+   emoji, full emoji picker (recents + categories), typing indicator over realtime
+   broadcast, optimistic sends, swipe-to-reply, scroll-to-latest, unread counts,
+   chat wallpaper, keyboard-safe pinning. Everything degrades gracefully. */
+
+var _CRM_SMILEY='<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M8.4 14.2c.9 1.4 2.1 2.1 3.6 2.1s2.7-.7 3.6-2.1"/><circle cx="9" cy="9.6" r=".6" fill="currentColor"/><circle cx="15" cy="9.6" r=".6" fill="currentColor"/></svg>';
+var _CRM_TK_CLOCK='<svg class="crm-tk" viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="6" cy="6" r="4.6"/><path d="M6 3.8V6l1.7 1.1"/></svg>';
+var _CRM_TK_ONE='<svg class="crm-tk" viewBox="0 0 14 11" width="13" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6 5 9.5 12.5 1.8"/></svg>';
+var _CRM_TK_TWO='<svg class="crm-tk" viewBox="0 0 18 11" width="16" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6 5 9.5 12.5 1.8"/><path d="M8.8 8.9l.7.6L16.9 1.8"/></svg>';
+
+function _crmEmojiOnly(t){t=(t||'').trim();if(!t||t.length>40)return false;try{if(!/^[\p{Extended_Pictographic}\p{Emoji_Component}\u{FE0F}\u{200D}\s]+$/u.test(t))return false;var n=0;if(window.Intl&&Intl.Segmenter){var seg=new Intl.Segmenter('en',{granularity:'grapheme'});for(var s of seg.segment(t.replace(/\s+/g,'')))n++;}else{n=Math.ceil(t.replace(/\s+/g,'').length/2);}return n>=1&&n<=6;}catch(e){return false;}}
+function _crmAnimCls(m,mine){CRM._seenM=CRM._seenM||{};if(CRM._seenM[m.id])return'';CRM._seenM[m.id]=1;return mine?' crm-anew-out':' crm-anew-in';}
+function _crmDayKey(iso){try{var d=new Date(iso);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}catch(e){return'';}}
+function _crmDayLbl(iso){try{var d=new Date(iso),n=new Date();var one=864e5;var d0=new Date(d.getFullYear(),d.getMonth(),d.getDate());var n0=new Date(n.getFullYear(),n.getMonth(),n.getDate());var diff=Math.round((n0-d0)/one);if(diff===0)return'Today';if(diff===1)return'Yesterday';if(diff<7)return d.toLocaleDateString('en-GB',{weekday:'long'});return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+(d.getFullYear()===n.getFullYear()?'':' '+d.getFullYear());}catch(e){return'';}}
+function _crmDatePill(iso){return'<div class="crm-datep"><span>'+_crmDayLbl(iso)+'</span></div>';}
+function _crmMsgsWithDates(list,cid,thread){
+  CRM._seenM=CRM._seenM||{};
+  if(CRM._seenConvo!==cid){list.forEach(function(m){CRM._seenM[m.id]=1;});CRM._seenConvo=cid;}
+  var out='',prev=null;
+  for(var i=0;i<list.length;i++){var m=list[i];
+    if(!prev||_crmDayKey(prev.at)!==_crmDayKey(m.at)){out+=_crmDatePill(m.at);prev=null;}
+    out+=_crmMsg(m,cid,thread,prev);prev=m;}
+  return out;
+}
+function _crmTicks(m,cid){CRM._pend=CRM._pend||{};var pend=CRM._pend[m.id];var read=!pend&&_crmReadByOthers(cid,m.at);return'<span class="crm-ticks'+(read?' crm-tk-read':'')+'" data-tk="'+m.id+'">'+(pend?_CRM_TK_CLOCK:(read?_CRM_TK_TWO:_CRM_TK_ONE))+'</span>';}
+function _crmTickFlip(id){try{var el=document.querySelector('[data-tk="'+id+'"]');if(!el)return;var cid=CRM.sel.convoId;var c=cid?_crmConvo(cid):null;var m=c?(c.messages||[]).find(function(x){return x.id===id;}):null;if(m)el.outerHTML=_crmTicks(m,cid);else el.innerHTML=_CRM_TK_ONE;}catch(e){}}
+function _crmReadByOthers(cid,at){var r=(CRM.readsAll||{})[cid];if(!r)return false;for(var k in r){if(k!==S.uid&&String(r[k])>=String(at))return true;}return false;}
+function _crmLoadReadsAll(){if(CRM._readsLoaded)return;CRM._readsLoaded=true;try{sb.from('crm_reads').select('conversation_id,user_id,last_seen_at').then(function(res){var rows=(res&&res.data)||[];if(!rows.length)return;CRM.readsAll=CRM.readsAll||{};rows.forEach(function(r){(CRM.readsAll[r.conversation_id]=CRM.readsAll[r.conversation_id]||{})[r.user_id]=r.last_seen_at;});_crmPaintTicks();}).catch?null:null;}catch(e){}}
+function _crmOnReadEvent(p){try{var row=(p&&(p.new||p.record))||{};if(!row.conversation_id||row.user_id===S.uid)return;CRM.readsAll=CRM.readsAll||{};(CRM.readsAll[row.conversation_id]=CRM.readsAll[row.conversation_id]||{})[row.user_id]=row.last_seen_at;if(row.conversation_id===CRM.sel.convoId)_crmPaintTicks();}catch(e){}}
+function _crmPaintTicks(){try{var cid=CRM.sel.convoId;if(!cid)return;var c=_crmConvo(cid);if(!c)return;var els=document.querySelectorAll('#crm-thread .crm-ticks,#crm-tthread .crm-ticks');for(var i=0;i<els.length;i++){var el=els[i];var id=el.getAttribute('data-tk');var m=(c.messages||[]).find(function(x){return x.id===id;});if(m)el.outerHTML=_crmTicks(m,cid);}}catch(e){}}
+function _crmUnreadN(c){try{var seen=(CRM.reads||{})[c.id]||'';var n=(c.messages||[]).filter(function(m){return !m.parentId&&(m.fromCustomer||m.senderId!==S.uid)&&String(m.at)>String(seen);}).length;n=Math.max(1,n);return n>99?'99+':n;}catch(e){return'•';}}
+function _crmTouchListRow(c){try{var row=document.querySelector('.crm-row[data-cid="'+c.id+'"]');if(!row)return;var tmp=document.createElement('div');tmp.innerHTML=_crmConvoRow(c,CRM.sel.convoId,false);if(tmp.firstElementChild)row.replaceWith(tmp.firstElementChild);}catch(e){}}
+App._crmGrow=(el)=>{try{el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}catch(e){}};
+App._crmPaste=(e)=>{try{var items=(e.clipboardData||{}).items||[];var fs=[];for(var i=0;i<items.length;i++){if(items[i].kind==='file'){var f=items[i].getAsFile();if(f&&f.type&&f.type.indexOf('image/')===0)fs.push(f);}}if(fs.length){e.preventDefault();_crmAddFiles(fs);}}catch(x){}};
+App._crmThScroll=(el)=>{var j=document.getElementById('crm-jump');if(!j)return;var far=el.scrollHeight-el.scrollTop-el.clientHeight;j.classList.toggle('on',far>320);};
+App._crmJump=()=>{var t=document.getElementById('crm-thread');if(!t)return;try{t.scrollTo({top:t.scrollHeight,behavior:'smooth'});}catch(e){t.scrollTop=t.scrollHeight;}};
+
+/* ── typing indicator: broadcast over a shared realtime channel ── */
+function _crmTypingJoin(){if(typeof _crmRT==='undefined'||_crmRT.tch)return;try{_crmRT.tch=sb.channel('bridge-crm-typing',{config:{broadcast:{self:false}}}).on('broadcast',{event:'typing'},function(p){var d=(p&&p.payload)||{};if(!d.cid||d.uid===S.uid)return;CRM._typing=CRM._typing||{};(CRM._typing[d.cid]=CRM._typing[d.cid]||{})[d.uid]={n:d.n||'Someone',ts:Date.now()};_crmTypingPaint();}).subscribe();}catch(e){}}
+function _crmTypingSend(){try{if(typeof _crmRT==='undefined'||!_crmRT.tch||!CRM.sel.convoId)return;var now=Date.now();if(CRM._tySent&&now-CRM._tySent<2200)return;CRM._tySent=now;_crmRT.tch.send({type:'broadcast',event:'typing',payload:{cid:CRM.sel.convoId,uid:S.uid,n:(typeof me==='function'&&me())?_crmFirst(me()):''}});}catch(e){}}
+function _crmTypingPaint(){var el=document.getElementById('crm-chatsub');if(!el)return;var cid=CRM.sel.convoId;var t=(CRM._typing||{})[cid]||{};var now=Date.now();var names=[];for(var k in t){if(now-t[k].ts<3200)names.push(t[k].n||'Someone');}
+  if(!el.dataset.sub)el.dataset.sub=el.innerHTML;
+  if(names.length){el.innerHTML='<span class="crm-typ">'+esc(names.slice(0,2).join(', '))+(names.length===1?' is':' are')+' typing<span class="crm-typd"><i></i><i></i><i></i></span></span>';}
+  else if(el.dataset.sub){el.innerHTML=el.dataset.sub;}}
+
+/* ── emoji picker: zero-dependency, categories + recents ── */
+var _CRM_EMOJI=[
+["Smileys","😀","😀 😃 😄 😁 😆 😅 😂 🤣 🥲 ☺️ 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 🤡 💩 👻 💀 👽 🤖"],
+["Gestures","👋","👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🫶 🫡 🫰 🫢 🫣 🧠 👀 👁️ 👄 🦷 👅 👂 👃 🦻 🦶 🦵"],
+["Hearts","❤️","❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 💯 💢 💥 💫 💦 💨 💬 💤 🎉 🎊 🎈 🎀 🎁 🪄 ✨ ⭐ 🌟 ⚡ 🔥 🌈 ☀️"],
+["Nature","🌸","🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🦄 🐝 🦋 🐌 🐞 🐢 🐍 🦖 🐙 🦀 🐠 🐬 🐳 🦈 🌸 💐 🌹 🌺 🌻 🌼 🌷 🌱 🌿 ☘️ 🍀 🍁 🍄 🌍 🌙 ⛅ ☁️ 🌧️ ⛈️ ❄️ 💧 🌊"],
+["Food","🍕","🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍈 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🥦 🥒 🌶️ 🌽 🥕 🍞 🥐 🥖 🥨 🧀 🥚 🍳 🥞 🧇 🥓 🍔 🍟 🍕 🌭 🥪 🌮 🌯 🥗 🍝 🍜 🍲 🍣 🍱 🍤 🍚 🍦 🍰 🎂 🧁 🍫 🍬 🍭 🍯 🍪 ☕ 🍵 🧃 🥤 🧋 🥂 🍷"],
+["Activity","⚽","⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🎱 🏓 🏸 ⛳ 🏹 🎣 🥊 🥋 🛹 ⛸️ 🎿 🏂 🏋️ 🤸 🧘 🏄 🏊 🚴 🚵 🎪 🎭 🎨 🎬 🎤 🎧 🎼 🎹 🥁 🎷 🎺 🎸 🎻 🎲 ♟️ 🎯 🎳 🎮 🧩 🚗 🚕 🚌 🏎️ 🚓 🚑 🚒 ✈️ 🚀 🛳️ ⛵ 🏝️ 🏔️ 🏕️ 🎡 🎢 🎠 🗼 🗽"],
+["Objects","💡","⌚ 📱 💻 ⌨️ 🖥️ 🖨️ 🖱️ 💾 💿 📷 📸 📹 🎥 📞 ☎️ 📺 📻 🧭 ⏰ ⏳ 🔋 🔌 💡 🔦 🕯️ 💸 💵 💰 💳 💎 ⚖️ 🧰 🔧 🔨 ⚙️ 🧲 🔮 🧿 🔭 🔬 💊 💉 🩹 🩺 🌡️ 🧬 🧹 🧺 🛁 🛎️ 🔑 🚪 🪑 🛏️ 🧸 🖼️ 🛍️ 📦 📜 📄 📊 📈 📉 📅 🗑️ 📌 📎 📏 ✂️ 🖊️ ✏️ 🔍 🔒 🔓"],
+["Symbols","✅","✅ ☑️ ✔️ ❌ ❎ ➕ ➖ ➗ ✖️ 💲 ™️ ©️ ®️ ⚠️ 🚸 ⛔ 🚫 ❗ ❕ ❓ ❔ ‼️ ⁉️ 💠 🔱 ⚜️ 🔰 ♻️ 💹 ❇️ ✳️ 🌐 🏧 ♿ 🅿️ 🔢 🔤 ℹ️ 🆗 🆕 🆙 🆒 🆓 🆖 🎵 🎶 ➡️ ⬅️ ⬆️ ⬇️ ↗️ ↘️ ↙️ ↖️ ↕️ ↔️ 🔄 🔃 🔚 🔙 🔛 🔝 🔜"]
+];
+function _crmEmoRec(){try{return JSON.parse(localStorage.getItem('bb_emo_rec')||'[]');}catch(e){return[];}}
+function _crmEmoRecPush(ch){try{var r=_crmEmoRec().filter(function(x){return x!==ch;});r.unshift(ch);localStorage.setItem('bb_emo_rec',JSON.stringify(r.slice(0,24)));}catch(e){}}
+function _crmEmoHost(){var h=document.getElementById('crm-emohost');if(!h){h=document.createElement('div');h.id='crm-emohost';document.body.appendChild(h);
+  h.addEventListener('click',function(ev){var b=ev.target.closest?ev.target.closest('button'):null;if(!b)return;ev.stopPropagation();
+    if(b.classList.contains('crm-ecat')){CRM._emo.cat=parseInt(b.getAttribute('data-i'),10);_crmEmoRender();return;}
+    if(b.classList.contains('crm-eemo')){App._crmEmoPick(b.textContent.trim());return;}});}
+  return h;}
+function _crmEmoRender(){var h=_crmEmoHost();var st=CRM._emo||{};var rec=_crmEmoRec();var cat=st.cat;
+  if(cat===undefined||cat===null)cat=(rec.length?-1:0);CRM._emo.cat=cat;
+  var tabs='<button class="crm-ecat'+(cat===-1?' on':'')+'" data-i="-1" title="Recent">🕘</button>'+_CRM_EMOJI.map(function(c,i){return'<button class="crm-ecat'+(cat===i?' on':'')+'" data-i="'+i+'" title="'+c[0]+'">'+c[1]+'</button>';}).join('');
+  var list=cat===-1?rec:(_CRM_EMOJI[cat]?_CRM_EMOJI[cat][2].split(' '):[]);
+  var grid=list.length?list.map(function(e){return'<button class="crm-eemo">'+e+'</button>';}).join(''):'<div class="crm-elab" style="padding:14px 4px">Nothing here yet — pick a few and they will land in Recent.</div>';
+  h.innerHTML='<div class="crm-ehd">'+tabs+'</div><div class="crm-egrid">'+grid+'</div>';}
+App._crmEmoOpen=(ev,mode,cid,mid)=>{if(ev&&ev.stopPropagation)ev.stopPropagation();App._crmCloseMsgActs();
+  CRM._emo={mode:mode,cid:cid||null,mid:mid||null,cat:(_crmEmoRec().length?-1:0)};_crmEmoRender();
+  var h=_crmEmoHost();h.classList.add('on');var mob=_crmIsMob();h.classList.toggle('crm-esheet',mob);
+  if(!mob){var r=null;try{r=ev&&ev.target&&ev.target.closest('button').getBoundingClientRect();}catch(e){}
+    var W=352,H=340;var x=r?Math.min(Math.max(8,r.left-46),window.innerWidth-W-8):(window.innerWidth-W)/2;
+    var y=r?(r.top-H-10):(window.innerHeight-H)/2;if(y<8)y=Math.min(window.innerHeight-H-8,(r?r.bottom+10:8));
+    h.style.left=x+'px';h.style.top=y+'px';}
+  else{h.style.left='';h.style.top='';}};
+App._crmEmoClose=()=>{var h=document.getElementById('crm-emohost');if(h)h.classList.remove('on');};
+App._crmEmoPick=(ch)=>{if(!ch)return;var st=CRM._emo||{};_crmEmoRecPush(ch);try{if(navigator.vibrate)navigator.vibrate(5);}catch(e){}
+  if(st.mode==='react'&&st.cid&&st.mid){App._crmEmoClose();App._crmReact(st.cid,st.mid,encodeURIComponent(ch));return;}
+  var el=document.getElementById(st.mode==='tinput'?'crm-tinput':'crm-input');if(!el)return;
+  var p=el.selectionStart!=null?el.selectionStart:el.value.length;var q=el.selectionEnd!=null?el.selectionEnd:p;
+  el.value=el.value.slice(0,p)+ch+el.value.slice(q);var np=p+ch.length;
+  try{el.focus();el.setSelectionRange(np,np);}catch(e){}App._crmGrow(el);};
+
+/* ── one-time wiring: styles, gestures, keyboard pinning, panel dismissal ── */
+(function(){
+  if(window._crmPlus)return;window._crmPlus=true;
+
+  /* premark thread replies as seen before the panel opens (no mass animation) */
+  var _o=App._crmOpenThread;
+  App._crmOpenThread=function(mid){try{var c=_crmConvo(CRM.sel.convoId);CRM._seenM=CRM._seenM||{};if(c)(c.messages||[]).forEach(function(x){if(x.parentId===mid||x.id===mid)CRM._seenM[x.id]=1;});}catch(e){}return _o(mid);};
+
+  /* dismiss emoji panel on outside tap / Esc */
+  document.addEventListener('click',function(e){var h=document.getElementById('crm-emohost');if(!h||!h.classList.contains('on'))return;if(e.target.closest&&(e.target.closest('#crm-emohost')||e.target.closest('.crm-emobtn')))return;h.classList.remove('on');},true);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')App._crmEmoClose();});
+
+  /* swipe-right a message to reply in thread (touch devices) */
+  var st=null;
+  document.addEventListener('touchstart',function(e){var ms=e.target.closest&&e.target.closest('#crm-thread .crm-msg[data-swipe]');if(!ms)return;var t=e.touches[0];st={el:ms,x:t.clientX,y:t.clientY,go:false,d:0};},{passive:true});
+  document.addEventListener('touchmove',function(e){if(!st)return;var t=e.touches[0];var dx=t.clientX-st.x,dy=t.clientY-st.y;
+    if(!st.go){if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){st=null;return;}if(dx>14&&Math.abs(dx)>Math.abs(dy)*1.2)st.go=true;else return;}
+    var d=Math.max(0,Math.min(dx,76));st.d=d;st.el.style.transform='translateX('+(d*.55)+'px)';st.el.classList.toggle('crm-swok',d>52);},{passive:true});
+  document.addEventListener('touchend',function(){if(!st)return;var el=st.el,ok=(st.d||0)>52;el.style.transition='transform .18s ease';el.style.transform='';setTimeout(function(){el.style.transition='';},220);el.classList.remove('crm-swok');
+    if(ok){try{if(navigator.vibrate)navigator.vibrate(10);}catch(e){}var mid=el.getAttribute('data-mid');if(mid)App._crmOpenThread(mid);}st=null;},{passive:true});
+
+  /* keep the newest message visible when the mobile keyboard opens */
+  if(window.visualViewport){window.visualViewport.addEventListener('resize',function(){var t=document.getElementById('crm-thread');if(!t)return;var atB=(t.scrollHeight-t.scrollTop-t.clientHeight)<140;if(atB)setTimeout(function(){t.scrollTop=t.scrollHeight;},60);});}
+
+  /* typing indicator refresh */
+  setInterval(function(){if(S&&S.route==='crm')_crmTypingPaint();},1100);
+
+  var css=''
+  +'.crm-scroll{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}'
+  /* bubbles */
+  +'.crm-bub{position:relative;padding:7px 9px 8px 11px;font-size:13.5px;line-height:1.42;word-break:break-word;box-shadow:0 1px 1.5px rgba(35,28,22,.10);max-width:100%;transition:transform .1s}'
+  +'.crm-bub-their{background:#fff;color:#13171B;border-radius:14px 14px 14px 5px}'
+  +'.crm-bub-mine{background:linear-gradient(160deg,#5E4C43 0%,#54433C 70%);color:#fff;border-radius:14px 14px 5px 14px}'
+  +'.crm-msg:active .crm-bub{transform:scale(.985)}'
+  +'.crm-meta{float:right;margin:8px -3px -4px 9px;font-size:10px;line-height:1;display:inline-flex;align-items:center;gap:3px;color:#A59788;user-select:none;white-space:nowrap}'
+  +'.crm-bub-mine .crm-meta{color:rgba(255,234,215,.75)}'
+  +'.crm-ticks{display:inline-flex;align-items:center}'
+  +'.crm-tk-read{color:#FFD9A0}.crm-bub-their .crm-tk-read{color:#C9A76B}'
+  +'.crm-edited{font-style:normal;opacity:.75;margin-right:4px}'
+  +'.crm-bigemo{background:transparent!important;border:none!important;box-shadow:none!important;padding:0 2px!important;font-size:42px;line-height:1.2}'
+  +'.crm-bigemo .crm-meta{float:none;display:flex;justify-content:flex-end;margin:1px 2px 0;color:#A59788}'
+  +'.crm-media{padding:4px 4px 6px!important}'
+  /* entrance animations */
+  +'@keyframes crmIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}'
+  +'@keyframes crmOut{from{opacity:0;transform:translate(12px,10px) scale(.94)}to{opacity:1;transform:none}}'
+  +'.crm-anew-in{animation:crmIn .26s cubic-bezier(.2,.8,.25,1)}'
+  +'.crm-anew-out{animation:crmOut .24s cubic-bezier(.2,.8,.25,1);transform-origin:100% 100%}'
+  /* date pills */
+  +'.crm-datep{display:flex;justify-content:center;position:sticky;top:2px;z-index:6;margin:10px 0 3px}'
+  +'.crm-datep span{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7B6D62;background:rgba(255,255,255,.92);border:1px solid #EAE3D8;border-radius:20px;padding:3px 12px;box-shadow:0 1px 3px rgba(35,28,22,.08);backdrop-filter:blur(4px)}'
+  /* reactions */
+  +'.crm-reacts{display:flex;gap:3px;flex-wrap:wrap;margin-top:-7px;z-index:2;padding:0 4px}'
+  +'.crm-mine .crm-reacts{justify-content:flex-end}'
+  +'.crm-rchip{display:inline-flex;align-items:center;gap:2px;font-size:12px;border:1px solid #EAE3D8;background:#fff;border-radius:20px;padding:1.5px 7px;cursor:pointer;box-shadow:0 1px 3px rgba(35,28,22,.10);transition:transform .12s}'
+  +'.crm-rchip b{font-size:10px;color:#786A5F}'
+  +'.crm-rchip.on{border-color:#D1B68F;background:#FBF4E7}'
+  +'.crm-rchip:active{transform:scale(1.18)}'
+  /* wallpaper */
+  +'.crm-wall{background-color:#F2EBE1;background-image:radial-gradient(900px 420px at 88% -12%,rgba(209,182,143,.16),transparent 60%),radial-gradient(760px 460px at -12% 112%,rgba(175,123,109,.11),transparent 55%),url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%2313171B%27%20stroke-opacity%3D%27.05%27%20stroke-width%3D%271.3%27%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%2734%27%20r%3D%277%27%2F%3E%3Cpath%20d%3D%27M160%2040c8-10%2022-10%2026%200-10%208-22%206-26%200z%27%2F%3E%3Ccircle%20cx%3D%27110%27%20cy%3D%27120%27%20r%3D%275%27%2F%3E%3Cpath%20d%3D%27M40%20170c0-9%208-16%2017-16%27%2F%3E%3Ccircle%20cx%3D%27190%27%20cy%3D%27180%27%20r%3D%278%27%2F%3E%3Cpath%20d%3D%27M90%20190l8%208m0-8l-8%208%27%2F%3E%3Cpath%20d%3D%27M150%20150c6-6%2014-6%2018%200%27%2F%3E%3Ccircle%20cx%3D%2770%27%20cy%3D%2780%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M190%2090c-7%202-12%208-12%2015%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")}'
+  /* composer pill */
+  +'.crm-pill{flex:1;display:flex;align-items:flex-end;gap:2px;background:#fff;border:1px solid #E6DED3;border-radius:23px;padding:3px 5px 3px 4px;min-width:0;transition:box-shadow .15s,border-color .15s}'
+  +'.crm-pill:focus-within{border-color:#D1B68F;box-shadow:0 0 0 3px rgba(209,182,143,.22)}'
+  +'.crm-pill textarea{flex:1;resize:none;border:none;background:transparent;padding:8px 4px;font-size:14px;font-family:inherit;outline:none;max-height:120px;line-height:1.45;min-width:0}'
+  +'.crm-pill textarea:focus{box-shadow:none!important;border-color:transparent!important}'
+  +'.crm-emobtn,.crm-attbtn{width:36px;height:36px;border:none;background:transparent;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:#8A7B6D;flex-shrink:0;transition:background .12s,transform .12s,color .12s;align-self:flex-end;margin-bottom:1px}'
+  +'.crm-emobtn:hover,.crm-attbtn:hover{background:#F4EFE7;color:#54433C}'
+  +'.crm-emobtn:active,.crm-attbtn:active{transform:scale(.88)}'
+  +'.crm-sendbtn{width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(150deg,#5E4C43,#54433C);color:#FFEAD7;cursor:pointer;display:grid;place-items:center;flex-shrink:0;box-shadow:0 3px 10px -2px rgba(35,28,22,.4);transition:transform .12s,box-shadow .15s}'
+  +'.crm-sendbtn:hover{box-shadow:0 5px 14px -2px rgba(35,28,22,.45)}'
+  +'.crm-sendbtn:active{transform:scale(.86)}'
+  +'.crm-sendbtn-sm{width:38px;height:38px}'
+  +'.crm-pill-sm textarea{font-size:13px;padding:7px 4px}'
+  /* jump to latest */
+  +'#crm-jump{position:absolute;right:14px;bottom:78px;width:40px;height:40px;border-radius:50%;border:1px solid #EAE3D8;background:rgba(255,255,255,.97);color:#54433C;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(35,28,22,.20);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .18s,transform .18s;z-index:12}'
+  +'#crm-jump.on{opacity:1;transform:none;pointer-events:auto}'
+  /* typing */
+  +'.crm-typ{color:#936659;font-weight:600;display:inline-flex;align-items:center}'
+  +'.crm-typd{display:inline-flex;gap:2.5px;margin-left:5px}'
+  +'.crm-typd i{width:4px;height:4px;border-radius:50%;background:currentColor;animation:crmTy 1.2s infinite}'
+  +'.crm-typd i:nth-child(2){animation-delay:.15s}.crm-typd i:nth-child(3){animation-delay:.3s}'
+  +'@keyframes crmTy{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2.5px)}}'
+  /* unread badge */
+  +'.crm-unb{min-width:18px;height:18px;border-radius:10px;background:#D1B68F;color:#2B2118;font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;padding:0 5px;flex-shrink:0;box-shadow:0 1px 2px rgba(35,28,22,.15)}'
+  /* swipe hint */
+  +'.crm-swhint{position:absolute;left:-36px;top:50%;transform:translateY(-50%) scale(.6);opacity:0;color:#54433C;background:#fff;border:1px solid #EAE3D8;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;transition:opacity .15s,transform .15s;pointer-events:none;z-index:3}'
+  +'.crm-mine .crm-swhint{left:auto;right:-36px}'
+  +'.crm-swok .crm-swhint{opacity:1;transform:translateY(-50%) scale(1)}'
+  /* emoji picker */
+  +'#crm-emohost{position:fixed;z-index:220;width:352px;height:340px;background:#fff;border:1px solid #E6DED3;border-radius:16px;box-shadow:0 18px 50px rgba(35,28,22,.28);display:none;flex-direction:column;overflow:hidden}'
+  +'#crm-emohost.on{display:flex;animation:crmIn .16s ease}'
+  +'#crm-emohost .crm-ehd{display:flex;gap:2px;padding:8px 8px 5px;border-bottom:1px solid #F1ECE4;overflow-x:auto;flex-shrink:0}'
+  +'.crm-ecat{border:none;background:transparent;font-size:17px;padding:5px 8px;border-radius:9px;cursor:pointer;flex-shrink:0;opacity:.55;transition:opacity .12s,background .12s}'
+  +'.crm-ecat.on{background:#F3EDE2;opacity:1}'
+  +'#crm-emohost .crm-egrid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;align-content:start}'
+  +'.crm-eemo{border:none;background:transparent;font-size:21px;padding:4px 0;border-radius:8px;cursor:pointer;line-height:1.25;transition:transform .1s,background .1s}'
+  +'.crm-eemo:hover{background:#F4EFE7}'
+  +'.crm-eemo:active{transform:scale(1.3)}'
+  +'.crm-elab{grid-column:1/-1;font-size:11px;font-weight:600;color:#A59788}'
+  /* mobile */
+  +'@media(max-width:767px){'
+    +'.crm-bub{font-size:14.5px;padding:8px 10px 9px 12px}'
+    +'.crm-pill textarea{font-size:16px}'
+    +'.crm-sendbtn{width:46px;height:46px}'
+    +'.crm-msg{max-width:84%!important}'
+    +'#crm-jump{bottom:86px}'
+    +'#crm-emohost.on{left:0!important;right:0;top:auto!important;bottom:0;width:auto;height:46vh;border-radius:18px 18px 0 0;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -14px 44px rgba(35,28,22,.3)}'
+    +'.crm-eemo{font-size:25px;padding:6px 0}'
+  +'}'
+  +'@media(prefers-reduced-motion:reduce){.crm-anew-in,.crm-anew-out,#crm-emohost.on{animation:none}.crm-typd i{animation:none}}';
+  document.head.insertAdjacentHTML('beforeend','<style id="crm-plus-css">'+css+'</style>');
+})();
