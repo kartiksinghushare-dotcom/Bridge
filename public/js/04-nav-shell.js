@@ -4,7 +4,7 @@
    Load order matters — see index.html.
    ============================================================ */
 /* ===== NAVIGATION ===== */
-const NAV_ADM=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','OKRs'],['accesscontrol','shield','Access Control']];
+const NAV_ADM=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
 const NAV_USR=[['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
 const NAV_MGR=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
 const MOB_ADM=['dashboard','mychecklists','tickets','notifications','more'];
@@ -17,7 +17,7 @@ const _isMgrRole=()=>{const r=(typeof _roleOf==='function')?_roleOf(me()):null;r
 const NAV_ALL=[
   ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
-  ['okr','flag','OKRs',()=>can('okr','view')],
+  ['okr','flag','BOLT',()=>can('okr','view')],
   ['crm','msg','Workspace',()=>can('crm','view')],
   ['hub:inbox','bell','Inbox',()=>true],
 
@@ -100,7 +100,8 @@ App.go=(r)=>{if(r&&String(r).slice(0,4)==='hub:')r=_hubHome(String(r).slice(4))|
   restoreFilters(r);
   if(r!=='teamview')S.tvUser=null;
   // Update URL hash so deep-links work; pushState so browser Back/Forward walk in-app history.
-  if(location.hash!=='#'+r){ if(history.pushState)history.pushState(null,'','#'+r); else if(history.replaceState)history.replaceState(null,'','#'+r); }
+  var _hr=({okr:'bolt',crm:'workspace'})[r]||r;
+  if(location.hash!=='#'+_hr){ if(history.pushState)history.pushState(null,'','#'+_hr); else if(history.replaceState)history.replaceState(null,'','#'+_hr); }
   render();window.scrollTo(0,0);
   // Lazy-load only the data this tab needs (nothing loads on a timer anymore).
   _lazyForRoute(r);};
@@ -108,7 +109,7 @@ App.go=(r)=>{if(r&&String(r).slice(0,4)==='hub:')r=_hubHome(String(r).slice(4))|
 //    (App.go's guarded pushState prevents loops). ──
 window.addEventListener('hashchange',()=>{
   if(!S.uid)return;
-  const r=(location.hash||'').replace(/^#/,'').trim();
+  var r=(location.hash||'').replace(/^#/,'').trim();r=({bolt:'okr',workspace:'crm'})[r]||r;
   if(r&&r!==S.route&&typeof App.go==='function')App.go(r);
 });
 App._lazyLoad=_lazyLoad;App._lazyLoadDate=_lazyLoadDate;

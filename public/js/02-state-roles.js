@@ -41,7 +41,7 @@ function saveDB(){
         if(Array.isArray(r.photos))r.photos=r.photos.map(p=>(typeof p==='string'&&p.startsWith('data:'))?'[photo]':p);
       });
     });
-    // OKR check-in photos: strip base64 the same way (real bytes live in Supabase; targeted writes
+    // BOLT check-in photos: strip base64 the same way (real bytes live in Supabase; targeted writes
     // send them at save time — _okrCheckinRow filters '[photo]' placeholders so they're never pushed).
     (dbCopy.DB.okrCheckins||[]).forEach(c=>{
       if(Array.isArray(c.photos))c.photos=c.photos.map(p=>(typeof p==='string'&&p.startsWith('data:'))?'[photo]':p);
@@ -154,7 +154,7 @@ function restoreFilters(route){
   try{S.filters=saved?JSON.parse(JSON.stringify(saved)):{};}catch(e){S.filters={};}
 }
 function clearAllFilters(){_filtersByRoute={};_filtersUid=null;_filtersLastWritten='';S.filters={};try{localStorage.removeItem(FILTERS_KEY);}catch(e){}}
-/* Expand/collapse state of the OKR tree rides along with the filters — losing which
+/* Expand/collapse state of the BOLT tree rides along with the filters — losing which
    branches were open on every refresh is the same complaint in a different shape.
    Stamped with the user id for the same reason as the filters: the ids of branches one
    person had open must not be written back to disk by whoever signs in next. */

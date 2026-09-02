@@ -1171,3 +1171,17 @@ button[style*="background:#13171B"],button[style*="background:#54433C"]{text-tra
 aside.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14)}
 /* Card hover ring — champagne tint */
 main#content .bg-white.rounded-2xl:hover,main#content .shadow-soft:hover{border-color:#E3D4BE}
+
+/* ════════════ MOBILE APP LAYER — native-feel polish ════════════ */
+html{-webkit-text-size-adjust:100%}
+@media(max-width:767px){
+  /* iOS never zooms a 16px input — kill focus-zoom app-wide */
+  #content input[type="text"],#content input[type="email"],#content input[type="password"],#content input[type="search"],#content input[type="number"],#content input[type="date"],#content input[type="time"],#content textarea,#content select,#modal input[type="text"],#modal input[type="email"],#modal input[type="password"],#modal input[type="search"],#modal input[type="number"],#modal input[type="date"],#modal input[type="time"],#modal textarea,#modal select{font-size:16px!important}
+  /* comfortable tap targets */
+  .ui-btn{min-height:44px}
+  /* native-feel tap feedback on cards and rows */
+  #content .okr-card:active,#content .crm-row:active,#content .clc:active,#content .stat-card-click:active{transform:scale(.988);transition:transform .09s}
+  /* modals never exceed the visual viewport; keep their own scroll */
+  #modal .pop{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #content{-webkit-overflow-scrolling:touch}
+}

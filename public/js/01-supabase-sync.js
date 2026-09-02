@@ -72,7 +72,7 @@ function _applyTickets(rows){
   // Keep any local-only tickets (just created, or older than the 30-day window) that the
   // server query didn't return — never drop them (but never re-add a deleted one).
   const fromSB=new Set(allTk.map(t=>t.id));
-  /* Same protection the tickets path uses, reused for OKRs: a server snapshot must never
+  /* Same protection the tickets path uses, reused for BOLTs: a server snapshot must never
      clobber a row whose local change is still sitting in the sync queue. */
   const localOnly=(DB.tickets||[]).filter(t=>!fromSB.has(t.id)&&!_delTk.has(t.id));
   // ── v2 FIX: never let a server snapshot clobber a ticket that still has queued local
@@ -89,7 +89,7 @@ let _tabLoading={};
 /* ── PORTED: sync bar + tab-loading helpers (Safe Backup) ── */
 function _anyLoading(){try{return Object.values(_tabLoading||{}).some(Boolean);}catch(e){return false;}}
 function _syncBar(on){try{let b=document.getElementById('syncbar');if(!b){if(!on)return;b=document.createElement('div');b.id='syncbar';document.body.appendChild(b);}b.classList.toggle('on',!!on);}catch(e){}}
-/* ── Roll-up-safe aggregates under OKR row-level security ────────────────────
+/* ── Roll-up-safe aggregates under BOLT row-level security ────────────────────
    RLS now hides objectives outside the user's scope. A roll-up or annual PARENT
    still has to total its children, so bridge_okr_rollup_facts() returns numbers
    only — no title, owner, department, comment or check-in author — for the
@@ -141,7 +141,7 @@ async function _loadOkrShadows(){
     if(so.length&&typeof rr==='function'&&S&&S.route==='okr')rr();   // redraw once totals can be computed
   }catch(e){console.warn('[okr rollup facts]',e&&e.message);}
 }
-/* v3.14 — locally-deleted OKR overlay.
+/* v3.14 — locally-deleted BOLT overlay.
    A cascade delete removes a whole subtree. If any of those delete requests does not reach
    the server (expired token, offline, a transient failure) the server still holds the rows,
    and the next pull would hand them straight back — the "I deleted it and it came back"
@@ -375,7 +375,7 @@ async function loadFromSB(){
     DB.users.forEach(u=>{if(!u.questionsAccess&&_savedQAccess[u.id])u.questionsAccess=true;});
   }
 
-  // ── PORTED (Safe Backup): OKR data + role profiles + role migration ──
+  // ── PORTED (Safe Backup): BOLT data + role profiles + role migration ──
   DB.users.forEach(u=>_ensureHrm(u));
   {const _gone=await _okrServerDeletedIds();_okrReconcileDeleted(_gone);
    DB.okrs=_okrDropDeleted('okrs',_keepPending('okrs',_mOKR(okrRows),DB.okrs,_gone));}

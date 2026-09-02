@@ -133,7 +133,7 @@ function confirmP(o){
     // Escape means "no" too (backdrop and X already route through closeModal).
     // The listener is detached by _confirmSettle on EVERY exit, not just the Escape one —
     // detaching only inside this branch left a live capture-phase handler on `document`
-    // after each Cancel/Delete/X, and a later Escape (in the OKR editor, say) would then
+    // after each Cancel/Delete/X, and a later Escape (in the BOLT editor, say) would then
     // fire all of them and tear that unrelated modal out of the DOM with its unsaved work.
     _confirmKey=ev=>{if(ev.key==='Escape')App._confirmEnd(0);};
     document.addEventListener('keydown',_confirmKey,true);

@@ -13,7 +13,7 @@ const esc=s=>(s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
    handler attribute, e.g. onclick="App.go('users');S.search='<here>'".
    esc() alone is wrong there: it turns ' into &#39;, the HTML parser decodes that back to a
    bare ' before the JS is compiled, and the handler dies with a SyntaxError — which is why
-   picking "Sara O'Brien" (or an OKR titled "Dubai's revenue") in ⌘K did nothing at all.
+   picking "Sara O'Brien" (or a BOLT titled "Dubai's revenue") in ⌘K did nothing at all.
    Backslash-escape for JS first, THEN HTML-escape: &#39; decodes to ' with the \ still in
    front of it, so the JS parser sees a properly escaped \'. Newlines would end the string
    literal too, so they are flattened to spaces. */

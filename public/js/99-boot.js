@@ -5,7 +5,7 @@
    ============================================================ */
 /* ===== BOOT ===== */
 (async function boot(){
-  const _hashRoute=(window.location.hash||'').replace('#','').trim();
+  var _hashRoute=(window.location.hash||'').replace('#','').trim();_hashRoute=({bolt:'okr',workspace:'crm'})[_hashRoute]||_hashRoute;
   const VALID_ROUTES=['dashboard','crm','mychecklists','users','hierarchy','checklists','allcl','questions','approvals','notifications','analytics','locations','departments','settings','audit','teamview','profile','okr','tickets'];
   const _deepLink=VALID_ROUTES.includes(_hashRoute)?_hashRoute:null;
   try{const{data:{session}}=await sb.auth.getSession();if(session){
@@ -19,7 +19,7 @@
         S.uid=mapped.id;
         if(_deepLink)S.route=_deepLink;
         else if(!S.route||S.route==='login')S.route=mapped.role==='Admin'?'dashboard':'mychecklists';
-        // v3.14: bring back this tab's remembered filters (and the OKR tree's open branches)
+        // v3.14: bring back this tab's remembered filters (and the BOLT tree's open branches)
         // before the first paint, so a refresh lands you exactly where you left off.
         restoreFilters(S.route);
         // CRITICAL: Always load from Supabase FIRST before any sync

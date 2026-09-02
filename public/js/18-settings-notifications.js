@@ -363,11 +363,11 @@ const EMAIL_EVENTS=[
   {key:'feedback_received',label:'Feedback received',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'deadline_reminder',label:'Deadline reminder',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'escalation',       label:'Escalation raised',    vars:'{{submitter}}, {{checklist_name}}, {{question}}, {{answer}}, {{action_url}}'},
-  {key:'okr_assigned',      label:'OKR assigned',          vars:'{{user_name}}, {{okr_title}}, {{assigner}}, {{target}}, {{schedule}}, {{period}}, {{action_url}}'},
-  {key:'okr_checkin_due',   label:'OKR check-in due (daily)',vars:'{{user_name}}, {{count}}, {{date}}, {{okr_titles}}, {{action_url}}'},
-  {key:'okr_update_added',  label:'OKR update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
-  {key:'okr_target_revised',label:'OKR target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
-  {key:'okr_closed',        label:'OKR closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
+  {key:'okr_assigned',      label:'BOLT assigned',          vars:'{{user_name}}, {{okr_title}}, {{assigner}}, {{target}}, {{schedule}}, {{period}}, {{action_url}}'},
+  {key:'okr_checkin_due',   label:'BOLT check-in due (daily)',vars:'{{user_name}}, {{count}}, {{date}}, {{okr_titles}}, {{action_url}}'},
+  {key:'okr_update_added',  label:'BOLT update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
+  {key:'okr_target_revised',label:'BOLT target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
+  {key:'okr_closed',        label:'BOLT closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
   /* Workspace. These templates already existed and were honoured by sendEmail, but were
      absent from this list, so nothing rendered an editor for them. */
   {key:'crm_automation',label:'Workspace automation (all boards)',vars:'{{user_name}}, {{rule}}, {{title}}, {{customer}}, {{board}}, {{status}}, {{priority}}, {{assignee}}, {{due_date}}, {{actor}}, {{action_url}}'},
@@ -394,11 +394,11 @@ function _defaultTemplates(){
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
     crm_reminder:{subject:'Reminder: {{note}}',body:'Hi {{user_name}},\n\nYour reminder is due: {{note}}\n\nConversation: "{{title}}"\n\n{{action_url}}'},
-    okr_assigned:{subject:'🎯 New OKR assigned: {{okr_title}}',body:'Hi {{user_name}},\n\n{{assigner}} assigned you an objective: {{okr_title}}\n\nTarget: {{target}}\nCheck-ins: {{schedule}}\nPeriod: {{period}}\n\nIf the objective has several owners, any one of you can submit an update — it counts for the whole group.\n\n{{action_url}}'},
-    okr_checkin_due:{subject:'⏰ OKR check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} OKR check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
+    okr_assigned:{subject:'🎯 New BOLT assigned: {{okr_title}}',body:'Hi {{user_name}},\n\n{{assigner}} assigned you an objective: {{okr_title}}\n\nTarget: {{target}}\nCheck-ins: {{schedule}}\nPeriod: {{period}}\n\nIf the objective has several owners, any one of you can submit an update — it counts for the whole group.\n\n{{action_url}}'},
+    okr_checkin_due:{subject:'⏰ BOLT check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} BOLT check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
     okr_update_added:{subject:'📈 {{okr_title}} — updated by {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} added an update on "{{okr_title}}": {{value}}\n\n{{comment}}\n\nThis counts for the whole owner group — nothing more to do for today\'s check-in.\n\n{{action_url}}'},
     okr_target_revised:{subject:'✏️ Target revised: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} revised the target on "{{okr_title}}": {{old_target}} → {{new_target}}\n\nReason: {{reason}}\n\nThe original target stays visible for comparison — the same updates feed both numbers.\n\n{{action_url}}'},
-    okr_closed:{subject:'🔒 OKR {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
+    okr_closed:{subject:'🔒 BOLT {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
   };
 }
 
@@ -460,7 +460,7 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('notifications')?'View Notifications'
     :ctaUrl.includes('settings')?'Open Settings'
     :ctaUrl.includes('analytics')?'View Analytics'
-    :ctaUrl.includes('okr')?'Open OKRs'
+    :ctaUrl.includes('okr')?'Open BOLTs'
     :'Open Bridge';
   return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#FAF7F1;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #EDE7DC;overflow:hidden">
@@ -604,11 +604,11 @@ function settingsPage(){
         ${_nsTogRow('inapp_crm_mention','Tagged in Workspace chat','When someone @mentions you in a conversation')}
         ${_nsTogRow('inapp_crm_ticket','Workspace ticket activity','Created, assigned, moved & automation alerts')}
         ${_nsTogRow('inapp_crm_reminder','Workspace reminders','Reminders scheduled by board automations (date & time)')}
-        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
-        ${_nsTogRow('inapp_okr_assigned','OKR assigned','Sent to every owner when an objective is assigned to them')}
-        ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
-        ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
-        ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">BOLTs</div>
+        ${_nsTogRow('inapp_okr_assigned','BOLT assigned','Sent to every owner when an objective is assigned to them')}
+        ${_nsTogRow('inapp_okr_update_added','BOLT update added','Sent to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('inapp_okr_target_revised','BOLT target revised','Sent to the owners when a target is revised')}
+        ${_nsTogRow('inapp_okr_closed','BOLT closed / reopened','Sent to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
@@ -663,12 +663,12 @@ function settingsPage(){
         ${_nsTogRow('email_crm_mention','Tagged in Workspace chat','Email when someone @mentions you')}
         ${_nsTogRow('email_crm_ticket','Workspace ticket activity','Email for created / assigned / automation alerts')}
         ${_nsTogRow('email_crm_reminder','Workspace reminders','Email for reminders scheduled by board automations')}
-        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
-        ${_nsTogRow('email_okr_assigned','OKR assigned','Email to every owner when an objective is assigned to them')}
-        ${_nsTogRow('email_okr_checkin_due','OKR check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}
-        ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
-        ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
-        ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">BOLTs</div>
+        ${_nsTogRow('email_okr_assigned','BOLT assigned','Email to every owner when an objective is assigned to them')}
+        ${_nsTogRow('email_okr_checkin_due','BOLT check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}
+        ${_nsTogRow('email_okr_update_added','BOLT update added','Email to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('email_okr_target_revised','BOLT target revised','Email to the owners when a target is revised')}
+        ${_nsTogRow('email_okr_closed','BOLT closed / reopened','Email to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
@@ -797,7 +797,7 @@ var _BB_SND_TYPES=[
  ['escalation','Escalations','A question or task escalates to you'],
  ['feedback','Feedback','Feedback and feedback replies'],
  ['late','Late & reminders','Overdue submissions and deadline reminders'],
- ['okr','OKRs','When an OKR is assigned to you, checked in or revised'],
+ ['okr','BOLT','When a BOLT is assigned to you, checked in or revised'],
  ['general','Everything else','Any other Bridge notification']
 ];
 function _bbSndKey(){return 'bb_snd_prefs_'+((typeof S!=='undefined'&&S&&S.uid)||'anon');}
@@ -811,7 +811,7 @@ App._bbSndOpen=()=>{window._bbSndOpen=!window._bbSndOpen;render();};
 function _bbNotifKind(n){
   var text=(n&&n.text)||'';var link=(n&&n.link)||'';
   if(n&&n.kind==='okr')return'okr';
-  if(/OKR|objective/i.test(text))return'okr';
+  if(/OKR|BOLT|objective/i.test(text))return'okr';
   if(/tagged you in/i.test(text))return'crm_mention';
   if(link&&String(link).indexOf('crm:')===0)return'workspace';
   if(text.indexOf('\u{1F3AB}')>=0||text.indexOf('\u21AA')>=0||text.indexOf('\u26A1')>=0||text.indexOf('\u{1F4AC}')>=0)return'workspace';

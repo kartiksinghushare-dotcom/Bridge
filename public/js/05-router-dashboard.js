@@ -27,7 +27,7 @@ function dashboardPage(){
       ${kpi('Late',late,'#B3402E','alert',"App.go('allcl')",'submissions (30d)')}
       ${kpi('Open tickets',openTk+progTk,'#54433C','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
       ${kpi('Approvals waiting',apprN,'#936659','approve',"App.go('approvals')",'in your inbox')}
-      ${okrs.length?kpi('OKRs',okrs.length,'#9C7386','chart',"App.go('okr')",'objectives you can see'):''}
+      ${okrs.length?kpi('BOLTs',okrs.length,'#9C7386','chart',"App.go('okr')",'objectives you can see'):''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px">
       ${chartCard('daily','Daily submissions','On time vs late — last 14 days')}
@@ -83,7 +83,7 @@ function _drawDashCharts(){
   // 5) tickets doughnut
   const tMap=[['Open',C.red],['In Progress',C.amber],['Resolved',C.green],['Closed',C.grey]];
   mk('tickets',{type:'doughnut',data:{labels:tMap.map(([s])=>s),datasets:[{data:tMap.map(([s])=>tickets.filter(t=>t.status===s).length),backgroundColor:tMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
-  // 6) OKR health doughnut
+  // 6) BOLT health doughnut
   if(typeof okrVisible==='function'&&can('okr','view')){
     const okrs=okrVisible();
     if(okrs.length){

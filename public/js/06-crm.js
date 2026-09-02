@@ -332,13 +332,15 @@ function _crmMsgActions(m,cid,thread){
   if(m.fromCustomer)return'';
   var own=m.senderId===S.uid;var part=can('crm','create');if(!part&&!can('crm','delete'))return'';
   var b='';
-  if(part)b+=_CRM_EMO.map(function(e){return'<button title="React" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')" style="border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;padding:2px 3px">'+e+'</button>';}).join('')+'<button title="More reactions" onclick="App._crmEmoOpen(event,\'react\',\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;font-size:14px;font-weight:800;line-height:1;padding:2px 5px">+</button>';
-  if(part&&!thread&&!m.parentId)b+='<button title="Reply in thread" onclick="App._crmOpenThread(\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;padding:2px 3px">'+ic('msg','w-3.5 h-3.5')+'</button>';
-  if(part)b+='<button title="Create ticket from this message" onclick="App._crmTicketFromMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#54433C;padding:2px 3px">'+ic('ticket','w-3.5 h-3.5')+'</button>';
-  if(own&&part)b+='<button title="Edit" onclick="App._crmEditMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;padding:2px 3px">'+ic('edit','w-3.5 h-3.5')+'</button>';
-  if(own&&part)b+='<button title="Forward" onclick="App._crmForward(\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#786A5F;padding:2px 3px">'+ic('send','w-3.5 h-3.5')+'</button>';
-  if((own&&part)||can('crm','delete'))b+='<button title="Delete" onclick="App._crmDelMsg(\''+cid+'\',\''+m.id+'\')" style="border:none;background:transparent;cursor:pointer;color:#B3402E;padding:2px 3px">'+ic('trash','w-3.5 h-3.5')+'</button>';
-  return'<div class="crm-macts" style="display:none;position:absolute;top:-13px;'+(!m.fromCustomer?'right:2px':'left:2px')+';background:#fff;border:1px solid #E6DED3;border-radius:10px;box-shadow:0 4px 14px rgba(35,28,22,.16);padding:1px 3px;gap:0;align-items:center;z-index:25">'+b+'</div>';
+  if(part)b+='<span class="crm-ma-emos">'+_CRM_EMO.map(function(e){return'<button class="crm-ma-emo" title="React" onclick="App._crmReact(\''+cid+'\',\''+m.id+'\',\''+encodeURIComponent(e)+'\')">'+e+'</button>';}).join('')+'<button class="crm-ma-plus" title="More reactions" onclick="App._crmEmoOpen(event,\'react\',\''+cid+'\',\''+m.id+'\')">+</button></span>';
+  var acts='';
+  if(part&&!thread&&!m.parentId)acts+='<button class="crm-ma-btn" title="Reply in thread" onclick="App._crmOpenThread(\''+m.id+'\')">'+ic('msg','w-4 h-4')+'</button>';
+  if(own&&part)acts+='<button class="crm-ma-btn" title="Edit" onclick="App._crmEditMsg(\''+cid+'\',\''+m.id+'\')">'+ic('edit','w-4 h-4')+'</button>';
+  if(own&&part)acts+='<button class="crm-ma-btn" title="Forward" onclick="App._crmForward(\''+m.id+'\')">'+ic('send','w-4 h-4')+'</button>';
+  if((own&&part)||can('crm','delete'))acts+='<button class="crm-ma-btn crm-ma-del" title="Delete" onclick="App._crmDelMsg(\''+cid+'\',\''+m.id+'\')">'+ic('trash','w-4 h-4')+'</button>';
+  if(b&&acts)b+='<span class="crm-ma-sep"></span>';
+  b+='<span class="crm-ma-acts">'+acts+'</span>';
+  return'<div class="crm-macts">'+b+'</div>';
 }
 function _crmMsg(m,cid,thread,prev){
   var editing=CRM.editMsgId===m.id;var _co=_crmConvo(cid);var _bd=_co?_crmBoard(_co.boardId):null;var _isChat=_bd?(_crmBS(_bd).type==='chat'):false;var mine=_isChat?(m.senderId===S.uid):(!m.fromCustomer);
@@ -2509,5 +2511,29 @@ function _crmDing(m,force){
    +'.crm-link:active{opacity:.7}'
    +'.crm-bub-mine .crm-link{color:#FFEAD7}'
    +'.crm-bub-mine .crm-tag{background:rgba(255,255,255,.24);color:#fff}'
+   +'</style>');
+})();
+
+
+/* ═══ CHAT+ round 7: refined message action bar ═══ */
+(function(){
+  if(window._crmPlus3)return;window._crmPlus3=true;
+  document.head.insertAdjacentHTML('beforeend','<style id="crm-plus3-css">'
+   +'.crm-macts{display:none;position:absolute;top:-18px;background:#fff;border:1px solid #EAE3D8;border-radius:22px;box-shadow:0 6px 20px rgba(35,28,22,.16),0 1px 3px rgba(35,28,22,.08);padding:3px 6px;gap:1px;align-items:center;z-index:25}'
+   +'.crm-mine .crm-macts{right:2px;left:auto}'
+   +'.crm-msg:not(.crm-mine) .crm-macts{left:2px;right:auto}'
+   +'.crm-ma-emos{display:inline-flex;align-items:center}'
+   +'.crm-ma-emo{border:none;background:transparent;cursor:pointer;font-size:17px;line-height:1;padding:4px 5px;border-radius:50%;transition:transform .13s cubic-bezier(.2,.8,.3,1.6)}'
+   +'.crm-ma-emo:hover{transform:scale(1.4) translateY(-3px)}'
+   +'.crm-ma-emo:active{transform:scale(1.15)}'
+   +'.crm-ma-plus{width:26px;height:26px;border:none;border-radius:50%;background:#F3EEE6;color:#54433C;font-size:15px;font-weight:800;line-height:1;cursor:pointer;margin-left:3px;display:grid;place-items:center;transition:background .12s,transform .12s}'
+   +'.crm-ma-plus:hover{background:#EADFCE;transform:scale(1.12)}'
+   +'.crm-ma-sep{width:1px;height:20px;background:#EDE6DA;margin:0 6px;display:inline-block;flex-shrink:0}'
+   +'.crm-ma-acts{display:inline-flex;align-items:center;gap:1px}'
+   +'.crm-ma-btn{width:29px;height:29px;border:none;background:transparent;border-radius:50%;color:#8A7B6D;cursor:pointer;display:grid;place-items:center;transition:background .12s,color .12s,transform .1s}'
+   +'.crm-ma-btn:hover{background:#F3EEE6;color:#54433C}'
+   +'.crm-ma-btn:active{transform:scale(.9)}'
+   +'.crm-ma-del:hover{background:#FAEDE8;color:#B3402E}'
+   +'@media(max-width:767px){.crm-ma-emo{font-size:21px;padding:6px 7px}.crm-ma-plus{width:34px;height:34px;font-size:17px}.crm-ma-btn{width:38px;height:38px}.crm-ma-sep{height:24px}}'
    +'</style>');
 })();

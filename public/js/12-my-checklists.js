@@ -22,7 +22,7 @@ function myClsPage(){
   if(!week.includes(S.calDate)){S.calDate=week.find(d=>d===today)||week[0];}
   const sel=S.calDate;
   const dayCls=myCls(S.uid,sel);
-  const okrDue=okrDueForUser(S.uid,sel); // OKR v2: scheduled check-ins land here as ONE combined card
+  const okrDue=okrDueForUser(S.uid,sel); // BOLT v2: scheduled check-ins land here as ONE combined card
   const doneN=dayCls.filter(c=>subForCl(c,S.uid,sel)).length;
   const lateN=sel>today?0:dayCls.filter(c=>!subForCl(c,S.uid,sel)&&(sel<today||(sel===today&&c.scheduleTime&&nowHM()>hm2m(c.scheduleTime)))).length;
   const pendN=dayCls.filter(c=>!subForCl(c,S.uid,sel)).length-lateN;
