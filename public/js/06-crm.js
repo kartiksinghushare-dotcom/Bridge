@@ -197,7 +197,7 @@ async function _crmLoad(){
     // v3.18: a board restored from the last session decides the hub, so a refresh lands on the same tab.
     if(CRM.sel.boardId){var _rb=_crmBoard(CRM.sel.boardId);if(_rb)CRM.sel.hubId=_rb.hubId;}
   }catch(e){CRM._err=(e&&e.message)||'Failed to load';console.warn('[CRM load]',CRM._err);}
-  CRM._loaded=true;CRM._loading=false;rr();try{_crmCheckReminders();}catch(e){}
+  CRM._loaded=true;CRM._loading=false;rr();try{if(CRM._openAfterLoad){var _oa=CRM._openAfterLoad;CRM._openAfterLoad=null;setTimeout(function(){try{App._crmOpenFromNotification(_oa.link,_oa.text);}catch(e){}},30);}}catch(e){}try{_crmCheckReminders();}catch(e){}
   try{_crmLiveInitTs();_crmLiveStart();}catch(e){}
 }
 const _crmStyle='<style>'
@@ -367,7 +367,7 @@ function _crmMsg(m,cid,thread,prev){
 }
 function _crmMentionItems(q){
   var b=_crmBoard(CRM.sel.boardId);var mem=_crmBoardPeople(b);q=(q||'').toLowerCase();
-  var list=mem.filter(u=>!q||fullName(u).toLowerCase().indexOf(q)>=0);
+  var list=mem.filter(u=>u.id!==S.uid&&(!q||fullName(u).toLowerCase().indexOf(q)>=0));
   var memIds={};mem.forEach(function(u){memIds[u.id]=1;});
   // Groups are taggable too — only groups with at least one member of this board
   var glist=_crmGroups().filter(function(g){var n=String(g.name||'').toLowerCase();var t=_crmGroupToken(g).toLowerCase();return (!q||n.indexOf(q)>=0||t.indexOf(q)>=0)&&(g.members||[]).some(function(id){return memIds[id];});});
@@ -2249,6 +2249,7 @@ function _crmFindConvoByTitle(text){
 App._crmOpenFromNotification=(link,text)=>{
   _crmInit();
   if(!can('crm','view'))return false;
+  if(!CRM._loaded){S.route='crm';S.search='';CRM._openAfterLoad={link:link,text:text};render();window.scrollTo(0,0);if(!CRM._loading){try{_crmLoad();}catch(e){}}return true;}
   var c=null;
   if(link&&String(link).indexOf('crm:')===0)c=_crmConvo(String(link).slice(4));
   if(!c)c=_crmFindConvoByTitle(text);

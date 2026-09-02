@@ -843,7 +843,7 @@ function _bbOnNotifRow(row){
       try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
       var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
       if(age<120000&&!row.read)_bbRing(_bbNotifKind({text:row.text,link:row.link}));
-      if(S.route==='notifications')try{render();}catch(e){}
+      try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
     }
   }catch(e){}
 }

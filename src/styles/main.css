@@ -1249,7 +1249,7 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   .ui-label{letter-spacing:.04em!important;font-size:10.5px!important;margin-bottom:5px!important}
   /* Filters + inputs: text inputs keep 16px (no iOS zoom); selects shrink (no zoom on select) */
   #content .ui-select,#content select{font-size:13.5px!important;min-height:38px!important;padding:8px 30px 8px 12px!important}
-  #content input.ui-input,#content input[type="text"],#content input[type="search"],#content input[type="email"],#content input[type="number"],#content textarea{font-size:16px!important;min-height:38px!important;padding:8px 12px!important}
+  #content input.ui-input,#content input[type="text"],#content input[type="search"],#content input[type="email"],#content input[type="number"],#content textarea{font-size:16px!important;min-height:38px!important;padding-top:8px!important;padding-bottom:8px!important}
   /* Toggles: smaller pill */
   .tog{width:32px!important;height:19px!important}
   .tog span{width:15px!important;height:15px!important;top:2px!important;left:2px!important}
@@ -1264,4 +1264,11 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   #content .crm-trow td,#content .crm-trow th{font-size:12.5px!important;padding:8px 9px!important}
   /* Search boxes / segmented filters read smaller */
   #content .hscroll button,#content .ui-tab,#content .ui-tab-pill{font-size:12px!important;min-height:31px!important;padding:6px 11px!important}
+}
+
+/* segmented sub-tabs: scroll on mobile instead of wrapping mid-word */
+@media(max-width:767px){
+  .bb-segtabs{overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap!important}
+  .bb-segtabs::-webkit-scrollbar{display:none}
+  .bb-segtab{flex:0 0 auto!important;white-space:nowrap!important;font-size:12px!important;padding:7px 13px!important}
 }

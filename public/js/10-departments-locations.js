@@ -233,7 +233,7 @@ function deptsPage(){
     if(!d){S.filters.deptSel=null;return deptsPage();}
     const dUsers=DB.users.filter(u=>u.department===d.name);
     const dCls=DB.checklists.filter(c=>c.department===d.name);
-    const TABS=[['docs','📁 Documents'],['users','👥 Users'],['checklists','✓ Checklists'],['subdepts','🏢 Sub-departments']];
+    const TABS=[['docs','📁 Documents'],['users','👥 Users'],['checklists','✓ Checklists'],['subdepts','🏢 Sub-depts']];
     return'<div class="fade">'
       // Back bar
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
@@ -244,8 +244,8 @@ function deptsPage(){
       +(can('departments','edit')?'<button onclick="App.editDept(this.dataset.id)" data-id="'+d.id+'" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:#F7F3EE;color:#3A312A;font-size:13px;font-weight:600;border:1px solid #EDE7DC;cursor:pointer">'+ic('edit','w-4 h-4')+'Edit</button>':'')
       +'</div>'
       // Sub-tabs
-      +'<div style="display:flex;gap:4px;margin-bottom:16px;background:#F7F3EE;border-radius:12px;padding:4px">'
-      +TABS.map(([k,l])=>'<button onclick="App._setDeptTab(this.dataset.k)" data-k="'+k+'" style="flex:1;padding:8px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;background:'+(stab===k?'#fff':'transparent')+';color:'+(stab===k?'#13171B':'#786A5F')+';box-shadow:'+(stab===k?'0 1px 4px rgba(0,0,0,.08)':'none')+'">'+l+'</button>').join('')
+      +'<div class="bb-segtabs" style="display:flex;gap:4px;margin-bottom:16px;background:#F7F3EE;border-radius:12px;padding:4px">'
+      +TABS.map(([k,l])=>'<button onclick="App._setDeptTab(this.dataset.k)" data-k="'+k+'" class="bb-segtab" style="flex:1;padding:8px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;background:'+(stab===k?'#fff':'transparent')+';color:'+(stab===k?'#13171B':'#786A5F')+';box-shadow:'+(stab===k?'0 1px 4px rgba(0,0,0,.08)':'none')+'">'+l+'</button>').join('')
       +'</div>'
       // Tab content
       +(stab==='docs'?_scopeDocsTab('dept',d.name):'')
