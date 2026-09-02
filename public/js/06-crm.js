@@ -130,6 +130,7 @@ function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'
 /* v3.20 — the chip is a CLASS, not inline styles, so it can invert inside the sender's own
    orange bubble (.crm-mine): a pale chip with dark-orange text was unreadable on #54433C. */
 function _crmAtPlain(t){return esc(t||'').replace(/@(\w+)/g,'<span class="crm-tag">@$1</span>');}
+function _crmLinkLabel(u){var s=String(u);var i=s.indexOf('://');if(i>=0&&i<8)s=s.slice(i+3);if(s.slice(0,4).toLowerCase()==='www.')s=s.slice(4);return s.length>42?s.slice(0,39)+'…':s;}
 function _crmAt(t){
   t=String(t||'');
   var re=/((?:https?:\/\/|www\.)[^\s<>"']+)/gi,out='',last=0,mm;
@@ -138,7 +139,7 @@ function _crmAt(t){
     var raw=mm[1],trail='';
     var tm=raw.match(/[),.!?:;\]]+$/);if(tm){trail=tm[0];raw=raw.slice(0,raw.length-trail.length);}
     var href=raw.toLowerCase().indexOf('http')===0?raw:('https://'+raw);
-    out+='<a class="crm-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(raw)+'</a>'+_crmAtPlain(trail);
+    out+='<a class="crm-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(_crmLinkLabel(raw))+'</a>'+_crmAtPlain(trail);
     last=mm.index+mm[1].length;
   }
   out+=_crmAtPlain(t.slice(last));
@@ -247,9 +248,20 @@ const _crmStyle='<style>'
      It used to be forced visible on every message, so it never went away after sending. */
   +'.crm-macts{display:none!important}'
   +'.crm-msg.crm-actopen .crm-macts{display:flex!important}'
-  +'.crm-macts{position:absolute;top:100%;bottom:auto;margin-top:6px;margin-bottom:0;right:0;left:auto;flex-wrap:wrap;max-width:min(300px,88vw);gap:2px!important;padding:5px!important;box-shadow:0 8px 26px rgba(35,28,22,.26)!important}'
-  +'.crm-msg:not(.crm-mine) .crm-macts{right:auto;left:0}'
-  +'.crm-macts button{min-width:38px!important;min-height:38px!important;display:inline-flex!important;align-items:center;justify-content:center;padding:0!important;font-size:17px!important}'
+  +'.crm-macts{position:absolute!important;top:auto!important;bottom:calc(100% + 8px)!important;margin:0!important;right:0;left:auto;flex-direction:column!important;align-items:stretch!important;flex-wrap:nowrap!important;width:max-content!important;max-width:min(320px,90vw)!important;gap:5px!important;padding:7px!important;border-radius:20px!important;box-shadow:0 16px 36px rgba(35,28,22,.30),0 3px 8px rgba(35,28,22,.12)!important;opacity:0;transform:translateY(6px) scale(.96);transform-origin:bottom right;animation:crmActsPop .18s cubic-bezier(.2,.9,.3,1.25) forwards}'
+  +'.crm-msg:not(.crm-mine) .crm-macts{right:auto;left:0;transform-origin:bottom left}'
+  +'.crm-msg.crm-actopen.crm-actbelow .crm-macts{top:calc(100% + 8px)!important;bottom:auto!important;transform-origin:top right}'
+  +'.crm-msg.crm-actbelow:not(.crm-mine) .crm-macts{transform-origin:top left}'
+  +'.crm-macts .crm-ma-emos{display:flex!important;align-items:center;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}'
+  +'.crm-macts .crm-ma-emos::-webkit-scrollbar{display:none}'
+  +'.crm-macts .crm-ma-sep{width:auto!important;height:1px!important;min-height:1px!important;background:#EDE6DA!important;margin:1px 4px!important;display:block!important;flex-shrink:0}'
+  +'.crm-macts .crm-ma-acts{display:flex!important;align-items:center;justify-content:space-between;gap:2px}'
+  +'.crm-macts button{min-width:42px!important;min-height:42px!important;display:inline-flex!important;align-items:center;justify-content:center;padding:0!important;font-size:22px!important;flex:0 0 auto}'
+  +'.crm-macts .crm-ma-btn svg{width:20px;height:20px}'
+  +'.crm-msg.crm-actopen{z-index:20}'
+  +'.crm-msg.crm-actopen .crm-bub{box-shadow:0 0 0 3px rgba(84,67,60,.16),0 8px 20px rgba(35,28,22,.18)!important}'
+  +'.crm-wall.crm-focusing .crm-msg:not(.crm-actopen){opacity:.26!important;transition:opacity .18s ease}'
+  +'@keyframes crmActsPop{to{opacity:1;transform:translateY(0) scale(1)}}'
   /* the ticket details panel was display:none on mobile, so assignee/status/fields/reminders
      were unreachable. It is now a dismissable bottom sheet. */
   +'.crm-hide-mob{display:none!important}'
@@ -801,11 +813,12 @@ App._crmMsgActs=(e,el)=>{
   var t=e&&e.target;
   if(t&&t.closest&&(t.closest('.crm-macts')||t.closest('button')||t.closest('a')||t.closest('input')||t.closest('textarea')))return;
   var on=el.classList.contains('crm-actopen');
-  document.querySelectorAll('.crm-msg.crm-actopen').forEach(function(m){m.classList.remove('crm-actopen');});
-  if(!on)el.classList.add('crm-actopen');
+  document.querySelectorAll('.crm-msg.crm-actopen').forEach(function(m){m.classList.remove('crm-actopen','crm-actbelow');});
+  var _wall=el.closest&&el.closest('.crm-wall');
+  if(!on){el.classList.add('crm-actopen');try{var _rc=el.getBoundingClientRect();if(_rc.top<175)el.classList.add('crm-actbelow');}catch(_e){}if(_wall)_wall.classList.add('crm-focusing');}else{if(_wall)_wall.classList.remove('crm-focusing');}
   if(e&&e.stopPropagation)e.stopPropagation();
 };
-App._crmCloseMsgActs=()=>{document.querySelectorAll('.crm-msg.crm-actopen').forEach(function(m){m.classList.remove('crm-actopen');});};
+App._crmCloseMsgActs=()=>{document.querySelectorAll('.crm-msg.crm-actopen').forEach(function(m){m.classList.remove('crm-actopen','crm-actbelow');});document.querySelectorAll('.crm-wall.crm-focusing').forEach(function(w){w.classList.remove('crm-focusing');});};
 /* Ticket details as a bottom sheet on small screens. */
 App._crmMobDetails=(open)=>{CRM._mobDetails=(open===undefined)?!CRM._mobDetails:!!open;rr();};
 if(!window._crmActsBound){
