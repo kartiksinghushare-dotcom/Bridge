@@ -833,6 +833,7 @@ function _bbRing(kind){
   }catch(e){}
 }
 window._bbSeenN=window._bbSeenN||{};
+function _bbSB(){try{if(typeof sb!=='undefined'&&sb)return sb;}catch(e){}try{return window.sb||null;}catch(e){}return null;}
 function _bbOnNotifRow(row){
   try{
     if(!row||!row.id||!S||row.user_id!==S.uid)return;
@@ -851,10 +852,10 @@ function _bbOnNotifRow(row){
   /* history never rings: keep marking whatever is already loaded as seen */
   setInterval(function(){try{(DB&&DB.notifications||[]).forEach(function(n){window._bbSeenN[n.id]=1;});}catch(e){}},2000);
   /* live: one realtime channel per signed-in user */
-  setInterval(function(){
-    if(!window.sb||!S||!S.uid||window._bbNotifRT)return;
-    try{
-      window._bbNotifRT=sb.channel('bb-notif-'+S.uid)
+  setInterval(function(){try{
+    var _s=_bbSB();
+    if(!_s||typeof S==='undefined'||!S||!S.uid||window._bbNotifRT)return;
+      window._bbNotifRT=_s.channel('bb-notif-'+S.uid)
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+S.uid},function(p){_bbOnNotifRow(p.new||p.record||{});})
         .subscribe();
     }catch(e){window._bbNotifRT=null;}
@@ -917,10 +918,10 @@ function _bbPresPaint(){try{var els=document.querySelectorAll('[data-pres]');for
    +'aside.sidebar .bb-dot{border-color:#181D23}'
    +'</style>');
   /* join the shared presence channel once signed in; tab close = socket close = red */
-  setInterval(function(){
-    if(!window.sb||typeof S==='undefined'||!S||!S.uid||window._bbPresRT)return;
-    try{
-      var ch=sb.channel('bb-presence',{config:{presence:{key:S.uid}}});
+  setInterval(function(){try{
+    var _s=_bbSB();
+    if(!_s||typeof S==='undefined'||!S||!S.uid||window._bbPresRT)return;
+      var ch=_s.channel('bb-presence',{config:{presence:{key:S.uid}}});
       window._bbPresRT=ch;window._bbPresUid=S.uid;
       ch.on('presence',{event:'sync'},function(){
         try{var st=ch.presenceState();var o={};for(var k in st)o[k]=true;window._bbOnline=o;_bbPresPaint();}catch(e){}
@@ -931,9 +932,34 @@ function _bbPresPaint(){try{var els=document.querySelectorAll('[data-pres]');for
   setInterval(function(){
     try{
       if(window._bbPresRT&&(!S||!S.uid||S.uid!==window._bbPresUid)){
-        try{sb.removeChannel(window._bbPresRT);}catch(e){}
+        try{var _s2=_bbSB();if(_s2)_s2.removeChannel(window._bbPresRT);}catch(e){}
         window._bbPresRT=null;window._bbOnline={};_bbPresPaint();
       }
     }catch(e){}
   },4000);
+})();
+
+
+/* ═══════════ PASSWORD EYE — every password field gets a show/hide toggle ═══════════ */
+(function(){
+  if(window._bbEyeBoot)return;window._bbEyeBoot=true;
+  var EYE='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.7"/></svg>';
+  var EYEOFF='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.9a10 10 0 0 1 1.4-.4c6.5 0 10 6.5 10 6.5a17 17 0 0 1-3 3.6M6.6 6.9A16.7 16.7 0 0 0 2 12s3.5 6.5 10 6.5a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a2.7 2.7 0 0 0 3.8 3.8"/></svg>';
+  document.head.insertAdjacentHTML('beforeend','<style id="bb-eye-css">.bb-eyewrap{position:relative;display:block;min-width:0;width:100%}.bb-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;background:transparent;color:#A59788;cursor:pointer;display:grid;place-items:center;border-radius:8px;z-index:3;padding:0}.bb-eye:hover{color:#54433C;background:rgba(84,67,60,.06)}.bb-eyewrap input{padding-right:40px!important;width:100%;box-sizing:border-box}</style>');
+  function _bbEyeEnhance(){
+    try{
+      var ins=document.querySelectorAll('input[type="password"]:not([data-eye])');
+      for(var i=0;i<ins.length;i++){
+        var inp=ins[i];inp.setAttribute('data-eye','1');
+        var w=document.createElement('div');w.className='bb-eyewrap';
+        inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
+        var b=document.createElement('button');b.type='button';b.className='bb-eye';b.setAttribute('aria-label','Show password');b.tabIndex=-1;b.innerHTML=EYE;
+        b.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();var ip=this.parentNode.querySelector('input');if(!ip)return;var show=ip.type==='password';ip.type=show?'text':'password';this.innerHTML=show?EYEOFF:EYE;this.setAttribute('aria-label',show?'Hide password':'Show password');try{ip.focus();var L=ip.value.length;ip.setSelectionRange(L,L);}catch(e){}});
+        w.appendChild(b);
+      }
+    }catch(e){}
+  }
+  var deb=null;
+  try{new MutationObserver(function(){clearTimeout(deb);deb=setTimeout(_bbEyeEnhance,120);}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+  _bbEyeEnhance();
 })();
