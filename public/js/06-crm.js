@@ -129,7 +129,21 @@ const _CRM_EMO=['\u{1F44D}','❤️','\u{1F602}','\u{1F62E}','\u{1F622}','\u{1F6
 function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#54433C','#96695B','#A97C33','#8A5D6B','#BC6E62','#A5796A'][h%6];return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>';}
 /* v3.20 — the chip is a CLASS, not inline styles, so it can invert inside the sender's own
    orange bubble (.crm-mine): a pale chip with dark-orange text was unreadable on #54433C. */
-function _crmAt(t){return esc(t||'').replace(/@(\w+)/g,'<span class="crm-tag">@$1</span>');}
+function _crmAtPlain(t){return esc(t||'').replace(/@(\w+)/g,'<span class="crm-tag">@$1</span>');}
+function _crmAt(t){
+  t=String(t||'');
+  var re=/((?:https?:\/\/|www\.)[^\s<>"']+)/gi,out='',last=0,mm;
+  while((mm=re.exec(t))){
+    out+=_crmAtPlain(t.slice(last,mm.index));
+    var raw=mm[1],trail='';
+    var tm=raw.match(/[),.!?:;\]]+$/);if(tm){trail=tm[0];raw=raw.slice(0,raw.length-trail.length);}
+    var href=raw.toLowerCase().indexOf('http')===0?raw:('https://'+raw);
+    out+='<a class="crm-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(raw)+'</a>'+_crmAtPlain(trail);
+    last=mm.index+mm[1].length;
+  }
+  out+=_crmAtPlain(t.slice(last));
+  return out;
+}
 function _crmImgs(imgs){if(!imgs||!imgs.length)return'';return'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+imgs.map(function(s){return'<img src="'+s+'" onclick="App._bigImg&&App._bigImg(this.src)" style="width:130px;height:96px;object-fit:cover;border-radius:10px;border:1px solid rgba(0,0,0,.08);cursor:pointer"/>';}).join('')+'</div>';}
 async function _crmProvisionDefault(){var hid=uid('hub'),bid=uid('brd');_crmMarkFresh(hid);_crmMarkFresh(bid);CRM.hubs.push({id:hid,name:'General',icon:'msg'});if(S.uid)CRM.hubMembers[hid]=[S.uid];CRM.boards.push({id:bid,hubId:hid,name:'Chat',members:S.uid?[S.uid]:[],settings:{type:'chat'},createdBy:S.uid||null});CRM.sel.hubId=hid;CRM.sel.boardId=bid;try{await sb.from('crm_hubs').insert({id:hid,name:'General',icon:'msg',created_by:S.uid||null,sort:0});if(S.uid)await sb.from('crm_hub_members').insert({hub_id:hid,user_id:S.uid});await sb.from('crm_boards').insert({id:bid,hub_id:hid,name:'Chat',created_by:S.uid||null,sort:0,settings:{type:'chat'}});if(S.uid)await sb.from('crm_board_members').insert({board_id:bid,user_id:S.uid});}catch(e){console.warn('[CRM default]',e&&e.message);}}
 /* ── v3.12: every hub ALWAYS has a Chat board by default — created with the hub and healed
@@ -750,7 +764,7 @@ function _crmRecips(board,event){var bs=_crmBS(board);var g=CRM.settings||{};var
 async function _crmNotifyRule(event,convo,board,emailType,vars){var recips=_crmRecips(board,event);if(!recips.length)return;var bs=_crmBS(board);var emailOn=!(bs.email&&bs.email[event]===false);var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var txt=(event==='created'?('\u{1F3AB} '+who+' created a ticket: "'+(convo.title||'')+'"'):event==='approval'?('✅ Approval needed: "'+(convo.title||'')+'"'):event==='decided'?(((vars&&vars.decision)||'Updated')+': "'+(convo.title||'')+'"'):('\u{1F514} '+(convo.title||'')));var _lnk2=convo&&convo.id?('crm:'+convo.id):null;for(var i=0;i<recips.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:recips[i],text:txt,time:at,read:false,link:_lnk2});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:recips[i],text:txt,read:false,created_at:at,link:_lnk2});}catch(e){}}if(emailOn&&emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,recips[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
 App._crmDecide=async(id,decision)=>{var c=_crmConvo(id);if(!c)return;var board=_crmBoard(c.boardId);var bs=_crmBS(board);if(!(can('crm','manage')||(bs.approvers||[]).indexOf(S.uid)>=0||can('crm','convert')||can('crm','edit')))return toast('Only approvers can decide','err');var at=new Date().toISOString();c.decision=decision;c.decidedBy=S.uid;c.decidedAt=at;var step=decision==='Approved'?bs.approveTo:bs.rejectTo;var detail;if(step&&step.action==='move'&&step.boardId&&_crmBoard(step.boardId)){c.boardId=step.boardId;c.isTicket=true;detail='moved to '+_crmBoard(step.boardId).name;}else{var _doneSt=(_crmStatuses(board).find(function(x){return x.done;})||{name:'Resolved'}).name;c.status=_doneSt;detail='marked '+_doneSt;}await _crmLog(decision,c,detail);toast('Ticket '+decision.toLowerCase()+' ✓');rr();sbWrite({table:'crm_conversations',op:'update',id:id,match:{col:'id',val:id},values:{decision:decision,decided_by:S.uid||null,decided_at:at,board_id:c.boardId,status:c.status,updated_at:at}},{label:'Ticket decision'});_crmNotifyRule('decided',c,board,'crm_decided',{title:c.title,decision:decision,actor:(me()?fullName(me()):''),customer:c.customer});if(typeof _crmNotifyEvent==='function')_crmNotifyEvent(board,decision==='Approved'?'approved':'rejected',c,decision==='Approved'?'crm_approval':'crm_decided',{title:c.title,decision:decision,actor:(me()?fullName(me()):''),customer:c.customer});};
 function _crmApprovalCtl(convo,board){return'';var bs=_crmBS(board);if(bs.type==='chat'||!convo.isTicket)return'';if(convo.decision){var col=convo.decision==='Approved'?['#346A47','#EEE4D5']:['#93301F','#FAEDE8'];var by=convo.decidedBy&&uById(convo.decidedBy)?fullName(uById(convo.decidedBy)):'';return'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:'+col[0]+';background:'+col[1]+';border-radius:8px;padding:4px 9px">'+esc(convo.decision)+(by?' · '+esc(by):'')+' · '+_crmDT(convo.decidedAt)+'</span>';}var ok=can('crm','manage')||(bs.approvers||[]).indexOf(S.uid)>=0||can('crm','convert');if(!ok)return'<span style="font-size:11.5px;color:#A59788">Awaiting approval</span>';return'<div style="display:flex;gap:6px"><button onclick="App._crmDecide(\''+convo.id+'\',\'Approved\')" style="display:inline-flex;align-items:center;gap:5px;background:#54433C;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;border:none;cursor:pointer">'+ic('check','w-3.5 h-3.5')+'Approve</button><button onclick="App._crmDecide(\''+convo.id+'\',\'Rejected\')" style="display:inline-flex;align-items:center;gap:5px;background:#fff;color:#B3402E;border:1px solid #E4A898;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer">'+ic('x','w-3.5 h-3.5')+'Reject</button></div>';}
-function _crmHdrBtns(convo,board){var others=CRM.boards.filter(function(b){return board&&b.hubId===board.hubId&&b.id!==convo.boardId&&_crmBoardVisible(b)&&_crmBS(b).type!=='chat';});var mv=(can('crm','edit')&&others.length)?'<div style="position:relative"><button class="crm-hdr-sec crm-hdr-btn" title="Move / escalate to another board" onclick="App._crmTogMove()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('send','w-4 h-4')+'</button><div id="crm-move" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #E6DED3;border-radius:12px;box-shadow:0 12px 32px rgba(35,28,22,.18);padding:6px;width:224px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:4px 8px">Move / escalate to</div>'+others.map(function(b){var t=_crmBS(b).type;return'<button onclick="App._crmMoveConvo(\''+convo.id+'\',\''+b.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#13171B" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'"><span style="color:#A59788">'+ic(t==='chat'?'msg':'ticket','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#A8998A">'+esc(t)+'</span></button>';}).join('')+'</div></div>':'';return mv+(convo.isTicket?'<button class="crm-hdr-btn" title="Details panel" onclick="App._crmTogDetails()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:'+(CRM.detailsOpen!==false?'#F7F4EF':'#fff')+';color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('info','w-4 h-4')+'</button>':'')+'<button title="Activity — who did what" class="crm-hdr-sec crm-hdr-btn" onclick="App._crmTogActivity()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:'+(CRM.activityOpen?'#F7F4EF':'#fff')+';color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('clock','w-4 h-4')+'</button>';}
+function _crmHdrBtns(convo,board){var others=CRM.boards.filter(function(b){return board&&b.hubId===board.hubId&&b.id!==convo.boardId&&_crmBoardVisible(b)&&_crmBS(b).type!=='chat';});var mv=(can('crm','edit')&&others.length)?'<div style="position:relative"><button class="crm-hdr-sec crm-hdr-btn" title="Move / escalate to another board" onclick="App._crmTogMove()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('send','w-4 h-4')+'</button><div id="crm-move" style="display:none;position:absolute;right:0;top:38px;z-index:60;background:#fff;border:1px solid #E6DED3;border-radius:12px;box-shadow:0 12px 32px rgba(35,28,22,.18);padding:6px;width:224px;max-height:250px;overflow:auto"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:4px 8px">Move / escalate to</div>'+others.map(function(b){var t=_crmBS(b).type;return'<button onclick="App._crmMoveConvo(\''+convo.id+'\',\''+b.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:7px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#13171B" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'"><span style="color:#A59788">'+ic(t==='chat'?'msg':'ticket','w-3.5 h-3.5')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#A8998A">'+esc(t)+'</span></button>';}).join('')+'</div></div>':'';var snd='<button class="crm-hdr-btn" id="crm-sndbtn" title="Message sound (loud!)" onclick="App._crmSndTog(this)" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:#fff;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1">'+(_crmSndOn()?'\u{1F514}':'\u{1F515}')+'</button>';return snd+mv+(convo.isTicket?'<button class="crm-hdr-btn" title="Details panel" onclick="App._crmTogDetails()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:'+(CRM.detailsOpen!==false?'#F7F4EF':'#fff')+';color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('info','w-4 h-4')+'</button>':'')+'<button title="Activity — who did what" class="crm-hdr-sec crm-hdr-btn" onclick="App._crmTogActivity()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:'+(CRM.activityOpen?'#F7F4EF':'#fff')+';color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('clock','w-4 h-4')+'</button>';}
 function _crmChecked(prefix){var out=[];(DB.users||[]).forEach(function(u){var el=document.getElementById(prefix+u.id);if(el&&el.checked)out.push(u.id);});return out;}
 App._crmTogActivity=()=>{CRM.activityOpen=!CRM.activityOpen;rr();};
 App._crmTogBoardSettings=(bid)=>{CRM._bsBoardId=bid||CRM.sel.boardId;CRM.boardSettingsOpen=!CRM.boardSettingsOpen;rr();};
@@ -1822,6 +1836,7 @@ function _crmMergeMsgRow(r,evt){
     c.messages.sort(function(a,b){return String(a.at||'').localeCompare(String(b.at||''));});
     if(!c.lastAt||String(m.at)>String(c.lastAt))c.lastAt=m.at;
     if(m.at&&(!_crmRT.lastTs||String(m.at)>_crmRT.lastTs))_crmRT.lastTs=String(m.at);
+    try{if(m.senderId!==S.uid&&m.at&&(Date.now()-new Date(m.at).getTime())<90000)_crmDing(m);}catch(e){}
     return true;
   }
   var old=c.messages[i];
@@ -2448,4 +2463,42 @@ App._crmEmoPick=(ch)=>{if(!ch)return;var st=CRM._emo||{};_crmEmoRecPush(ch);try{
   +'}'
   +'@media(prefers-reduced-motion:reduce){.crm-anew-in,.crm-anew-out,#crm-emohost.on{animation:none}.crm-typd i{animation:none}}';
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus-css">'+css+'</style>');
+})();
+
+
+/* ═══ CHAT+ round 2: clickable links + loud incoming-message sound ═══ */
+var _crmAC=null,_crmDingT=0;
+function _crmSndOn(){try{if(typeof _bbSndAllow==='function')return _bbSndAllow('workspace_message');return localStorage.getItem('bb_chat_sound')!=='0';}catch(e){return true;}}
+App._crmSndTog=(btn)=>{var on;if(typeof _bbSndSet==='function'&&typeof _bbSndAllow==='function'){on=!_bbSndAllow('workspace_message');_bbSndSet('workspace_message',on);}else{on=!(localStorage.getItem('bb_chat_sound')!=='0');try{localStorage.setItem('bb_chat_sound',on?'1':'0');}catch(e){}}if(btn)btn.textContent=on?'\u{1F514}':'\u{1F515}';if(on)_crmDing(null,true);try{toast(on?'Chat sound on \u{1F514}':'Chat sound off');}catch(e){}};
+function _crmACtx(){try{if(!_crmAC)_crmAC=new (window.AudioContext||window.webkitAudioContext)();if(_crmAC.state==='suspended')_crmAC.resume();return _crmAC;}catch(e){return null;}}
+function _crmDing(m,force){
+  if(!force){if(!_crmSndOn())return;var now=Date.now();if(now-(window._bbDingT||0)<1500)return;window._bbDingT=now;}
+  var ctx=_crmACtx();if(!ctx)return;
+  try{
+    var t0=ctx.currentTime+0.02;
+    var master=ctx.createGain();master.gain.value=0.95;
+    var comp=ctx.createDynamicsCompressor();master.connect(comp);comp.connect(ctx.destination);
+    var seq=[740,988,1245,740,988,1245];
+    for(var i=0;i<seq.length;i++){
+      var t=t0+i*0.185;var f=seq[i];
+      for(var d=0;d<2;d++){
+        var o=ctx.createOscillator();o.type='square';o.frequency.setValueAtTime(f+(d?7:0),t);
+        var g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.55,t+0.015);g.gain.setValueAtTime(0.55,t+0.125);g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+        o.connect(g);g.connect(master);o.start(t);o.stop(t+0.18);
+      }
+    }
+  }catch(e){}
+}
+(function(){
+  if(window._crmPlus2)return;window._crmPlus2=true;
+  /* browsers only allow audio after a user gesture — unlock on the first one */
+  ['click','keydown','touchstart'].forEach(function(ev){
+    document.addEventListener(ev,function once(){_crmACtx();document.removeEventListener(ev,once,true);},true);
+  });
+  document.head.insertAdjacentHTML('beforeend','<style id="crm-plus2-css">'
+   +'.crm-link{color:#936659;font-weight:600;text-decoration:underline;text-underline-offset:2px;word-break:break-all}'
+   +'.crm-link:active{opacity:.7}'
+   +'.crm-bub-mine .crm-link{color:#FFEAD7}'
+   +'.crm-bub-mine .crm-tag{background:rgba(255,255,255,.24);color:#fff}'
+   +'</style>');
 })();

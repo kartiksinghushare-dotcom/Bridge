@@ -582,6 +582,7 @@ function settingsPage(){
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
 
   const inappTab=`<div class="space-y-4">
+    ${typeof _bbSndCard==='function'?_bbSndCard():''}
     <div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden">
       <div style="padding:14px 20px;background:#F5F1EB;border-bottom:1px solid #EEE8DE">
         <div style="font-size:14px;font-weight:700">In-app notifications</div>
@@ -781,3 +782,124 @@ App._exportCSV=()=>{
   toast('Exported '+subs.length+' submissions ('+(qRows.length-1)+' question responses)');
 };
 
+
+
+/* ═══════════ SOUND ALERTS — every Bridge notification rings once ═══════════
+   Loud bell on arrival (realtime + poll), rate-limited to one ring, with
+   per-person per-type opt-outs stored on this device. */
+var _BB_SND_TYPES=[
+ ['workspace_message','Workspace chat messages','A new message in any of your conversations'],
+ ['workspace','Workspace activity','@mentions, tickets, moves and automation updates'],
+ ['checklist','Checklists','A checklist is assigned to you or removed'],
+ ['approval','Approvals','Approval requested, approved or rejected'],
+ ['edit','Edit requests','Edit requests and re-submissions'],
+ ['escalation','Escalations','A question or task escalates to you'],
+ ['feedback','Feedback','Feedback and feedback replies'],
+ ['late','Late & reminders','Overdue submissions and deadline reminders'],
+ ['okr','OKRs','OKR assignments, check-ins and revisions'],
+ ['general','Everything else','Any other Bridge notification']
+];
+function _bbSndKey(){return 'bb_snd_prefs_'+((typeof S!=='undefined'&&S&&S.uid)||'anon');}
+function _bbSndPrefs(){try{var p=JSON.parse(localStorage.getItem(_bbSndKey())||'{}');p.types=p.types||{};if(p.master===undefined)p.master=true;return p;}catch(e){return{master:true,types:{}};}}
+function _bbSndSave(p){try{localStorage.setItem(_bbSndKey(),JSON.stringify(p));}catch(e){}}
+function _bbSndAllow(t){var p=_bbSndPrefs();if(p.master===false)return false;return p.types[t]!==false;}
+function _bbSndSet(t,on){var p=_bbSndPrefs();p.types[t]=!!on;_bbSndSave(p);}
+App._bbSndMaster=()=>{var p=_bbSndPrefs();p.master=(p.master===false);_bbSndSave(p);if(p.master)try{_crmDing(null,true);}catch(e){}render();};
+App._bbSndTogType=(t)=>{var p=_bbSndPrefs();p.types[t]=(p.types[t]===false);_bbSndSave(p);if(p.types[t]&&p.master!==false)try{_crmDing(null,true);}catch(e){}render();};
+App._bbSndOpen=()=>{window._bbSndOpen=!window._bbSndOpen;render();};
+function _bbNotifKind(n){
+  var text=(n&&n.text)||'';var link=(n&&n.link)||'';
+  if(n&&n.kind==='okr')return'okr';
+  if(/OKR|objective/i.test(text))return'okr';
+  if(/tagged you in/i.test(text))return'workspace';
+  if(link&&String(link).indexOf('crm:')===0)return'workspace';
+  if(text.indexOf('\u{1F3AB}')>=0||text.indexOf('\u21AA')>=0||text.indexOf('\u26A1')>=0||text.indexOf('\u{1F4AC}')>=0)return'workspace';
+  if(/^\u2705 Approval needed:/.test(text))return'workspace';
+  if(/checklist assigned|checklist removed/i.test(text))return'checklist';
+  if(/escalat/i.test(text))return'escalation';
+  if(/feedback|replied|reply/i.test(text))return'feedback';
+  if(/approv|reject/i.test(text))return'approval';
+  if(/edit request|re-submit|resubmit/i.test(text))return'edit';
+  if(/overdue|late|reminder|deadline/i.test(text))return'late';
+  return'general';
+}
+function _bbRing(kind){
+  try{
+    if(!_bbSndPrefs().master)return;
+    if(!_bbSndAllow(kind))return;
+    var now=Date.now();if(now-(window._bbDingT||0)<1500)return;window._bbDingT=now;
+    _crmDing(null,true);
+  }catch(e){}
+}
+window._bbSeenN=window._bbSeenN||{};
+function _bbOnNotifRow(row){
+  try{
+    if(!row||!row.id||!S||row.user_id!==S.uid)return;
+    if(window._bbSeenN[row.id])return;window._bbSeenN[row.id]=1;
+    var known=(DB.notifications||[]).some(function(x){return x.id===row.id;});
+    if(!known){
+      try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
+      var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
+      if(age<120000&&!row.read)_bbRing(_bbNotifKind({text:row.text,link:row.link}));
+      if(S.route==='notifications')try{render();}catch(e){}
+    }
+  }catch(e){}
+}
+(function(){
+  if(window._bbNotifBoot)return;window._bbNotifBoot=true;
+  /* history never rings: keep marking whatever is already loaded as seen */
+  setInterval(function(){try{(DB&&DB.notifications||[]).forEach(function(n){window._bbSeenN[n.id]=1;});}catch(e){}},2000);
+  /* live: one realtime channel per signed-in user */
+  setInterval(function(){
+    if(!window.sb||!S||!S.uid||window._bbNotifRT)return;
+    try{
+      window._bbNotifRT=sb.channel('bb-notif-'+S.uid)
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+S.uid},function(p){_bbOnNotifRow(p.new||p.record||{});})
+        .subscribe();
+    }catch(e){window._bbNotifRT=null;}
+  },2500);
+  /* fallback: light refresh once a minute while the tab is visible */
+  setInterval(function(){
+    if(!S||!S.uid||document.visibilityState!=='visible')return;
+    try{if(typeof _lazyLoad==='function')_lazyLoad('notifications');}catch(e){}
+  },60000);
+  /* poll path rings too: wrap the apply step, ring only brand-new fresh rows */
+  if(typeof _applyNotifications==='function'){
+    var _oap=_applyNotifications;
+    _applyNotifications=function(notifs){
+      var prev={};try{(DB.notifications||[]).forEach(function(n){prev[n.id]=1;});}catch(e){}
+      _oap(notifs);
+      try{
+        (DB.notifications||[]).forEach(function(n){
+          if(prev[n.id]||window._bbSeenN[n.id]){window._bbSeenN[n.id]=1;return;}
+          window._bbSeenN[n.id]=1;
+          var age=n.time?(Date.now()-new Date(n.time).getTime()):9e9;
+          if(age<120000&&!n.read)_bbRing(_bbNotifKind(n));
+        });
+      }catch(e){}
+    };
+  }
+})();
+function _bbSndRow(t,label,desc){
+  var on=_bbSndAllow(t);var p=_bbSndPrefs();
+  return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F1ECE3'+(p.master===false?';opacity:.45;pointer-events:none':'')+'">'
+   +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#13171B">'+label+'</div>'
+   +(desc?'<div style="font-size:11px;color:#A8998A;margin-top:1px">'+desc+'</div>':'')+'</div>'
+   +'<button class="tog'+(on?' on':'')+'" onclick="App._bbSndTogType(\''+t+'\')" aria-label="Toggle sound for '+label+'"><span></span></button></div>';
+}
+function _bbSndCard(){
+  var p=_bbSndPrefs();var open=!!window._bbSndOpen;
+  return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden;margin-bottom:16px">'
+   +'<div style="padding:13px 18px;background:#F5F1EB;'+(open?'border-bottom:1px solid #EEE8DE;':'')+'display:flex;align-items:center;gap:11px">'
+   +'<button onclick="App._bbSndOpen()" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:none;background:transparent;cursor:pointer;text-align:left;padding:0">'
+   +'<span style="font-size:17px">\u{1F514}</span>'
+   +'<span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:700;color:#13171B">Notification sounds</span>'
+   +'<span style="display:block;font-size:11.5px;color:#A59788;margin-top:1px">'+(p.master===false?'All sounds off':'Rings once per notification \u00B7 tap to choose which types')+'</span></span>'
+   +'<span style="margin-left:auto;color:#B8AA9C;transform:rotate('+(open?'90':'0')+'deg);transition:transform .15s">'+ic('chevR','w-4 h-4')+'</span></button>'
+   +'<button onclick="try{_crmDing(null,true)}catch(e){}" class="ui-btn ui-btn-ghost ui-btn-sm" style="flex-shrink:0">Test</button>'
+   +'<button class="tog'+(p.master!==false?' on':'')+'" onclick="App._bbSndMaster()" aria-label="All notification sounds"><span></span></button>'
+   +'</div>'
+   +(open?'<div style="padding:2px 18px 10px">'+_BB_SND_TYPES.map(function(r){return _bbSndRow(r[0],r[1],r[2]);}).join('')+'</div>':'')
+   +'</div>';
+}
+window._bbSndCard=_bbSndCard;
