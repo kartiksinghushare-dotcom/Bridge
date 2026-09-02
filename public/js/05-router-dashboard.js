@@ -22,7 +22,7 @@ function dashboardPage(){
     </button>`;
   const chartCard=(key,title,sub)=>`<div class="ui-card" style="padding:16px 18px;min-width:0"><div style="margin-bottom:10px"><div class="fd" style="font-size:13.5px;font-weight:800;color:var(--c-text)">${title}</div><div style="font-size:11px;color:var(--c-text-3);margin-top:1px">${sub}</div></div><div style="height:210px;position:relative"><canvas data-dash-chart="${key}"></canvas></div></div>`;
   return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
+    <div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
       ${kpi('On-time rate',rate===null?'—':rate+'%','#54433C','approve',"App.go('allcl')",'last 30 days')}
       ${kpi('Late',late,'#B3402E','alert',"App.go('allcl')",'submissions (30d)')}
       ${kpi('Open tickets',openTk+progTk,'#54433C','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}

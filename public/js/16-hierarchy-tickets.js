@@ -141,7 +141,7 @@ function ticketsPage(){
   return'<div class="fade">'+
     hdr('Tickets','Escalation tickets from checklist responses')+
     // Stats row — tap a card to filter by that status (Clear resets)
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
+    '<div class="bb-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
       statCard('Open',open,'#54433C',"App._tkFilter('status','Open')")+
       statCard('In Progress',inprog,'#96695B',"App._tkFilter('status','In Progress')")+
       statCard('Resolved',resolved,'#54433C',"App._tkFilter('status','Resolved')")+

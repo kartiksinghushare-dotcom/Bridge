@@ -1185,3 +1185,51 @@ html{-webkit-text-size-adjust:100%}
   #modal .pop{max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
   #content{-webkit-overflow-scrolling:touch}
 }
+
+/* ════════════ iOS / ANDROID APP-MODE LAYER ════════════ */
+/* Safari needs the -webkit- twin for backdrop blur */
+header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
+#toast .tt{-webkit-backdrop-filter:saturate(140%) blur(2px)}
+.crm-datep span{-webkit-backdrop-filter:blur(4px)}
+/* Installed to the home screen: keep content clear of the notch / status bar */
+@media all and (display-mode: standalone){
+  header.topbar{padding-top:env(safe-area-inset-top)}
+  .crm-fs{padding-top:env(safe-area-inset-top);box-sizing:border-box}
+  #modal{padding-top:env(safe-area-inset-top)}
+  aside.sidebar{padding-top:env(safe-area-inset-top)}
+}
+
+/* ════════════ MOBILE WORKSPACE FIX (v10) — compact tabs, scrollable list ════════════ */
+@media(max-width:767px){
+  /* the fixed CRM shell must not wrap its row of [nav | main] */
+  #content .crm-fs{flex-wrap:nowrap!important}
+  /* ── Board tab strip: ONE horizontal scrolling row (was wrapping into a ~210px block) ── */
+  #content .crm-tabsrow{flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0!important}
+  #content .crm-tabsrow::-webkit-scrollbar{display:none}
+  #content .crm-btab{flex-shrink:0!important;padding:11px 12px!important;font-size:13px!important;font-weight:600!important}
+  #content .crm-btab span{font-size:11px!important}
+  /* ── Board bar: one tidy line, title ellipsizes ── */
+  #content .crm-boardbar{flex-wrap:nowrap!important;padding:9px 12px!important;gap:8px!important}
+  #content .crm-hubname{font-size:15px!important;min-width:0}
+  /* ── Restore the conversation-list scroll: bound the height chain ── */
+  #content .crm-mainrow{flex-wrap:nowrap!important;min-height:0!important;flex:1 1 auto!important}
+  #content .crm-listcol{height:100%!important;min-height:0!important}
+  #content #crm-list{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+  /* ── Ticket board: toolbar scrolls in one row; cells right-sized; table swipes ── */
+  #content .crm-viewbar{flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 12px!important}
+  #content .crm-viewbar::-webkit-scrollbar{display:none}
+  #content .crm-viewbar>*{flex-shrink:0}
+  #content .crm-trow td,#content .crm-trow th,#content .crm-colh{font-size:13px!important}
+  /* collapse the tab strip to ONE ~48px row: its trailing admin controls must not stack */
+  #content .crm-tabsrow>div{flex-shrink:0!important}
+  #content .crm-tabsrow div[style*="display:flex"]{flex-wrap:nowrap!important}
+  #content .crm-tabsrow{align-items:center!important}
+}
+
+/* ════════════ MOBILE POLISH (v11) — KPI grids 2-up, org tree scrolls ════════════ */
+@media(max-width:767px){
+  #content .bb-kpis{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  #content .bb-kpis .stat-card-click,#content .bb-kpis>*{padding:13px!important;min-width:0}
+  #content .oc li{flex-shrink:0!important}
+  #content .oc li>div{flex-shrink:0!important}
+}

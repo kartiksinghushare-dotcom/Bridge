@@ -507,7 +507,7 @@ function crmPage(){
       var _lfCnt={all:_bc.length,unread:_bc.filter(_crmUnread).length,mine:_bc.filter(_crmMine).length};
       var lfRow='<div style="display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--c-border);background:#FCFAF7;flex-shrink:0">'+[['all','All'],['unread','Unread'],['mine','Mine']].map(function(x){var on=_lf===x[0];return '<button onclick="App._crmListFilter(\''+x[0]+'\')" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:'+(on?'#13171B':'transparent')+';color:'+(on?'#fff':'var(--c-text-2)')+';font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px">'+x[1]+(_lfCnt[x[0]]?'<span style="font-size:9.5px;font-weight:800;border-radius:8px;min-width:15px;padding:1px 4px;background:'+(on?'rgba(255,255,255,.22)':'var(--c-border)')+';color:'+(on?'#fff':'var(--c-text-2)')+'">'+_lfCnt[x[0]]+'</span>':'')+'</button>';}).join('')+'</div>';
       var listCol='<div class="crm-listcol" style="width:22%;min-width:238px;max-width:340px;border-right:1px solid #EDE7DC;display:flex;flex-direction:column;min-height:0">'+lfRow+'<div class="crm-scroll" style="flex:1;overflow-y:auto" id="crm-list">'+_crmConvoListInner()+'</div>'+((canCreate&&!_crmIsMob())?'<div style="border-top:1px solid #EDE7DC;padding:11px;background:#FAF7F3;flex-shrink:0"><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin-bottom:7px">New conversation</div><input id="crm-nc-name" placeholder="Customer / Order ID" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #E6DED3;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><input id="crm-nc-title" placeholder="Subject" style="width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid #E6DED3;border-radius:8px;font-size:12.5px;margin-bottom:6px;outline:none"/><button onclick="App._crmNewConvo()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#54433C;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer">Start chat</button></div>':'')+((canCreate&&_crmIsMob())?'<button class="crm-fab" onclick="App._crmNewChatModal()" aria-label="New chat">'+ic('plus','w-4 h-4')+'New chat</button>':'')+'</div>';
-      mainInner=row1+row2+'<div style="flex:1;display:flex;min-height:0">'+listCol+_crmChatPane((searching?_crmConvo(CRM.sel.convoId):convo),board)+'</div>';}else{var openC=_crmConvo(CRM.sel.convoId);if(openC&&openC.boardId===board.id){mainInner=row1+'<div style="flex:1;display:flex;flex-direction:column;min-height:0"><div style="padding:7px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="App._crmBackToTable()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid #E6DED3;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#3A312A">'+ic('back','w-4 h-4')+'Back to '+esc(inView?view.name:board.name)+'</button></div>'+_crmChatPane(openC,board)+'</div>';}else{CRM.sel.convoId=null;mainInner=row1+row2+(inView?_crmViewBarV(board,view):_crmViewBar(board))+_crmTable(board,inView?{filters:_crmViewFilters(view,board.id)}:{});}}
+      mainInner=row1+row2+'<div class="crm-mainrow" style="flex:1;display:flex;min-height:0">'+listCol+_crmChatPane((searching?_crmConvo(CRM.sel.convoId):convo),board)+'</div>';}else{var openC=_crmConvo(CRM.sel.convoId);if(openC&&openC.boardId===board.id){mainInner=row1+'<div style="flex:1;display:flex;flex-direction:column;min-height:0"><div style="padding:7px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="App._crmBackToTable()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid #E6DED3;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#3A312A">'+ic('back','w-4 h-4')+'Back to '+esc(inView?view.name:board.name)+'</button></div>'+_crmChatPane(openC,board)+'</div>';}else{CRM.sel.convoId=null;mainInner=row1+row2+(inView?_crmViewBarV(board,view):_crmViewBar(board))+_crmTable(board,inView?{filters:_crmViewFilters(view,board.id)}:{});}}
     }
   }
   var hubsLabel=(CRM.settings&&CRM.settings.hubsLabel)||'Hubs';
@@ -2472,10 +2472,21 @@ App._crmEmoPick=(ch)=>{if(!ch)return;var st=CRM._emo||{};_crmEmoRecPush(ch);try{
 var _crmAC=null,_crmDingT=0;
 function _crmSndOn(){try{if(typeof _bbSndAllow==='function')return _bbSndAllow('workspace_message');return localStorage.getItem('bb_chat_sound')!=='0';}catch(e){return true;}}
 App._crmSndTog=(btn)=>{var on;if(typeof _bbSndSet==='function'&&typeof _bbSndAllow==='function'){on=!_bbSndAllow('workspace_message');_bbSndSet('workspace_message',on);}else{on=!(localStorage.getItem('bb_chat_sound')!=='0');try{localStorage.setItem('bb_chat_sound',on?'1':'0');}catch(e){}}if(btn)btn.textContent=on?'\u{1F514}':'\u{1F515}';if(on)_crmDing(null,true);try{toast(on?'Chat sound on \u{1F514}':'Chat sound off');}catch(e){}};
-function _crmACtx(){try{if(!_crmAC)_crmAC=new (window.AudioContext||window.webkitAudioContext)();if(_crmAC.state==='suspended')_crmAC.resume();return _crmAC;}catch(e){return null;}}
+function _crmACtx(){try{if(!_crmAC)_crmAC=new (window.AudioContext||window.webkitAudioContext)();return _crmAC;}catch(e){return null;}}
 function _crmDing(m,force){
   if(!force){if(!_crmSndOn())return;var now=Date.now();if(now-(window._bbDingT||0)<1500)return;window._bbDingT=now;}
   var ctx=_crmACtx();if(!ctx)return;
+  /* THE FIX: a suspended context (browser auto-suspends an idle/backgrounded tab) has a clock
+     that isn't advancing, so notes scheduled against ctx.currentTime land in the past and are
+     dropped — the message arrives but you hear nothing. Resume FIRST, play only once running. */
+  window._bbDingTok=(window._bbDingTok||0)+1;var tok=window._bbDingTok;
+  function _go(){if(tok!==window._bbDingTok)return;if(!ctx||ctx.state!=='running')return;window._bbDingTok=tok+1;_crmDingPlay(ctx);}
+  if(ctx.state==='running'){_go();return;}
+  try{var pr=ctx.resume();if(pr&&pr.then)pr.then(_go).catch(function(){});}catch(e){}
+  setTimeout(_go,80);setTimeout(_go,320);
+}
+function _crmDingPlay(ctx){
+  if(!ctx||ctx.state!=='running')return;
   try{
     var t0=ctx.currentTime+0.02;
     /* hard-clip waveshaper: the rough, distorted edge */
@@ -2502,10 +2513,13 @@ function _crmDing(m,force){
 }
 (function(){
   if(window._crmPlus2)return;window._crmPlus2=true;
-  /* browsers only allow audio after a user gesture — unlock on the first one */
-  ['click','keydown','touchstart'].forEach(function(ev){
-    document.addEventListener(ev,function once(){_crmACtx();document.removeEventListener(ev,once,true);},true);
-  });
+  /* browsers only allow audio after a user gesture. Keep the listeners LIVE (not once) so every
+     interaction re-arms a context the browser may have re-suspended, and prime iOS with a silent
+     buffer the first time so later programmatic dings are allowed. */
+  function _bbUnlock(){var c=_crmACtx();if(!c)return;if(c.state==='suspended'){try{c.resume();}catch(e){}}
+    if(!window._bbPrimed){window._bbPrimed=true;try{var bf=c.createBuffer(1,1,22050);var sp=c.createBufferSource();sp.buffer=bf;sp.connect(c.destination);sp.start(0);}catch(e){}}}
+  ['pointerdown','click','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,_bbUnlock,true);});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&_crmAC&&_crmAC.state==='suspended'){try{_crmAC.resume();}catch(e){}}});
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus2-css">'
    +'.crm-link{color:#936659;font-weight:600;text-decoration:underline;text-underline-offset:2px;word-break:break-all}'
    +'.crm-link:active{opacity:.7}'
