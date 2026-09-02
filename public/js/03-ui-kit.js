@@ -5,7 +5,7 @@
    ============================================================ */
 /* ===== AVATARS ===== */
 const PAL=['bg-rose-100 text-rose-700','bg-amber-100 text-amber-700','bg-emerald-100 text-emerald-700','bg-sky-100 text-sky-700','bg-violet-100 text-violet-700','bg-orange-100 text-orange-700','bg-teal-100 text-teal-700'];
-const avatar=(u,sz='w-9 h-9',tx='text-xs')=>{if(!u)return'<div class="'+sz+' bg-ink-200 rounded-full grid place-items-center '+tx+' shrink-0">?</div>';return`<div class="${sz} ${PAL[((u.firstName||'?').charCodeAt(0)+(u.lastName||'?').charCodeAt(0))%PAL.length]} rounded-full grid place-items-center font-semibold ${tx} shrink-0 fd">${esc(initials(u))}</div>`;}
+const avatar=(u,sz='w-9 h-9',tx='text-xs')=>{if(!u)return'<div class="'+sz+' bg-ink-200 rounded-full grid place-items-center '+tx+' shrink-0">?</div>';const _dot=u.id?`<span class="bb-dot${(window._bbOnline&&window._bbOnline[u.id])?' on':''}" data-pres="${u.id}"></span>`:'';return`<div class="${sz} ${PAL[((u.firstName||'?').charCodeAt(0)+(u.lastName||'?').charCodeAt(0))%PAL.length]} rounded-full grid place-items-center font-semibold ${tx} shrink-0 fd" style="position:relative">${esc(initials(u))}${_dot}</div>`;}
 
 /* ═══════════ SHARED UI — token-driven design system (Evarca-aligned) ═══════════
    ONE button helper btn() with variants; btnP/btnG kept as thin aliases so every

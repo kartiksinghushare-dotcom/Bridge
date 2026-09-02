@@ -789,14 +789,15 @@ App._exportCSV=()=>{
    per-person per-type opt-outs stored on this device. */
 var _BB_SND_TYPES=[
  ['workspace_message','Workspace chat messages','A new message in any of your conversations'],
- ['workspace','Workspace activity','@mentions, tickets, moves and automation updates'],
- ['checklist','Checklists','A checklist is assigned to you or removed'],
+ ['crm_mention','Tagged / @mentions','Someone @mentions you anywhere in Workspace'],
+ ['workspace','Workspace activity','Tickets created, assigned, moved and automation updates'],
+ ['checklist','Checklists','When someone assigns a checklist to you, or removes one'],
  ['approval','Approvals','Approval requested, approved or rejected'],
  ['edit','Edit requests','Edit requests and re-submissions'],
  ['escalation','Escalations','A question or task escalates to you'],
  ['feedback','Feedback','Feedback and feedback replies'],
  ['late','Late & reminders','Overdue submissions and deadline reminders'],
- ['okr','OKRs','OKR assignments, check-ins and revisions'],
+ ['okr','OKRs','When an OKR is assigned to you, checked in or revised'],
  ['general','Everything else','Any other Bridge notification']
 ];
 function _bbSndKey(){return 'bb_snd_prefs_'+((typeof S!=='undefined'&&S&&S.uid)||'anon');}
@@ -811,7 +812,7 @@ function _bbNotifKind(n){
   var text=(n&&n.text)||'';var link=(n&&n.link)||'';
   if(n&&n.kind==='okr')return'okr';
   if(/OKR|objective/i.test(text))return'okr';
-  if(/tagged you in/i.test(text))return'workspace';
+  if(/tagged you in/i.test(text))return'crm_mention';
   if(link&&String(link).indexOf('crm:')===0)return'workspace';
   if(text.indexOf('\u{1F3AB}')>=0||text.indexOf('\u21AA')>=0||text.indexOf('\u26A1')>=0||text.indexOf('\u{1F4AC}')>=0)return'workspace';
   if(/^\u2705 Approval needed:/.test(text))return'workspace';
@@ -903,3 +904,36 @@ function _bbSndCard(){
    +'</div>';
 }
 window._bbSndCard=_bbSndCard;
+
+
+/* ═══════════ PRESENCE — green dot while a person's Bridge tab is open ═══════════ */
+window._bbOnline=window._bbOnline||{};
+function _bbPresPaint(){try{var els=document.querySelectorAll('[data-pres]');for(var i=0;i<els.length;i++){els[i].classList.toggle('on',!!window._bbOnline[els[i].getAttribute('data-pres')]);}}catch(e){}}
+(function(){
+  if(window._bbPresBoot)return;window._bbPresBoot=true;
+  document.head.insertAdjacentHTML('beforeend','<style id="bb-pres-css">'
+   +'.bb-dot{position:absolute;right:-1px;bottom:-1px;width:30%;height:30%;min-width:8px;min-height:8px;max-width:12px;max-height:12px;border-radius:50%;background:#C25441;border:2px solid #fff;box-sizing:border-box;z-index:2;transition:background .25s}'
+   +'.bb-dot.on{background:#2FA36B;box-shadow:0 0 5px rgba(47,163,107,.55)}'
+   +'aside.sidebar .bb-dot{border-color:#181D23}'
+   +'</style>');
+  /* join the shared presence channel once signed in; tab close = socket close = red */
+  setInterval(function(){
+    if(!window.sb||typeof S==='undefined'||!S||!S.uid||window._bbPresRT)return;
+    try{
+      var ch=sb.channel('bb-presence',{config:{presence:{key:S.uid}}});
+      window._bbPresRT=ch;window._bbPresUid=S.uid;
+      ch.on('presence',{event:'sync'},function(){
+        try{var st=ch.presenceState();var o={};for(var k in st)o[k]=true;window._bbOnline=o;_bbPresPaint();}catch(e){}
+      }).subscribe(function(s){if(s==='SUBSCRIBED'){try{ch.track({uid:S.uid,at:new Date().toISOString()});}catch(e){}}});
+    }catch(e){window._bbPresRT=null;}
+  },2500);
+  /* sign-out or user switch: leave and re-key */
+  setInterval(function(){
+    try{
+      if(window._bbPresRT&&(!S||!S.uid||S.uid!==window._bbPresUid)){
+        try{sb.removeChannel(window._bbPresRT);}catch(e){}
+        window._bbPresRT=null;window._bbOnline={};_bbPresPaint();
+      }
+    }catch(e){}
+  },4000);
+})();

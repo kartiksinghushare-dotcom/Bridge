@@ -993,7 +993,7 @@ function notificationsPage(){
     Workspace:wsNotifs.length,
   };
 
-  return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')+(typeof _bbSndCard==='function'?_bbSndCard():'')
+  return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')
     // Tabs
     +'<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'
     +TABS.map(t=>{

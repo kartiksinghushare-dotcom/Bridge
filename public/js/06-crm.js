@@ -126,7 +126,7 @@ function _crmDueMeta(c){if(!c||!c.isTicket||!c.dueDate)return null;var _b=_crmBo
 function _crmCats(board){var c=board&&board.settings&&board.settings.categories;return (c&&c.length)?c:[];}
 const _crmFirst=u=>u?(fullName(u).split(' ')[0]||fullName(u)):'';
 const _CRM_EMO=['\u{1F44D}','❤️','\u{1F602}','\u{1F62E}','\u{1F622}','\u{1F64F}'];
-function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#54433C','#96695B','#A97C33','#8A5D6B','#BC6E62','#A5796A'][h%6];return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>';}
+function _crmCustAv(name,sz){sz=sz||34;var n=(name||'?').trim();var ini=(n[0]||'?').toUpperCase();var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);var bg=['#54433C','#96695B','#A97C33','#8A5D6B','#BC6E62','#A5796A'][h%6];var dot='';try{var lu=n.toLowerCase();var mu=(DB.users||[]).find(function(x){return fullName(x).toLowerCase()===lu;});if(mu&&mu.id)dot='<span class="bb-dot'+((window._bbOnline&&window._bbOnline[mu.id])?' on':'')+'" data-pres="'+mu.id+'"></span>';}catch(e){}return'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:#fff;display:grid;place-items:center;font-size:'+Math.round(sz*0.4)+'px;font-weight:700;flex-shrink:0;position:relative">'+esc(ini)+dot+'</div>';}
 /* v3.20 — the chip is a CLASS, not inline styles, so it can invert inside the sender's own
    orange bubble (.crm-mine): a pale chip with dark-orange text was unreadable on #54433C. */
 function _crmAtPlain(t){return esc(t||'').replace(/@(\w+)/g,'<span class="crm-tag">@$1</span>');}
@@ -2476,16 +2476,25 @@ function _crmDing(m,force){
   var ctx=_crmACtx();if(!ctx)return;
   try{
     var t0=ctx.currentTime+0.02;
-    var master=ctx.createGain();master.gain.value=0.95;
-    var comp=ctx.createDynamicsCompressor();master.connect(comp);comp.connect(ctx.destination);
-    var seq=[740,988,1245,740,988,1245];
-    for(var i=0;i<seq.length;i++){
-      var t=t0+i*0.185;var f=seq[i];
-      for(var d=0;d<2;d++){
-        var o=ctx.createOscillator();o.type='square';o.frequency.setValueAtTime(f+(d?7:0),t);
-        var g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.55,t+0.015);g.gain.setValueAtTime(0.55,t+0.125);g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
-        o.connect(g);g.connect(master);o.start(t);o.stop(t+0.18);
+    /* hard-clip waveshaper: the rough, distorted edge */
+    var sh=ctx.createWaveShaper();var cur=new Float32Array(256);
+    for(var ci=0;ci<256;ci++){var xx=ci/128-1;cur[ci]=Math.max(-0.85,Math.min(0.85,xx*3.2));}
+    sh.curve=cur;sh.oversample='none';
+    var master=ctx.createGain();master.gain.value=1.0;
+    var comp=ctx.createDynamicsCompressor();
+    sh.connect(master);master.connect(comp);comp.connect(ctx.destination);
+    /* alternating two-tone klaxon — 8 rough bursts, detuned saw+square stack + low buzz */
+    for(var i=0;i<8;i++){
+      var t=t0+i*0.155;var f=(i%2?880:587);
+      var dets=[-14,0,13];
+      for(var di=0;di<dets.length;di++){
+        var o=ctx.createOscillator();o.type=dets[di]?'sawtooth':'square';o.frequency.setValueAtTime(f+dets[di],t);
+        var g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.006);g.gain.setValueAtTime(0.5,t+0.115);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+        o.connect(g);g.connect(sh);o.start(t);o.stop(t+0.152);
       }
+      var b=ctx.createOscillator();b.type='square';b.frequency.setValueAtTime(f/4,t);
+      var bg=ctx.createGain();bg.gain.setValueAtTime(0.0001,t);bg.gain.exponentialRampToValueAtTime(0.35,t+0.008);bg.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+      b.connect(bg);bg.connect(sh);b.start(t);b.stop(t+0.152);
     }
   }catch(e){}
 }
