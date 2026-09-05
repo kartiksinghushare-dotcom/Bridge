@@ -412,7 +412,7 @@ function _crmDetailsPanel(convo,board){
     +fRow('Status',canEd?_crmStatusSel(board,convo,selSt):_crmStatusChip(board,convo.status))
     +fRow('Customer','<span style="font-size:12.5px;font-weight:700">'+esc(convo.customer||'\u2014')+'</span>')
     +(function(){var _dc=cols.filter(function(c){return c.type!=='remind';});return _dc.length?'<div style="border-top:1px dashed #EAE3D8;padding-top:12px">'+_dc.map(function(col){return fRow(esc(col.name),_crmCell(convo,col));}).join('')+'</div>':'';})()
-    +fRow('Created','<span style="font-size:12px;color:#7B6D62">'+_crmDT(convo.createdAt)+'</span>')
+    +fRow('Created','<span style="font-size:12px;color:#7B6D62">'+_crmDT(convo.createdAt)+(uById(convo.createdBy)?' <span style="color:#A8998A">by</span> <b style="color:#13171B">'+esc(fullName(uById(convo.createdBy)))+'</b>':'')+'</span>')
     +(acts.length?'<div style="border-top:1px dashed #EAE3D8;padding-top:12px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A8998A;margin-bottom:6px">Activity</div>'+acts.map(function(a){var au=uById(a.actor);return '<div style="font-size:11.5px;color:#75675C;padding:3px 0;line-height:1.45"><b style="color:#13171B">'+esc(au?_crmFirst(au):'Someone')+'</b> '+esc(a.action)+(a.detail?' \u2014 '+esc(a.detail):'')+' <span style="color:#B8AA9C">\u00B7 '+_crmRel(a.at)+'</span></div>';}).join('')+'</div>':'')
     +'</div></div>';
 }
@@ -638,7 +638,9 @@ function _crmRenderPreview(){
 App._crmDragOver=(e)=>{e.preventDefault();var z=document.getElementById('crm-drop');if(z)z.style.display='grid';};
 App._crmDragLeave=(e)=>{if(e&&e.relatedTarget)return;var z=document.getElementById('crm-drop');if(z)z.style.display='none';};
 App._crmDrop=(e)=>{e.preventDefault();var z=document.getElementById('crm-drop');if(z)z.style.display='none';if(!can('crm','create'))return;_crmAddFiles(e.dataTransfer&&e.dataTransfer.files);};
-App._crmReact=async(cid,mid,emo)=>{if(!can('crm','create'))return;emo=decodeURIComponent(emo);var c=_crmConvo(cid);if(!c)return;var m=(c.messages||[]).find(x=>x.id===mid);if(!m)return;if(!m.reactions)m.reactions={};var arr=m.reactions[emo]||[];var i=arr.indexOf(S.uid);if(i>=0)arr.splice(i,1);else arr.push(S.uid);if(arr.length)m.reactions[emo]=arr;else delete m.reactions[emo];rr();try{await sb.from('crm_messages').update({reactions:m.reactions}).eq('id',mid);}catch(e){}};
+App._crmReact=async(cid,mid,emo)=>{if(!can('crm','create'))return;emo=decodeURIComponent(emo);var c=_crmConvo(cid);if(!c)return;var m=(c.messages||[]).find(x=>x.id===mid);if(!m)return;if(!m.reactions)m.reactions={};var arr=m.reactions[emo]||[];var i=arr.indexOf(S.uid);if(i>=0)arr.splice(i,1);else arr.push(S.uid);if(arr.length)m.reactions[emo]=arr;else delete m.reactions[emo];if(!_crmPatchReacts(m,cid)){_crmLiveRR();}try{await sb.from('crm_messages').update({reactions:m.reactions}).eq('id',mid);}catch(e){}};
+/* Swap only the reaction chips of one bubble in place — a full rr() rebuilt the page and yanked the thread scroll. Returns false when the bubble isn't on screen. */
+function _crmPatchReacts(m,cid){var els=document.querySelectorAll('.crm-msg[data-mid="'+m.id+'"]');if(!els.length)return false;var html=_crmReactChips(m,cid);els.forEach(function(el){var cur=el.querySelector('.crm-reacts');if(cur){if(html)cur.outerHTML=html;else cur.remove();}else if(html){var bub=el.querySelector('.crm-bub');if(bub)bub.insertAdjacentHTML('afterend',html);}});try{App._crmCloseMsgActs();}catch(e){}return true;}
 App._crmEditMsg=(cid,mid)=>{CRM.editMsgId=mid;rr();var el=document.getElementById('crm-edit-'+mid);if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}};
 App._crmCancelEdit=()=>{CRM.editMsgId=null;rr();};
 App._crmSaveEdit=async(cid,mid)=>{var el=document.getElementById('crm-edit-'+mid);var v=el?el.value.trim():'';var c=_crmConvo(cid);var m=c&&(c.messages||[]).find(x=>x.id===mid);CRM.editMsgId=null;if(m&&v){m.text=v;m.edited=true;}rr();if(m&&v){try{await sb.from('crm_messages').update({body:v,edited_at:new Date().toISOString()}).eq('id',mid);}catch(e){}}};
@@ -775,7 +777,15 @@ App._crmDelCat=async(name)=>{if(!can('crm','delete'))return;var b=_crmBoard(CRM.
 
 // ===== CRM AUTOMATION: activity log, approvals, notification rules, email =====
 function _crmBS(board){var s=(board&&board.settings)||{};var g=CRM.settings||{};return{type:s.type||'chat',approvers:s.approvers||[],notify:s.notify||{},email:(s.email&&Object.keys(s.email).length?s.email:(g.email||{})),approveTo:s.approveTo||{action:'resolve'},rejectTo:s.rejectTo||{action:'resolve'}};}
-function _crmActFor(cid){return (CRM.activity||[]).filter(function(a){return a.conversationId===cid;});}
+function _crmActFor(cid){
+  var out=(CRM.activity||[]).filter(function(a){return a.conversationId===cid;});
+  /* Always show who opened the ticket/chat — older rows or imports may have no logged 'created' entry. */
+  var c=_crmConvo(cid);
+  if(c&&c.createdBy&&!out.some(function(a){return a.actor===c.createdBy&&/^(created|started)/i.test(a.action||'');})){
+    out.push({id:'act-created-'+cid,conversationId:cid,boardId:c.boardId,actor:c.createdBy,action:c.isTicket?'created this ticket':'started this chat',detail:'',at:c.createdAt});
+  }
+  return out;
+}
 async function _crmLog(action,convo,detail){var id=uid('act');var at=new Date().toISOString();var e={id:id,conversationId:convo?convo.id:null,boardId:convo?convo.boardId:CRM.sel.boardId,actor:S.uid,action:action,detail:detail||'',at:at};if(!CRM.activity)CRM.activity=[];CRM.activity.unshift(e);try{await sb.from('crm_activity').insert({id:id,conversation_id:e.conversationId,board_id:e.boardId,actor:S.uid||null,action:action,detail:e.detail,created_at:at});}catch(err){}}
 function _crmRecips(board,event){var bs=_crmBS(board);var g=CRM.settings||{};var set={};var gl=_crmExpandPeople((g.notify&&g.notify.list)||[]);var bl=_crmExpandPeople((bs.notify&&bs.notify.list)||[]);if(event==='approval'){_crmExpandPeople(bs.approvers||[]).forEach(function(u){set[u]=1;});}else{gl.forEach(function(u){set[u]=1;});bl.forEach(function(u){set[u]=1;});}delete set[S.uid];return Object.keys(set);}
 async function _crmNotifyRule(event,convo,board,emailType,vars){var recips=_crmRecips(board,event);if(!recips.length)return;var bs=_crmBS(board);var emailOn=!(bs.email&&bs.email[event]===false);var who=me()?fullName(me()):'Someone';var at=new Date().toISOString();var txt=(event==='created'?('\u{1F3AB} '+who+' created a ticket: "'+(convo.title||'')+'"'):event==='approval'?('✅ Approval needed: "'+(convo.title||'')+'"'):event==='decided'?(((vars&&vars.decision)||'Updated')+': "'+(convo.title||'')+'"'):('\u{1F514} '+(convo.title||'')));var _lnk2=convo&&convo.id?('crm:'+convo.id):null;for(var i=0;i<recips.length;i++){if(_crmInappOn('crm_ticket')){var nid=uid('n');try{DB.notifications.unshift({id:nid,userId:recips[i],text:txt,time:at,read:false,link:_lnk2});}catch(e){}try{await sb.from('notifications').insert({id:nid,user_id:recips[i],text:txt,read:false,created_at:at,link:_lnk2});}catch(e){}}if(emailOn&&emailType&&typeof queueEmail==='function'){try{queueEmail(emailType,recips[i],null,null,vars||{});}catch(e){}}}try{_invalidateNotifCache();}catch(e){}}
@@ -1858,6 +1868,13 @@ function _crmMergeMsgRow(r,evt){
     return true;
   }
   var old=c.messages[i];
+  /* Realtime trims big rows (max_record_bytes) — a reaction on a photo message can arrive with
+     the images (and body) missing. Only take fields the payload actually carries, and never let
+     an empty images list wipe photos we already hold (the UI can't remove photos from a message). */
+  if(!('body' in r))m.text=old.text;
+  if(!('edited_at' in r))m.edited=old.edited;
+  if(!('reactions' in r))m.reactions=old.reactions||{};
+  if(!('images' in r)||(!(m.images||[]).length&&(old.images||[]).length))m.images=old.images||[];
   if(old.text===m.text&&!!old.edited===!!m.edited&&JSON.stringify(old.reactions||{})===JSON.stringify(m.reactions||{})
      &&JSON.stringify(old.images||[])===JSON.stringify(m.images||[]))return false;
   c.messages[i]=Object.assign(old,{text:m.text,edited:m.edited,reactions:m.reactions,images:m.images});
@@ -2044,6 +2061,8 @@ function _crmOnMsgEvent(p){
   try{
     var evt=p.eventType||p.event;
     var row=(evt==='DELETE')?(p.old||{}):(p.new||{});
+    /* Oversized payload (photos): Supabase sends a partial row + 'Error 413'. Fetch the real row instead. */
+    if(evt!=='DELETE'&&row.id&&((p.errors&&p.errors.length)||!('conversation_id' in row)||!('body' in row)||!('images' in row))){_crmRefetchMsg(row.id);return;}
     var changed=_crmMergeMsgRow(row,evt);
     if(_crmRT.needConvos){_crmRT.needConvos=false;_crmPoll(true);}
     _crmLiveApplied(changed,row.conversation_id===CRM.sel.convoId);
@@ -2057,6 +2076,14 @@ function _crmOnConvoEvent(p){
     if(_crmRT.needMsgsFor){var cid=_crmRT.needMsgsFor;_crmRT.needMsgsFor=null;_crmFetchMsgsFor(cid);}
     _crmLiveApplied(changed,row.id===CRM.sel.convoId);
   }catch(e){}
+}
+function _crmRefetchMsg(id){
+  sb.from('crm_messages').select('*').eq('id',id).limit(1).then(function(r){
+    if(!r||r.error||!r.data||!r.data.length)return;
+    var row=r.data[0];var ch=_crmMergeMsgRow(row,'INSERT');
+    if(_crmRT.needConvos){_crmRT.needConvos=false;_crmPoll(true);}
+    _crmLiveApplied(ch,row.conversation_id===CRM.sel.convoId);
+  }).catch(function(){});
 }
 function _crmFetchMsgsFor(cid){
   sb.from('crm_messages').select('*').eq('conversation_id',cid).order('created_at',{ascending:true}).then(function(r){

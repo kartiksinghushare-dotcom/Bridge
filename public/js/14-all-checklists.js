@@ -229,7 +229,38 @@ function allClsPage(){
   </div>`;
 }
 
-App._bigImg=(src)=>{openModal(`<div style="padding:10px;position:relative"><button onclick="App.closeModal()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);border:none;border-radius:50%;width:26px;height:26px;color:#fff;cursor:pointer;display:grid;place-items:center;z-index:1;font-size:14px">×</button><img src="${esc(src)}" alt="Enlarged photo" style="width:100%;border-radius:10px;max-height:80vh;object-fit:contain;display:block"/></div>`,'max-w-xl');};
+/* Image viewer with zoom: +/− buttons, mouse wheel, pinch, drag-to-pan, double-tap. Used by Workspace chat, checklists, approvals, BOLT check-ins. */
+App._bigImg=(src)=>{
+  var B='width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:17px;line-height:1;font-weight:700;backdrop-filter:blur(4px)';
+  openModal('<div id="bigimg-wrap" style="position:relative;background:#111;border-radius:16px;overflow:hidden;height:min(84vh,900px);user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab">'
+    +'<img id="bigimg" src="'+esc(src)+'" alt="Enlarged photo" draggable="false" style="position:absolute;left:50%;top:50%;max-width:100%;max-height:100%;transform:translate(-50%,-50%);transform-origin:center;will-change:transform;pointer-events:none"/>'
+    +'<div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2">'
+    +'<button type="button" title="Zoom out" data-z="out" style="'+B+'">&minus;</button>'
+    +'<button type="button" title="Reset" data-z="reset" id="bigimg-pct" style="'+B+';font-size:11.5px;width:auto;padding:0 10px">100%</button>'
+    +'<button type="button" title="Zoom in" data-z="in" style="'+B+'">+</button>'
+    +'<button type="button" title="Close" onclick="App.closeModal()" style="'+B+'">&times;</button></div>'
+    +'<div style="position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:11px;color:rgba(255,255,255,.55);pointer-events:none">Scroll or pinch to zoom · drag to move · double-tap to toggle</div>'
+    +'</div>','max-w-4xl');
+  var wrap=document.getElementById('bigimg-wrap'),img=document.getElementById('bigimg'),pct=document.getElementById('bigimg-pct');if(!wrap||!img)return;
+  var sc=1,tx=0,ty=0,MIN=1,MAX=6;
+  function apply(){img.style.transform='translate(-50%,-50%) translate('+tx+'px,'+ty+'px) scale('+sc+')';if(pct)pct.textContent=Math.round(sc*100)+'%';wrap.style.cursor=sc>1?'grab':'zoom-in';}
+  function zoomTo(ns,cx,cy){ns=Math.max(MIN,Math.min(MAX,ns));if(ns===sc)return;var r=wrap.getBoundingClientRect();var px=(cx==null?r.width/2:cx-r.left)-r.width/2,py=(cy==null?r.height/2:cy-r.top)-r.height/2;var k=ns/sc;tx=px-(px-tx)*k;ty=py-(py-ty)*k;sc=ns;if(sc===1){tx=0;ty=0;}apply();}
+  wrap.querySelectorAll('[data-z]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var z=b.getAttribute('data-z');if(z==='in')zoomTo(sc*1.5);else if(z==='out')zoomTo(sc/1.5);else{sc=1;tx=0;ty=0;apply();}});});
+  wrap.addEventListener('wheel',function(e){e.preventDefault();e.stopPropagation();zoomTo(sc*Math.exp(-e.deltaY*0.0018),e.clientX,e.clientY);},{passive:false});
+  wrap.addEventListener('dblclick',function(e){e.preventDefault();if(sc>1){sc=1;tx=0;ty=0;apply();}else zoomTo(2.5,e.clientX,e.clientY);});
+  var pts={},drag=null,pinch=null,lastTap=0;
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+  wrap.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;e.preventDefault();pts[e.pointerId]={x:e.clientX,y:e.clientY};try{wrap.setPointerCapture(e.pointerId);}catch(x){}var ids=Object.keys(pts);
+    if(ids.length===2){var a=pts[ids[0]],b=pts[ids[1]];pinch={d:dist(a,b),sc:sc,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,tx:tx,ty:ty};drag=null;}
+    else if(ids.length===1){drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty,moved:false};if(e.pointerType==='touch'){var now=Date.now();if(now-lastTap<300){if(sc>1){sc=1;tx=0;ty=0;apply();}else zoomTo(2.5,e.clientX,e.clientY);drag=null;}lastTap=now;}}
+    if(sc>1)wrap.style.cursor='grabbing';});
+  wrap.addEventListener('pointermove',function(e){if(!pts[e.pointerId])return;pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);
+    if(pinch&&ids.length>=2){var a=pts[ids[0]],b=pts[ids[1]];var d=dist(a,b);var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;sc=pinch.sc;tx=pinch.tx;ty=pinch.ty;zoomTo(pinch.sc*(d/Math.max(1,pinch.d)),pinch.mx,pinch.my);tx+=mx-pinch.mx;ty+=my-pinch.my;apply();}
+    else if(drag&&sc>1){tx=drag.tx+(e.clientX-drag.x);ty=drag.ty+(e.clientY-drag.y);drag.moved=true;apply();}});
+  function up(e){delete pts[e.pointerId];try{wrap.releasePointerCapture(e.pointerId);}catch(x){}var ids=Object.keys(pts);if(ids.length<2)pinch=null;if(ids.length===0){drag=null;if(sc<=1){sc=1;tx=0;ty=0;}}else if(ids.length===1&&!pinch){var p=pts[ids[0]];drag={x:p.x,y:p.y,tx:tx,ty:ty,moved:false};}apply();}
+  wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',up);
+  apply();
+};
 
 
 function approvalsPage(){
