@@ -266,3 +266,4 @@ Everything prior still green: 13 notification, 17 access-control, 19 live/sticky
 
 - **WhatsApp ticks**: clock = sending · one tick = saved · two grey = delivered to every other member's device · two blue = read by every other member. "Members" = the board's channel + board people (active, minus the sender). Delivery is stamped by each person's Bridge when the message (or its alert) reaches them (`crm_reads.last_delivered_at`, new column); reading is stamped when they open the chat (`last_seen_at`). Same ticks in the chat list preview.
 - **Chat list narrower** (23%, 232–290px; 34px avatars, smaller type).
+- Sidebar sections (Work / People / Manage) start collapsed; a section you open stays open for the session.
