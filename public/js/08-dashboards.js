@@ -1,3 +1,8 @@
+/* ============================================================
+   Bridge — 08-dashboards.js  (split from Bridge.html lines 2156-2300)
+   Classic script: shares top-level scope with the other /js files.
+   Load order matters — see index.html.
+   ============================================================ */
 function _dashTicketsPanel(scopeUsers){
   const open=(DB.tickets||[]).filter(t=>t.status==='Open'||t.status==='In Progress');
   const ids=scopeUsers?new Set(scopeUsers.map(u=>u.id)):null;

@@ -1,3 +1,8 @@
+/* ============================================================
+   Bridge — 17-analytics.js  (split from Bridge.html lines 5924-6148)
+   Classic script: shares top-level scope with the other /js files.
+   Load order matters — see index.html.
+   ============================================================ */
 App._viewSubById=(id)=>App.viewSub(id);
 App._userDrill=(uid)=>{
   const u=uById(uid);if(!u)return;

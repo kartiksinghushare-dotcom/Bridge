@@ -1,4 +1,15 @@
+/* ============================================================
+   Bridge — 04-nav-shell.js  (split from Bridge.html lines 1403-1627)
+   Classic script: shares top-level scope with the other /js files.
+   Load order matters — see index.html.
+   ============================================================ */
+/* ===== NAVIGATION ===== */
+const NAV_ADM=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
+const NAV_USR=[['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
 const NAV_MGR=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
+const MOB_ADM=['dashboard','mychecklists','tickets','notifications','more'];
+const MOB_USR=['mychecklists','tickets','notifications','more'];
+const MOB_MGR=['dashboard','mychecklists','tickets','notifications','more'];
 const NAV_ALL=[
   ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
@@ -52,6 +63,7 @@ const NAV_SECTION_OF={
   'hub:admin':'Manage',
 };
 const NAV_SECTION_ICON={Time:'clock',Work:'list',People:'users',Manage:'cog'};
+const NAV_SECTION_ORDER=['Work','People','Manage'];
 function navSectionsFor(){
   const flat=navFor();
   const daily=[],sections={};

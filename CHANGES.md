@@ -260,3 +260,4 @@ Everything prior still green: 13 notification, 17 access-control, 19 live/sticky
 - **Deleted messages stay visible as “🚫 Kartik deleted this message”** (WhatsApp style). Text, photos and reactions are wiped; the row keeps `deleted_at` / `deleted_by` (new columns on `crm_messages`, also in `crm_messages_lite`). The chat list shows “This message was deleted” as the preview.
 - **Multi-line messages keep their lines** (Shift+Enter for a new line; bubbles render `pre-wrap`).
 - **Login screen** copy updated for today's Bridge: “Every goal, every shift, one Bridge.” with OKRs · Workspace · Checklists.
+- Fix: restored the nav/mobile-bar constants (NAV_ADM, NAV_USR, MOB_ADM/USR/MGR, NAV_SECTION_ORDER) the dead-code pass had wrongly removed (they were only used via spread `...X`, which the checker missed) — this was the "Can't find variable: MOB_ADM" error on sign-in. Every route now render-tested for Admin / Manager / User on desktop and mobile.
