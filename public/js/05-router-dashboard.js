@@ -24,10 +24,10 @@ function dashboardPage(){
   return `<div class="fade">${hdr('Dashboard','How the team is doing right now — tap any number to jump in')}
     <div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
       ${kpi('On-time rate',rate===null?'—':rate+'%','#54433C','approve',"App.go('allcl')",'last 30 days')}
-      ${kpi('Late',late,'#B3402E','alert',"App.go('allcl')",'submissions (30d)')}
-      ${kpi('Open tickets',openTk+progTk,'#54433C','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
+      ${kpi('Late',late,'#AF7B6D','alert',"App.go('allcl')",'submissions (30d)')}
+      ${kpi('Open tickets',openTk+progTk,'#13171B','ticket',"App.go('tickets')",openTk+' open · '+progTk+' in progress')}
       ${kpi('Approvals waiting',apprN,'#936659','approve',"App.go('approvals')",'in your inbox')}
-      ${okrs.length?kpi('OKRs',okrs.length,'#9C7386','chart',"App.go('okr')",'objectives you can see'):''}
+      ${okrs.length?kpi('OKRs',okrs.length,'#13171B','chart',"App.go('okr')",'objectives you can see'):''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px">
       ${chartCard('daily','Daily submissions','On time vs late — last 14 days')}
@@ -53,7 +53,9 @@ function _drawDashCharts(){
   const T=_aChartTheme();
   const{subs,tickets}=_dashScope();
   const today=todayISO();
-  const C={brand:'#54433C',brandSoft:'rgba(84,67,60,.14)',green:'#5FA077',greenSoft:'rgba(43,190,113,.16)',red:'#B2412C',amber:'#C9A76B',sky:'#B7826F',violet:'#9C7386',grey:'#A59788',ink:'#13171B'};
+  /* v3.25 — brand palette only (BB Brand Guidelines p.31-32): Leather Brown = good/on-time, Bronze = late/open,
+     Gold = pending/in-progress, Carbon Black = rejected/not achieved, Nude = on track/editing, Sand Beige = neutral/closed */
+  const C={brand:'#54433C',brandSoft:'rgba(84,67,60,.14)',green:'#54433C',greenSoft:'rgba(84,67,60,.14)',red:'#AF7B6D',amber:'#D1B68F',sky:'#E2B7A9',violet:'#936659',grey:'#D8CCC0',ink:'#13171B',copper:'#936659'};
   const mk=(key,cfg)=>{const cv=document.querySelector('canvas[data-dash-chart="'+key+'"]');if(!cv)return;cfg.options=cfg.options||{};cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;cfg.options.plugins=cfg.options.plugins||{};cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:T.tick,font:{size:10.5},boxWidth:14,padding:8}};_aCharts.push(new Chart(cv.getContext('2d'),cfg));};
   const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
   const fmtDay=(iso)=>{const d=new Date(iso+'T00:00:00');return d.toLocaleDateString(undefined,{day:'numeric',month:'short'});};
@@ -72,13 +74,13 @@ function _drawDashCharts(){
     {label:'Goal (100%)',data:wk.map(()=>100),borderColor:C.grey,borderDash:[6,5],pointRadius:0,fill:false,borderWidth:1.5}]},
     options:{scales:{x:{ticks:{color:T.tick,font:{size:9.5},maxRotation:0},grid:{display:false}},y:{beginAtZero:true,suggestedMax:110,ticks:{color:T.tick,font:{size:10},callback:v=>v+'%'},grid:{color:T.grid}}}}});
   // 3) outcomes doughnut
-  const stMap=[['On Time',C.green],['Late',C.red],['Pending Approval',C.amber],['Rejected','#7B291B'],['Editing',C.sky]];
+  const stMap=[['On Time',C.green],['Late',C.red],['Pending Approval',C.amber],['Rejected',C.ink],['Editing',C.sky]];
   const stData=stMap.map(([s])=>subs.filter(x=>x.status===s).length);
   mk('status',{type:'doughnut',data:{labels:stMap.map(([s])=>s),datasets:[{data:stData,backgroundColor:stMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
   // 4) dept compliance bars
   const depts={};subs.forEach(s=>{const c=clById(s.checklistId);const d=c?c.department:null;if(!d)return;depts[d]=depts[d]||{ot:0,lt:0};if(s.status==='On Time')depts[d].ot++;else if(s.status==='Late')depts[d].lt++;});
   const dNames=Object.keys(depts).filter(d=>depts[d].ot+depts[d].lt>0);
-  mk('dept',{type:'bar',data:{labels:dNames,datasets:[{label:'On-time %',data:dNames.map(d=>Math.round(depts[d].ot/(depts[d].ot+depts[d].lt)*100)),backgroundColor:dNames.map((_,i)=>[C.brand,C.sky,C.green,C.violet,C.amber][i%5]),borderRadius:5,maxBarThickness:46}]},
+  mk('dept',{type:'bar',data:{labels:dNames,datasets:[{label:'On-time %',data:dNames.map(d=>Math.round(depts[d].ot/(depts[d].ot+depts[d].lt)*100)),backgroundColor:dNames.map((_,i)=>[C.brand,C.copper,C.amber,C.red,C.sky][i%5]),borderRadius:5,maxBarThickness:46}]},
     options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:T.tick,font:{size:10.5}},grid:{display:false}},y:{beginAtZero:true,suggestedMax:110,ticks:{color:T.tick,font:{size:10},callback:v=>v+'%'},grid:{color:T.grid}}}}});
   // 5) tickets doughnut
   const tMap=[['Open',C.red],['In Progress',C.amber],['Resolved',C.green],['Closed',C.grey]];
@@ -87,7 +89,7 @@ function _drawDashCharts(){
   if(typeof okrVisible==='function'&&can('okr','view')){
     const okrs=okrVisible();
     if(okrs.length){
-      const oMap=[['Achieved',C.green],['On track',C.sky],['Off track',C.amber],['Not achieved','#7B291B'],['No data',C.grey]];
+      const oMap=[['Achieved',C.green],['On track',C.amber],['Off track',C.red],['Not achieved',C.ink],['No data',C.grey]];
       const oData=oMap.map(([s])=>okrs.filter(o=>okrStatusOf(o)===s).length);
       mk('okr',{type:'doughnut',data:{labels:oMap.map(([s])=>s),datasets:[{data:oData,backgroundColor:oMap.map(([,c])=>c),borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%'}});
     }

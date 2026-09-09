@@ -77,7 +77,7 @@ function dismissNote(key,html,opts={}){return'';// v3.16: blue info notes remove
     <button type="button" onclick="event.stopPropagation();try{localStorage.setItem('bridge_note_${key}','1')}catch(e){};${after}" title="Got it — don't show this again" aria-label="Dismiss" style="flex-shrink:0;width:18px;height:18px;border:none;background:transparent;color:#42352E;cursor:pointer;font-size:14px;line-height:1;padding:0;display:grid;place-items:center">×</button>
   </div>`;
 }
-function _aChartTheme(){return {tick:'#796B60',grid:'rgba(144,165,171,0.18)'};}
+function _aChartTheme(){return {tick:'#796B60',grid:'rgba(216,204,192,0.45)'};}   /* grid = Sand Beige (brand) */
 App._searchRR=(inputId)=>{const a=document.activeElement;const ss=a?a.selectionStart:null,se=a?a.selectionEnd:null;rr();const el=document.getElementById(inputId);if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se);}catch(e){}}};
 
 /* shims for ported shell (index approvals model; announcements not included) */
