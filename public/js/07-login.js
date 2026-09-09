@@ -59,7 +59,7 @@ App.login=async()=>{
     const{data:profile}=await sb.from('profiles').select('*').eq('id',data.user.id).single();
     if(!profile){await sb.auth.signOut();S.uid=null;render();throw new Error('Profile not found');}
     if(profile.status==='Inactive'){await sb.auth.signOut();S.uid=null;render();throw new Error('Account inactive — contact admin');}
-    const u={id:profile.id,firstName:_unesc(profile.first_name)||'',lastName:_unesc(profile.last_name)||'',email:profile.email||'',phone:_unesc(profile.phone)||'',position:_unesc(profile.position)||'',department:_unesc(profile.department)||'',role:profile.role||'User',status:profile.status,managerId:profile.manager_id||null,managerHistory:profile.manager_history||[],rules:profile.rules||{past:true,future:true,edit:true},approval:profile.approval_settings||{past:false,future:false,edited:false},docAccess:profile.doc_access||{departments:{},locations:{}},questionsAccess:profile.questions_access||false,emailEnabled:profile.email_enabled!==false,cities:Array.isArray(profile.cities)?profile.cities:[],hrm:(profile.hrm&&typeof profile.hrm==='object')?profile.hrm:null,password:'***'};
+    const u={id:profile.id,firstName:_unesc(profile.first_name)||'',lastName:_unesc(profile.last_name)||'',email:profile.email||'',phone:_unesc(profile.phone)||'',position:_unesc(profile.position)||'',department:_unesc(profile.department)||'',role:profile.role||'User',status:profile.status,managerId:profile.manager_id||null,managerHistory:profile.manager_history||[],rules:profile.rules||{past:true,future:true,edit:true},approval:profile.approval_settings||{past:false,future:false,edited:false},docAccess:profile.doc_access||{departments:{},locations:{}},questionsAccess:profile.questions_access||false,emailEnabled:profile.email_enabled!==false,cities:Array.isArray(profile.cities)?profile.cities:[],hrm:(profile.hrm&&typeof profile.hrm==='object')?profile.hrm:null,notifyPrefs:(profile.notify_prefs&&typeof profile.notify_prefs==='object')?profile.notify_prefs:{},password:'***'};
     const idx=DB.users.findIndex(x=>x.id===u.id);
     if(idx>-1)DB.users[idx]=u;else DB.users.push(u);
     S.uid=u.id;
@@ -68,7 +68,7 @@ App.login=async()=>{
     try{restoreFilters(S.route);if(typeof App._okrReloadExpanded==='function')App._okrReloadExpanded();}catch(e){}
     saveDB();render();
     // Load full data in background — don't block UI
-    loadFromSB().then(()=>{saveDB();if(Date.now()-_lastUserAction>3000)render();}).catch(()=>{});
+    loadFromSB().then(()=>{saveDB();if(Date.now()-_lastUserAction>3000)render();try{if(typeof _bbAfterBoot==='function')_bbAfterBoot();}catch(e){}}).catch(()=>{});
   }catch(err){
     const msg=err.message.includes('Invalid')||err.message.includes('credentials')||err.message.includes('invalid_grant')
       ?'Incorrect email or password':err.message;

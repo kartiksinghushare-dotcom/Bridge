@@ -230,3 +230,14 @@ Everything prior still green: 13 notification, 17 access-control, 19 live/sticky
 ## Still open (your call)
 - **`optional-rls-hardening.sql`** — included, not applied. Access is still app-enforced only.
 - **Assign your people** — only 6 of 40 users have real Workspace assignments.
+
+## v3.22 — 9 Sep 2026
+
+- **BOLT → OKR** everywhere: nav, tabs, dashboard, notifications, email templates, settings, sounds. Route is `#okr` (old `#bolt` links still work).
+- **Channel vs board access fixed**: everyone with channel access is automatically a member of every board in that channel — including boards created later — for mentions, assignees, board rules and notifications. Board-only members stay limited to their board. The board-members dialog now shows "Via channel · automatic" and "Board only" separately.
+- **Notify on every message**: each new Workspace message (and thread reply) notifies every member of that board, not just tagged people. Each person can switch this off in **Profile → My notifications** (`profiles.notify_prefs.chat_all`); tags always notify. Admin master switch in Settings → In-App → "Every Workspace message". Opening a chat clears its bell notifications.
+- **Desktop notifications**: system pop-ups from the browser (Notification API) for every kind of alert while Bridge is open; suppressed for the chat you're currently reading.
+- **Push when Bridge is closed**: `public/sw.js` service worker + `push_subscriptions` table + `send-push` Edge Function, fired by a statement-level trigger on `notifications` (pg_net). VAPID keys live in `push_config` (service-role only). Works on desktop browsers, Android, and iPhone as a Home-Screen app. The Capacitor app can store an APNs/FCM token in the same table (`kind`) — the sender for those is still to be wired.
+- **Chat opens at the latest message** (robust scroll pinning after render, animations and image loads).
+- **Newest activity first**: the chat you just messaged or received a message in moves to the top of the list.
+- **WhatsApp layout** in brand colours: slimmer sidebars/tabs, WhatsApp list rows (avatar · name+time · preview with sender + ticks · unread pill · @ badge when tagged), bubbles with tails and sender name inside, light outgoing bubble, blue read ticks, quiet composer bar, WhatsApp-style @mention highlight. "New chat" is now the + button beside the filter chips.

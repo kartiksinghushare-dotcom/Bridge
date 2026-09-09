@@ -229,7 +229,7 @@ function allClsPage(){
   </div>`;
 }
 
-/* Image viewer with zoom: +/− buttons, mouse wheel, pinch, drag-to-pan, double-tap. Used by Workspace chat, checklists, approvals, BOLT check-ins. */
+/* Image viewer with zoom: +/− buttons, mouse wheel, pinch, drag-to-pan, double-tap. Used by Workspace chat, checklists, approvals, OKR check-ins. */
 App._bigImg=(src)=>{
   var B='width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:17px;line-height:1;font-weight:700;backdrop-filter:blur(4px)';
   openModal('<div id="bigimg-wrap" style="position:relative;background:#111;border-radius:16px;overflow:hidden;height:min(84vh,900px);user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab">'

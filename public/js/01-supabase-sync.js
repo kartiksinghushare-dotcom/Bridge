@@ -9,7 +9,7 @@ const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 const sb=supabase.createClient(SB_URL,SB_ANON,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 function _unesc(s){if(!s)return s;return String(s).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");}
 const _mQrow=q=>({id:q.id,text:q.text||'',type:q.type||'answer',options:q.options||[],photo:q.photo||false,approval:q.approval||false,comment:q.comment||false,isPublic:q.is_public!==false,createdBy:q.created_by||null,createdAt:q.created_at,departmentId:q.department_id||null,subDepartmentId:q.sub_department_id||null});
-function _mU(r){return(r||[]).map(p=>({id:p.id,firstName:_unesc(p.first_name)||'',lastName:_unesc(p.last_name)||'',email:p.email||'',phone:_unesc(p.phone)||'',position:_unesc(p.position)||'',department:_unesc(p.department)||'',role:p.role||'User',status:p.status||'Active',managerId:p.manager_id||null,managerHistory:p.manager_history||[],rules:p.rules||{past:true,future:true,edit:true},approval:p.approval_settings||{past:false,future:false,edited:false},docAccess:p.doc_access||{departments:{},locations:{}},questionsAccess:p.questions_access||false,emailEnabled:p.email_enabled!==false,cities:Array.isArray(p.cities)?p.cities:[],hrm:(p.hrm&&typeof p.hrm==='object')?p.hrm:null,password:'***'}));}
+function _mU(r){return(r||[]).map(p=>({id:p.id,firstName:_unesc(p.first_name)||'',lastName:_unesc(p.last_name)||'',email:p.email||'',phone:_unesc(p.phone)||'',position:_unesc(p.position)||'',department:_unesc(p.department)||'',role:p.role||'User',status:p.status||'Active',managerId:p.manager_id||null,managerHistory:p.manager_history||[],rules:p.rules||{past:true,future:true,edit:true},approval:p.approval_settings||{past:false,future:false,edited:false},docAccess:p.doc_access||{departments:{},locations:{}},questionsAccess:p.questions_access||false,emailEnabled:p.email_enabled!==false,cities:Array.isArray(p.cities)?p.cities:[],hrm:(p.hrm&&typeof p.hrm==='object')?p.hrm:null,notifyPrefs:(p.notify_prefs&&typeof p.notify_prefs==='object')?p.notify_prefs:{},password:'***'}));}
 function _mC(r){return(r||[]).map(c=>({id:c.id,name:c.name||'',description:c.description||'',department:c.department||'',subDepartment:c.sub_department||'',frequency:c.frequency||'Daily',schedule:c.schedule||'',selectedDays:c.selected_days||[],selectedDates:(c.selected_dates||[]).map(x=>x==='L'?'L':Number(x)),customDates:c.custom_dates||[],startDate:c.start_date||'',endDate:c.end_date||'',locationIds:c.location_ids||[],assignees:c.assignees||[],tasks:c.tasks||[],questionIds:c.question_ids||[],questionConfigs:(()=>{const raw=c.question_configs||{};const fixed={};Object.keys(raw).forEach(k=>{const clean=k.startsWith('"')&&k.endsWith('"')?JSON.parse(k):k;fixed[clean]=raw[k];});return fixed;})(),scheduleTime:c.schedule_time||null,status:c.status||'Active',anyOne:c.any_one||false,createdBy:c.created_by||null}));}
 function _mDraft(r){return{id:r.id,checklistId:r.checklist_id,userId:r.user_id,date:r.date,questionResponses:r.question_responses||[],tasks:r.tasks||[],updatedAt:r.updated_at||null};}
 function _mS(r){return(r||[]).map(s=>({id:s.id,checklistId:s.checklist_id,userId:s.user_id,date:s.date,status:s.status||'Pending',submittedAt:s.submitted_at||null,tasks:s.tasks||[],questionResponses:s.question_responses||[],editCount:s.edit_count||0,editHistory:s.edit_history||[],checklistDeleted:s.checklist_deleted||false}));}
@@ -72,7 +72,7 @@ function _applyTickets(rows){
   // Keep any local-only tickets (just created, or older than the 30-day window) that the
   // server query didn't return — never drop them (but never re-add a deleted one).
   const fromSB=new Set(allTk.map(t=>t.id));
-  /* Same protection the tickets path uses, reused for BOLTs: a server snapshot must never
+  /* Same protection the tickets path uses, reused for OKRs: a server snapshot must never
      clobber a row whose local change is still sitting in the sync queue. */
   const localOnly=(DB.tickets||[]).filter(t=>!fromSB.has(t.id)&&!_delTk.has(t.id));
   // ── v2 FIX: never let a server snapshot clobber a ticket that still has queued local
@@ -89,7 +89,7 @@ let _tabLoading={};
 /* ── PORTED: sync bar + tab-loading helpers (Safe Backup) ── */
 function _anyLoading(){try{return Object.values(_tabLoading||{}).some(Boolean);}catch(e){return false;}}
 function _syncBar(on){try{let b=document.getElementById('syncbar');if(!b){if(!on)return;b=document.createElement('div');b.id='syncbar';document.body.appendChild(b);}b.classList.toggle('on',!!on);}catch(e){}}
-/* ── Roll-up-safe aggregates under BOLT row-level security ────────────────────
+/* ── Roll-up-safe aggregates under OKR row-level security ────────────────────
    RLS now hides objectives outside the user's scope. A roll-up or annual PARENT
    still has to total its children, so bridge_okr_rollup_facts() returns numbers
    only — no title, owner, department, comment or check-in author — for the
@@ -141,7 +141,7 @@ async function _loadOkrShadows(){
     if(so.length&&typeof rr==='function'&&S&&S.route==='okr')rr();   // redraw once totals can be computed
   }catch(e){console.warn('[okr rollup facts]',e&&e.message);}
 }
-/* v3.14 — locally-deleted BOLT overlay.
+/* v3.14 — locally-deleted OKR overlay.
    A cascade delete removes a whole subtree. If any of those delete requests does not reach
    the server (expired token, offline, a transient failure) the server still holds the rows,
    and the next pull would hand them straight back — the "I deleted it and it came back"
@@ -375,7 +375,7 @@ async function loadFromSB(){
     DB.users.forEach(u=>{if(!u.questionsAccess&&_savedQAccess[u.id])u.questionsAccess=true;});
   }
 
-  // ── PORTED (Safe Backup): BOLT data + role profiles + role migration ──
+  // ── PORTED (Safe Backup): OKR data + role profiles + role migration ──
   DB.users.forEach(u=>_ensureHrm(u));
   {const _gone=await _okrServerDeletedIds();_okrReconcileDeleted(_gone);
    DB.okrs=_okrDropDeleted('okrs',_keepPending('okrs',_mOKR(okrRows),DB.okrs,_gone));}

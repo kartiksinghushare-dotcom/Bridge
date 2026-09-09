@@ -40,6 +40,8 @@ function profilePage(){
       <button id="ep-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App.saveProfile().finally(()=>{const b=document.getElementById('ep-save-btn');if(b){b.disabled=false;b.textContent='Save changes';}})" style="padding:10px 20px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Save changes</button>
     </div>
   </div>
+  ${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}
+  ${typeof _bbSndCard==='function'?_bbSndCard():''}
   <!-- Change password -->
   <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">
     <h3 class="fd font-semibold text-sm mb-3">Change password</h3>
@@ -363,11 +365,11 @@ const EMAIL_EVENTS=[
   {key:'feedback_received',label:'Feedback received',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'deadline_reminder',label:'Deadline reminder',    vars:'{{user_name}}, {{checklist_name}}, {{action_url}}'},
   {key:'escalation',       label:'Escalation raised',    vars:'{{submitter}}, {{checklist_name}}, {{question}}, {{answer}}, {{action_url}}'},
-  {key:'okr_assigned',      label:'BOLT assigned',          vars:'{{user_name}}, {{okr_title}}, {{assigner}}, {{target}}, {{schedule}}, {{period}}, {{action_url}}'},
-  {key:'okr_checkin_due',   label:'BOLT check-in due (daily)',vars:'{{user_name}}, {{count}}, {{date}}, {{okr_titles}}, {{action_url}}'},
-  {key:'okr_update_added',  label:'BOLT update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
-  {key:'okr_target_revised',label:'BOLT target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
-  {key:'okr_closed',        label:'BOLT closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
+  {key:'okr_assigned',      label:'OKR assigned',          vars:'{{user_name}}, {{okr_title}}, {{assigner}}, {{target}}, {{schedule}}, {{period}}, {{action_url}}'},
+  {key:'okr_checkin_due',   label:'OKR check-in due (daily)',vars:'{{user_name}}, {{count}}, {{date}}, {{okr_titles}}, {{action_url}}'},
+  {key:'okr_update_added',  label:'OKR update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
+  {key:'okr_target_revised',label:'OKR target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
+  {key:'okr_closed',        label:'OKR closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
   /* Workspace. These templates already existed and were honoured by sendEmail, but were
      absent from this list, so nothing rendered an editor for them. */
   {key:'crm_automation',label:'Workspace automation (all boards)',vars:'{{user_name}}, {{rule}}, {{title}}, {{customer}}, {{board}}, {{status}}, {{priority}}, {{assignee}}, {{due_date}}, {{actor}}, {{action_url}}'},
@@ -394,11 +396,11 @@ function _defaultTemplates(){
     crm_approval:{subject:'✅ Approval needed: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" ({{customer}}) needs your approval.\n\n{{action_url}}'},
     crm_decided:{subject:'{{decision}}: {{title}}',body:'Hi {{user_name}},\n\n"{{title}}" was {{decision}} by {{actor}}.\n\n{{action_url}}'},
     crm_reminder:{subject:'Reminder: {{note}}',body:'Hi {{user_name}},\n\nYour reminder is due: {{note}}\n\nConversation: "{{title}}"\n\n{{action_url}}'},
-    okr_assigned:{subject:'🎯 New BOLT assigned: {{okr_title}}',body:'Hi {{user_name}},\n\n{{assigner}} assigned you an objective: {{okr_title}}\n\nTarget: {{target}}\nCheck-ins: {{schedule}}\nPeriod: {{period}}\n\nIf the objective has several owners, any one of you can submit an update — it counts for the whole group.\n\n{{action_url}}'},
-    okr_checkin_due:{subject:'⏰ BOLT check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} BOLT check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
+    okr_assigned:{subject:'🎯 New OKR assigned: {{okr_title}}',body:'Hi {{user_name}},\n\n{{assigner}} assigned you an objective: {{okr_title}}\n\nTarget: {{target}}\nCheck-ins: {{schedule}}\nPeriod: {{period}}\n\nIf the objective has several owners, any one of you can submit an update — it counts for the whole group.\n\n{{action_url}}'},
+    okr_checkin_due:{subject:'⏰ OKR check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} OKR check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
     okr_update_added:{subject:'📈 {{okr_title}} — updated by {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} added an update on "{{okr_title}}": {{value}}\n\n{{comment}}\n\nThis counts for the whole owner group — nothing more to do for today\'s check-in.\n\n{{action_url}}'},
     okr_target_revised:{subject:'✏️ Target revised: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} revised the target on "{{okr_title}}": {{old_target}} → {{new_target}}\n\nReason: {{reason}}\n\nThe original target stays visible for comparison — the same updates feed both numbers.\n\n{{action_url}}'},
-    okr_closed:{subject:'🔒 BOLT {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
+    okr_closed:{subject:'🔒 OKR {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
   };
 }
 
@@ -407,7 +409,7 @@ function _nsDefault(){return{
   inapp_checklist_assigned:true,inapp_submission_submitted:true,
   inapp_submission_late:true,inapp_submission_approved:true,inapp_submission_rejected:true,
   inapp_approval_requested:true,inapp_approval_decided:true,
-  inapp_feedback_received:true,inapp_deadline_reminder:true,
+  inapp_feedback_received:true,inapp_deadline_reminder:true,inapp_crm_message:true,
   email_checklist_assigned:true,email_submission_submitted:false,
   email_submission_late:true,email_submission_approved:true,email_submission_rejected:true,
   email_approval_requested:true,email_approval_decided:true,
@@ -460,7 +462,7 @@ function _bodyToHtml(fromName, bodyText, actionUrl=''){
     :ctaUrl.includes('notifications')?'View Notifications'
     :ctaUrl.includes('settings')?'Open Settings'
     :ctaUrl.includes('analytics')?'View Analytics'
-    :ctaUrl.includes('okr')?'Open BOLTs'
+    :ctaUrl.includes('okr')?'Open OKRs'
     :'Open Bridge';
   return`<!DOCTYPE html><html><body style="margin:0;padding:0;background:#FAF7F1;font-family:sans-serif">
   <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:16px;border:1px solid #EDE7DC;overflow:hidden">
@@ -582,6 +584,7 @@ function settingsPage(){
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
 
   const inappTab=`<div class="space-y-4">
+    ${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}
     ${typeof _bbSndCard==='function'?_bbSndCard():''}
     <div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden">
       <div style="padding:14px 20px;background:#F5F1EB;border-bottom:1px solid #EEE8DE">
@@ -601,14 +604,15 @@ function settingsPage(){
         ${_nsTogRow('inapp_approval_decided','Approval decided','Sent to the user when their approval is approved/rejected')}
         ${_nsTogRow('inapp_feedback_received','Feedback received','Sent to the user when their manager sends feedback')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Workspace</div>
+        ${_nsTogRow('inapp_crm_message','Every Workspace message','Board & channel members are alerted for each message (each person can switch their own off in Profile → My notifications)')}
         ${_nsTogRow('inapp_crm_mention','Tagged in Workspace chat','When someone @mentions you in a conversation')}
         ${_nsTogRow('inapp_crm_ticket','Workspace ticket activity','Created, assigned, moved & automation alerts')}
         ${_nsTogRow('inapp_crm_reminder','Workspace reminders','Reminders scheduled by board automations (date & time)')}
-        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">BOLTs</div>
-        ${_nsTogRow('inapp_okr_assigned','BOLT assigned','Sent to every owner when an objective is assigned to them')}
-        ${_nsTogRow('inapp_okr_update_added','BOLT update added','Sent to co-owners when someone submits the group\'s check-in')}
-        ${_nsTogRow('inapp_okr_target_revised','BOLT target revised','Sent to the owners when a target is revised')}
-        ${_nsTogRow('inapp_okr_closed','BOLT closed / reopened','Sent to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
+        ${_nsTogRow('inapp_okr_assigned','OKR assigned','Sent to every owner when an objective is assigned to them')}
+        ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
+        ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
@@ -663,12 +667,12 @@ function settingsPage(){
         ${_nsTogRow('email_crm_mention','Tagged in Workspace chat','Email when someone @mentions you')}
         ${_nsTogRow('email_crm_ticket','Workspace ticket activity','Email for created / assigned / automation alerts')}
         ${_nsTogRow('email_crm_reminder','Workspace reminders','Email for reminders scheduled by board automations')}
-        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">BOLTs</div>
-        ${_nsTogRow('email_okr_assigned','BOLT assigned','Email to every owner when an objective is assigned to them')}
-        ${_nsTogRow('email_okr_checkin_due','BOLT check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}
-        ${_nsTogRow('email_okr_update_added','BOLT update added','Email to co-owners when someone submits the group\'s check-in')}
-        ${_nsTogRow('email_okr_target_revised','BOLT target revised','Email to the owners when a target is revised')}
-        ${_nsTogRow('email_okr_closed','BOLT closed / reopened','Email to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">OKRs</div>
+        ${_nsTogRow('email_okr_assigned','OKR assigned','Email to every owner when an objective is assigned to them')}
+        ${_nsTogRow('email_okr_checkin_due','OKR check-in due (daily)','Sent automatically every morning (server schedule) to owners with a check-in due that day')}
+        ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
+        ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
+        ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
       </div>
     </div>
   </div>`;
@@ -797,7 +801,7 @@ var _BB_SND_TYPES=[
  ['escalation','Escalations','A question or task escalates to you'],
  ['feedback','Feedback','Feedback and feedback replies'],
  ['late','Late & reminders','Overdue submissions and deadline reminders'],
- ['okr','BOLT','When a BOLT is assigned to you, checked in or revised'],
+ ['okr','OKR','When an OKR is assigned to you, checked in or revised'],
  ['general','Everything else','Any other Bridge notification']
 ];
 function _bbSndKey(){return 'bb_snd_prefs_'+((typeof S!=='undefined'&&S&&S.uid)||'anon');}
@@ -842,7 +846,7 @@ function _bbOnNotifRow(row){
     if(!known){
       try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
       var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
-      if(age<120000&&!row.read)_bbRing(_bbNotifKind({text:row.text,link:row.link}));
+      if(age<120000&&!row.read){_bbRing(_bbNotifKind({text:row.text,link:row.link}));try{_bbDesktopShow(row);}catch(e){}}
       try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
     }
   }catch(e){}
@@ -876,7 +880,7 @@ function _bbOnNotifRow(row){
           if(prev[n.id]||window._bbSeenN[n.id]){window._bbSeenN[n.id]=1;return;}
           window._bbSeenN[n.id]=1;
           var age=n.time?(Date.now()-new Date(n.time).getTime()):9e9;
-          if(age<120000&&!n.read)_bbRing(_bbNotifKind(n));
+          if(age<120000&&!n.read){_bbRing(_bbNotifKind(n));try{_bbDesktopShow({id:n.id,text:n.text,link:n.link,read:n.read});}catch(e){}}
         });
       }catch(e){}
     };
@@ -963,3 +967,160 @@ function _bbPresPaint(){try{var els=document.querySelectorAll('[data-pres]');for
   try{new MutationObserver(function(){clearTimeout(deb);deb=setTimeout(_bbEyeEnhance,120);}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
   _bbEyeEnhance();
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   v3.22 — MY NOTIFICATIONS (per person) + DESKTOP notifications + WEB PUSH
+   · profiles.notify_prefs (jsonb) holds each person's own switches:
+       chat_all  — alert me on EVERY Workspace message on my boards (default ON)
+       desktop   — system notifications while Bridge is open in a tab (default ON)
+       push      — notifications while Bridge is closed, via Web Push (default ON once enabled)
+   · Desktop = the browser Notification API, fired from the same realtime row that rings the bell.
+   · Push = service worker (/sw.js) + push_subscriptions table + `send-push` edge function,
+     called by a trigger on `notifications` — so every kind of alert reaches a closed app.
+   · Native (Capacitor iOS/Android): register the device token into push_subscriptions with
+     kind 'apns'/'fcm' from the shell and the same trigger/function picks it up (sender TODO).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+var _BB_VAPID_PUBLIC='BHQnIaq-75Zs5dj1k7IBupTUYqBYpHknv8XaXHqlV3ti1IkDaLgr-Pk7SuemZSoFTRx7VN8te6mvjpl3nn64nmc';
+function _bbNP(){try{var u=me();if(!u)return{};if(!u.notifyPrefs||typeof u.notifyPrefs!=='object')u.notifyPrefs={};return u.notifyPrefs;}catch(e){return{};}}
+function _bbNPOn(key){var p=_bbNP();return p[key]!==false;}
+async function _bbNPSave(patch){
+  var u=me();if(!u)return;
+  u.notifyPrefs=Object.assign({},u.notifyPrefs||{},patch||{});
+  try{saveDB();}catch(e){}
+  try{var r=await sb.from('profiles').update({notify_prefs:u.notifyPrefs}).eq('id',u.id);if(r&&r.error)throw r.error;}
+  catch(e){console.warn('[notify_prefs]',e&&e.message);toast('Saved on this device only — sync failed','warn');}
+}
+App._bbNPTog=async(btn,key)=>{
+  var nowOn=btn.classList.contains('off');
+  btn.classList.toggle('on',nowOn);btn.classList.toggle('off',!nowOn);btn.setAttribute('aria-checked',nowOn?'true':'false');
+  var patch={};patch[key]=nowOn;await _bbNPSave(patch);
+  if(key==='push'&&nowOn){try{await App._bbPushEnable(true);}catch(e){}}
+  if(key==='desktop'&&nowOn){try{await App._bbDesktopEnable(true);}catch(e){}}
+  try{render();}catch(e){}
+};
+function _bbNPRow(key,label,desc,extra){
+  var on=_bbNPOn(key);
+  return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F1ECE3">'
+    +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#13171B">'+label+'</div>'
+    +(desc?'<div style="font-size:11px;color:#A8998A;margin-top:1px;line-height:1.45">'+desc+'</div>':'')+(extra||'')+'</div>'
+    +'<button role="switch" aria-checked="'+(on?'true':'false')+'" aria-label="'+esc(label)+'" class="tog '+(on?'on':'off')+'" onclick="App._bbNPTog(this,\''+key+'\')"><span></span></button></div>';
+}
+/* ── Desktop notifications (tab open, maybe in the background) ── */
+function _bbDesktopSupported(){return typeof window!=='undefined'&&'Notification' in window;}
+function _bbDesktopState(){if(!_bbDesktopSupported())return'unsupported';try{return Notification.permission;}catch(e){return'unsupported';}}
+App._bbDesktopEnable=async(quiet)=>{
+  if(!_bbDesktopSupported()){if(!quiet)toast('This browser can’t show desktop notifications','warn');return false;}
+  try{var p=await Notification.requestPermission();
+    if(p==='granted'){if(!quiet){toast('Desktop notifications on ✓');try{new Notification('Bridge',{body:'You’ll be notified here when something needs you.',icon:'/icons/icon-192.png',tag:'bb-test'});}catch(e){}}return true;}
+    if(!quiet)toast(p==='denied'?'Blocked in the browser — allow notifications for this site in the address-bar settings':'Not enabled','warn');
+  }catch(e){}
+  return false;
+};
+/* Show a system notification for a fresh bell row — but not for the conversation the person is
+   looking at right now (they can see it), and never twice for the same row. */
+function _bbDesktopShow(row){
+  try{
+    if(!row||!row.id)return;if(_bbDesktopState()!=='granted')return;if(!_bbNPOn('desktop'))return;
+    window._bbDeskSeen=window._bbDeskSeen||{};if(window._bbDeskSeen[row.id])return;window._bbDeskSeen[row.id]=1;
+    var link=row.link||'';
+    var viewing=false;
+    try{viewing=document.visibilityState==='visible'&&document.hasFocus()&&S.route==='crm'&&typeof CRM!=='undefined'&&CRM&&CRM.sel&&link===('crm:'+CRM.sel.convoId);}catch(e){}
+    /* Push is on for this device: the service worker shows the system notification (same tag), so
+       don't show a second one here. If the person is already looking at that chat, close the
+       worker's one as it lands. */
+    if(_bbPushHere()&&!_bbIsNative()){if(viewing)_bbCloseSWNotif(link||row.id);return;}
+    if(viewing)return;
+    var text=String(row.text||'');
+    var title=text.indexOf('\u{1F4AC}')>=0?'Workspace':(/tagged you in/i.test(text)?'You were tagged':/OKR|BOLT|objective/i.test(text)?'OKR':/checklist/i.test(text)?'Checklist':/approv|reject/i.test(text)?'Approval':/reminder|overdue|late|deadline/i.test(text)?'Reminder':'Bridge');
+    var body=text.replace(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*/u,'').slice(0,200);
+    var n=new Notification(title,{body:body,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:link||row.id,renotify:true,data:{link:link,id:row.id}});
+    n.onclick=function(){try{window.focus();}catch(e){}try{n.close();}catch(e){}try{App._bbOpenLink(link,text,row.id);}catch(e){}};
+    setTimeout(function(){try{n.close();}catch(e){}},12000);
+  }catch(e){}
+}
+function _bbCloseSWNotif(tag){try{if(!('serviceWorker' in navigator))return;var go=function(){navigator.serviceWorker.getRegistration('/').then(function(r){if(!r||!r.getNotifications)return;r.getNotifications({tag:tag}).then(function(ns){ns.forEach(function(n){try{n.close();}catch(e){}});}).catch(function(){});}).catch(function(){});};go();setTimeout(go,1500);setTimeout(go,4000);}catch(e){}}
+/* Open what a notification points at (system notification click, push tap, ?nl= deep link) */
+App._bbOpenLink=(link,text,nid)=>{
+  try{if(nid){var n=(DB.notifications||[]).find(function(x){return x.id===nid;});if(n&&!n.read){n.read=true;_invalidateNotifCache();try{sb.from('notifications').update({read:true}).eq('id',nid).then(function(){}).catch(function(){});}catch(e){}}}}catch(e){}
+  if(link&&String(link).indexOf('crm:')===0&&typeof App._crmOpenFromNotification==='function'){if(App._crmOpenFromNotification(link,text||''))return;}
+  App.go('notifications');
+};
+/* ── Web Push (app closed) ── */
+function _bbPushSupported(){return typeof navigator!=='undefined'&&'serviceWorker' in navigator&&'PushManager' in window&&_bbDesktopSupported();}
+function _bbB64ToU8(b){var pad='='.repeat((4-b.length%4)%4);var s=(b+pad).replace(/-/g,'+').replace(/_/g,'/');var raw=atob(s);var out=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
+function _bbIsNative(){try{return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());}catch(e){return false;}}
+async function _bbSWReg(){
+  if(!('serviceWorker' in navigator))return null;
+  try{var reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});return reg;}catch(e){console.warn('[sw]',e&&e.message);return null;}
+}
+async function _bbPushSaveSub(sub){
+  if(!sub||!S.uid)return;
+  var j=sub.toJSON?sub.toJSON():sub;
+  var row={user_id:S.uid,kind:'webpush',endpoint:j.endpoint,keys:j.keys||{},ua:(navigator.userAgent||'').slice(0,200),updated_at:new Date().toISOString(),last_error:null};
+  try{var r=await sb.from('push_subscriptions').upsert(row,{onConflict:'endpoint'});if(r&&r.error)throw r.error;try{localStorage.setItem('bb_push_ep_'+S.uid,j.endpoint);}catch(e){}}
+  catch(e){console.warn('[push save]',e&&e.message);}
+}
+App._bbPushEnable=async(quiet)=>{
+  if(_bbIsNative()){if(!quiet)toast('In the app, notifications are set up by the app itself','warn');return false;}
+  if(!_bbPushSupported()){if(!quiet)toast('This browser can’t receive push notifications'+(/iP(hone|ad)/.test(navigator.userAgent)?' — add Bridge to your Home Screen first':''),'warn');return false;}
+  try{
+    var ok=await App._bbDesktopEnable(true);if(!ok){if(!quiet)toast('Allow notifications first','warn');return false;}
+    var reg=await _bbSWReg();if(!reg){if(!quiet)toast('Could not start background notifications','err');return false;}
+    await navigator.serviceWorker.ready;
+    var sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_bbB64ToU8(_BB_VAPID_PUBLIC)});
+    await _bbPushSaveSub(sub);
+    if(_bbNP().push===false)await _bbNPSave({push:true});
+    if(!quiet)toast('Push notifications on for this device ✓');
+    try{render();}catch(e){}
+    return true;
+  }catch(e){console.warn('[push]',e&&e.message);if(!quiet)toast('Push setup failed: '+((e&&e.message)||'unknown'),'err');return false;}
+};
+App._bbPushDisableHere=async()=>{
+  try{var reg=await navigator.serviceWorker.getRegistration('/');var sub=reg?await reg.pushManager.getSubscription():null;
+    if(sub){try{await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);}catch(e){}try{await sub.unsubscribe();}catch(e){}}
+    try{localStorage.removeItem('bb_push_ep_'+S.uid);}catch(e){}
+    toast('Push off on this device');render();}catch(e){}
+};
+/* On every boot: keep the subscription fresh (endpoints rotate) without asking anything. */
+async function _bbPushResync(){
+  if(!S.uid||_bbIsNative()||!_bbPushSupported())return;
+  if(_bbDesktopState()!=='granted'||!_bbNPOn('push'))return;
+  try{var reg=await _bbSWReg();if(!reg)return;var sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_bbB64ToU8(_BB_VAPID_PUBLIC)});
+    var ep='';try{ep=localStorage.getItem('bb_push_ep_'+S.uid)||'';}catch(e){}
+    if(sub&&sub.endpoint!==ep)await _bbPushSaveSub(sub);
+  }catch(e){}
+}
+function _bbPushHere(){try{return !!localStorage.getItem('bb_push_ep_'+(S&&S.uid));}catch(e){return false;}}
+/* The card — used on Profile (everyone) and on Settings → In-App (admins). */
+function _bbMyNotifCard(){
+  var ds=_bbDesktopState();var native=_bbIsNative();
+  var deskExtra=!_bbDesktopSupported()?'<div style="font-size:11px;color:#B3402E;margin-top:4px">Not supported in this browser</div>'
+    :ds==='granted'?'<div style="font-size:11px;color:#428059;margin-top:4px;font-weight:700">✓ Allowed on this device</div>'
+    :ds==='denied'?'<div style="font-size:11px;color:#B3402E;margin-top:4px">Blocked by the browser — allow notifications for this site from the address bar</div>'
+    :'<button onclick="App._bbDesktopEnable()" class="ui-btn ui-btn-primary ui-btn-sm" style="margin-top:6px">Allow on this device</button>';
+  var pushExtra=native?'<div style="font-size:11px;color:#A8998A;margin-top:4px">Handled by the app</div>'
+    :!_bbPushSupported()?'<div style="font-size:11px;color:#B3402E;margin-top:4px">'+(/iP(hone|ad)/.test(navigator.userAgent||'')?'On iPhone: Share → Add to Home Screen, then open Bridge from there to enable':'Not supported in this browser')+'</div>'
+    :_bbPushHere()?'<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="font-size:11px;color:#428059;font-weight:700">✓ On for this device</span><button onclick="App._bbPushDisableHere()" style="border:none;background:transparent;color:#A8998A;font-size:11px;cursor:pointer;text-decoration:underline">turn off here</button></div>'
+    :'<button onclick="App._bbPushEnable()" class="ui-btn ui-btn-primary ui-btn-sm" style="margin-top:6px">Enable on this device</button>';
+  return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden;margin-bottom:16px">'
+    +'<div style="padding:13px 18px;background:#F5F1EB;border-bottom:1px solid #EEE8DE;display:flex;align-items:center;gap:10px"><span style="font-size:17px">\u{1F4EC}</span><div><div style="font-size:13.5px;font-weight:700;color:#13171B">My notifications</div><div style="font-size:11.5px;color:#A59788;margin-top:1px">Only for you — change any time</div></div></div>'
+    +'<div style="padding:2px 18px 10px">'
+    +_bbNPRow('chat_all','Every Workspace message','Alert me for each new message on boards I’m in, even when I’m not tagged. Tags always notify.')
+    +_bbNPRow('desktop','Desktop notifications','System pop-ups while Bridge is open in a tab',deskExtra)
+    +_bbNPRow('push','Notify me when Bridge is closed','Push notifications on this device even when the app or tab isn’t open',pushExtra)
+    +'</div></div>';
+}
+window._bbMyNotifCard=_bbMyNotifCard;
+/* Boot hooks: SW registration, subscription resync, deep link from a push tap */
+function _bbAfterBoot(){
+  try{_bbPushResync();}catch(e){}
+  try{
+    var q=new URLSearchParams(window.location.search||'');var nl=q.get('nl');
+    if(nl){try{history.replaceState(null,'',window.location.pathname+window.location.hash);}catch(e){}setTimeout(function(){try{App._bbOpenLink(nl,'');}catch(e){}},400);}
+  }catch(e){}
+  try{if('serviceWorker' in navigator&&!window._bbSWMsgBound){window._bbSWMsgBound=true;navigator.serviceWorker.addEventListener('message',function(ev){var d=ev.data||{};if(d.type==='bb-open'){try{App._bbOpenLink(d.link||'','');}catch(e){}}});}}catch(e){}
+}
+window._bbAfterBoot=_bbAfterBoot;
