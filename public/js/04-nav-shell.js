@@ -82,7 +82,7 @@ App.toggleNavSec=(name)=>{
   S._navCollapsed=S._navCollapsed||{};
   const {sections}=navSectionsFor();
   const sec=sections.find(x=>x.label===name);
-  const cur=(name in S._navCollapsed)?!!S._navCollapsed[name]:true;   // v3.25: sections start collapsed
+  const cur=(name in S._navCollapsed)?!!S._navCollapsed[name]:false;   // v3.25: sections start EXPANDED
   S._navCollapsed[name]=!cur;
   render();
 };
@@ -159,9 +159,8 @@ function shell(content){
     // T1: honor the user's explicit collapse/expand. Only fall back to "auto-expand the
     // section with the active route" when the user hasn't toggled it yet — otherwise a
     // section containing the current page could never be collapsed.
-    // v3.25: every section starts COLLAPSED (no auto-expand for the active page); a section the
-    // person opened stays open for the session.
-    const collapsed=(sec.label in S._navCollapsed)?!!S._navCollapsed[sec.label]:true;
+    // v3.25: every section starts EXPANDED; a section the person collapses stays collapsed for the session.
+    const collapsed=(sec.label in S._navCollapsed)?!!S._navCollapsed[sec.label]:false;
     const show=!collapsed;
     return`<div class="nav-sec${show?'':' collapsed'}">
       <button class="nav-sec-hdr" onclick="App.toggleNavSec('${sec.label}')"><span class="nav-ico" style="width:14px;height:14px;color:rgba(237,230,220,.4)">${ic(sec.icon,'w-3.5 h-3.5')}</span><span style="flex:1;text-align:left">${sec.label}</span><span class="nav-chev">${ic('chevD','w-3.5 h-3.5')}</span></button>
