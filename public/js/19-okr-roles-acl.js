@@ -16,8 +16,6 @@ function _syncErr(label){return (e)=>{
   const rls=_isRlsErr(e);
   toast(rls?('Couldn\'t save '+(label||'changes')+' — you may not have permission'):('Couldn\'t save '+(label||'changes')+' — check your connection'),'err');
 };}
-// Surface a caught exception from a user-initiated operation (validation already toasts its own message).
-function _opErr(e,ctx){console.warn('[op]',ctx,e?.message||e);toast((ctx?(ctx+' failed'):'Something went wrong')+(_isRlsErr(e)?' — permission denied':''),'err');}
 /* chipBar(items,activeKey,fnName,opts) — ONE tab/segment bar.
    items: [[key,label,count?],...]  fnName is a STRING like 'App.x' called as fnName('key').
    opts.style: 'segment'(default)|'pill'. Preserves existing onclick strings via fnName. */
@@ -52,15 +50,6 @@ const HOW={
     'Tick the box on any objective to select it, then <b>Bulk edit</b> changes owners, department, dates, targets, direction, schedule, roll-up or status across all of them at once — and can close, reopen or delete them. Only the fields you tick are written.','The quarter filter has an All / Annual / Quarterly switch, so you can view just the annual picture, just the quarters, or everything.','Every input and edit is kept in the objective\'s activity log.'],l:[['mychecklists','My Checklists'],['dashboard','Dashboard'],['accesscontrol','Access Control']]},
 };
 
-App._howModal=()=>{
-  const h=HOW[S.route];if(!h)return;
-  const nav=navFor().find(n=>n[0]===S.route);
-  modalShell({title:'How this tab works',sub:nav?nav[2]:'',size:'max-w-md',
-    body:`<div style="font-size:13.5px;color:var(--c-text);line-height:1.65">${h.t}</div>
-      ${h.d?`<div style="margin-top:12px;border-top:1px dashed var(--c-border);padding-top:10px">${h.d.map(x=>`<div style="display:flex;gap:8px;font-size:12.5px;color:var(--c-text-2);line-height:1.55;padding:4px 0"><span style="color:var(--c-brand-ink);font-weight:800;flex-shrink:0">→</span><span>${x}</span></div>`).join('')}</div>`:''}
-      ${h.l&&h.l.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center"><span style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase">Linked tabs:</span>${h.l.filter(x=>navFor().some(n=>n[0]===x[0])).map(x=>`<button onclick="App.closeModal();App.go('${x[0]}')" class="ui-btn ui-btn-ghost ui-btn-sm">${x[1]} →</button>`).join('')}</div>`:''}`,
-    footer:btnP('Got it','App.closeModal()')});
-};
 function _howBar(key){return'';// v3.16: blue helper banners removed (user request) — the "?" HOW modal content stays available to future UI
   const h=HOW[key];if(!h)return'';
   try{if(localStorage.getItem('bridge_how_'+key))return'';}catch(e){}
@@ -127,20 +116,6 @@ window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCa
 /* ═══ PORTED FROM SAFE BACKUP: access-control support (reduced — HRM suite not included) ═══ */
 const isHR=()=>{const u=me();return !!u&&(u.hrm?.isHR===true);};
 function _ensureHrm(u){if(!u)return u;if(!u.hrm||typeof u.hrm!=='object')u.hrm={};const h=u.hrm;if(h.isHR===undefined)h.isHR=false;if(h.roleProfileId===undefined)h.roleProfileId=null;return u;}
-/* ═══════════════════════════════════════════════════════════════
-   PERMISSIONS SYSTEM (frontend-only — NO Supabase, all on DB / u.hrm)
-   - PERM_AREAS: single source of truth. Add an area = add one entry.
-   - DB.roleProfiles: named permission bundles (object keyed by id).
-   - u.hrm.roleProfileId: per-user assignment (null = base-role floor).
-   - can()/scopeOf()/scopeFilter(): the resolver every gate calls.
-   - _baseCan()/_baseScope(): back-compat shim = TODAY's exact access
-     for any user with NO assigned profile. This is the safety net.
-   ═══════════════════════════════════════════════════════════════ */
-// `group` partitions the Access-Control editor into labelled sections (rendering only — does not
-// affect can()/scope resolution). Every `actions` entry below is an action that is actually enforced
-// by a can(area,action) gate somewhere in this file (verified by grep — see B2a matrix); the editor
-// is fully data-driven from this list so a toggle exists for every gate the app checks.
-const PERM_GROUPS=['People & Org','Tasks & Tickets','Content','Insights','System'];
 const PERM_AREAS=[
   {key:'dashboard',label:'Dashboard',desc:'The landing overview',actions:['view'],scoped:false,group:'System'},
   {key:'employees',label:'Users',desc:'The people directory — create, edit, deactivate people, assign managers & roles',actions:['view','create','edit','delete','deactivate','resetPassword','assignManager','assignRole','assign','manage'],scoped:true,group:'People & Org'},
@@ -167,8 +142,6 @@ const PERM_AREAS=[
 const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board'};
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
 const SCOPE_LABEL={none:'None',self:'Only their own',team:'Their team',department:'Their department',location:'Their office',everyone:'Everyone'};
-const _areaByKey=k=>PERM_AREAS.find(a=>a.key===k);
-
 // ── Seed built-in roles (idempotent; version-stamped so v3 upgrades older seeds in place) ──
 // ROLES-FIRST MODEL (v3): Access Control creates ROLES (full toggle bundles); every user is
 // ASSIGNED one role (u.hrm.roleProfileId) and sees only what it grants. Per-user AREA OVERRIDES
@@ -209,11 +182,6 @@ function _seedRoleProfiles(){
   });
 }
 
-// ── Resolver v3 (roles-first, fully toggle-driven) ──
-// Priority: 1) per-user AREA OVERRIDE (u.hrm.perms — beats everything, even Super Admin)
-//           2) ASSIGNED ROLE (u.hrm.roleProfileId → DB.roleProfiles)
-//           3) legacy fallbacks for anyone not yet migrated (Admin default-all, HR floor, base shim).
-function _myProfile(){const u=me();if(!u)return null;const id=u.hrm?.roleProfileId;return id?(DB.roleProfiles?.[id]||null):null;}
 function _roleOf(u){const id=u&&u.hrm&&u.hrm.roleProfileId;return id?(DB.roleProfiles?.[id]||null):null;}
 function _userPermArea(u,area){const p=u&&u.hrm&&u.hrm.perms;return(p&&typeof p==='object'&&p[area]&&typeof p[area]==='object')?p[area]:null;}
 function can(area,action){
@@ -301,8 +269,6 @@ function scopeFilter(area){
   if(sc==='location'){const l=u?.hrm?.locationId;return id=>!!l&&uById(id)?.hrm?.locationId===l;}
   return ()=>false;
 }
-function scopedUsers(area){const f=scopeFilter(area);return DB.users.filter(u=>f(u.id));}
-
 // ── Legacy base-role shim (only reachable for users with NO role assigned — pre-migration) ──
 const _canReportLegacy=()=>{const p=me()?.hrm?.reportPerms||{};return Object.values(p).some(Boolean);};
 function _baseCan(area,action){
@@ -512,8 +478,6 @@ const OKR_DIR_LONG={
 function okrDirOf(o){const d=(o&&o.direction)||'up';return(d==='down'||d==='gte'||d==='lte')?d:'up';}
 /* THRESHOLD family: a single value, no start, compliance-based %. */
 function okrIsThresh(o){return !!o&&o.metricType!=='yesno'&&(okrDirOf(o)==='gte'||okrDirOf(o)==='lte');}
-/* RANGE family: start → target. */
-function okrIsRange(o){return !!o&&!okrIsThresh(o);}
 function okrDirDown(o){return !!o&&okrDirOf(o)==='down'&&o.metricType!=='yesno';}
 /* Legacy allowance shape only — 'down' whose target sits ABOVE the start. */
 function okrIsLimit(o){
@@ -600,13 +564,6 @@ function _okrReadings(o){
   if(ps)pts=pts.filter(p=>p.date>=ps);
   if(pe)pts=pts.filter(p=>p.date<=pe);
   return pts;
-}
-/* THRESHOLD % = compliance: share of the period's readings on the good side of the line. */
-function _okrCompliancePct(o){
-  const pts=_okrReadings(o);
-  if(!pts.length)return null;
-  const ok=pts.filter(p=>okrThreshOKAt(o,p.value,p.date)===true).length;
-  return Math.round((ok/pts.length)*1000)/10;
 }
 /* v3.19 — THRESHOLD verdicts run on the period's DAILY AVERAGE, not the latest reading.
    One value per reported day (the day's newest report wins), averaged across every day that
@@ -941,8 +898,6 @@ let _OKRSEL=new Set(),_OKRBULK=null,_OKR_SHOWN=[];
 /* Everything the current view/filters are showing that this user is allowed to change —
    what "Select all" ticks and what the selection counter measures itself against. */
 function _okrSelectable(){return _OKR_SHOWN.map(okrById).filter(Boolean).filter(_okrCanEditNode);}
-/* Anything on screen the user may see — the export needs no edit rights. */
-function _okrSelectableView(){return _OKR_SHOWN.map(okrById).filter(Boolean).filter(okrCanSee);}
 App._okrTogSel=(id)=>{if(_OKRSEL.has(id))_OKRSEL.delete(id);else _OKRSEL.add(id);rr();};
 App._okrSelAll=()=>{const all=_okrSelectable();const every=all.length&&all.every(o=>_OKRSEL.has(o.id));if(every)all.forEach(o=>_OKRSEL.delete(o.id));else all.forEach(o=>_OKRSEL.add(o.id));rr();};
 App._okrSelClear=()=>{_OKRSEL=new Set();rr();};
@@ -1303,8 +1258,6 @@ App._okrProgressModal=(id)=>{
     body:`<div id="okr-pm" data-okr="${o.id}" style="margin:-6px -2px 0">${_okrProgressPanel(o,kids,pct,st)}</div>`});
   setTimeout(()=>{try{_drawOKRCharts();}catch(e){}},80);
 };
-App._okrTogLogs=(id)=>{_OKR_LOGS[id]=!_OKR_LOGS[id];rr();};
-
 function okrPage(){
   const vis=okrVisible(),canCreate=_okrCanCreate();
   const today=todayISO();
@@ -3304,10 +3257,6 @@ function _okrLeafPctAt(o,date){
   }
   return _okrClampPct(((v-s)/(t-s))*100);
 }
-// Roll-up progress as it stood on `date` (only check-ins ≤ date count). Cycle-safe.
-function _okrProgressAt(o,date,_seen){
-  return _okrLeafPctAt(o,date); // own inputs only (matches okrProgress)
-}
 function _okrIdealAt(o,date,span,pctMode,tOverride){
   const ps=o.periodStart||span[0],pe=o.periodEnd||span[1];
   const lo=pctMode?0:Number(o.startValue||0);
@@ -3318,10 +3267,6 @@ function _okrIdealAt(o,date,span,pctMode,tOverride){
   if(t1<=t0)return hi;
   return Math.round((lo+(hi-lo)*((tn-t0)/(t1-t0)))*100)/100;
 }
-/* Current & target in the objective's OWN units.
-   Leaf: latest check-in (or start). Parent WITH its own start→target (e.g. 98% → 99%):
-   the roll-up % mapped onto that scale — rollup 20% of 98→99 = 98.2. */
-function _okrHasOwnScale(o){return o.targetValue!==null&&o.targetValue!==undefined&&o.metricType!=='yesno';}
 function _okrOwnCur(o){
   const v=okrCurrentOf(o);
   return(v===null||v===undefined)?Number(o.startValue||0):v;
@@ -3664,7 +3609,6 @@ App._acT=(area,act)=>{
 App._acScope=(area,scope)=>{if(!_acGuard()||!_ACD)return;const p=_ACD.perms[area];if(!p)return;p.scope=scope;_acMark();};
 App._acRule=(key)=>{if(!_acGuard()||!_ACD)return;_ACD.rules[key]=_ACD.rules[key]===false;_acMark();};
 App._acAppr=(key)=>{if(!_acGuard()||!_ACD)return;_ACD.approval[key]=_ACD.approval[key]!==true;_acMark();};
-App._acHRFlag=()=>{if(!_acGuard()||!_ACD)return;_ACD.isHR=!(_ACD.isHR===true);_acMark();};
 App._acCity=(cityId)=>{
   if(!_acGuard()||!_ACD)return;
   const i=_ACD.cities.indexOf(cityId);

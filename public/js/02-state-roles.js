@@ -178,8 +178,6 @@ const me=()=>DB.users.find(u=>u.id===S.uid);
 // read "SubAdmin". Access Control itself stays separately gated by can('accessControl',…),
 // which the Administrator profile omits, so broadening isAdmin() here never leaks it.
 const _rpid=u=>(u&&u.hrm&&u.hrm.roleProfileId)||null;
-// Super Admin only (the top profile, incl. Access Control). Legacy 'Admin' as fallback.
-const isSuperAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return id?id==='superadmin':u.role==='Admin';};
 // Full org-wide admin = Super Admin OR Administrator profile. 'Admin' displays as "Super
 // Admin"; 'SubAdmin' displays as "Admin" (manager powers + the All Checklists tab).
 const isAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return id?(id==='superadmin'||id==='admin'):(u.role==='Admin'||u.role==='SubAdmin');};
@@ -187,26 +185,6 @@ const isSubAdmin=()=>{const u=me();if(!u)return false;const id=_rpid(u);return i
 // (legacy roleLabel removed — the UI shows Access Control role profiles everywhere now)
 const hasDocAccess=()=>{const u=me();if(!u)return false;if(isAdmin())return true;const da=u.docAccess||{};return Object.values(da.departments||{}).some(p=>p.view)||Object.values(da.locations||{}).some(p=>p.view);};
 function subTree(uid,_seen=new Set()){if(_seen.has(uid))return[];_seen.add(uid);const direct=DB.users.filter(u=>u.managerId===uid&&u.id!==uid);return direct.flatMap(u=>[u,...subTree(u.id,_seen)]);}
-// ── Date-aware manager lookup (uses managerHistory; falls back to current managerId) ──
-function _mgrOfOn(u,date){
-  const h=u?.managerHistory;
-  if(Array.isArray(h)&&h.length){
-    let hit;for(const p of h){if((p.from||'0001-01-01')<=date&&(!p.to||date<p.to))hit=p;}
-    if(hit!==undefined)return hit.managerId||null;
-  }
-  return u?.managerId||null;
-}
-// Was user uid2 under mgrId (directly or via chain) on a given date?
-function _underOn(uid2,mgrId,date){
-  let cur=uById(uid2);let g=0;
-  while(cur&&g++<12){
-    const m=_mgrOfOn(cur,date);
-    if(!m)return false;
-    if(m===mgrId)return true;
-    cur=uById(m);
-  }
-  return false;
-}
 const isMgr=()=>DB.users.some(u=>u.managerId===S.uid&&u.id!==S.uid)&&!isAdmin();
 function visU(){if(isAdmin())return DB.users;return[me(),...subTree(S.uid)].filter(Boolean);}
 function isDesc(a,b){return subTree(b).some(u=>u.id===a);}

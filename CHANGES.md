@@ -241,3 +241,22 @@ Everything prior still green: 13 notification, 17 access-control, 19 live/sticky
 - **Chat opens at the latest message** (robust scroll pinning after render, animations and image loads).
 - **Newest activity first**: the chat you just messaged or received a message in moves to the top of the list.
 - **WhatsApp layout** in brand colours: slimmer sidebars/tabs, WhatsApp list rows (avatar · name+time · preview with sender + ticks · unread pill · @ badge when tagged), bubbles with tails and sender name inside, light outgoing bubble, blue read ticks, quiet composer bar, WhatsApp-style @mention highlight. "New chat" is now the + button beside the filter chips.
+
+## v3.23 — 9 Sep 2026
+
+- **Workspace opens fast**: messages load from the `crm_messages_lite` view (no base64 photos — that was ~9 MB per open); a chat's photos are fetched only when it is opened, with shimmer placeholders until they land.
+- **Chat no longer jumps to the top** a second or two after opening: every repaint (bell notification, poll, realtime) now keeps the chat's scroll position, and a bell row arriving while in Workspace uses the light in-place repaint.
+- **Chat list slimmer**: 38px avatars, smaller type, tighter rows, narrower column.
+- **@mention** shown as coloured text only (no highlight box).
+- **Bell** in the chat header is a line icon (slashed when muted) instead of an emoji.
+- **Collapsed hub rail** shows each hub's initials; clicking a tile opens a menu with "All boards" and that hub's filtered views.
+- **Settings for everyone**: tabs *Profile* and *My notifications* (every-message alerts, desktop, push, sounds) for all users; *In-App / Email / Templates* stay admin-only. The old Profile page redirects here. Personal cards were removed from the admin In-App tab (no duplicates). **Data tab removed** (Export/Clear data/Reset).
+- **Dead code removed** (62 unused functions/vars across the JS files: old convert-to-ticket/approval flow, analytics page, CSV export, data-clearing, legacy nav arrays, unused OKR/ACL helpers) plus old files: `legacy/`, `.rebrand-backup/`, `public/mobile-test.html`, `optional-rls-hardening.sql`, `BUGFIXES.md`.
+
+## v3.24 — 9 Sep 2026
+
+- **@tag inside threads**: the thread reply box has its own @-picker (people, groups, Everyone).
+- **Thread alerts only for the thread**: a reply notifies the parent message's author + people who replied in that thread (+ anyone tagged) — not the whole board.
+- **Deleted messages stay visible as “🚫 Kartik deleted this message”** (WhatsApp style). Text, photos and reactions are wiped; the row keeps `deleted_at` / `deleted_by` (new columns on `crm_messages`, also in `crm_messages_lite`). The chat list shows “This message was deleted” as the preview.
+- **Multi-line messages keep their lines** (Shift+Enter for a new line; bubbles render `pre-wrap`).
+- **Login screen** copy updated for today's Bridge: “Every goal, every shift, one Bridge.” with OKRs · Workspace · Checklists.

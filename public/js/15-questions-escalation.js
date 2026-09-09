@@ -121,18 +121,6 @@ function visibleQuestions(){
 // Creator (or admin) can manage a question
 function canManageQ(q){return can('questions','manage')||q.createdBy===S.uid;}
 
-App._togQPublic=(id)=>{
-  const q=(DB.questions||[]).find(x=>x.id===id);if(!q)return;
-  if(!canManageQ(q)){toast('Only the creator can change this','warn');return;}
-  q.isPublic=q.isPublic===false?true:false;
-  toast(q.isPublic?'Question is now Public — visible to everyone with Questions access':'Question is now Private — visible only to you and assigned users','ok');
-  saveDB();rr();
-  // Sync to Supabase in background
-  sb.from('questions').update({is_public:q.isPublic}).eq('id',id).then(({error})=>{
-    if(error)console.error('togQPublic sync:',error.message);
-  }).catch(e=>console.error('togQPublic:',e));
-};
-
 function qCard(q){
     const _qdep=q.departmentId?(DB.departments||[]).find(d=>d.id===q.departmentId):null;
     const _qsub=q.subDepartmentId?(DB.departments||[]).find(d=>d.id===q.subDepartmentId):null;
@@ -744,12 +732,6 @@ function _subBadges(c,sub,opts){
   const compliance='<span title="'+(flagged?flagged+' answer'+(flagged>1?'s':'')+' triggered an escalation':'No escalations — compliant')+'" style="font-size:'+fs+';font-weight:700;padding:'+pad+';border-radius:20px;background:'+compBg+';color:'+compClr+'">'+compLabel+'</span>';
   return attempt+compliance;
 }
-// Back-compat boolean wrapper (kept in case anything references the old name)
-function _subHasEscalation(c,subOrResponses){
-  if(subOrResponses&&!Array.isArray(subOrResponses))return _subEscalationCount(c,subOrResponses)>0;
-  return false;
-}
-
 // ── Escalation on submit ──
 function _processEscalations(checklistId,date,responses){
   const c=clById(checklistId);if(!c)return;

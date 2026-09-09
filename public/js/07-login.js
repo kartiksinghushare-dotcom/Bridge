@@ -9,11 +9,13 @@ function loginView(){return`<div class="min-h-screen flex" style="background:var
     <div style="position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(209,182,143,.28),transparent 70%);filter:blur(40px)"></div>
     <div style="position:absolute;left:-80px;bottom:-100px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(209,182,143,.18),transparent 70%);filter:blur(50px)"></div>
     <div class="relative" style="display:flex;flex-direction:column;gap:6px"><span class="fd" style="font-size:21px;font-weight:600;letter-spacing:.42em;color:#fff">BRIDGE</span><span style="font-size:10.5px;font-weight:600;letter-spacing:.34em;color:#D1B68F">BY BLOOMINGBOX</span></div>
-    <div class="relative"><h1 class="fd" style="font-size:33px;font-weight:500;line-height:1.32;letter-spacing:.07em">EVERY SHIFT,<br>EVERY CHECK,<br><span style="color:#D1B68F">ACCOUNTED FOR.</span></h1><div style="width:56px;height:1px;background:#D1B68F;margin-top:22px"></div><p style="color:rgba(255,255,255,.6);margin-top:20px;line-height:1.7;font-size:14px;max-width:380px;font-weight:300">Enterprise checklists with question-based responses, escalation routing, location tracking, and real-time approvals.</p>
-      <div style="display:flex;gap:24px;margin-top:34px">
-        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">CHECKLISTS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">every shift covered</div></div>
+    <div class="relative"><h1 class="fd" style="font-size:33px;font-weight:500;line-height:1.32;letter-spacing:.07em">EVERY GOAL,<br>EVERY SHIFT,<br><span style="color:#D1B68F">ONE BRIDGE.</span></h1><div style="width:56px;height:1px;background:#D1B68F;margin-top:22px"></div><p style="color:rgba(255,255,255,.6);margin-top:20px;line-height:1.7;font-size:14px;max-width:400px;font-weight:300">OKRs with scheduled check-ins, team Workspace chat and ticket boards, shift checklists with escalation and approvals — everything BloomingBox runs on, in one place.</p>
+      <div style="display:flex;gap:22px;margin-top:34px;flex-wrap:wrap">
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">OKRs</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">targets &amp; check-ins</div></div>
         <div style="width:1px;background:rgba(209,182,143,.25)"></div>
-        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">APPROVALS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">one unified inbox</div></div>
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">WORKSPACE</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">chat &amp; tickets</div></div>
+        <div style="width:1px;background:rgba(209,182,143,.25)"></div>
+        <div><div class="fd" style="font-size:13px;font-weight:600;letter-spacing:.18em;color:#D1B68F">CHECKLISTS</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:300">every shift covered</div></div>
       </div></div>
     <div style="font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.35)">© 2026 BLOOMINGBOX</div>
   </div>

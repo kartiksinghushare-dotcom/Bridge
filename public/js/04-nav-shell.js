@@ -1,19 +1,4 @@
-/* ============================================================
-   Bridge — 04-nav-shell.js  (split from Bridge.html lines 1403-1627)
-   Classic script: shares top-level scope with the other /js files.
-   Load order matters — see index.html.
-   ============================================================ */
-/* ===== NAVIGATION ===== */
-const NAV_ADM=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','OKR'],['accesscontrol','shield','Access Control']];
-const NAV_USR=[['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
 const NAV_MGR=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
-const MOB_ADM=['dashboard','mychecklists','tickets','notifications','more'];
-const MOB_USR=['mychecklists','tickets','notifications','more'];
-const MOB_MGR=['dashboard','mychecklists','tickets','notifications','more'];
-/* ── NAV v3 (Evarca-aligned): perms-driven master list + HUBS.
-   A hub is ONE sidebar entry whose member pages show a pill sub-tab strip.
-   Routes are unchanged — deep links, notifications and ⌘K keep working. ── */
-const _isMgrRole=()=>{const r=(typeof _roleOf==='function')?_roleOf(me()):null;return !!r&&r.id==='manager';};
 const NAV_ALL=[
   ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
   ['mychecklists','check','My Checklists',()=>true],
@@ -28,6 +13,7 @@ const NAV_ALL=[
   ['hub:people','users','People',()=>!!_hubHome('people')],
 
   ['hub:admin','shield','Administration',()=>!!_hubHome('admin')],
+  ['settings','cog','Settings',()=>!can('settings','view')],   // v3.23: non-admins get their personal Settings (profile + my notifications)
 ];
 /* ───── HUBS: one sidebar entry, sub-tab strip on every member route ───── */
 const HUB_DEF={
@@ -65,7 +51,6 @@ const NAV_SECTION_OF={
   'hub:people':'People',
   'hub:admin':'Manage',
 };
-const NAV_SECTION_ORDER=['Work','People','Manage'];
 const NAV_SECTION_ICON={Time:'clock',Work:'list',People:'users',Manage:'cog'};
 function navSectionsFor(){
   const flat=navFor();
@@ -112,7 +97,7 @@ window.addEventListener('hashchange',()=>{
   var r=(location.hash||'').replace(/^#/,'').trim();r=({bolt:'okr',workspace:'crm'})[r]||r;
   if(r&&r!==S.route&&typeof App.go==='function')App.go(r);
 });
-App._lazyLoad=_lazyLoad;App._lazyLoadDate=_lazyLoadDate;
+App._lazyLoadDate=_lazyLoadDate;
 
 /* ===== RENDER ===== */
 let _lastUserAction=0; // timestamp of last submit/approve/etc — prevents loadFromSB overwriting fresh state
@@ -121,14 +106,18 @@ function render(){if(!S.uid){$('#app').innerHTML=loginView();return;}
   // Preserve the sidebar's own scroll position across a full re-render (clicking a lower nav
   // item used to jump the sidebar back to the top).
   const _sb=document.querySelector('.sidebar');const _sy=_sb?_sb.scrollTop:0;
+  // v3.23: and the Workspace chat's scroll (a repaint from anywhere — a bell notification, a
+  // poll — used to throw the open chat back to its first message 1-2 s after opening).
+  const _ks=(typeof _crmKeepScroll==='function')?_crmKeepScroll():null;
   $('#app').innerHTML=shell(pageContent());
-  const _sb2=document.querySelector('.sidebar');if(_sb2&&_sy)_sb2.scrollTop=_sy;}
+  const _sb2=document.querySelector('.sidebar');if(_sb2&&_sy)_sb2.scrollTop=_sy;
+  if(_ks)_ks();}
 function rr(){_invalidateNotifCache();
   // v3.14: persist the CURRENT tab's filters on every redraw. Saving only when leaving a
   // tab meant the tab you were actually sitting on was never written, so a refresh lost
   // exactly the filters you had just set. Also covers the few places that assign S.route
   // directly instead of going through App.go(). Cheap — it no-ops unless something changed.
-  try{saveFilters(S.route);}catch(e){}const _y=window.scrollY||document.documentElement.scrollTop||0;const c=$('#content');if(c)c.innerHTML=pageContent();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
+  try{saveFilters(S.route);}catch(e){}const _y=window.scrollY||document.documentElement.scrollTop||0;const _ks=(typeof _crmKeepScroll==='function')?_crmKeepScroll():null;const c=$('#content');if(c)c.innerHTML=pageContent();if(_ks)_ks();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
 App.rr=rr;
 // UI-1: live-search helper — rr() rebuilds #content and destroys the typing <input>, dropping
 // focus/caret. Re-render, then restore focus + selection on the search input by id.

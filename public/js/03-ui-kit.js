@@ -11,7 +11,6 @@ const avatar=(u,sz='w-9 h-9',tx='text-xs')=>{if(!u)return'<div class="'+sz+' bg-
    ONE button helper btn() with variants; btnP/btnG kept as thin aliases so every
    existing call site keeps working. New code can call btn() directly. */
 const hdr=(t,s,a='')=>`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap"><div style="min-width:0"><h1 class="fd" style="font-size:var(--fs-h1);font-weight:600;letter-spacing:-.4px;line-height:1.15;color:var(--c-text)">${esc(t)}</h1>${s?`<p style="font-size:14px;color:var(--c-text-2);margin-top:4px">${esc(s)}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">${a}</div></div>`;
-const pageHeader=hdr;
 function btn(label,onclick,opts={}){
   const v=opts.variant||'primary',sz=opts.size||'md',i=opts.icon||'';
   const dis=opts.disabled?' aria-disabled="true"':'';
@@ -20,7 +19,6 @@ function btn(label,onclick,opts={}){
 }
 const btnP=(l,o,i='')=>btn(l,o,{variant:'primary',icon:i});
 const btnG=(l,o,i='')=>btn(l,o,{variant:'ghost',icon:i});
-const btnDanger=(l,o,i='')=>btn(l,o,{variant:'danger',icon:i});
 const fld=(l,id,v='',t='text',p='')=>`<div><label for="${id}" class="ui-label">${l}</label><input id="${id}" type="${t}" value="${esc(v)}" placeholder="${esc(p)}" class="ui-input rf"/></div>`;
 const selF=(l,id,opts,sv='')=>`<div><label for="${id}" class="ui-label">${l}</label><select id="${id}" class="ui-select rf">${opts.map(o=>`<option value="${esc(Array.isArray(o)?o[0]:o)}" ${(Array.isArray(o)?o[0]:o)===sv?'selected':''}>${esc(Array.isArray(o)?o[1]:o)}</option>`).join('')}</select></div>`;
 function mkTog(id,on,label){return`<div class="flex items-center justify-between" style="padding:7px 0;min-height:40px"><span style="font-size:14px;color:var(--c-text)">${label}</span><button id="${id}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${esc(label)}" class="tog ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off');this.setAttribute('aria-checked',this.classList.contains('on'))"><span></span></button></div>`;}
@@ -58,10 +56,7 @@ const statCard=(t,v,c='sky',oc='')=>{
   return '<div style="'+base+'">'+lbl+val+'</div>';
 };
 const empty=(i,t,s)=>`<div style="text-align:center;padding:40px 24px"><div style="width:56px;height:56px;border-radius:var(--r-lg);background:var(--c-brand-soft);color:var(--c-brand-ink);display:grid;place-items:center;margin:0 auto 14px">${ic(i,'w-6 h-6')}</div><p class="fd" style="font-weight:700;color:var(--c-text);font-size:15.5px">${esc(t)}</p>${s?`<p style="font-size:13px;color:var(--c-text-3);margin-top:5px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.55">${esc(s)}</p>`:''}</div>`;
-const emptyState=empty;
-const emptyCTA=(i,t,s,ctaLabel,onclick)=>`<div style="text-align:center;padding:48px 24px"><div style="width:52px;height:52px;border-radius:var(--r-lg);background:var(--c-surface-2);color:var(--c-text-3);display:grid;place-items:center;margin:0 auto 14px">${ic(i,'w-6 h-6')}</div><p class="fd" style="font-weight:700;color:var(--c-text-2);font-size:15px">${esc(t)}</p>${s?`<p style="font-size:13px;color:var(--c-text-3);margin-top:5px;max-width:340px;margin-left:auto;margin-right:auto">${esc(s)}</p>`:''}${ctaLabel?`<div style="margin-top:16px">${btn(ctaLabel,onclick,{variant:'primary',size:'sm',icon:'plus'})}</div>`:''}</div>`;
 const loadingState=(label='Loading…')=>`<div style="text-align:center;padding:48px 24px"><div style="display:flex;flex-direction:column;gap:10px;max-width:360px;margin:0 auto 16px"><div class="ui-skel" style="height:14px;width:60%"></div><div class="ui-skel" style="height:48px"></div><div class="ui-skel" style="height:48px"></div></div><p style="font-size:13px;color:var(--c-text-3)">${esc(label)}</p></div>`;
-const errorState=(t='Something went wrong',s='',retry='')=>`<div style="text-align:center;padding:48px 24px"><div style="width:52px;height:52px;border-radius:var(--r-lg);background:var(--c-danger-soft);color:var(--c-danger);display:grid;place-items:center;margin:0 auto 14px">${ic('alert','w-6 h-6')}</div><p class="fd" style="font-weight:700;color:var(--c-text);font-size:15px">${esc(t)}</p>${s?`<p style="font-size:13px;color:var(--c-text-2);margin-top:5px">${esc(s)}</p>`:''}${retry?`<div style="margin-top:16px">${btn('Try again',retry,{variant:'ghost',size:'sm',icon:'refresh'})}</div>`:''}</div>`;
 const _isLoading=(kind)=>{try{return !!(_tabLoading&&_tabLoading[kind]);}catch(e){return false;}};
 
 /* ===== MODAL ===== */

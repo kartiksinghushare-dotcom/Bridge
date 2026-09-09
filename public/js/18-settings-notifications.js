@@ -8,10 +8,11 @@
 function auditPage(){return`<div class="fade">${hdr('Audit Logs','')}<div class="bg-white rounded-2xl border border-ink-100 shadow-soft overflow-hidden"><div class="divide-y divide-ink-50 max-h-[70vh] overflow-y-auto">${DB.audit.map(l=>`<div class="px-4 py-3 flex items-center gap-2.5 text-sm"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span><div class="flex-1 min-w-0"><span class="font-semibold">${esc(l.actor)}</span> <span class="text-ink-500">${esc(l.action.toLowerCase())}</span>${l.target?` <span class="font-medium">${esc(l.target)}</span>`:''}</div><span class="text-[11px] text-ink-300 shrink-0">${new Date(l.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')||empty('audit','No logs yet','')}</div></div></div>`;}
 App._goNotifFeedback=()=>{S.route="notifications";S.search="";S.expandedCl=null;S.afOpen=null;S.tvUser=null;S.filters={ntab:"Feedback"};render();window.scrollTo(0,0);};
 
-function profilePage(){
+/* v3.23 — the Profile page became the "Profile" tab of Settings (everyone can open Settings now:
+   personal tabs for all, workspace-wide tabs for admins). */
+function _profileTab(){
   const u=me();
-  return`<div class="fade max-w-xl">
-  ${hdr('Profile','')}
+  return`<div>
   <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">
     <div class="flex items-center gap-4 mb-5">
       ${avatar(u,'w-14 h-14','text-xl')}
@@ -40,8 +41,6 @@ function profilePage(){
       <button id="ep-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App.saveProfile().finally(()=>{const b=document.getElementById('ep-save-btn');if(b){b.disabled=false;b.textContent='Save changes';}})" style="padding:10px 20px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Save changes</button>
     </div>
   </div>
-  ${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}
-  ${typeof _bbSndCard==='function'?_bbSndCard():''}
   <!-- Change password -->
   <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">
     <h3 class="fd font-semibold text-sm mb-3">Change password</h3>
@@ -223,18 +222,6 @@ App._previewDoc=async(id)=>{
   }
 };
 
-/* v3.14 — "Reset workspace" clears only THIS browser's cached copy and reloads; nothing is
-   deleted on the server. The old inline confirm() implied it wiped the workspace itself. */
-App._resetWorkspaceCache=async()=>{
-  if(!(await confirmP({
-    title:'Reset this device',
-    body:'Clears the copy of the workspace cached in <b>this browser</b> and reloads it fresh from the server.',
-    items:['nothing is deleted on the server','other people and your other devices are unaffected','remembered filters on this device are cleared'],
-    confirmLabel:'Reset and reload',cancelLabel:'Cancel',danger:false,icon:'refresh'})))return;
-  try{localStorage.removeItem(window.LS_KEY||'shiftly_v3');}catch(e){}
-  try{if(typeof clearAllFilters==='function')clearAllFilters();}catch(e){}
-  location.reload();
-};
 App._delDoc=async(id)=>{
   const doc=(DB.documents||[]).find(x=>x.id===id);if(!doc)return;
   if(!(await confirmP({
@@ -575,17 +562,18 @@ App._testEmail=async()=>{
 
 
 App._setSTab=(k)=>{S.filters.stab=k;rr();};
-function settingsPage(){
-  const stab=(S.filters.stab&&S.filters.stab!=='workflow')?S.filters.stab:'inapp';
-  if(!_ns){_loadNS().then(()=>rr());return`<div class="fade max-w-2xl">${hdr('Settings','')}<div style="padding:40px;text-align:center;color:#A59788;font-size:13px">Loading…</div></div>`;}
-  const ns=_ns;
-  // Workflow tab removed (Evarca-aligned): its 4 toggles were saved but never read by any code.
-  const TABS=[['inapp','In-App'],['email','Email'],['templates','Templates'],['data','Data']];
+function settingsPage(forceTab){
+  const admin=can('settings','view');
+  const TABS=[['profile','Profile'],['mynotif','My notifications']].concat(admin?[['inapp','In-App'],['email','Email'],['templates','Templates']]:[]);
+  let stab=forceTab||S.filters.stab||(admin?'inapp':'mynotif');
+  if(!TABS.some(t=>t[0]===stab))stab=admin?'inapp':'mynotif';
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
+  if(stab==='profile')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${_profileTab()}</div>`;
+  if(stab==='mynotif')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div class="space-y-4">${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}${typeof _bbSndCard==='function'?_bbSndCard():''}</div></div>`;
+  if(!_ns){_loadNS().then(()=>rr());return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div style="padding:40px;text-align:center;color:#A59788;font-size:13px">Loading…</div></div>`;}
+  const ns=_ns;
 
   const inappTab=`<div class="space-y-4">
-    ${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}
-    ${typeof _bbSndCard==='function'?_bbSndCard():''}
     <div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden">
       <div style="padding:14px 20px;background:#F5F1EB;border-bottom:1px solid #EEE8DE">
         <div style="font-size:14px;font-weight:700">In-app notifications</div>
@@ -744,49 +732,9 @@ function settingsPage(){
     toast('Reset to default ✓');rr();
   };
 
-  const dataTab=`<div class="space-y-4">
-    <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5">
-      <h3 class="fd font-semibold text-sm mb-3">Export & Reset</h3>
-      <div class="flex gap-3 flex-wrap">
-        ${btnG('Export CSV','App._exportCSV()','download')}
-        <button onclick="App._clearOperational()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #F5DCC0;color:#463830;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#F5EFDF'" onmouseout="this.style.background='#fff'">🧹 Clear data</button>
-        <button onclick="App._resetWorkspaceCache()" style="flex:1;min-width:140px;padding:10px;border-radius:12px;border:1.5px solid #EFC9BE;color:#A63528;background:#fff;font-weight:600;font-size:14px;cursor:pointer" onmouseover="this.style.background='#F9EBE5'" onmouseout="this.style.background='#fff'">Reset workspace</button>
-      </div>
-    </div>
-    <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5">
-      <h3 class="fd font-semibold text-sm mb-3">Workspace stats</h3>
-      <div class="grid grid-cols-4 gap-2 text-center">${[['Users',DB.users.length],['Checklists',DB.checklists.length],['Locations',DB.locations.length],['Submissions',DB.submissions.length]].map(([k,v])=>`<div class="bg-ink-50 rounded-xl p-3"><div class="fd text-xl font-bold">${v}</div><div class="text-[10px] text-ink-400 font-medium">${k}</div></div>`).join('')}</div>
-    </div>
-  </div>`;
-
-  const content=stab==='inapp'?inappTab:stab==='email'?emailTab:stab==='templates'?templatesTab:dataTab;
+  const content=stab==='inapp'?inappTab:stab==='email'?emailTab:templatesTab;
   return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${content}</div>`;
 }
-
-App._exportCSV=()=>{
-  let subs=DB.submissions;if(!isAdmin())subs=subs.filter(s=>subTree(S.uid).some(u=>u.id===s.userId)||s.userId===S.uid);
-  const f=S.filters;const fArr=k=>Array.isArray(f[k])?f[k]:(f[k]?[f[k]]:[]);
-  if(fArr('users').length)subs=subs.filter(s=>fArr('users').includes(s.userId));
-  if(fArr('deps').length)subs=subs.filter(s=>{const c=clById(s.checklistId);return fArr('deps').includes(c?.department);});
-  if(fArr('locs').length)subs=subs.filter(s=>{const c=clById(s.checklistId);return fArr('locs').some(l=>(c?.locationIds||[]).includes(l));});
-  if(fArr('stats').length)subs=subs.filter(s=>fArr('stats').includes(s.status));
-  if(f.dr1)subs=subs.filter(s=>s.date>=f.dr1);if(f.dr2)subs=subs.filter(s=>s.date<=f.dr2);
-  const summaryRows=[['#','User','Email','Phone','Department','Position','Checklist','Dept','Location(s)','Date','Status','Submitted At','Edit Count','Pending Approval','Compliance','Escalations']];
-  subs.forEach((s,i)=>{const u=uById(s.userId),c=clById(s.checklistId);if(!u)return;if(!c&&!s.checklistDeleted)return;const clName=c?c.name:'[Deleted checklist]';const clDept=c?c.department||'':'';const clLocs=c?(c.locationIds||[]).map(id=>DB.locations.find(l=>l.id===id)?.name||'').join('; '):'';const _escN=(c&&(c.questionIds||[]).length)?_subEscalationCount(c,s):0;const _compTxt=(c&&(c.questionIds||[]).length)?(_escN>0?'Non-compliant':'Compliant'):'N/A';summaryRows.push([i+1,fullName(u),u.email||'',u.phone||'',u.department||'',u.position||'',clName,clDept,clLocs,s.date,s.status,s.submittedAt?new Date(s.submittedAt).toLocaleString('en-GB'):'',s.editCount||0,s.status==='Pending Approval'?'Yes':'No',_compTxt,_escN]);});
-  // Also export question responses as a second sheet
-  const qRows=[['Sub #','User','Email','Checklist','Date','Status','Question','Response','Comment','Escalated']];
-  subs.forEach((s,si)=>{const u=uById(s.userId),c=clById(s.checklistId);if(!u)return;(s.questionResponses||[]).forEach((qr,qi)=>{const q=(DB.questions||[]).find(x=>x.id===qr.questionId);const _esc=(c&&q&&_qrEscalates(c,q,qr))?'Yes':'';qRows.push([si+1,fullName(u),u.email||'',c?c.name:'[Deleted]',s.date,s.status,q?q.text:'Q'+(qi+1),qr.response!==null&&qr.response!==undefined?String(qr.response):'',qr.comment||'',_esc]);});});
-  const all=[...summaryRows,[],['=== QUESTION RESPONSES (one row per response) ==='],[],...qRows];
-  const csv=all.map(r=>r.map(v=>{let cell=String(v??'');
-    // Neutralize CSV formula injection: cells that begin with = + - @ (or tab/CR)
-    // are prefixed with a single quote so spreadsheet apps treat them as text.
-    if(/^[=+\-@\t\r]/.test(cell))cell="'"+cell;
-    return '"'+cell.replace(/"/g,'""')+'"';}).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='bridge_export_'+todayISO()+'.csv';a.click();
-  toast('Exported '+subs.length+' submissions ('+(qRows.length-1)+' question responses)');
-};
-
-
 
 /* ═══════════ SOUND ALERTS — every Bridge notification rings once ═══════════
    Loud bell on arrival (realtime + poll), rate-limited to one ring, with
@@ -847,7 +795,7 @@ function _bbOnNotifRow(row){
       try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
       var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
       if(age<120000&&!row.read){_bbRing(_bbNotifKind({text:row.text,link:row.link}));try{_bbDesktopShow(row);}catch(e){}}
-      try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
+      try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='crm'){if(typeof _crmLiveRR==='function')_crmLiveRR();}else if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
     }
   }catch(e){}
 }

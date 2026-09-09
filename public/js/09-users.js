@@ -171,44 +171,6 @@ App._bulkApplyUsers=()=>{
   toast(ok+' user'+(ok===1?'':'s')+' updated ✓'+(skipped.length?' · '+skipped.length+' skipped':''));
   if(skipped.length)setTimeout(()=>toast(skipped.slice(0,2).join(' · ')+(skipped.length>2?' · +'+(skipped.length-2)+' more':''),'warn'),1100);
 };
-function _docAccessSection(u){
-  if(!topDepts().length&&!DB.locations.length)return'<div style="background:#FAF7F3;border-radius:16px;padding:14px;margin-top:8px"><p style="font-size:12px;color:#A59788;text-align:center">Add departments and locations first to assign document access.</p></div>';
-  const da=u?.docAccess||{departments:{},locations:{}};
-  const PERMS=['view','upload','download','edit'];
-  let html='<div style="border-top:1px solid #EDE7DC;margin-top:14px;padding-top:14px">'
-    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#A59788;margin-bottom:10px">Document Access</p>';
-  if(topDepts().length){
-    html+='<p style="font-size:11px;font-weight:700;color:#3A312A;margin-bottom:8px">Departments</p>';
-    html+=topDepts().map(d=>{
-      const dp=da.departments?.[d.name]||{};
-      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#FAF7F3;border-radius:10px">'
-        +'<span style="font-size:12px;font-weight:600;min-width:100px;flex-shrink:0">'+esc(d.name)+'</span>'
-        +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
-        +PERMS.map(p=>'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">'
-          +'<input type="checkbox" class="doc-perm-dept" data-dept="'+esc(d.name)+'" data-perm="'+p+'"'+(dp[p]?' checked':'')+'> '
-          +p.charAt(0).toUpperCase()+p.slice(1)
-          +'</label>').join('')
-        +'</div></div>';
-    }).join('');
-  }
-  if(DB.locations.length){
-    html+='<p style="font-size:11px;font-weight:700;color:#3A312A;margin-bottom:8px;margin-top:10px">Locations</p>';
-    html+=DB.locations.map(l=>{
-      const lp=da.locations?.[l.id]||{};
-      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:9px 12px;background:#FAF7F3;border-radius:10px">'
-        +'<span style="font-size:12px;font-weight:600;min-width:100px;flex-shrink:0">'+esc(l.name)+'</span>'
-        +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
-        +PERMS.map(p=>'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">'
-          +'<input type="checkbox" class="doc-perm-loc" data-loc="'+l.id+'" data-perm="'+p+'"'+(lp[p]?' checked':'')+'> '
-          +p.charAt(0).toUpperCase()+p.slice(1)
-          +'</label>').join('')
-        +'</div></div>';
-    }).join('');
-  }
-  html+='</div>';
-  return html;
-}
-
 App.editUser=(id=null)=>{
   const u=id?uById(id):null;
   if(!can('employees',id?'edit':'create')){toast('You don’t have permission to do that','err');return;}
