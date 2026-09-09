@@ -261,3 +261,8 @@ Everything prior still green: 13 notification, 17 access-control, 19 live/sticky
 - **Multi-line messages keep their lines** (Shift+Enter for a new line; bubbles render `pre-wrap`).
 - **Login screen** copy updated for today's Bridge: “Every goal, every shift, one Bridge.” with OKRs · Workspace · Checklists.
 - Fix: restored the nav/mobile-bar constants (NAV_ADM, NAV_USR, MOB_ADM/USR/MGR, NAV_SECTION_ORDER) the dead-code pass had wrongly removed (they were only used via spread `...X`, which the checker missed) — this was the "Can't find variable: MOB_ADM" error on sign-in. Every route now render-tested for Admin / Manager / User on desktop and mobile.
+
+## v3.25 — 9 Sep 2026
+
+- **WhatsApp ticks**: clock = sending · one tick = saved · two grey = delivered to every other member's device · two blue = read by every other member. "Members" = the board's channel + board people (active, minus the sender). Delivery is stamped by each person's Bridge when the message (or its alert) reaches them (`crm_reads.last_delivered_at`, new column); reading is stamped when they open the chat (`last_seen_at`). Same ticks in the chat list preview.
+- **Chat list narrower** (23%, 232–290px; 34px avatars, smaller type).

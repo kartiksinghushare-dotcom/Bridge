@@ -760,6 +760,9 @@ function _bbSndSet(t,on){var p=_bbSndPrefs();p.types[t]=!!on;_bbSndSave(p);}
 App._bbSndMaster=()=>{var p=_bbSndPrefs();p.master=(p.master===false);_bbSndSave(p);if(p.master)try{_crmDing(null,true);}catch(e){}render();};
 App._bbSndTogType=(t)=>{var p=_bbSndPrefs();p.types[t]=(p.types[t]===false);_bbSndSave(p);if(p.types[t]&&p.master!==false)try{_crmDing(null,true);}catch(e){}render();};
 App._bbSndOpen=()=>{window._bbSndOpen=!window._bbSndOpen;render();};
+/* v3.25 — a Workspace alert reaching this device = the message was DELIVERED here (grey double
+   tick for the sender), even when the Workspace tab isn't open. Never touches last_seen_at. */
+function _bbStampDelivered(link){try{if(!link||String(link).indexOf('crm:')!==0||!S||!S.uid)return;var cid=String(link).slice(4);window._bbDelivT=window._bbDelivT||{};var now=Date.now();if(window._bbDelivT[cid]&&now-window._bbDelivT[cid]<5000)return;window._bbDelivT[cid]=now;var iso=new Date(now).toISOString();try{if(typeof CRM!=='undefined'&&CRM){CRM.deliv=CRM.deliv||{};CRM.deliv[cid]=iso;}}catch(e){}_bbSB().from('crm_reads').upsert({user_id:S.uid,conversation_id:cid,last_delivered_at:iso},{onConflict:'user_id,conversation_id'}).then(function(){}).catch(function(){});}catch(e){}}
 function _bbNotifKind(n){
   var text=(n&&n.text)||'';var link=(n&&n.link)||'';
   if(n&&n.kind==='okr')return'okr';
@@ -795,6 +798,7 @@ function _bbOnNotifRow(row){
       try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
       var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
       if(age<120000&&!row.read){_bbRing(_bbNotifKind({text:row.text,link:row.link}));try{_bbDesktopShow(row);}catch(e){}}
+      try{_bbStampDelivered(row.link);}catch(e){}
       try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='crm'){if(typeof _crmLiveRR==='function')_crmLiveRR();}else if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
     }
   }catch(e){}
