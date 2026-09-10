@@ -48,6 +48,7 @@
   NC.FAMILY={mention:'mention',chat:'chat'};
   NC.familyOf=function(kind){return NC.FAMILY[kind]||'other';};
   NC.SOUNDS=[
+    ['alarm','Alarm','The loud rising triple-beep — impossible to miss'],
     ['pop','Pop','Soft and quick'],
     ['ding','Ding','A single clear note'],
     ['chime','Chime','Two rising notes'],
@@ -56,13 +57,15 @@
     ['knock','Knock','Low and discreet'],
     ['none','Silent','No sound for this family']
   ];
-  NC.DEFAULT_SOUND={chat:'pop',mention:'chime',other:'ding'};
+  NC.DEFAULT_SOUND={chat:'alarm',mention:'alarm',other:'alarm'};
   NC.soundFor=function(kind){var p=prefs();var fam=NC.familyOf(kind);var s=p.sounds&&p.sounds[fam];return NC.SOUNDS.some(function(x){return x[0]===s;})?s:NC.DEFAULT_SOUND[fam];};
   NC.volume=function(){var p=prefs();var v=p.sounds&&typeof p.sounds.volume==='number'?p.sounds.volume:0.8;return Math.max(0,Math.min(1,v));};
 
   /* tone specs: notes rendered offline into a tiny WAV (mono 16-bit, 22.05 kHz) */
   var RATE=22050;
   var SPEC={
+    /* the original Bridge alert: insistent bright triple-beep that rises and repeats (~0.85s) */
+    alarm:[{f:988,t:0,d:0.09},{f:1319,t:.12,d:0.09},{f:1760,t:.24,d:0.12},{f:1319,t:.46,d:0.09},{f:1760,t:.58,d:0.20}].reduce(function(a,n){a.push({f:n.f,t:n.t,d:n.d,g:.6,w:'square',sus:true});a.push({f:n.f,t:n.t,d:n.d,g:.55,w:'sine',sus:true});return a;},[]),
     pop:  [{f:920,t:0,d:0.12,g:1,glide:-260,w:'sine'},{f:1840,t:0,d:0.05,g:.25,w:'sine'}],
     ding: [{f:1318,t:0,d:0.38,g:.9,w:'sine'},{f:2636,t:0,d:0.18,g:.22,w:'sine'}],
     chime:[{f:988,t:0,d:0.20,g:.8,w:'sine'},{f:1976,t:0,d:0.08,g:.15,w:'sine'},{f:1319,t:.14,d:0.36,g:.9,w:'sine'},{f:2638,t:.14,d:0.12,g:.18,w:'sine'}],
@@ -79,8 +82,8 @@
       for(var i=s0;i<s1;i++){
         var x=(i-s0)/RATE,u=x/n.d;
         var f=n.f+(n.glide||0)*u;ph+=2*Math.PI*f/RATE;
-        var env=(x<0.004?x/0.004:1)*Math.exp(-4.2*u)*(u>0.85?(1-u)/0.15:1);
-        var v=n.w==='tri'?(2/Math.PI)*Math.asin(Math.sin(ph)):Math.sin(ph);
+        var env=n.sus?(x<0.004?x/0.004:1)*(u<0.6?1:(1-u)/0.4):(x<0.004?x/0.004:1)*Math.exp(-4.2*u)*(u>0.85?(1-u)/0.15:1);
+        var v=n.w==='tri'?(2/Math.PI)*Math.asin(Math.sin(ph)):n.w==='square'?(Math.sin(ph)>=0?0.6:-0.6):Math.sin(ph);
         buf[i]+=v*env*(n.g||1);
       }
     });
