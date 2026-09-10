@@ -472,7 +472,7 @@ App._submitRun=async(clId,date)=>{
   // 4. Background: sync notifications / approvals / tickets (non-blocking).
   Promise.allSettled([
     DB.approvals.length?sb.from('approvals').upsert(DB.approvals.map(a=>({id:a.id,type:a.type||'Submission',requester_id:a.requesterId,checklist_id:a.checklistId||null,date:a.date||null,status:a.status,note:a.note||'',is_resubmit:a.isResubmit||false,used_at:a.usedAt||null})),{onConflict:'id'}):Promise.resolve(),
-    sb.from('notifications').upsert(DB.notifications.slice(0,50).map(n=>({id:n.id,user_id:n.userId,text:n.text,read:n.read||false,created_at:n.time||new Date().toISOString()})),{onConflict:'id'}),
+    _notifFlush(),   // v3.27: insert-only (the old whole-list upsert re-sent every row and caused phantom alerts)
     // ⚠ Tickets are intentionally NOT mirrored here anymore (same reason as _sync): a stale
     //   browser could resurrect a just-deleted ticket. Escalation tickets are inserted directly
     //   to Supabase at creation time, so this bulk upsert is redundant.

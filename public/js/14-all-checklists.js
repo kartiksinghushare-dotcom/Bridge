@@ -371,7 +371,7 @@ App._decide=async(id,status)=>{
     // Approving/rejecting changes ONLY the status — never rewrite question_responses here, or an
     // approver whose cache is stale would clobber the submitter's uploaded photo URLs with '[photo]'.
     s ? sb.from('submissions').update({status:s.status}).eq('id',s.id) : Promise.resolve(),
-    sb.from('notifications').upsert(DB.notifications.slice(0,20).map(n=>({id:n.id,user_id:n.userId,text:n.text,read:n.read||false,created_at:n.time||new Date().toISOString()})),{onConflict:'id'}),
+    _notifFlush(),   // v3.27: insert-only (the old whole-list upsert re-sent every row and caused phantom alerts)
   ]).catch(()=>{});
 };
 

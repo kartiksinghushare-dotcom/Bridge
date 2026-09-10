@@ -478,6 +478,8 @@ async function sendEmail(eventType, userId, vars){
   const user = userId ? uById(userId) : null;
   if(!user?.email){console.warn('sendEmail: no email for user',userId);return;}
   if(user.emailEnabled===false) return;
+  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
+    var _np=user.notifyPrefs||{};var _c=_np.channels&&_np.channels[_k];if(_c&&_c.email===false)return;}catch(e){}
   if(!_ns) await _loadNS();
   if(!_ns.email_enabled) return;
   if(_ns['email_'+eventType]===false) return;
@@ -569,7 +571,7 @@ function settingsPage(forceTab){
   if(!TABS.some(t=>t[0]===stab))stab=admin?'inapp':'mynotif';
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
   if(stab==='profile')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${_profileTab()}</div>`;
-  if(stab==='mynotif')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div class="space-y-4">${typeof _bbMyNotifCard==='function'?_bbMyNotifCard():''}${typeof _bbSndCard==='function'?_bbSndCard():''}</div></div>`;
+  if(stab==='mynotif')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div>${window.BBNotify?BBNotify.settingsHTML():(typeof _bbMyNotifCard==='function'?_bbMyNotifCard():'')}</div></div>`;
   if(!_ns){_loadNS().then(()=>rr());return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div style="padding:40px;text-align:center;color:#A59788;font-size:13px">Loading…</div></div>`;}
   const ns=_ns;
 
@@ -736,132 +738,64 @@ function settingsPage(forceTab){
   return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${content}</div>`;
 }
 
-/* ═══════════ SOUND ALERTS — every Bridge notification rings once ═══════════
-   Loud bell on arrival (realtime + poll), rate-limited to one ring, with
-   per-person per-type opt-outs stored on this device. */
-var _BB_SND_TYPES=[
- ['workspace_message','Workspace chat messages','A new message in any of your conversations'],
- ['crm_mention','Tagged / @mentions','Someone @mentions you anywhere in Workspace'],
- ['workspace','Workspace activity','Tickets created, assigned, moved and automation updates'],
- ['checklist','Checklists','When someone assigns a checklist to you, or removes one'],
- ['approval','Approvals','Approval requested, approved or rejected'],
- ['edit','Edit requests','Edit requests and re-submissions'],
- ['escalation','Escalations','A question or task escalates to you'],
- ['feedback','Feedback','Feedback and feedback replies'],
- ['late','Late & reminders','Overdue submissions and deadline reminders'],
- ['okr','OKR','When an OKR is assigned to you, checked in or revised'],
- ['general','Everything else','Any other Bridge notification']
+/* ═══════════════════════════════════════════════════════════════════════════════
+   v3.27 — NOTIFICATION KINDS & PREFERENCES
+   The database decides WHO gets a notification and writes the row (kind, conversation, count).
+   HOW it is shown (badge / sound / card / desktop pop-up / push) is decided in ONE place:
+   20-notification-center.js (window.BBNotify). This file keeps the kinds, the per-person
+   preference helpers (profiles.notify_prefs.channels[kind][channel]) and the Settings UI.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+var _BB_KINDS=[
+ ['mention','Tagged in a chat','Someone @mentions you or your group in Workspace'],
+ ['chat','Every chat message','New messages on boards you belong to (grouped per chat)'],
+ ['ticket','Tickets','Created, assigned, moved, approved and automation alerts'],
+ ['okr','OKRs','Assigned, check-ins, updates, target changes'],
+ ['checklist','Checklists','Assigned, submitted, approved, rejected, late'],
+ ['approval','Approvals','Requested and decided'],
+ ['feedback','Feedback','Feedback and replies from your manager'],
+ ['reminder','Reminders & deadlines','Due reminders, overdue items, edit requests'],
+ ['escalation','Escalations','A question or task escalates to you']
 ];
-function _bbSndKey(){return 'bb_snd_prefs_'+((typeof S!=='undefined'&&S&&S.uid)||'anon');}
-function _bbSndPrefs(){try{var p=JSON.parse(localStorage.getItem(_bbSndKey())||'{}');p.types=p.types||{};if(p.master===undefined)p.master=true;return p;}catch(e){return{master:true,types:{}};}}
-function _bbSndSave(p){try{localStorage.setItem(_bbSndKey(),JSON.stringify(p));}catch(e){}}
-function _bbSndAllow(t){var p=_bbSndPrefs();if(p.master===false)return false;return p.types[t]!==false;}
-function _bbSndSet(t,on){var p=_bbSndPrefs();p.types[t]=!!on;_bbSndSave(p);}
-App._bbSndMaster=()=>{var p=_bbSndPrefs();p.master=(p.master===false);_bbSndSave(p);if(p.master)try{_crmDing(null,true);}catch(e){}render();};
-App._bbSndTogType=(t)=>{var p=_bbSndPrefs();p.types[t]=(p.types[t]===false);_bbSndSave(p);if(p.types[t]&&p.master!==false)try{_crmDing(null,true);}catch(e){}render();};
-App._bbSndOpen=()=>{window._bbSndOpen=!window._bbSndOpen;render();};
-/* v3.25 — a Workspace alert reaching this device = the message was DELIVERED here (grey double
-   tick for the sender), even when the Workspace tab isn't open. Never touches last_seen_at. */
-function _bbStampDelivered(link){try{if(!link||String(link).indexOf('crm:')!==0||!S||!S.uid)return;var cid=String(link).slice(4);window._bbDelivT=window._bbDelivT||{};var now=Date.now();if(window._bbDelivT[cid]&&now-window._bbDelivT[cid]<5000)return;window._bbDelivT[cid]=now;var iso=new Date(now).toISOString();try{if(typeof CRM!=='undefined'&&CRM){CRM.deliv=CRM.deliv||{};CRM.deliv[cid]=iso;}}catch(e){}_bbSB().from('crm_reads').upsert({user_id:S.uid,conversation_id:cid,last_delivered_at:iso},{onConflict:'user_id,conversation_id'}).then(function(){}).catch(function(){});}catch(e){}}
-function _bbNotifKind(n){
-  var text=(n&&n.text)||'';var link=(n&&n.link)||'';
-  if(n&&n.kind==='okr')return'okr';
+var _BB_CHANNELS=[['inbox','Inbox'],['sound','Sound'],['desktop','Desktop'],['push','Push'],['email','Email']];
+/* defaults when nothing is saved: everything on, except e-mail for plain chat */
+function _bbPrefDefault(kind,ch){return !(kind==='chat'&&ch==='email');}
+/* legacy text → kind, only for rows older than the engine (new rows carry kind from the server) */
+function _bbKindFromText(text,link){
+  text=text||'';link=link||'';
+  if(/tagged you in/i.test(text))return'mention';
   if(/OKR|BOLT|objective/i.test(text))return'okr';
-  if(/tagged you in/i.test(text))return'crm_mention';
-  if(link&&String(link).indexOf('crm:')===0)return'workspace';
-  if(text.indexOf('\u{1F3AB}')>=0||text.indexOf('\u21AA')>=0||text.indexOf('\u26A1')>=0||text.indexOf('\u{1F4AC}')>=0)return'workspace';
-  if(/^\u2705 Approval needed:/.test(text))return'workspace';
-  if(/checklist assigned|checklist removed/i.test(text))return'checklist';
+  if(link.indexOf('crm:')===0&&text.indexOf('\u{1F4AC}')>=0)return'chat';
+  if(/checklist/i.test(text))return'checklist';
   if(/escalat/i.test(text))return'escalation';
   if(/feedback|replied|reply/i.test(text))return'feedback';
   if(/approv|reject/i.test(text))return'approval';
-  if(/edit request|re-submit|resubmit/i.test(text))return'edit';
-  if(/overdue|late|reminder|deadline/i.test(text))return'late';
+  if(/overdue|late|reminder|deadline|edit request|re-?submit/i.test(text))return'reminder';
+  if(link.indexOf('crm:')===0)return'ticket';
   return'general';
 }
-function _bbRing(kind){
+function _bbNotifKind(n){if(!n)return'general';if(n.kind)return n.kind;return _bbKindFromText(n.text,n.link);}
+/* old sound-type names still used by a few callers */
+function _bbKindNorm(t){return({workspace_message:'chat',crm_mention:'mention',workspace:'ticket',late:'reminder',edit:'reminder'})[t]||t||'general';}
+/* the person's preference for one kind × channel (saved on the profile, follows them everywhere) */
+function _bbPrefOn(kind,ch){
   try{
-    if(!_bbSndPrefs().master)return;
-    if(!_bbSndAllow(kind))return;
-    var now=Date.now();if(now-(window._bbDingT||0)<1500)return;window._bbDingT=now;
-    _crmDing(null,true);
-  }catch(e){}
+    kind=_bbKindNorm(kind);var p=_bbNP();var c=p.channels&&p.channels[kind];
+    if(c&&typeof c[ch]==='boolean')return c[ch];
+    /* legacy single switches */
+    if(ch==='inbox'&&kind==='chat'&&p.chat_all===false)return false;
+    if(ch==='desktop'&&p.desktop===false)return false;
+    if(ch==='push'&&p.push===false)return false;
+    return _bbPrefDefault(kind,ch);
+  }catch(e){return true;}
 }
-window._bbSeenN=window._bbSeenN||{};
+async function _bbNPSetChannel(kind,ch,on){
+  var p=_bbNP();var channels=Object.assign({},p.channels||{});channels[kind]=Object.assign({},channels[kind]||{});channels[kind][ch]=!!on;
+  var patch={channels:channels};
+  if(kind==='chat'&&ch==='inbox')patch.chat_all=!!on;        // keep the legacy switch in step (server trigger reads both)
+  if(ch==='desktop'||ch==='push'){var all=_BB_KINDS.every(function(k){var c=channels[k[0]];return !(c&&c[ch]===false);});patch[ch]=all;}
+  await _bbNPSave(patch);
+}
 function _bbSB(){try{if(typeof sb!=='undefined'&&sb)return sb;}catch(e){}try{return window.sb||null;}catch(e){}return null;}
-function _bbOnNotifRow(row){
-  try{
-    if(!row||!row.id||!S||row.user_id!==S.uid)return;
-    if(window._bbSeenN[row.id])return;window._bbSeenN[row.id]=1;
-    var known=(DB.notifications||[]).some(function(x){return x.id===row.id;});
-    if(!known){
-      try{DB.notifications.unshift({id:row.id,userId:row.user_id,text:row.text||'',read:row.read||false,time:row.created_at,link:row.link||null});_invalidateNotifCache();}catch(e){}
-      var age=row.created_at?(Date.now()-new Date(row.created_at).getTime()):9e9;
-      if(age<120000&&!row.read){_bbRing(_bbNotifKind({text:row.text,link:row.link}));try{_bbDesktopShow(row);}catch(e){}}
-      try{_bbStampDelivered(row.link);}catch(e){}
-      try{var _ae=document.activeElement;var _typing=_ae&&/^(INPUT|TEXTAREA)$/.test(_ae.tagName);if(S.route==='crm'){if(typeof _crmLiveRR==='function')_crmLiveRR();}else if(S.route==='notifications'){render();}else if(!_typing){render();}}catch(e){}
-    }
-  }catch(e){}
-}
-(function(){
-  if(window._bbNotifBoot)return;window._bbNotifBoot=true;
-  /* history never rings: keep marking whatever is already loaded as seen */
-  setInterval(function(){try{(DB&&DB.notifications||[]).forEach(function(n){window._bbSeenN[n.id]=1;});}catch(e){}},2000);
-  /* live: one realtime channel per signed-in user */
-  setInterval(function(){try{
-    var _s=_bbSB();
-    if(!_s||typeof S==='undefined'||!S||!S.uid||window._bbNotifRT)return;
-      window._bbNotifRT=_s.channel('bb-notif-'+S.uid)
-        .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+S.uid},function(p){_bbOnNotifRow(p.new||p.record||{});})
-        .subscribe();
-    }catch(e){window._bbNotifRT=null;}
-  },2500);
-  /* fallback: light refresh once a minute while the tab is visible */
-  setInterval(function(){
-    if(!S||!S.uid||document.visibilityState!=='visible')return;
-    try{if(typeof _lazyLoad==='function')_lazyLoad('notifications');}catch(e){}
-  },60000);
-  /* poll path rings too: wrap the apply step, ring only brand-new fresh rows */
-  if(typeof _applyNotifications==='function'){
-    var _oap=_applyNotifications;
-    _applyNotifications=function(notifs){
-      var prev={};try{(DB.notifications||[]).forEach(function(n){prev[n.id]=1;});}catch(e){}
-      _oap(notifs);
-      try{
-        (DB.notifications||[]).forEach(function(n){
-          if(prev[n.id]||window._bbSeenN[n.id]){window._bbSeenN[n.id]=1;return;}
-          window._bbSeenN[n.id]=1;
-          var age=n.time?(Date.now()-new Date(n.time).getTime()):9e9;
-          if(age<120000&&!n.read){_bbRing(_bbNotifKind(n));try{_bbDesktopShow({id:n.id,text:n.text,link:n.link,read:n.read});}catch(e){}}
-        });
-      }catch(e){}
-    };
-  }
-})();
-function _bbSndRow(t,label,desc){
-  var on=_bbSndAllow(t);var p=_bbSndPrefs();
-  return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F1ECE3'+(p.master===false?';opacity:.45;pointer-events:none':'')+'">'
-   +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#13171B">'+label+'</div>'
-   +(desc?'<div style="font-size:11px;color:#A8998A;margin-top:1px">'+desc+'</div>':'')+'</div>'
-   +'<button class="tog'+(on?' on':'')+'" onclick="App._bbSndTogType(\''+t+'\')" aria-label="Toggle sound for '+label+'"><span></span></button></div>';
-}
-function _bbSndCard(){
-  var p=_bbSndPrefs();var open=!!window._bbSndOpen;
-  return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden;margin-bottom:16px">'
-   +'<div style="padding:13px 18px;background:#F5F1EB;'+(open?'border-bottom:1px solid #EEE8DE;':'')+'display:flex;align-items:center;gap:11px">'
-   +'<button onclick="App._bbSndOpen()" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:none;background:transparent;cursor:pointer;text-align:left;padding:0">'
-   +'<span style="font-size:17px">\u{1F514}</span>'
-   +'<span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:700;color:#13171B">Notification sounds</span>'
-   +'<span style="display:block;font-size:11.5px;color:#A59788;margin-top:1px">'+(p.master===false?'All sounds off':'Rings once per notification \u00B7 tap to choose which types')+'</span></span>'
-   +'<span style="margin-left:auto;color:#B8AA9C;transform:rotate('+(open?'90':'0')+'deg);transition:transform .15s">'+ic('chevR','w-4 h-4')+'</span></button>'
-   +'<button onclick="try{_crmDing(null,true)}catch(e){}" class="ui-btn ui-btn-ghost ui-btn-sm" style="flex-shrink:0">Test</button>'
-   +'<button class="tog'+(p.master!==false?' on':'')+'" onclick="App._bbSndMaster()" aria-label="All notification sounds"><span></span></button>'
-   +'</div>'
-   +(open?'<div style="padding:2px 18px 10px">'+_BB_SND_TYPES.map(function(r){return _bbSndRow(r[0],r[1],r[2]);}).join('')+'</div>':'')
-   +'</div>';
-}
-window._bbSndCard=_bbSndCard;
-
 
 /* ═══════════ PRESENCE — green dot while a person's Bridge tab is open ═══════════ */
 window._bbOnline=window._bbOnline||{};
@@ -943,21 +877,14 @@ async function _bbNPSave(patch){
   try{var r=await sb.from('profiles').update({notify_prefs:u.notifyPrefs}).eq('id',u.id);if(r&&r.error)throw r.error;}
   catch(e){console.warn('[notify_prefs]',e&&e.message);toast('Saved on this device only — sync failed','warn');}
 }
-App._bbNPTog=async(btn,key)=>{
+App._bbNPTogCh=async(btn,kind,ch)=>{
   var nowOn=btn.classList.contains('off');
   btn.classList.toggle('on',nowOn);btn.classList.toggle('off',!nowOn);btn.setAttribute('aria-checked',nowOn?'true':'false');
-  var patch={};patch[key]=nowOn;await _bbNPSave(patch);
-  if(key==='push'&&nowOn){try{await App._bbPushEnable(true);}catch(e){}}
-  if(key==='desktop'&&nowOn){try{await App._bbDesktopEnable(true);}catch(e){}}
-  try{render();}catch(e){}
+  await _bbNPSetChannel(kind,ch,nowOn);
+  if(ch==='push'&&nowOn){try{await App._bbPushEnable(true);}catch(e){}}
+  if(ch==='desktop'&&nowOn){try{await App._bbDesktopEnable(true);}catch(e){}}
 };
-function _bbNPRow(key,label,desc,extra){
-  var on=_bbNPOn(key);
-  return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F1ECE3">'
-    +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#13171B">'+label+'</div>'
-    +(desc?'<div style="font-size:11px;color:#A8998A;margin-top:1px;line-height:1.45">'+desc+'</div>':'')+(extra||'')+'</div>'
-    +'<button role="switch" aria-checked="'+(on?'true':'false')+'" aria-label="'+esc(label)+'" class="tog '+(on?'on':'off')+'" onclick="App._bbNPTog(this,\''+key+'\')"><span></span></button></div>';
-}
+App._bbNPRowAll=async(kind,on)=>{for(var i=0;i<_BB_CHANNELS.length;i++){await _bbNPSetChannel(kind,_BB_CHANNELS[i][0],on);}render();};
 /* ── Desktop notifications (tab open, maybe in the background) ── */
 function _bbDesktopSupported(){return typeof window!=='undefined'&&'Notification' in window;}
 function _bbDesktopState(){if(!_bbDesktopSupported())return'unsupported';try{return Notification.permission;}catch(e){return'unsupported';}}
@@ -973,18 +900,17 @@ App._bbDesktopEnable=async(quiet)=>{
    looking at right now (they can see it), and never twice for the same row. */
 function _bbDesktopShow(row){
   try{
-    if(!row||!row.id)return;if(_bbDesktopState()!=='granted')return;if(!_bbNPOn('desktop'))return;
-    window._bbDeskSeen=window._bbDeskSeen||{};if(window._bbDeskSeen[row.id])return;window._bbDeskSeen[row.id]=1;
+    if(!row||!row.id)return;if(_bbDesktopState()!=='granted')return;if(!_bbPrefOn(_bbNotifKind(row),'desktop'))return;
+    window._bbDeskSeen=window._bbDeskSeen||{};var _dk=row.id+':'+(row.count||1);if(window._bbDeskSeen[_dk])return;window._bbDeskSeen[_dk]=1;
     var link=row.link||'';
     var viewing=false;
     try{viewing=document.visibilityState==='visible'&&document.hasFocus()&&S.route==='crm'&&typeof CRM!=='undefined'&&CRM&&CRM.sel&&link===('crm:'+CRM.sel.convoId);}catch(e){}
-    /* Push is on for this device: the service worker shows the system notification (same tag), so
-       don't show a second one here. If the person is already looking at that chat, close the
-       worker's one as it lands. */
-    if(_bbPushHere()&&!_bbIsNative()){if(viewing)_bbCloseSWNotif(link||row.id);return;}
-    if(viewing)return;
-    var text=String(row.text||'');
-    var title=text.indexOf('\u{1F4AC}')>=0?'Workspace':(/tagged you in/i.test(text)?'You were tagged':/OKR|BOLT|objective/i.test(text)?'OKR':/checklist/i.test(text)?'Checklist':/approv|reject/i.test(text)?'Approval':/reminder|overdue|late|deadline/i.test(text)?'Reminder':'Bridge');
+    /* v3.27: while a Bridge window is open the service worker never shows a system notification
+       (it hands the push to the app) — so this pop-up is THE one, and only in the background. */
+    if(viewing){_bbCloseSWNotif(link||row.id);return;}
+    if(document.visibilityState==='visible'&&document.hasFocus())return;
+    var text=String(row.text||'');var kind=_bbNotifKind(row);
+    var title=({mention:'You were tagged',chat:((row.count||1)>1?(row.count+' new messages'):'New message'),ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation'})[kind]||'Bridge';
     var body=text.replace(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*/u,'').slice(0,200);
     var n=new Notification(title,{body:body,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:link||row.id,renotify:true,data:{link:link,id:row.id}});
     n.onclick=function(){try{window.focus();}catch(e){}try{n.close();}catch(e){}try{App._bbOpenLink(link,text,row.id);}catch(e){}};
@@ -1038,7 +964,7 @@ App._bbPushDisableHere=async()=>{
 /* On every boot: keep the subscription fresh (endpoints rotate) without asking anything. */
 async function _bbPushResync(){
   if(!S.uid||_bbIsNative()||!_bbPushSupported())return;
-  if(_bbDesktopState()!=='granted'||!_bbNPOn('push'))return;
+  if(_bbDesktopState()!=='granted'||_bbNP().push===false)return;
   try{var reg=await _bbSWReg();if(!reg)return;var sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_bbB64ToU8(_BB_VAPID_PUBLIC)});
     var ep='';try{ep=localStorage.getItem('bb_push_ep_'+S.uid)||'';}catch(e){}
@@ -1046,28 +972,12 @@ async function _bbPushResync(){
   }catch(e){}
 }
 function _bbPushHere(){try{return !!localStorage.getItem('bb_push_ep_'+(S&&S.uid));}catch(e){return false;}}
-/* The card — used on Profile (everyone) and on Settings → In-App (admins). */
-function _bbMyNotifCard(){
-  var ds=_bbDesktopState();var native=_bbIsNative();
-  var deskExtra=!_bbDesktopSupported()?'<div style="font-size:11px;color:#B3402E;margin-top:4px">Not supported in this browser</div>'
-    :ds==='granted'?'<div style="font-size:11px;color:#428059;margin-top:4px;font-weight:700">✓ Allowed on this device</div>'
-    :ds==='denied'?'<div style="font-size:11px;color:#B3402E;margin-top:4px">Blocked by the browser — allow notifications for this site from the address bar</div>'
-    :'<button onclick="App._bbDesktopEnable()" class="ui-btn ui-btn-primary ui-btn-sm" style="margin-top:6px">Allow on this device</button>';
-  var pushExtra=native?'<div style="font-size:11px;color:#A8998A;margin-top:4px">Handled by the app</div>'
-    :!_bbPushSupported()?'<div style="font-size:11px;color:#B3402E;margin-top:4px">'+(/iP(hone|ad)/.test(navigator.userAgent||'')?'On iPhone: Share → Add to Home Screen, then open Bridge from there to enable':'Not supported in this browser')+'</div>'
-    :_bbPushHere()?'<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="font-size:11px;color:#428059;font-weight:700">✓ On for this device</span><button onclick="App._bbPushDisableHere()" style="border:none;background:transparent;color:#A8998A;font-size:11px;cursor:pointer;text-decoration:underline">turn off here</button></div>'
-    :'<button onclick="App._bbPushEnable()" class="ui-btn ui-btn-primary ui-btn-sm" style="margin-top:6px">Enable on this device</button>';
-  return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft" style="overflow:hidden;margin-bottom:16px">'
-    +'<div style="padding:13px 18px;background:#F5F1EB;border-bottom:1px solid #EEE8DE;display:flex;align-items:center;gap:10px"><span style="font-size:17px">\u{1F4EC}</span><div><div style="font-size:13.5px;font-weight:700;color:#13171B">My notifications</div><div style="font-size:11.5px;color:#A59788;margin-top:1px">Only for you — change any time</div></div></div>'
-    +'<div style="padding:2px 18px 10px">'
-    +_bbNPRow('chat_all','Every Workspace message','Alert me for each new message on boards I’m in, even when I’m not tagged. Tags always notify.')
-    +_bbNPRow('desktop','Desktop notifications','System pop-ups while Bridge is open in a tab',deskExtra)
-    +_bbNPRow('push','Notify me when Bridge is closed','Push notifications on this device even when the app or tab isn’t open',pushExtra)
-    +'</div></div>';
-}
-window._bbMyNotifCard=_bbMyNotifCard;
+/* v3.27: the My-notifications UI is BBNotify.settingsHTML() in 20-notification-center.js */
 /* Boot hooks: SW registration, subscription resync, deep link from a push tap */
 function _bbAfterBoot(){
+  /* v3.27: first sync is done — from here on, rows are "new"; everything before is history (badge only) */
+  window._bbFirstSyncDone=true;try{if(window.BBNotify)BBNotify.markReady();}catch(e){}
+  try{if(window.BBNotify)BBNotify.heartbeat(true);}catch(e){}
   try{_bbPushResync();}catch(e){}
   try{
     var q=new URLSearchParams(window.location.search||'');var nl=q.get('nl');

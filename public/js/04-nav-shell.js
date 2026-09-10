@@ -122,13 +122,26 @@ function render(){if(!S.uid){$('#app').innerHTML=loginView();return;}
   const _ks=(typeof _crmKeepScroll==='function')?_crmKeepScroll():null;
   $('#app').innerHTML=shell(pageContent());
   const _sb2=document.querySelector('.sidebar');if(_sb2&&_sy)_sb2.scrollTop=_sy;
-  if(_ks)_ks();}
+  if(_ks)_ks();
+  try{if(window.BBNotify)BBNotify._paintDnd();}catch(e){}
+  try{_bbTabsFix();}catch(e){}}
+/* v3.27 — mobile tab strips: keep the active tab in view and show a fade while more tabs are off-screen */
+function _bbTabsFix(){
+  if(window.innerWidth>767)return;
+  document.querySelectorAll('.ui-tabs').forEach(function(t){
+    var can=t.scrollWidth>t.clientWidth+4;t.classList.toggle('bb-can-scroll',can);
+    if(!can)return;
+    var on=t.querySelector('.ui-tab.on');if(on&&!t._bbScrolled){t._bbScrolled=true;try{var r=on.getBoundingClientRect(),tr=t.getBoundingClientRect();if(r.right>tr.right||r.left<tr.left)t.scrollLeft+= (r.left-tr.left)-12;}catch(e){}}
+    var upd=function(){t.classList.toggle('bb-at-end',t.scrollLeft+t.clientWidth>=t.scrollWidth-4);};upd();
+    if(!t._bbScrollBound){t._bbScrollBound=true;t.addEventListener('scroll',upd,{passive:true});}
+  });
+}
 function rr(){_invalidateNotifCache();
   // v3.14: persist the CURRENT tab's filters on every redraw. Saving only when leaving a
   // tab meant the tab you were actually sitting on was never written, so a refresh lost
   // exactly the filters you had just set. Also covers the few places that assign S.route
   // directly instead of going through App.go(). Cheap — it no-ops unless something changed.
-  try{saveFilters(S.route);}catch(e){}const _y=window.scrollY||document.documentElement.scrollTop||0;const _ks=(typeof _crmKeepScroll==='function')?_crmKeepScroll():null;const c=$('#content');if(c)c.innerHTML=pageContent();if(_ks)_ks();window.scrollTo(0,_y);requestAnimationFrame(()=>window.scrollTo(0,_y));}
+  try{saveFilters(S.route);}catch(e){}const _y=window.scrollY||document.documentElement.scrollTop||0;const _ks=(typeof _crmKeepScroll==='function')?_crmKeepScroll():null;const c=$('#content');if(c)c.innerHTML=pageContent();if(_ks)_ks();window.scrollTo(0,_y);try{_bbTabsFix();}catch(e){}requestAnimationFrame(()=>window.scrollTo(0,_y));}
 App.rr=rr;
 // UI-1: live-search helper — rr() rebuilds #content and destroys the typing <input>, dropping
 // focus/caret. Re-render, then restore focus + selection on the search input by id.
@@ -197,7 +210,7 @@ function shell(content){
           <div class="nav-brand" style="width:24px;height:24px;font-size:11px">B</div>
           <span class="fd" style="font-weight:600;font-size:12.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--c-ink)">Bridge</span>
         </div>
-        <div style="flex:1"></div><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(35,28,22,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
+        <div style="flex:1"></div><button data-bb-dnd hidden class="bb-dnd-pill" onclick="App.go('settings');S.filters.stab='mynotif';rr()" title="Notifications paused">${ic('clock','w-3.5 h-3.5')}<span class="hidden sm:inline">Paused</span></button><button onclick="App._cmdk()" class="hidden md:flex" style="${S.route==='crm'?'display:none !important;':''}align-items:center;gap:8px;width:240px;padding:8px 12px;border-radius:12px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);font-size:12.5px;font-weight:500;cursor:text;box-shadow:inset 0 1px 2px rgba(35,28,22,.04)">${ic('search','w-4 h-4')}<span style="flex:1;text-align:left">Search anything…</span><span style="font-size:10px;font-weight:800;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:6px;padding:1px 6px;color:var(--c-text-3)">⌘K</span></button>
         <button onclick="App.go('notifications')" class="md:hidden" aria-label="Notifications" style="position:relative;width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--c-text);display:grid;place-items:center;cursor:pointer">${ic('bell','w-5 h-5')}${(()=>{const n=_notifCount();return n?`<span style="position:absolute;top:5px;right:5px">${countBadge(n,'danger')}</span>`:'';})()}</button>
         <button onclick="App.go('profile')" class="md:hidden" aria-label="Profile">${avatar(u,'w-8 h-8','text-[11px]')}</button>
       </div>

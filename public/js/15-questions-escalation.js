@@ -212,7 +212,7 @@ function questionsPage(){
     </div>
     <!-- CSV Import / Export bar -->
     ${can('questions','import')?`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#FAF7F3;border-radius:12px;border:1.5px solid #EDE7DC">
-      <div style="flex:1;min-width:0">
+      <div style="flex:1 1 220px;min-width:0">
         <div style="font-size:12px;font-weight:700;color:#3A312A;margin-bottom:1px">Bulk import via CSV</div>
         <div style="font-size:11px;color:#A59788">Download the template, fill it in, then upload to add multiple questions at once</div>
       </div>
@@ -1000,6 +1000,7 @@ App._setNTab=(t)=>{S.filters.ntab=t;rr();};
 App._notifClick=(id)=>{
   const n=DB.notifications.find(x=>x.id===id);if(!n)return;
   n.read=true;_invalidateNotifCache();saveDB();
+  try{sb.from('notifications').update({read:true}).eq('id',id).then(()=>{}).catch(()=>{});}catch(e){}   // v3.26: other devices clear instantly
   const t=n.text||'';
   // Navigate first with clean filters, then set the tab
   /* v3.20 — a Workspace mention/ticket alert belongs in the Workspace. It used to match

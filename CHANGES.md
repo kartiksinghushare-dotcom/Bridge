@@ -1,3 +1,20 @@
+# Bridge v131 — one notification pipeline (sounds, DND, quiet hours, presence) · mobile polish
+
+`public/js/20-notification-center.js` (new), `public/js/06-crm.js`, `public/js/18-settings-notifications.js`, `public/js/01-supabase-sync.js`, `public/js/04-nav-shell.js`, `public/js/12-my-checklists.js`, `public/js/14-all-checklists.js`, `public/js/15-questions-escalation.js`, `public/js/16-hierarchy-tickets.js`, `public/sw.js`, `src/styles/main.css`, `index.html` + cache-buster `?v=131`.
+DB (additive): new `user_presence` table (own-rows RLS), `server_now()` function, the two push triggers now carry `updated_at`/`actor_id`. Edge function `send-push` redeployed (v3). Nothing deleted.
+
+**Why:** the old sound code lived in three places with three different rules — it rang on opening Bridge (queued pushes + rows re-touched by a background sync), rang twice on push-enabled devices (OS + in-app), rang in every open tab, and had one loud 5-note alarm for everything.
+
+- **One engine — `BBNotify` (20-notification-center.js).** Every path (realtime insert/update, push handed over by the service worker, poll) goes through `BBNotify.handle(row)`, which alone decides badge / sound / in-app card / desktop pop-up. Rules: "new" = newer than this session's first sync on the **server** clock (`rpc server_now`, so a wrong device clock can't ring old rows); every row rings **once per device** (key = id + count, kept 24h in localStorage — reloads and duplicate paths never re-ring); an UPDATE rings only when `count` grew; only the **focused tab** alerts (or one elected tab if none is focused); never the chat on screen; never while DND / quiet hours / device mute.
+- **Three sound families, six tones.** Messages (default *Pop*), Mentions (*Chime*), everything else (*Ding*) — plus Pulse, Bell, Knock, Silent. Tones are synthesised into tiny WAVs at runtime (no files), unlocked silently on the first tap; nothing ever plays "later". Volume slider + preview.
+- **Do Not Disturb (30 min / 1 h / 2 h / until tomorrow 8:00), quiet hours (daily window, your time-zone) and "Mute this device"** — DND & quiet hours are saved on the profile so every device and the push server honour them; a small *Paused* pill shows in the top bar.
+- **No more double alerts.** Every open Bridge tab sends a presence heartbeat (`user_presence`, 20 s, focused/visible, keepalive on leave); `send-push` skips Web Push while any device is **focused**, skips DND/quiet hours, and chat pushes now expire after 1 h (6 h before — the wake-up burst). The service worker never shows a system notification while a Bridge window is open on the device — it hands the push to the app; stale late pushes update the card silently.
+- **Settings → My notifications rebuilt, ClickUp-style and mobile-first:** Do Not Disturb · Sounds · What notifies you (per kind: Inbox / Sound / Desktop / Push / Email as tap-able chips, "All on/off") · This device (desktop permission, push, **Preview an alert** buttons). Old device-mute + matrix cards removed; the chat-header bell now toggles *Every chat message → Sound*.
+- **Data fix:** saving a checklist / approving used to re-upsert your last 50 notifications (rewrote `created_at` with `updated_at`, flipped rows read elsewhere back to unread, fired an UPDATE for every row). Replaced by `_notifFlush()` — inserts only rows this browser created and hasn't sent (ON CONFLICT DO NOTHING). Same for the background mirror.
+- **Mobile polish:** an open Workspace chat now owns the whole screen (tab bar hidden, composer on the home indicator — WhatsApp); search boxes take their own line in filter rows; selects sit 2-up; scrollable tab strips hide the scrollbar, fade at the edge and keep the active tab in view; bottom sheets capped at the visible viewport; the Questions "Bulk import" block and the Hierarchy role badge no longer collapse; in-app alert cards sit under the header.
+
+---
+
 # Bridge v98 — paced OKR panel polish: both guide lines, cleaner layout
 
 `public/js/19-okr-roles-acl.js` + cache-buster `?v=98`. No DB changes.

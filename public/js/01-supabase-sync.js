@@ -41,8 +41,30 @@ function _applyApprovals(appr){
 }
 function _applyNotifications(notifs){
   const _uid=S.uid;
-  DB.notifications=(notifs||[]).filter(n=>n.user_id===_uid).map(n=>({id:n.id,userId:n.user_id,text:n.text||'',read:n.read||false,time:n.created_at,link:n.link||null}));
+  /* v3.27: a row that came from the server is persisted — _notifFlush must never re-send it.
+     Keep rows this browser created for OTHER people until they are flushed (they used to be lost on refresh). */
+  window._notifPersisted=window._notifPersisted||{};
+  (notifs||[]).forEach(n=>{if(n&&n.id)window._notifPersisted[n.id]=1;});
+  const pendingOthers=(DB.notifications||[]).filter(n=>n&&n.userId&&n.userId!==_uid&&!window._notifPersisted[n.id]);
+  DB.notifications=pendingOthers.concat((notifs||[]).filter(n=>n.user_id===_uid).map(n=>({id:n.id,userId:n.user_id,text:n.text||'',read:n.read||false,time:n.updated_at||n.created_at,created:n.created_at,link:n.link||null,kind:n.kind||null,count:n.count||1,conversationId:n.conversation_id||null})));
 }
+/* v3.27 — persist ONLY notification rows this browser created and has not sent yet (INSERT … ON CONFLICT DO NOTHING).
+   The old whole-table upsert re-sent every row: it flipped rows read on another device back to unread, rewrote
+   created_at with updated_at, and fired a realtime UPDATE for every row (= phantom sounds). */
+function _notifFlush(){
+  try{
+    window._notifPersisted=window._notifPersisted||{};
+    const rows=(DB.notifications||[]).filter(n=>n&&n.id&&n.userId&&!window._notifPersisted[n.id]).slice(0,100)
+      .map(n=>({id:n.id,user_id:n.userId,text:n.text||'',read:n.read||false,created_at:n.created||n.time||new Date().toISOString(),link:n.link||null,kind:n.kind||null}));
+    if(!rows.length)return Promise.resolve({skipped:true});
+    rows.forEach(r=>{window._notifPersisted[r.id]=1;});   // optimistic: never double-send
+    return sb.from('notifications').upsert(rows,{onConflict:'id',ignoreDuplicates:true}).then(r=>{
+      if(r&&r.error){rows.forEach(x=>{delete window._notifPersisted[x.id];});console.warn('[notif flush]',r.error.message);}
+      return r;
+    });
+  }catch(e){return Promise.resolve({error:e});}
+}
+window._notifFlush=_notifFlush;
 function _applyFeedback(feedbackRows){
   if(!feedbackRows){DB.feedback=DB.feedback||[];return;}
   const {_uid,_isAdmin,_isSubAdmin,_isMgr,_teamIds}=_roleCtx();
@@ -463,7 +485,7 @@ async function _sync(){try{
     _mirror('submissions',DB.submissions.map(s=>({id:s.id,checklist_id:s.checklistId,user_id:s.userId,date:s.date,status:s.status,submitted_at:s.submittedAt||null,edit_count:s.editCount||0,edit_history:s.editHistory||[]}))),
     _mirror('approvals',DB.approvals.map(a=>({id:a.id,type:a.type||'Submission',requester_id:a.requesterId,checklist_id:a.checklistId||null,date:a.date||null,status:a.status,note:a.note||'',is_resubmit:a.isResubmit||false,used_at:a.usedAt||null}))),
     _mirror('audit_logs',DB.audit.slice(0,200).map(l=>({id:l.id,actor:l.actor,action:l.action,target:l.target||''}))),
-    _mirror('notifications',DB.notifications.map(n=>({id:n.id,user_id:n.userId,text:n.text,read:n.read||false,created_at:n.time||new Date().toISOString(),link:n.link||null}))),
+    _notifFlush(),   // v3.27: insert-only — see _notifFlush
     _mirror('feedback',(DB.feedback||[]).map(fb=>({id:fb.id,checklist_id:fb.checklistId||null,user_id:fb.userId,manager_id:fb.managerId,date:fb.date||null,title:fb.title||null,type:fb.type||'General',text:fb.text||'',priority:fb.priority||'Low',task_name:fb.taskName||null,level:fb.level||'direct',status:fb.status||'Sent',acknowledged:fb.acknowledged||false,acknowledged_at:fb.acknowledgedAt||null,reply:fb.reply||null,replied_at:fb.repliedAt||null,replies:fb.replies||[],created_at:fb.createdAt||new Date().toISOString()}))),
     _mirror('doc_folders',(DB.folders||[]).map(f=>({id:f.id,name:f.name,parent_id:f.parentId||null,type:f.type,scope:f.scope,created_by:f.createdBy||null,created_at:f.createdAt}))),
     _mirror('documents',(DB.documents||[]).map(d=>({id:d.id,name:d.name,folder_id:d.folderId||null,type:d.type,scope:d.scope,url:d.url,storage_path:d.storagePath||null,file_type:d.fileType||null,file_size:d.fileSize||null,uploaded_by:d.uploadedBy||null,uploader_name:d.uploaderName||null,uploaded_at:d.uploadedAt}))),

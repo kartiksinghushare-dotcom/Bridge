@@ -1272,3 +1272,29 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   .bb-segtabs::-webkit-scrollbar{display:none}
   .bb-segtab{flex:0 0 auto!important;white-space:nowrap!important;font-size:12px!important;padding:7px 13px!important}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   v3.27 — MOBILE POLISH LAYER
+   · search boxes take their own full line inside filter rows (they used to shrink to 2 letters)
+   · scrollable tab strips (hub tabs, settings tabs, chip bars) hide their scrollbar, show a soft
+     fade while more tabs are off-screen, and keep the active tab scrolled into view
+   · filter rows: selects share the line 2-up instead of a ragged wrap
+   · notification cards, DND pill and toasts clear the top/bottom safe areas
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media(max-width:767px){
+  #content input[type=search],#content input[placeholder*="Search"],#content input[placeholder*="search"]{flex:1 1 100%!important;width:100%!important;min-width:0!important}
+  #content div:has(> input[placeholder*="Search"]),#content div:has(> input[placeholder*="search"]){flex:1 1 100%!important;width:100%!important;min-width:0!important}
+  #content [style*="display:flex"]:not([style*="flex-direction:column"]) > select.ui-select,
+  #content [style*="display:flex"]:not([style*="flex-direction:column"]) > select.rf{flex:1 1 calc(50% - 6px)!important;width:auto!important;min-width:0!important;max-width:100%}
+  .ui-tabs{flex-wrap:nowrap;scrollbar-width:none;position:relative;scroll-snap-type:x proximity;scroll-padding:8px}
+  .ui-tabs::-webkit-scrollbar{display:none}
+  .ui-tab{scroll-snap-align:start}
+  .ui-tabs.bb-can-scroll{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),rgba(0,0,0,.15));mask-image:linear-gradient(90deg,#000 calc(100% - 36px),rgba(0,0,0,.15))}
+  .ui-tabs.bb-can-scroll.bb-at-end{-webkit-mask-image:none;mask-image:none}
+  .bb-dnd-pill span{display:none}
+  #toast{bottom:calc(74px + env(safe-area-inset-bottom))!important}
+  /* bottom-sheet dialogs: never taller than the visible viewport, keyboard included */
+  #modal>[role=dialog]{max-height:min(92vh,92dvh)!important}
+}
+/* the tab strip fade is decided by JS (scrollWidth vs clientWidth); harmless on desktop */
+.ui-tabs.bb-can-scroll{position:relative}

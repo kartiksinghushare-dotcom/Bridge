@@ -21,7 +21,7 @@ function _tNode(u,d){
     :((rp&&rp.id==='manager')||kids.length)?['MANAGER','#ECE2D3','#463830']
     :(rp&&!rp.builtin&&rp.name)?[String(rp.name).toUpperCase(),'#F3EDEA','#7F6533']
     :null;
-  const card=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px 14px;box-shadow:var(--sh-xs);min-width:118px;max-width:170px;position:relative">
+  const card=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:10px 14px;box-shadow:var(--sh-xs);min-width:118px;max-width:170px;position:relative;${kids.length?'padding-bottom:18px;':''}">
       ${avatar(u,'w-9 h-9','text-[11px]')}
       <div style="min-width:0;text-align:center">
         <div style="font-size:12px;font-weight:700;color:var(--c-text);line-height:1.25">${esc(fullName(u))}</div>
