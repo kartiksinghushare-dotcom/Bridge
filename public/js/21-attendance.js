@@ -474,16 +474,17 @@ function attendancePage(forceTab){
   return `<div class="fade">${hdr('Attendance','Clock-ins, hours and work-from-home days',(canMng?btn('Rules',"App.go('attsettings')",{variant:'subtle',size:'sm',icon:'cog'}):'')+(can('attendance','export')&&_attEnabled()?btn('Export CSV',`App._attExport('${tab}')`,{variant:'ghost',size:'sm',icon:'download',attrs:'title="Exports '+esc(_attRangeLabel(r))+'"'}):''))}${tabs}${body}</div>`;
 }
 /* ── Calendar for one person over the range ── */
-function _attMyTab(uid2){
-  const u=uById(uid2);if(!u)return '';
+function _attMyTab(uid2,opts){
+  opts=opts||{};const u=uById(uid2);if(!u)return '';
   const r=_attRange();const mine=uid2===S.uid;
   if(!mine||r.from<new Date(Date.now()-62*864e5).toISOString().slice(0,10))_attLoadRange(r.from,r.to,[uid2]);
   const st=_attStats(uid2,r.from,r.to);
   const tiles=[['Days present',st.present,'#54433C'],['Hours',_attFmtMins(st.mins),'#13171B'],['Avg / day',_attFmtMins(st.avg),'#936659'],['WFH days',st.wfh,'#B7826F'],['Late',st.late,'#A97C33'],['Auto out',st.autoOut,'#C9584A'],['Absent',st.absent,'#786A5F']].map(([l,v,c])=>`<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:14px;padding:10px 12px;min-width:0"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3)">${l}</div><div class="fd" style="font-size:20px;font-weight:800;color:${c};margin-top:3px">${v}</div></div>`).join('');
   const switcher='';
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">${mine?'':`<div style="display:flex;align-items:center;gap:8px">${avatar(u,'w-8 h-8','text-[11px]')}<b style="font-size:14px">${esc(fullName(u))}</b>${can('employees','viewProfile')?`<button onclick="App.openProfile('${u.id}')" style="font-size:12px;font-weight:700;color:var(--c-brand);background:none;border:none;cursor:pointer">Profile →</button>`:''}</div>`}${switcher}</div>`;
+  const back=opts.back?`<button onclick="S.filters.attPerson=null;rr()" class="ui-btn ui-btn-subtle ui-btn-sm" title="Back to the team list">${ic('back','w-3.5 h-3.5')}Team</button>`:'';
+  const head=`<div class="att-person-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">${mine?'':`<div style="display:flex;align-items:center;gap:8px;min-width:0">${back}${avatar(u,'w-8 h-8','text-[11px]')}<b style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fullName(u))}</b>${can('employees','viewProfile')?`<button onclick="App.openProfile('${u.id}')" style="font-size:12px;font-weight:700;color:var(--c-brand);background:none;border:none;cursor:pointer">Profile →</button>`:''}</div>`}${switcher}</div>`;
   const legend=`<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--c-text-3);margin:8px 2px 0">${[['Present','#428059'],['WFH','#B7826F'],['Absent','#C9584A'],['Off day','#D8CCC0']].map(([l,c])=>`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${c}"></span>${l}</span>`).join('')}<span>· tap a day for details</span></div>`;
-  return _attRangeBar()+head+`<div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${tiles}</div>`+_attCalendar(u,r)+legend;
+  return (mine?_attRangeBar():head+_attRangeBar())+`<div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${tiles}</div>`+_attCalendar(u,r)+legend;
 }
 function _attCalendar(u,r){
   const canEdit=_attCanEditFor(u.id);
@@ -531,7 +532,7 @@ function _attTeamTab(){
   _attLoadRange(r.from,r.to,people.map(p=>p.id));
   const q=(S.filters.attQ||'').toLowerCase();
   const list=people.filter(p=>!q||fullName(p).toLowerCase().includes(q)||String(p.department||'').toLowerCase().includes(q));
-  if(S.filters.attPerson){const p=uById(S.filters.attPerson);if(p)return `<button onclick="S.filters.attPerson=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-bottom:12px">${ic('back','w-4 h-4')}Back to team</button>`+_attMyTab(p.id);}
+  if(S.filters.attPerson){const p=uById(S.filters.attPerson);if(p)return _attMyTab(p.id,{back:true});}
   const day=r.to>todayISO()?todayISO():r.to; // status column follows the range dropdown (its last day)
   const isToday=day===todayISO();
   let inN=0,wfhN=0,outN=0,absN=0;
