@@ -406,6 +406,7 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 (function(){
   var NC=window.BBNotify;if(!NC)return;
+  function esc_(s){try{return esc(s);}catch(e){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}}
   var CH_HELP={inbox:'Shows in your Inbox and the bell badge',sound:'Plays a tone while Bridge is open',desktop:'System pop-up while Bridge is open in the background',push:'Reaches this phone or computer when Bridge is closed',email:'Sends an e-mail'};
   var CH_ICON={inbox:'bell',sound:'bell',desktop:'grid',push:'flag',email:'msg'};
   function icn(n,c){try{return ic(n,c||'w-3.5 h-3.5');}catch(e){return'';}}
