@@ -1315,3 +1315,10 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 .att-cell:not([disabled]):hover{box-shadow:var(--sh-sm);transform:translateY(-1px)}
 .att-cell[disabled]{cursor:default}
 @media(max-width:767px){#content .att-cal{grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:3px!important}#content .att-cell{padding:4px 4px!important;min-height:50px!important;min-width:0}#content .att-cell div{font-size:9.5px!important}}
+/* v132.4 — page header on phones: title on its own line, actions become a full-width row of equal buttons */
+@media(max-width:767px){
+  #content .bb-hdr{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
+  #content .bb-hdr-actions{width:100%;flex-wrap:wrap}
+  #content .bb-hdr-actions>.ui-btn,#content .bb-hdr-actions>button{flex:1 1 calc(50% - 4px);min-width:0;justify-content:center}
+  #content .bb-hdr-actions:empty{display:none}
+}

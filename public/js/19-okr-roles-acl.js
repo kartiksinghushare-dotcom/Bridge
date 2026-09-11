@@ -160,7 +160,7 @@ function _seedRoleProfiles(){
     admin:{id:'admin',name:'Administrator',description:'Full operational access across the whole organization — everything except Access Control.',builtin:true,perms:allOf(true)},
     manager:{id:'manager',name:'Team Lead / Manager',description:'Sees and acts on their team: approvals, checklists, tickets, team OKRs, reports.',builtin:true,perms:{
       dashboard:A('none','view'),
-      attendance:A('team','view','clock','edit','export'),
+      attendance:A('team','view','clock','export'),   // managers SEE their team's attendance; only HR edits it
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
       messages:A('none','view','send','delete'),
       employees:A('team','view','viewProfile','viewSensitive'),
@@ -172,6 +172,23 @@ function _seedRoleProfiles(){
       approvals:A('none','view','decide'),
       okr:A('team','view','create','edit','manage'),
       analytics:A('none','view'),
+    }},
+    hr:{id:'hr',name:'HR',description:'People operations — the only role that adds or corrects attendance by hand, edits HR details, manages WFH and everyone’s documents.',builtin:true,perms:{
+      dashboard:A('none','view'),
+      attendance:A('everyone','view','clock','edit','delete','export','manage'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
+      messages:A('none','view','send','delete'),
+      employees:A('everyone','view','create','edit','deactivate','resetPassword','assignManager','viewProfile','viewSensitive','editHr','manageWfh'),
+      hierarchy:A('everyone','view'),
+      documentsPersonal:A('everyone','view','create','edit','delete','upload','download'),
+      documentsOrg:A('everyone','view','create','upload','download'),
+      locations:A('none','view','manageGeofence'),
+      departments:A('none','view'),
+      checklists:A('self','view'),
+      tickets:A('self','view','create'),
+      crm:A('everyone','view','create','edit','convert','assign'),
+      approvals:A('none','view','decide'),
+      okr:A('self','view'),
     }},
     basic:{id:'basic',name:'Basic Employee',description:'A standard employee — their own checklists, attendance, leave and tickets.',builtin:true,perms:{
       dashboard:A('none','view'),
@@ -186,7 +203,7 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='15'; // v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
+  const V='16'; // v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
@@ -3504,7 +3521,7 @@ App._acAssignRole=(uid2,roleId)=>{
   // ONE role: derive the legacy base-role field from the access role so nothing is set twice.
   const baseRole=roleId==='superadmin'?'Admin':roleId==='admin'?'SubAdmin':'User';
   if(u.role!==baseRole){u.role=baseRole;sb.from('profiles').update({role:baseRole}).eq('id',u.id).then(()=>{}).catch(()=>{});}
-  u.hrm.isHR=(roleId==='hr'); // ONE concept: the HR role IS the HR approver stage
+  u.hrm.isHR=(roleId==='hr'); // ONE concept: the HR role IS the HR approver stage (built-in 'HR' role, v16)
   log(fullName(me()),'Role assigned',fullName(u)+' → '+(DB.roleProfiles[roleId].name||roleId));
   _acPushProfile(u);
   saveDB();_syncRoleProfiles();toast(fullName(u)+' → '+(DB.roleProfiles[roleId].name||roleId));rr();

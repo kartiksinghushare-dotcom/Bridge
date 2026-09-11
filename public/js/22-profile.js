@@ -45,7 +45,7 @@ function profilePage(){
   _profLoadDocs(u.id);
   if(typeof _attLoadMine==='function'&&P.self)_attLoadMine();
   let tab=S.filters.profTab||'overview';
-  const tabs=PROF_TABS.filter(([k])=>{if(k==='security')return P.self;if(k==='docs')return P.docsView;if(k==='attendance')return P.attendance;return true;});
+  const tabs=PROF_TABS.filter(([k])=>{if(k==='security')return P.self;if(k==='docs')return P.docsView;if(k==='attendance')return P.attendance&&!P.self;return true;});
   if(!tabs.some(t=>t[0]===tab))tab='overview';
   const mgr=u.managerId?uById(u.managerId):null;
   const loc=u.locationId?locById(u.locationId):null;

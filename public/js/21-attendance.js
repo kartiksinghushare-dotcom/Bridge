@@ -148,7 +148,7 @@ App._geoSave=()=>{
 };
 
 /* ═══════════════ ATTENDANCE SETTINGS (workspace_settings · attendance_settings) ═══════════════ */
-const ATT_DEFAULT={enabled:false,tz:'Asia/Dubai',tracking_from:'2026-09-11',auto_out_time:'23:59',reminder_in_on:true,reminder_in_after_min:15,reminder_out_on:true,reminder_out_after_min:30,geofence_strict:true,gps_tolerance_m:30,max_accuracy_m:300,wfh_notify_manager:true,late_grace_min:10};
+const ATT_DEFAULT={enabled:false,tz:'Asia/Dubai',tracking_from:'2026-09-11',auto_out_time:'23:59',reminder_in_on:true,reminder_in_after_min:15,reminder_out_on:true,reminder_out_after_min:30,geofence_strict:true,gps_tolerance_m:30,max_accuracy_m:300,late_grace_min:10};
 let _ATTS=null;
 function _attSettings(){return _ATTS||ATT_DEFAULT;}
 /* Master switch — the whole attendance system (clock card, WFH, reminders, auto clock-out) stays dark until an admin turns it on in Attendance → Settings. */
@@ -192,7 +192,8 @@ function _attRowsFor(uid2,date){return (DB.attendance||[]).filter(a=>a.userId===
 function _attOpen(uid2){return (DB.attendance||[]).find(a=>a.userId===uid2&&a.inAt&&!a.outAt)||null;}
 function _attIsWfh(uid2,date){return (DB.wfh||[]).some(w=>w.userId===uid2&&w.date===date);}
 function _attMins(a){if(!a||!a.inAt)return 0;const end=a.outAt?new Date(a.outAt):new Date();return Math.max(0,Math.round((end-new Date(a.inAt))/60000));}
-function _attFmtMins(m){if(!m)return '0h';const h=Math.floor(m/60),mm=m%60;return h?(h+'h'+(mm?' '+mm+'m':'')):(mm+'m');}
+function _attFmtMins(m){m=Math.max(0,Math.round(m||0));const h=Math.floor(m/60),mm=m%60;return h+'h '+String(mm).padStart(2,'0')+'m';}
+function _attFmtHHMM(m){m=Math.max(0,Math.round(m||0));return Math.floor(m/60)+':'+String(m%60).padStart(2,'0');}
 function _attHM(iso){if(!iso)return '—';const d=new Date(iso);return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
 function _attDayMins(uid2,date){return _attRowsFor(uid2,date).reduce((n,a)=>n+_attMins(a),0);}
 function _attSchedule(u){return {in:'09:00',out:'18:00',offDays:['Sun'],...((u&&u.workSchedule)||{})};}
@@ -299,7 +300,7 @@ App._attToggleWfh=async()=>{
     if(error){DB.wfh=DB.wfh.filter(w=>!(w.userId===S.uid&&w.date===today));rr();return toast('Couldn’t save — '+error.message,'err');}
     log(fullName(u),'Marked WFH',today);
     toast('Today is a work-from-home day 🏠');
-    if(_attSettings().wfh_notify_manager!==false&&u.managerId){
+    if(u.managerId&&(typeof _ns==='undefined'||!_ns||_ns.inapp_attendance_wfh!==false)){
       _attNotify(u.managerId,'🏠 '+fullName(u)+' is working from home today.','att:team:'+today,'attendance');
       try{if(typeof sendEmail==='function')sendEmail('attendance_wfh',u.managerId,{wfh_user:fullName(u),date:fmtD(today)}).catch(()=>{});}catch(e){}
     }
@@ -384,6 +385,9 @@ function _homeTodayChecklists(today){
 }
 
 /* ═══════════════ ATTENDANCE TAB ═══════════════ */
+/* Who may add / edit someone's attendance by hand: a person with Attendance → Edit (HR / admin) — and never their own.
+   Employees only clock in and out; their own record is never editable by them. */
+function _attCanEditFor(uid2){return !!uid2&&uid2!==S.uid&&can('attendance','edit')&&scopeFilter('attendance')(uid2);}
 /* ═══ Date range (shared by My / Team / Export) ═══ */
 function _attISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function _attRange(){
@@ -401,7 +405,9 @@ function _attRangeLabel(r){return r.from===r.to?fmtD(r.from):(fmtS(r.from)+' –
 App._attPreset=(k)=>{
   const t=new Date();const iso=_attISO;
   let from,to=iso(t);
+  if(k==='custom'){S.filters.attPreset='custom';rr();return;}
   if(k==='today'){from=to;}
+  else if(k==='yesterday'){const d=new Date(t);d.setDate(d.getDate()-1);from=to=iso(d);}
   else if(k==='week'){const d=new Date(t);d.setDate(d.getDate()-6);from=iso(d);}
   else if(k==='month'){from=to.slice(0,8)+'01';}
   else if(k==='lastmonth'){const f=new Date(t.getFullYear(),t.getMonth()-1,1);const l=new Date(t.getFullYear(),t.getMonth(),0);from=iso(f);to=iso(l);}
@@ -412,10 +418,10 @@ App._attPreset=(k)=>{
 App._attSetRange=(from,to)=>{if(from)S.filters.attFrom=from;if(to)S.filters.attTo=to;S.filters.attPreset='custom';rr();};
 function _attRangeBar(){
   const r=_attRange();const p=S.filters.attPreset||'month';
-  const chips=[['today','Today'],['week','7 days'],['month','This month'],['lastmonth','Last month'],['30','30 days'],['90','90 days']].map(([k,l])=>`<button onclick="App._attPreset('${k}')" class="ui-tab-pill${p===k?' on':''}" style="padding:5px 11px;min-height:30px;font-size:12px">${l}</button>`).join('');
+  const opts=[['today','Today'],['yesterday','Yesterday'],['week','Last 7 days'],['month','This month'],['lastmonth','Last month'],['30','Last 30 days'],['90','Last 90 days'],['custom','Custom range…']];
   return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    <div class="hscroll" style="gap:6px;max-width:100%">${chips}</div>
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.from}" max="${todayISO()}" onchange="App._attSetRange(this.value,null)"/><span style="font-size:12px;color:var(--c-text-3)">to</span><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.to}" max="${todayISO()}" onchange="App._attSetRange(null,this.value)"/></div>
+    <select class="ui-select" style="width:auto;min-width:160px;padding:7px 30px 7px 12px" onchange="App._attPreset(this.value)">${opts.map(([k,l])=>`<option value="${k}" ${p===k?'selected':''}>${l}</option>`).join('')}</select>
+    ${p==='custom'?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.from}" max="${todayISO()}" onchange="App._attSetRange(this.value,null)"/><span style="font-size:12px;color:var(--c-text-3)">to</span><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.to}" max="${todayISO()}" onchange="App._attSetRange(null,this.value)"/></div>`:`<span style="font-size:12.5px;color:var(--c-text-3)">${esc(_attRangeLabel(r))}</span>`}
   </div>`;
 }
 /* Load a whole range for a set of people (cached per range). */
@@ -457,16 +463,15 @@ function attendancePage(forceTab){
   const others=_attScopeUsers().filter(x=>x.id!==S.uid).length>0;
   const canMng=can('attendance','manage');
   if(forceTab==='settings')return `<div class="fade">${hdr('Attendance settings','Rules for clock-in, reminders and auto clock-out — applies to everyone')}${canMng?_attSettingsTab():empty('lock','Restricted','You need Attendance → Manage.')}</div>`;
-  const TABS=[['my','My attendance']].concat(others?[['team','Team']]:[]).concat(canMng?[['settings','Settings']]:[]);
+  const TABS=[['my','My attendance']].concat(others?[['team','Team']]:[]);   // rules live in Administration → Attendance only
   let tab=S.filters.attTab||'my';if(!TABS.some(t=>t[0]===tab))tab='my';
-  const tabs=`<div class="ui-tabs" style="margin-bottom:14px">${TABS.map(([k,l])=>`<button class="ui-tab${tab===k?' on':''}" onclick="S.filters.attTab='${k}';rr()">${l}</button>`).join('')}</div>`;
+  const tabs=TABS.length>1?`<div class="ui-tabs" style="margin-bottom:14px">${TABS.map(([k,l])=>`<button class="ui-tab${tab===k?' on':''}" onclick="S.filters.attTab='${k}';rr()">${l}</button>`).join('')}</div>`:'';
   let body='';
-  if(!_attEnabled()&&tab!=='settings'){body=(_ATTS?empty('clock','Attendance isn’t switched on yet',canMng?'Turn it on under Settings when the geofences are ready.':'Your admin will switch it on soon.'):loadingState());}
+  if(!_attEnabled()){body=(_ATTS?empty('clock','Attendance isn’t switched on yet',canMng?'Turn it on under Administration → Attendance when the geofences are ready.':'Your admin will switch it on soon.'):loadingState());}
   else if(tab==='my')body=_attMyTab(S.uid);
-  else if(tab==='team')body=_attTeamTab();
-  else body=_attSettingsTab();
+  else body=_attTeamTab();
   const r=_attRange();
-  return `<div class="fade">${hdr('Attendance','Clock-ins, hours and work-from-home days',tab!=='settings'&&can('attendance','export')&&_attEnabled()?btn('Export CSV',`App._attExport('${tab}')`,{variant:'ghost',size:'sm',icon:'download',attrs:'title="Exports '+esc(_attRangeLabel(r))+'"'}):'')}${tabs}${body}</div>`;
+  return `<div class="fade">${hdr('Attendance','Clock-ins, hours and work-from-home days',(canMng?btn('Rules',"App.go('attsettings')",{variant:'subtle',size:'sm',icon:'cog'}):'')+can('attendance','export')&&_attEnabled()?btn('Export CSV',`App._attExport('${tab}')`,{variant:'ghost',size:'sm',icon:'download',attrs:'title="Exports '+esc(_attRangeLabel(r))+'"'}):'')}${tabs}${body}</div>`;
 }
 /* ── Calendar for one person over the range ── */
 function _attMyTab(uid2){
@@ -475,14 +480,13 @@ function _attMyTab(uid2){
   if(!mine||r.from<new Date(Date.now()-62*864e5).toISOString().slice(0,10))_attLoadRange(r.from,r.to,[uid2]);
   const st=_attStats(uid2,r.from,r.to);
   const tiles=[['Days present',st.present,'#54433C'],['Hours',_attFmtMins(st.mins),'#13171B'],['Avg / day',_attFmtMins(st.avg),'#936659'],['WFH days',st.wfh,'#B7826F'],['Late',st.late,'#A97C33'],['Auto out',st.autoOut,'#C9584A'],['Absent',st.absent,'#786A5F']].map(([l,v,c])=>`<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:14px;padding:10px 12px;min-width:0"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3)">${l}</div><div class="fd" style="font-size:20px;font-weight:800;color:${c};margin-top:3px">${v}</div></div>`).join('');
-  const view=S.filters.attView||'calendar';
-  const switcher=`<div class="ui-tabs" style="padding:3px"><button class="ui-tab${view==='calendar'?' on':''}" style="min-height:30px;padding:5px 11px" onclick="S.filters.attView='calendar';rr()">Calendar</button><button class="ui-tab${view==='list'?' on':''}" style="min-height:30px;padding:5px 11px" onclick="S.filters.attView='list';rr()">List</button></div>`;
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">${mine?`<div style="font-size:12.5px;color:var(--c-text-3)">${esc(_attRangeLabel(r))}</div>`:`<div style="display:flex;align-items:center;gap:8px">${avatar(u,'w-8 h-8','text-[11px]')}<b style="font-size:14px">${esc(fullName(u))}</b>${can('employees','viewProfile')?`<button onclick="App.openProfile('${u.id}')" style="font-size:12px;font-weight:700;color:var(--c-brand);background:none;border:none;cursor:pointer">Profile →</button>`:''}</div>`}${switcher}</div>`;
+  const switcher='';
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">${mine?'':`<div style="display:flex;align-items:center;gap:8px">${avatar(u,'w-8 h-8','text-[11px]')}<b style="font-size:14px">${esc(fullName(u))}</b>${can('employees','viewProfile')?`<button onclick="App.openProfile('${u.id}')" style="font-size:12px;font-weight:700;color:var(--c-brand);background:none;border:none;cursor:pointer">Profile →</button>`:''}</div>`}${switcher}</div>`;
   const legend=`<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--c-text-3);margin:8px 2px 0">${[['Present','#428059'],['WFH','#B7826F'],['Absent','#C9584A'],['Off day','#D8CCC0']].map(([l,c])=>`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${c}"></span>${l}</span>`).join('')}<span>· tap a day for details</span></div>`;
-  return _attRangeBar()+head+`<div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${tiles}</div>`+(view==='calendar'?_attCalendar(u,r)+legend:_attList(u,r));
+  return _attRangeBar()+head+`<div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${tiles}</div>`+_attCalendar(u,r)+legend;
 }
 function _attCalendar(u,r){
-  const canEdit=can('attendance','edit')&&(u.id===S.uid||scopeFilter('attendance')(u.id));
+  const canEdit=_attCanEditFor(u.id);
   const months=_attMonthsBetween(r.from,r.to);
   const today=todayISO();
   return months.map(ym=>{
@@ -505,26 +509,11 @@ function _attCalendar(u,r){
       <div class="ui-card-pad" style="padding:10px 12px 12px"><div class="att-cal" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">${WKDAYS.map(d=>`<div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-align:center;padding:2px 0 4px;text-transform:uppercase">${d}</div>`).join('')}${cells.join('')}</div></div></div>`;
   }).join('');
 }
-function _attList(u,r){
-  const canEdit=can('attendance','edit')&&(u.id===S.uid||scopeFilter('attendance')(u.id));
-  const days=_attDaysBetween(r.from,r.to).filter(d=>d<=todayISO()).reverse();
-  const rows=days.map(d=>{
-    const rs=_attRowsFor(u.id,d);const m=rs.reduce((n,a)=>n+_attMins(a),0);const wfh=_attIsWfh(u.id,d)||rs.some(a=>a.mode==='wfh');
-    const first=rs[0],last=rs[rs.length-1];const status=_attDayStatus(u,d);const sc=ATT_SC[status];
-    const loc=first&&first.inLocId?locById(first.inLocId):null;
-    return `<div class="att-row" onclick="App._attDay('${u.id}','${d}')" style="display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--c-border);cursor:pointer">
-      <div><div style="font-size:13px;font-weight:800;color:var(--c-text)">${fmtS(d)}</div><div style="font-size:10.5px;color:var(--c-text-3)">${dayAbbr(d)}</div></div>
-      <div style="min-width:0"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;${sc}">${status}</span>${rs.length?`<span style="font-size:12.5px;color:var(--c-text)">${_attHM(first.inAt)} → ${last.outAt?_attHM(last.outAt):'…'}</span>`:''}${rs.length>1?`<span style="font-size:10.5px;color:var(--c-text-3)">${rs.length} sessions</span>`:''}${first&&_attLate(u,first)?'<span style="font-size:10px;font-weight:800;color:#A97C33">LATE</span>':''}${rs.some(a=>a.autoOut)?'<span style="font-size:10px;font-weight:800;color:#C9584A">AUTO OUT</span>':''}${rs.some(a=>a.editedBy)?'<span style="font-size:10px;font-weight:800;color:#786A5F">EDITED</span>':''}</div>
-        <div style="font-size:11px;color:var(--c-text-3);margin-top:2px">${loc?esc(loc.name):(wfh&&rs.length?'Work from home':'')}${first&&first.note?' · '+esc(first.note):''}</div></div>
-      <div style="display:flex;align-items:center;gap:8px"><span class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">${rs.length?_attFmtMins(m):''}</span>${canEdit?ic('chevR','w-3.5 h-3.5'):''}</div>
-    </div>`;}).join('');
-  return `<div class="ui-card"><div class="ui-card-pad" style="padding-top:4px">${rows||'<div style="padding:24px;text-align:center;color:var(--c-text-3);font-size:12.5px">No days in this range</div>'}</div></div>`;
-}
 /* ── Day detail (tap a calendar cell) ── */
 App._attDay=(uid2,d)=>{
   const u=uById(uid2);if(!u)return;
   const rs=_attRowsFor(uid2,d);const status=_attDayStatus(u,d);const total=rs.reduce((n,a)=>n+_attMins(a),0);
-  const canEdit=can('attendance','edit')&&(uid2===S.uid||scopeFilter('attendance')(uid2));
+  const canEdit=_attCanEditFor(uid2);
   const sess=rs.map(a=>{const li=a.inLocId?locById(a.inLocId):null;const lo=a.outLocId?locById(a.outLocId):null;const ed=a.editedBy?uById(a.editedBy):null;
     return `<div style="border:1px solid var(--c-border);border-radius:12px;padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:14px;font-weight:800;color:var(--c-text)">${_attHM(a.inAt)} → ${a.outAt?_attHM(a.outAt):'<span style="color:#346A47">still in</span>'} <span style="font-size:12px;color:var(--c-text-3);font-weight:600">· ${_attFmtMins(_attMins(a))}</span></div><div style="display:flex;gap:4px;flex-wrap:wrap">${a.mode==='wfh'?'<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F6EAE3;color:#8A6152">🏠 WFH</span>':''}${_attLate(u,a)?'<span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;background:#F9F1DF;color:#7C5A26">Late</span>':''}${a.autoOut?'<span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;background:#F9E9E3;color:#7E2A1C">Auto clock-out</span>':''}</div></div>
@@ -580,9 +569,8 @@ function _attSettingsTab(){
     ${row('tol','GPS tolerance','Extra metres added to every geofence radius, because phones are rarely exact.',num('gps_tolerance_m','m',0,200))}
     ${row('acc','Reject weak GPS above','If the phone reports a worse accuracy than this, ask the person to try again instead of guessing.',num('max_accuracy_m','m',50,2000))}
     ${row('late','Late grace period','Minutes after the shift start before an arrival counts as late.',num('late_grace_min','min',0,120))}
-    ${row('rin','Clock-in reminder','Remind people who haven’t clocked in, this many minutes after their shift start (in-app, push and email as per their preferences).',`<div style="display:flex;align-items:center;gap:8px">${num('reminder_in_after_min','min',0,240)}${tog('reminder_in_on')}</div>`)}
+    ${row('rin','Clock-in reminder','Remind people who haven’t clocked in, this many minutes after their shift start. Which channels (in-app / email) is set under Settings → In-App / Email → Attendance.',`<div style="display:flex;align-items:center;gap:8px">${num('reminder_in_after_min','min',0,240)}${tog('reminder_in_on')}</div>`)}
     ${row('rout','Clock-out reminder','Remind people still clocked in, this many minutes after their shift end.',`<div style="display:flex;align-items:center;gap:8px">${num('reminder_out_after_min','min',0,240)}${tog('reminder_out_on')}</div>`)}
-    ${row('wfh','Tell the manager about WFH days','When someone marks a work-from-home day, their manager gets a note (in-app + email as per settings).',tog('wfh_notify_manager'))}
     ${row('from','Tracking started on','Days before this date are not counted as absent (the feature launch date, or when you started using it).',`<input type="date" value="${esc(s.tracking_from||'')}" class="ui-input" style="width:auto;padding:7px 10px" onchange="App._attSet('tracking_from',this.value)"/>`)}
     ${row('tz','Time zone','Used for the auto clock-out and reminders.',`<input value="${esc(s.tz||'Asia/Dubai')}" class="ui-input" style="width:150px;padding:7px 10px" onchange="App._attSet('tz',this.value)"/>`)}
   </div></div>
@@ -592,7 +580,8 @@ App._attSet=(k,v)=>{if(!can('attendance','manage'))return toast('You need Attend
 
 /* ── Manual edit / add (managers) ── */
 App._attEdit=(id,uid2,date)=>{
-  if(!can('attendance','edit'))return toast('You need Attendance → Edit','err');
+  if(uid2===S.uid)return toast('You can’t change your own attendance — clock in and out from My Day, or ask HR','err');
+  if(!_attCanEditFor(uid2))return toast('Only HR (Attendance → Edit) can add or change someone’s attendance','err');
   const a=id?(DB.attendance||[]).find(x=>x.id===id):null;
   const u=uById(uid2);
   const t=iso=>iso?new Date(iso).toTimeString().slice(0,5):'';
@@ -606,7 +595,7 @@ App._attEdit=(id,uid2,date)=>{
     footer:(a&&can('attendance','delete')?btn('Delete',`App._attDel('${a.id}')`,{variant:'danger',size:'md',icon:'trash'}):'')+btnG('Cancel','App.closeModal()')+btnP('Save','App._attEditSave(\''+(a?a.id:'')+'\',\''+uid2+'\',\''+date+'\')')});
 };
 App._attEditSave=async(id,uid2,date)=>{
-  if(!can('attendance','edit'))return;
+  if(!_attCanEditFor(uid2))return toast('Only HR can add or change someone’s attendance','err');
   const tin=$('#ae-in')?.value,tout=$('#ae-out')?.value,mode=$('#ae-mode')?.value||'office',note=($('#ae-note')?.value||'').trim(),reason=($('#ae-reason')?.value||'').trim();
   if(!tin)return toast('Clock-in time is required','err');
   if(!reason)return toast('Give a reason — it is shown to the person and kept in the audit log','err');
@@ -624,8 +613,9 @@ App._attEditSave=async(id,uid2,date)=>{
   closeModal();toast('Saved ✓');rr();
 };
 App._attDel=async(id)=>{
-  if(!can('attendance','delete'))return toast('You need Attendance → Delete','err');
   const a=(DB.attendance||[]).find(x=>x.id===id);if(!a)return;
+  if(a.userId===S.uid)return toast('You can’t delete your own attendance','err');
+  if(!can('attendance','delete')||!scopeFilter('attendance')(a.userId))return toast('You need Attendance → Delete for this person','err');
   if(!(await confirmP({title:'Delete this attendance entry?',body:'<b>'+esc(fullName(uById(a.userId)))+'</b> · '+esc(fmtD(a.date))+' · '+_attHM(a.inAt)+' → '+(a.outAt?_attHM(a.outAt):'…'),confirmLabel:'Delete',cancelLabel:'Keep it'})))return;
   DB.attendance=DB.attendance.filter(x=>x.id!==id);closeModal();rr();
   const{error}=await sb.from('attendance').delete().eq('id',id);
@@ -636,8 +626,8 @@ App._attDel=async(id)=>{
 App._attExport=(tab)=>{
   if(!can('attendance','export'))return toast('You need Attendance → Export','err');
   const r=_attRange();const people=tab==='team'?_attScopeUsers():[me()];
-  const lines=[['Name','Email','Department','Date','Status','Clock in','Clock out','Hours','Mode','Location','Late','Auto out','Edited','Note']];
-  people.forEach(p=>{_attDaysBetween(r.from,r.to).filter(d=>d<=todayISO()).forEach(d=>{const rs=_attRowsFor(p.id,d);if(!rs.length){const st=_attDayStatus(p,d);if(st==='—')return;lines.push([fullName(p),p.email,p.department,d,st,'','','0','','','','','','']);return;}rs.forEach(a=>{const loc=a.inLocId?locById(a.inLocId):null;lines.push([fullName(p),p.email,p.department,d,'Present',_attHM(a.inAt),a.outAt?_attHM(a.outAt):'',(_attMins(a)/60).toFixed(2),a.mode,loc?loc.name:'',_attLate(p,a)?'yes':'',a.autoOut?'yes':'',a.editedBy?'yes':'',a.note||'']);});});});
+  const lines=[['Name','Email','Department','Date','Status','Clock in','Clock out','Hours (h:mm)','Mode','Location','Late','Auto out','Edited','Note']];
+  people.forEach(p=>{_attDaysBetween(r.from,r.to).filter(d=>d<=todayISO()).forEach(d=>{const rs=_attRowsFor(p.id,d);if(!rs.length){const st=_attDayStatus(p,d);if(st==='—')return;lines.push([fullName(p),p.email,p.department,d,st,'','','0','','','','','','']);return;}rs.forEach(a=>{const loc=a.inLocId?locById(a.inLocId):null;lines.push([fullName(p),p.email,p.department,d,'Present',_attHM(a.inAt),a.outAt?_attHM(a.outAt):'',_attFmtHHMM(_attMins(a)),a.mode,loc?loc.name:'',_attLate(p,a)?'yes':'',a.autoOut?'yes':'',a.editedBy?'yes':'',a.note||'']);});});});
   const csv=lines.map(x=>x.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='attendance-'+r.from+'_'+r.to+(tab==='team'?'-team':'')+'.csv';a.click();
   const ym=r.from+' to '+r.to;
