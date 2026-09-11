@@ -1,4 +1,4 @@
-// Bridge — send-push (v3.27)
+// Bridge — send-push (v132: + dm / attendance / people / access kinds)
 // Called by the DB triggers on `notifications` (new rows, and collapsed chat rows that grew) with the
 // rows to deliver. For every device the person registered (push_subscriptions):
 //   · skips the person entirely while Bridge is OPEN AND FOCUSED on one of their devices
@@ -124,7 +124,7 @@ function inQuietHours(p: any): boolean {
   return from < to ? (nowMin >= from && nowMin < to) : (nowMin >= from || nowMin < to);
 }
 function hm(s: any, dflt: number): number { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); if (!m) return dflt; return (Number(m[1]) % 24) * 60 + (Number(m[2]) % 60); }
-function ttlFor(kind: string): number { return (kind === "chat" || kind === "mention") ? 60 * 60 : 60 * 60 * 6; }
+function ttlFor(kind: string): number { return (kind === "chat" || kind === "mention" || kind === "dm") ? 60 * 60 : kind === "attendance" ? 60 * 60 * 2 : 60 * 60 * 6; }
 
 function kindOf(text: string, link: string): string {
   const t = text || "";
@@ -150,6 +150,10 @@ function titleFor(kind: string, r: Row): string {
     case "feedback": return "Feedback";
     case "reminder": return "Reminder";
     case "escalation": return "Escalation";
+    case "dm": return (r.count && r.count > 1) ? `${r.count} new messages` : "Direct message";   // v132
+    case "attendance": return "Attendance";
+    case "people": return "People";
+    case "access": return "Access changed";
     default: return "Bridge";
   }
 }

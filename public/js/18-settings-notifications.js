@@ -364,6 +364,12 @@ const EMAIL_EVENTS=[
   {key:'crm_mention',   label:'Workspace chat mention',           vars:'{{user_name}}, {{actor}}, {{title}}, {{action_url}}'},
   {key:'crm_approval',  label:'Workspace approval needed',        vars:'{{user_name}}, {{title}}, {{customer}}, {{action_url}}'},
   {key:'crm_decided',   label:'Workspace approval decided',       vars:'{{user_name}}, {{title}}, {{decision}}, {{actor}}, {{action_url}}'},
+  /* v132 — attendance, direct messages, people */
+  {key:'attendance_reminder',label:'Attendance reminders (clock in / out, auto clock-out)',vars:'{{user_name}}, {{action_url}} — the server job sends these; edit wording here'},
+  {key:'attendance_wfh',     label:'Work-from-home day (to the manager)',vars:'{{user_name}} (manager), {{wfh_user}}, {{date}}, {{action_url}}'},
+  {key:'attendance_edited',  label:'Attendance edited by a manager',     vars:'{{user_name}}, {{actor}}, {{date}}, {{reason}}, {{action_url}}'},
+  {key:'dm_message',         label:'Direct message received',            vars:'{{user_name}}, {{actor}}, {{preview}}, {{action_url}}'},
+  {key:'people_event',       label:'Birthdays, anniversaries & document expiry',vars:'{{user_name}}, {{text}}, {{action_url}}'},
 ];
 
 function _defaultTemplates(){
@@ -388,6 +394,11 @@ function _defaultTemplates(){
     okr_update_added:{subject:'📈 {{okr_title}} — updated by {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} added an update on "{{okr_title}}": {{value}}\n\n{{comment}}\n\nThis counts for the whole owner group — nothing more to do for today\'s check-in.\n\n{{action_url}}'},
     okr_target_revised:{subject:'✏️ Target revised: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} revised the target on "{{okr_title}}": {{old_target}} → {{new_target}}\n\nReason: {{reason}}\n\nThe original target stays visible for comparison — the same updates feed both numbers.\n\n{{action_url}}'},
     okr_closed:{subject:'🔒 OKR {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
+    attendance_reminder:{subject:'⏰ Attendance reminder',body:'Hi {{user_name}},\n\nThis is your attendance reminder from Bridge. Open My Day to clock in or out.\n\n{{action_url}}'},
+    attendance_wfh:{subject:'🏠 {{wfh_user}} is working from home today',body:'Hi {{user_name}},\n\n{{wfh_user}} marked {{date}} as a work-from-home day.\n\n{{action_url}}'},
+    attendance_edited:{subject:'✏️ Your attendance for {{date}} was edited',body:'Hi {{user_name}},\n\n{{actor}} edited your attendance for {{date}}.\n\nReason: {{reason}}\n\n{{action_url}}'},
+    dm_message:{subject:'💬 New message from {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} sent you a message on Bridge:\n\n"{{preview}}"\n\n{{action_url}}'},
+    people_event:{subject:'🎉 {{text}}',body:'Hi {{user_name}},\n\n{{text}}\n\n{{action_url}}'},
   };
 }
 
@@ -403,6 +414,8 @@ function _nsDefault(){return{
   email_feedback_received:false,email_deadline_reminder:true,email_escalation:true,
   inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
   email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
+  inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_dm_message:true,inapp_people_event:true,
+  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_dm_message:false,email_people_event:true,
   templates:{},
 };}
 let _ns=null;
@@ -478,7 +491,7 @@ async function sendEmail(eventType, userId, vars){
   const user = userId ? uById(userId) : null;
   if(!user?.email){console.warn('sendEmail: no email for user',userId);return;}
   if(user.emailEnabled===false) return;
-  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
+  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
     var _np=user.notifyPrefs||{};var _c=_np.channels&&_np.channels[_k];if(_c&&_c.email===false)return;}catch(e){}
   if(!_ns) await _loadNS();
   if(!_ns.email_enabled) return;
@@ -493,6 +506,7 @@ async function sendEmail(eventType, userId, vars){
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
     okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
+    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',dm_message:'workspace',people_event:'profile',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
@@ -566,8 +580,8 @@ App._testEmail=async()=>{
 App._setSTab=(k)=>{S.filters.stab=k;rr();};
 function settingsPage(forceTab){
   const admin=can('settings','view');
-  const TABS=[['profile','Profile'],['mynotif','My notifications']].concat(admin?[['inapp','In-App'],['email','Email'],['templates','Templates']]:[]);
-  let stab=forceTab||S.filters.stab||(admin?'inapp':'mynotif');
+  const TABS=[['mynotif','My notifications']].concat(admin?[['inapp','In-App'],['email','Email'],['templates','Templates']]:[]);
+  let stab=forceTab||S.filters.stab||(admin?'inapp':'mynotif');if(stab==='profile'){stab=S.filters.stab='mynotif';}   /* v132: Profile is its own page now */
   if(!TABS.some(t=>t[0]===stab))stab=admin?'inapp':'mynotif';
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
   if(stab==='profile')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${_profileTab()}</div>`;
@@ -603,6 +617,13 @@ function settingsPage(forceTab){
         ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
         ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
+        ${_nsTogRow('inapp_attendance_reminder','Clock-in / clock-out reminders & auto clock-out','Server-side reminders after shift start / end, and the note when someone is clocked out automatically')}
+        ${_nsTogRow('inapp_attendance_wfh','Work-from-home day → manager','Tell the manager when someone marks a WFH day')}
+        ${_nsTogRow('inapp_attendance_edited','Attendance edited','Tell the person when a manager edits or adds one of their entries')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
+        ${_nsTogRow('inapp_dm_message','Direct messages','New private messages (each person can silence their own in My notifications)')}
+        ${_nsTogRow('inapp_people_event','Birthdays, anniversaries & document expiry','To the manager (and the person, for documents) — 30 / 7 / 0 days before expiry')}
       </div>
     </div>
   </div>`;
@@ -663,6 +684,13 @@ function settingsPage(forceTab){
         ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
         ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
+        ${_nsTogRow('email_attendance_reminder','Clock-in / clock-out reminders','Email with the reminder (server job, honours each person’s Attendance → Email switch)')}
+        ${_nsTogRow('email_attendance_wfh','Work-from-home day → manager','Email the manager when someone marks a WFH day')}
+        ${_nsTogRow('email_attendance_edited','Attendance edited','Email the person when a manager edits their entry')}
+        <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
+        ${_nsTogRow('email_dm_message','Direct messages','Email for every private message — off by default, in-app + push usually suffice')}
+        ${_nsTogRow('email_people_event','Birthdays, anniversaries & document expiry','Email the manager / person for people events')}
       </div>
     </div>
   </div>`;
@@ -754,7 +782,11 @@ var _BB_KINDS=[
  ['approval','Approvals','Requested and decided'],
  ['feedback','Feedback','Feedback and replies from your manager'],
  ['reminder','Reminders & deadlines','Due reminders, overdue items, edit requests'],
- ['escalation','Escalations','A question or task escalates to you']
+ ['escalation','Escalations','A question or task escalates to you'],
+ ['dm','Direct messages','Private one-to-one messages'],
+ ['attendance','Attendance','Clock-in / clock-out reminders, auto clock-out, WFH and edits'],
+ ['people','People & documents','Birthdays, work anniversaries and document expiry'],
+ ['access','Access changes','Your role or permissions were changed']
 ];
 var _BB_CHANNELS=[['inbox','Inbox'],['sound','Sound'],['desktop','Desktop'],['push','Push'],['email','Email']];
 /* defaults when nothing is saved: everything on, except e-mail for plain chat */
@@ -910,7 +942,7 @@ function _bbDesktopShow(row){
     if(viewing){_bbCloseSWNotif(link||row.id);return;}
     if(document.visibilityState==='visible'&&document.hasFocus())return;
     var text=String(row.text||'');var kind=_bbNotifKind(row);
-    var title=({mention:'You were tagged',chat:((row.count||1)>1?(row.count+' new messages'):'New message'),ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation'})[kind]||'Bridge';
+    var title=({mention:'You were tagged',chat:((row.count||1)>1?(row.count+' new messages'):'New message'),ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',dm:((row.count||1)>1?(row.count+' new messages'):'New message'),attendance:'Attendance',people:'People',access:'Access changed'})[kind]||'Bridge';
     var body=text.replace(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*/u,'').slice(0,200);
     var n=new Notification(title,{body:body,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:link||row.id,renotify:true,data:{link:link,id:row.id}});
     n.onclick=function(){try{window.focus();}catch(e){}try{n.close();}catch(e){}try{App._bbOpenLink(link,text,row.id);}catch(e){}};
@@ -922,6 +954,15 @@ function _bbCloseSWNotif(tag){try{if(!('serviceWorker' in navigator))return;var 
 App._bbOpenLink=(link,text,nid)=>{
   try{if(nid){var n=(DB.notifications||[]).find(function(x){return x.id===nid;});if(n&&!n.read){n.read=true;_invalidateNotifCache();try{sb.from('notifications').update({read:true}).eq('id',nid).then(function(){}).catch(function(){});}catch(e){}}}}catch(e){}
   if(link&&String(link).indexOf('crm:')===0&&typeof App._crmOpenFromNotification==='function'){if(App._crmOpenFromNotification(link,text||''))return;}
+  /* v132 deep links: att:<date> / att:in:<date> / att:out:<date> → My Day (clock card) · att:team:<date> → Attendance team ·
+     profile:<uid>[:docs] → that profile · home → My Day */
+  try{
+    var L=String(link||'');
+    if(L==='home'||L.indexOf('att:in:')===0||L.indexOf('att:out:')===0){App.go('home');return;}
+    if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';S.filters.attDay=L.slice(9)||null;if(S.filters.attDay)S.filters.attYm=S.filters.attDay.slice(0,7);rr();return;}
+    if(L.indexOf('att:')===0){App.go('attendance');S.filters.attTab='my';var d=L.slice(4);if(/^\d{4}-\d{2}/.test(d))S.filters.attYm=d.slice(0,7);rr();return;}
+    if(L.indexOf('profile:')===0){var parts=L.split(':');if(typeof App.openProfile==='function'){App.openProfile(parts[1]);if(parts[2]==='docs'){S.filters.profTab='docs';rr();}return;}}
+  }catch(e){}
   App.go('notifications');
 };
 /* ── Web Push (app closed) ── */

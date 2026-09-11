@@ -117,8 +117,10 @@ window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCa
 const isHR=()=>{const u=me();return !!u&&(u.hrm?.isHR===true);};
 function _ensureHrm(u){if(!u)return u;if(!u.hrm||typeof u.hrm!=='object')u.hrm={};const h=u.hrm;if(h.isHR===undefined)h.isHR=false;if(h.roleProfileId===undefined)h.roleProfileId=null;return u;}
 const PERM_AREAS=[
-  {key:'dashboard',label:'Dashboard',desc:'The landing overview',actions:['view'],scoped:false,group:'System'},
-  {key:'employees',label:'Users',desc:'The people directory — create, edit, deactivate people, assign managers & roles',actions:['view','create','edit','delete','deactivate','resetPassword','assignManager','assignRole','assign','manage'],scoped:true,group:'People & Org'},
+  {key:'dashboard',label:'Dashboard',desc:'The Overview dashboard (company charts). Everyone always gets My Day.',actions:['view'],scoped:false,group:'System'},
+  {key:'attendance',label:'Attendance',desc:'Clock in / out with geofence, work-from-home days and the Attendance tab. “Sees” decides WHOSE attendance they can view and edit — their own always shows',actions:['view','clock','edit','delete','export','manage'],scoped:true,group:'Time'},
+  {key:'myProfile',label:'My profile (own)',desc:'What a person may change on their OWN profile page',actions:['editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'],scoped:false,group:'People & Org'},
+  {key:'employees',label:'Users',desc:'The people directory — create, edit, deactivate people, assign managers & roles. “Open profile” shows another person’s full profile; “Sensitive details” reveals birth date, ID numbers, emergency contact and documents; “Edit HR details” edits joining date, employee ID, schedule, work location and the WFH switch',actions:['view','create','edit','delete','deactivate','resetPassword','assignManager','assignRole','assign','manage','viewProfile','viewSensitive','editHr','manageWfh'],scoped:true,group:'People & Org'},
   {key:'hierarchy',label:'Hierarchy / Org chart',desc:'The reporting tree',actions:['view'],scoped:true,group:'People & Org'},
   {key:'teamview',label:'Team view',desc:'The Team page — live checklist status of the team',actions:['view'],scoped:false,group:'People & Org'},
   {key:'departments',label:'Departments',desc:'Top-level department list',actions:['view','create','edit','delete'],scoped:false,group:'People & Org'},
@@ -128,8 +130,9 @@ const PERM_AREAS=[
   {key:'questions',label:'Questions',desc:'The questions feature',actions:['view','create','edit','manage','delete','import','export'],scoped:false,group:'Tasks & Tickets'},
   {key:'tickets',label:'Tickets',desc:'Issue tickets',actions:['view','create','edit','assign','comment','resolve','reopen','close','manage','delete','export'],scoped:true,group:'Tasks & Tickets'},
   {key:'crm',label:'Workspace',desc:'Workspace inbox — hubs (channels), boards, chats & tickets. ACCESS: a person added to a CHANNEL sees every board in it; a person added to a single BOARD sees only that board. “Assign people (channel)” and “Assign people (board)” decide who can hand out that access, and “See every channel & board” bypasses membership entirely. “Rename” covers hubs/boards + the sidebar title; “People groups” manages the reusable @taggable groups; “Filtered views” lets them create member-scoped filtered views on a board',actions:['view','create','edit','convert','assign','rename','groups','views','members','hubMembers','seeAll','delete','manage'],scoped:false,group:'Tasks & Tickets'},
+  {key:'messages',label:'Direct messages',desc:'One-to-one private chats in Workspace. Only the two people in a chat can ever read it — no role can read others’ DMs',actions:['view','send','delete'],scoped:false,group:'Tasks & Tickets'},
   {key:'documentsOrg',label:'Documents (organization)',desc:'Shared dept/location files',actions:['view','create','edit','delete','upload','download','approve'],scoped:true,group:'Content'},
-  {key:'documentsPersonal',label:'Personal documents',desc:'Files on a person\'s profile',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
+  {key:'documentsPersonal',label:'Personal documents (of others)',desc:'Documents on OTHER people\'s profiles — passport, visa, contract… “Sees” limits whose. Own documents are governed by “My profile”',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
   {key:'analytics',label:'Analytics',desc:'Operational analytics dashboard (checklists, compliance, tickets)',actions:['view','export'],scoped:false,group:'Insights'},
   {key:'okr',label:'OKR',desc:'Hierarchical objectives (L0 → L1 → L2). “Sees” decides WHOSE objectives they can view — owners always see their own (they have to update them); sub-objectives of anything visible are included',actions:['view','create','edit','checkin','manage','delete'],scoped:true,group:'Insights'},
   {key:'locations',label:'Locations',desc:'Offices and GPS boundary',actions:['view','create','edit','manage','delete','manageGeofence'],scoped:false,group:'System'},
@@ -139,7 +142,9 @@ const PERM_AREAS=[
   {key:'accessControl',label:'Access Control',desc:'The role-profile system itself',actions:['view','manage'],scoped:false,group:'System'},
 ];
 // Plain-language labels used by the Access Control editor + live summary.
-const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board'};
+const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board',clock:'Clock in / out',send:'Send',viewProfile:'Open profile',viewSensitive:'Sensitive details',editHr:'Edit HR details',manageWfh:'Allow / block WFH',editDetails:'Edit own details',editAvatar:'Change photo',editEmergency:'Emergency contact',uploadDocs:'Upload documents',deleteDocs:'Delete documents'};
+/* Group order in the editors — Time & People first so the everyday areas are at the top. */
+const PERM_GROUP_ORDER=['System','Time','People & Org','Tasks & Tickets','Content','Insights'];
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
 const SCOPE_LABEL={none:'None',self:'Only their own',team:'Their team',department:'Their department',location:'Their office',everyone:'Everyone'};
 // ── Seed built-in roles (idempotent; version-stamped so v3 upgrades older seeds in place) ──
@@ -155,7 +160,10 @@ function _seedRoleProfiles(){
     admin:{id:'admin',name:'Administrator',description:'Full operational access across the whole organization — everything except Access Control.',builtin:true,perms:allOf(true)},
     manager:{id:'manager',name:'Team Lead / Manager',description:'Sees and acts on their team: approvals, checklists, tickets, team OKRs, reports.',builtin:true,perms:{
       dashboard:A('none','view'),
-      employees:A('team','view'),
+      attendance:A('team','view','clock','edit','export'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
+      messages:A('none','view','send','delete'),
+      employees:A('team','view','viewProfile','viewSensitive'),
       teamview:A('none','view'),
       checklists:A('team','view','create','edit','duplicate','assign','approve','delete'),
       tickets:A('team','view','create','edit','assign','resolve','manage'),
@@ -167,6 +175,9 @@ function _seedRoleProfiles(){
     }},
     basic:{id:'basic',name:'Basic Employee',description:'A standard employee — their own checklists, attendance, leave and tickets.',builtin:true,perms:{
       dashboard:A('none','view'),
+      attendance:A('self','view','clock'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs'),
+      messages:A('none','view','send','delete'),
       checklists:A('self','view'),
       tickets:A('self','view','create'),
       crm:A('everyone','view','create','edit','convert','assign'),
@@ -175,10 +186,22 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='14'; // v14: Workspace access is membership-based — CRM gains 'members' (assign to a board), 'hubMembers' (assign to a whole channel) and 'seeAll' (bypass membership). Super Admin/Admin get all three; Manager gets board-level assignment; Basic gets none. Custom roles keep their toggles: switch the new ones on per role in Access Control.
+  const V='15'; // v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
+  });
+  /* v132 one-time floor for CUSTOM roles: nobody should lose the ability to clock in, message a
+     colleague or edit their own profile just because their role was created before these areas
+     existed. Adds ONLY the everyday self-scoped switches; admins can widen or narrow per role. */
+  Object.values(DB.roleProfiles).forEach(p=>{
+    if(p.builtin||p._v132)return;
+    p.perms=p.perms||{};
+    if(!p.perms.attendance)p.perms.attendance=A('self','view','clock');
+    if(!p.perms.myProfile)p.perms.myProfile=A('none','editDetails','editAvatar','editEmergency','uploadDocs');
+    if(!p.perms.messages)p.perms.messages=A('none','view','send','delete');
+    if(p.perms.employees&&p.perms.employees.actions&&p.perms.employees.actions.view&&p.perms.employees.actions.viewProfile===undefined)p.perms.employees.actions.viewProfile=true;
+    p._v132=1;
   });
 }
 
@@ -266,7 +289,7 @@ function scopeFilter(area){
   if(sc==='self')return id=>id===myId;
   if(sc==='team'){const set=new Set([myId,...subTree(myId).map(x=>x.id)]);return id=>set.has(id);}
   if(sc==='department'){const d=u?.department;return id=>!!d&&uById(id)?.department===d;}
-  if(sc==='location'){const l=u?.hrm?.locationId;return id=>!!l&&uById(id)?.hrm?.locationId===l;}
+  if(sc==='location'){const l=u?.locationId||u?.hrm?.locationId;return id=>{const t=uById(id);return !!l&&!!t&&((t.locationId||t.hrm?.locationId)===l);};}
   return ()=>false;
 }
 // ── Legacy base-role shim (only reachable for users with NO role assigned — pre-migration) ──
@@ -275,7 +298,9 @@ function _baseCan(area,action){
   const sub=isSubAdmin(),mgr=isMgr(),hr=isHR(),q=!!me()?.questionsAccess,doc=hasDocAccess();
   switch(area){
     case 'dashboard':return true;
-    case 'attendance':return action==='view'?true:(sub||hr);
+    case 'attendance':return (action==='view'||action==='clock')?true:(sub||hr||mgr);
+    case 'myProfile':return true;
+    case 'messages':return true;
     case 'leaveRequests':return action==='approve'?(sub||mgr||hr):(action==='download'?(sub||hr):true);
     case 'leaveBalances':return action==='view'?(sub||mgr||hr):((action==='grant'||action==='edit')?hr:false);
     case 'hrSettings':return hr;
@@ -3447,7 +3472,7 @@ function _acPeopleTab(){
       <td style="padding:11px 8px">${canMng
         ?`<select onchange="App._acAssignRole('${u.id}',this.value)" class="ui-select" style="width:200px;font-size:12.5px;min-height:0;height:36px;padding:4px 26px 4px 12px">${roles.map(r=>`<option value="${r.id}" ${rid===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}${rid&&!DB.roleProfiles[rid]?`<option value="${esc(rid)}" selected>${esc(rid)} (missing)</option>`:''}${!rid?'<option value="" selected>— No role —</option>':''}</select>`
         :`<span style="font-size:12px;font-weight:700;color:var(--c-text-2)">${esc((DB.roleProfiles[rid]||{}).name||'— No role —')}</span>`}</td>
-      <td style="padding:11px 16px;text-align:right"><button onclick="App._acCustomize('${u.id}')" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('cog','w-3.5 h-3.5')}Personal</button></td>
+      <td style="padding:11px 16px;text-align:right;white-space:nowrap"><button onclick="App._acPreview('${u.id}')" class="ui-btn ui-btn-subtle ui-btn-sm" title="What this person can actually see">${ic('eye','w-3.5 h-3.5')}Preview</button> <button onclick="App._acCustomize('${u.id}')" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('cog','w-3.5 h-3.5')}Personal${nOv?` <span style="font-size:9px;font-weight:800;color:#6B4E1F;background:#F8F0DE;padding:1px 5px;border-radius:8px">${nOv}</span>`:''}</button></td>
     </tr>`;
   }).join('');
   return `<div class="ui-card" style="padding:0;overflow:hidden">
@@ -3555,7 +3580,7 @@ App._renderACUser=()=>{
     </div>`;
   // per-area overrides: follows role by default; Override copies the role's area for editing
   const groups={};PERM_AREAS.forEach(a=>{(groups[a.group||'System']=groups[a.group||'System']||[]).push(a);});
-  const ovCards=Object.keys(groups).map(g=>{
+  const ovCards=_permGroupKeys(groups).map(g=>{
     const rowsH=groups[g].map(a=>{
       const ov=d.perms[a.key];
       const roleArea=(role&&role.perms&&role.perms[a.key])||null;
@@ -3587,7 +3612,26 @@ App._renderACUser=()=>{
 function _acGuard(){if(!can('accessControl','manage')){toast('You need Access Control → Manage','err');return false;}return true;}
 function _acMark(){if(_ACD){_ACD.dirty=true;App._renderACUser();}}
 function _acPushProfile(u){
-  sb.from('profiles').update({rules:u.rules||{},approval_settings:u.approval||{},cities:u.cities||[],doc_access:u.docAccess||{departments:{},locations:{}},hrm:u.hrm||{}}).eq('id',u.id).then(({error})=>{if(error)_syncErr('access change')(error);}).catch(_syncErr('access change'));
+  sb.from('profiles').update({rules:u.rules||{},approval_settings:u.approval||{},cities:u.cities||[],doc_access:u.docAccess||{departments:{},locations:{}},hrm:u.hrm||{}}).eq('id',u.id).then(({error})=>{if(error)_syncErr('access change')(error);else _acNotifyTarget(u);}).catch(_syncErr('access change'));
+}
+/* v132 — tell the person (kind 'access'): their open session refetches its profile + roles and
+   re-renders, so a changed role takes effect within seconds instead of at the next sign-in. */
+function _acNotifyTarget(u){
+  try{
+    if(!u||u.id===S.uid)return;
+    window._acNotified=window._acNotified||{};if(Date.now()-(window._acNotified[u.id]||0)<10000)return;window._acNotified[u.id]=Date.now();
+    const n={id:uid('n'),userId:u.id,text:'🔐 Your access was updated by '+fullName(me())+' — tabs and buttons refresh automatically.',time:new Date().toISOString(),read:false,kind:'access',link:'home'};
+    DB.notifications.unshift(n);
+    sb.from('notifications').insert({id:n.id,user_id:u.id,text:n.text,read:false,created_at:n.time,kind:'access',link:'home'}).then(()=>{}).catch(()=>{});
+  }catch(e){}
+}
+async function _accessRefresh(){
+  try{
+    const [p,r]=await Promise.all([sb.from('profiles').select('*').eq('id',S.uid).maybeSingle(),sb.from('workspace_settings').select('value').eq('key','role_profiles').maybeSingle()]);
+    if(r.data&&r.data.value&&typeof r.data.value==='object')DB.roleProfiles={...(DB.roleProfiles||{}),...r.data.value};
+    if(p.data){const fresh=_mU([p.data])[0];const cur=uById(S.uid);if(cur&&fresh){Object.assign(cur,fresh);_ensureHrm(cur);}}
+    _seedRoleProfiles();saveDB();render();
+  }catch(e){console.warn('[access refresh]',e&&e.message);}
 }
 App._acOvAdd=(area)=>{
   if(!_acGuard()||!_ACD)return;
@@ -3687,7 +3731,8 @@ App._renderRPEdit=()=>{
   const lab='font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.06em';
   const nUsers=p.isNew?0:DB.users.filter(u=>u.hrm?.roleProfileId===p.id).length;
   const groups={};PERM_AREAS.forEach(a=>{(groups[a.group||'System']=groups[a.group||'System']||[]).push(a);});
-  const grid=Object.keys(groups).map(g=>{
+  let totalOn=0,totalAll=0;PERM_AREAS.forEach(a=>{const c=p.perms[a.key];totalAll+=a.actions.length;a.actions.forEach(x=>{if(c&&c.actions&&c.actions[x])totalOn++;});});
+  const grid=_permGroupKeys(groups).map(g=>{
     const rowsH=groups[g].map(a=>{
       const cur=p.perms[a.key]||{scope:'none',actions:{}};
       const nOn=a.actions.filter(x=>(cur.actions||{})[x]).length;
@@ -3700,16 +3745,19 @@ App._renderRPEdit=()=>{
         </div>
       </div>`;
     }).join('');
-    return `<div style="margin-bottom:8px"><div style="${lab};margin-bottom:2px">${esc(g)}</div>${rowsH}</div>`;
+    const gOn=groups[g].reduce((n,a)=>n+a.actions.filter(x=>((p.perms[a.key]||{}).actions||{})[x]).length,0);
+    const gAll=groups[g].reduce((n,a)=>n+a.actions.length,0);
+    return `<div style="margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="${lab}">${esc(g)}</span><span style="font-size:10px;color:var(--c-text-3)">${gOn}/${gAll}</span>${canMng?`<span style="flex:1"></span><button onclick="App._rpGroup('${esc(g)}',true)" class="ui-btn ui-btn-subtle ui-btn-sm" style="min-height:22px;padding:1px 9px;font-size:10.5px">All on</button><button onclick="App._rpGroup('${esc(g)}',false)" class="ui-btn ui-btn-subtle ui-btn-sm" style="min-height:22px;padding:1px 9px;font-size:10.5px">All off</button>`:''}</div>${rowsH}</div>`;
   }).join('');
-  modalShell({title:p.isNew?'New role':('Role — '+(p.name||'Untitled')),sub:(nUsers?nUsers+' people have this role · ':'')+'toggles apply on Save',size:'max-w-3xl',key:'ac-role',
+  const tplPick=p.isNew&&canMng?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--c-text-2)"><span>Start from:</span>${['basic','manager','admin'].map(k=>DB.roleProfiles[k]?`<button onclick="App._rpFromTemplate('${k}')" class="ui-btn ui-btn-ghost ui-btn-sm">${esc(DB.roleProfiles[k].name)}</button>`:'').join('')}<button onclick="App._rpFromTemplate('')" class="ui-btn ui-btn-ghost ui-btn-sm">Blank</button></div>`:'';
+  modalShell({title:p.isNew?'New role':('Role — '+(p.name||'Untitled')),sub:(nUsers?nUsers+(nUsers===1?' person has':' people have')+' this role · ':'')+totalOn+' of '+totalAll+' permissions on · toggles apply on Save',size:'max-w-3xl',key:'ac-role',
     body:`<div>
       ${p.dirty?'<div style="font-size:11.5px;font-weight:800;color:#6B4E1F;background:#F8F0DE;border-radius:9px;padding:7px 11px;margin-bottom:12px">● Unsaved changes — press Save below</div>':''}
       <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:14px">
         <div><label style="${lab}">Role name *</label><input ${dis?'disabled':''} type="text" value="${esc(p.name||'')}" oninput="_RPD.name=this.value;_RPD.dirty=true" placeholder="e.g. Branch Supervisor" class="ui-input rf" style="margin-top:5px"/></div>
         <div><label style="${lab}">Description</label><input ${dis?'disabled':''} type="text" value="${esc(p.description||'')}" oninput="_RPD.description=this.value;_RPD.dirty=true" placeholder="What is this role for?" class="ui-input rf" style="margin-top:5px"/></div>
       </div>
-      <input value="${esc(p.q||'')}" placeholder="Find a permission… e.g. create user, payroll, tickets" class="ui-input rf" style="margin-bottom:10px" oninput="_RPD.q=this.value;const q=this.value.toLowerCase();document.querySelectorAll('[data-rp-row]').forEach(r=>{r.style.display=!q||r.getAttribute('data-rp-row').includes(q)?'grid':'none'});"/>
+      ${tplPick}<input value="${esc(p.q||'')}" placeholder="Find a permission… e.g. clock in, tickets, documents" class="ui-input rf" style="margin-bottom:10px" oninput="_RPD.q=this.value;const q=this.value.toLowerCase();document.querySelectorAll('[data-rp-row]').forEach(r=>{r.style.display=!q||r.getAttribute('data-rp-row').includes(q)?'grid':'none'});"/>
       ${grid}
     </div>`,
     footer:btnG('Cancel','_RPD=null;App.closeModal()')+(canMng?btnP(p.isNew?'Create role':'Save role','App._rpSave()'):'')});
@@ -3724,6 +3772,42 @@ App._rpT=(area,act)=>{
   _RPD.dirty=true;App._renderRPEdit();
 };
 App._rpScope=(area,scope)=>{if(!can('accessControl','manage')||!_RPD)return;const p=_RPD.perms[area]=_RPD.perms[area]||{scope:'none',actions:{}};p.scope=scope;_RPD.dirty=true;App._renderRPEdit();};
+function _permGroupKeys(groups){const order=typeof PERM_GROUP_ORDER!=='undefined'?PERM_GROUP_ORDER:[];return Object.keys(groups).sort((a,b)=>{const ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});}
+/* v132 — whole-group switch in the role editor. "All on" also lifts scoped areas to Everyone
+   (a permission with scope none is a switch that changes nothing). "All off" clears the group. */
+App._rpGroup=(g,on)=>{
+  if(!can('accessControl','manage')||!_RPD)return;
+  PERM_AREAS.filter(a=>(a.group||'System')===g).forEach(a=>{
+    if(on){const p=_RPD.perms[a.key]=_RPD.perms[a.key]||{scope:'none',actions:{}};p.actions={};a.actions.forEach(x=>p.actions[x]=true);if(a.scoped)p.scope='everyone';}
+    else delete _RPD.perms[a.key];
+  });
+  _RPD.dirty=true;App._renderRPEdit();
+};
+App._rpFromTemplate=(k)=>{
+  if(!can('accessControl','manage')||!_RPD||!_RPD.isNew)return;
+  const src=k&&DB.roleProfiles[k];
+  _RPD.perms=src?JSON.parse(JSON.stringify(src.perms||{})):{};
+  if(src&&!_RPD.name)_RPD.name='';
+  _RPD.dirty=true;App._renderRPEdit();
+};
+/* v132 — ACCESS PREVIEW: "what does this person actually see?" resolved with the SAME
+   canUser() the app enforces, so the answer can never drift from reality. */
+App._acPreview=(uid2)=>{
+  const u=uById(uid2);if(!u)return;
+  const role=_roleOf(u);
+  const pages=[];
+  const NAVP=[['My Day','home',()=>true],['Overview dashboard','dashboard',()=>canUser(u,'analytics','view')],['Attendance','attendance',()=>canUser(u,'attendance','view')],['My Checklists','mychecklists',()=>true],['OKR','okr',()=>canUser(u,'okr','view')],['Workspace','crm',()=>canUser(u,'crm','view')],['Direct messages','dm',()=>canUser(u,'messages','view')],['Inbox','notifications',()=>true],['Approvals','approvals',()=>canUser(u,'approvals','view')],['Checklist builder','checklists',()=>canUser(u,'checklists','create')],['All results','allcl',()=>canUser(u,'allChecklists','view')],['Team','teamview',()=>canUser(u,'teamview','view')],['Questions','questions',()=>canUser(u,'questions','view')],['Tickets','tickets',()=>canUser(u,'tickets','view')],['Users','users',()=>canUser(u,'employees','view')],['Hierarchy','hierarchy',()=>canUser(u,'hierarchy','view')],['Settings','settings',()=>canUser(u,'settings','view')],['Access Control','accesscontrol',()=>canUser(u,'accessControl','view')],['Departments','departments',()=>canUser(u,'departments','view')],['Locations','locations',()=>canUser(u,'locations','view')],['Audit','audit',()=>canUser(u,'audit','view')]];
+  NAVP.forEach(([l,r,f])=>{let ok=false;try{ok=!!f();}catch(e){}pages.push(`<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;background:${ok?'#EEE4D5':'var(--c-surface-2)'};color:${ok?'#463830':'var(--c-text-3)'};${ok?'':'text-decoration:line-through;opacity:.7'}">${ok?ic('check','w-3 h-3'):ic('x','w-3 h-3')}${esc(l)}</span>`);});
+  const groups={};PERM_AREAS.forEach(a=>{(groups[a.group||'System']=groups[a.group||'System']||[]).push(a);});
+  const rows=_permGroupKeys(groups).map(g=>`<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${esc(g)}</div>${groups[g].map(a=>{
+    const ov=_userPermArea(u,a.key);
+    const acts=a.actions.filter(x=>canUser(u,a.key,x)).map(x=>PERM_ACTION_LABEL[x]||x);
+    const sc=a.scoped?(ov?ov.scope:(role&&role.perms&&role.perms[a.key]?role.perms[a.key].scope:(u.role==='Admin'?'everyone':'none'))):null;
+    return `<div style="display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:4px 10px;padding:6px 0;border-top:1px solid var(--c-border);font-size:12px"><div style="font-weight:700;color:var(--c-text)">${esc(a.label)}${ov?' <span style="font-size:9px;font-weight:800;color:#6B4E1F;background:#F8F0DE;padding:1px 6px;border-radius:8px">OVERRIDE</span>':''}</div><div style="color:${acts.length?'var(--c-text-2)':'var(--c-text-3)'}">${acts.length?esc(acts.join(' · ')):'— nothing'}${sc&&acts.length?` <span style="color:var(--c-text-3)">· sees ${esc(SCOPE_LABEL[sc]||sc)}</span>`:''}</div></div>`;}).join('')}</div>`).join('');
+  modalShell({title:'Access preview — '+fullName(u),sub:(role?('Role: '+role.name):'No role assigned')+' · exactly what the app enforces right now',size:'max-w-2xl',key:'ac-preview',
+    body:`<div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Pages they can open</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px">${pages.join('')}</div>${rows}</div>`,
+    footer:btnG('Close','App.closeModal()')+(can('accessControl','manage')?btnP('Personal settings',`App.closeModal();App._acCustomize('${u.id}')`):'')});
+};
 App._rpSave=()=>{
   if(!can('accessControl','manage'))return toast('You need Access Control → Manage','err');
   const p=_RPD;if(!p)return;

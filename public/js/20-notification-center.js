@@ -45,7 +45,7 @@
 
   /* ─────────────────────────── families & sounds ─────────────────────────── */
   /* every kind belongs to one of three sound families — three tones is what people can tell apart */
-  NC.FAMILY={mention:'mention',chat:'chat'};
+  NC.FAMILY={mention:'mention',chat:'chat',dm:'mention',attendance:'attendance'};   /* v132: DMs ring like a mention (they are personal); attendance has its own family */
   NC.familyOf=function(kind){return NC.FAMILY[kind]||'other';};
   NC.SOUNDS=[
     ['alarm','Alarm','The loud rising triple-beep — impossible to miss'],
@@ -57,7 +57,7 @@
     ['knock','Knock','Low and discreet'],
     ['none','Silent','No sound for this family']
   ];
-  NC.DEFAULT_SOUND={chat:'alarm',mention:'alarm',other:'alarm'};
+  NC.DEFAULT_SOUND={chat:'alarm',mention:'alarm',other:'alarm',attendance:'chime'};
   NC.soundFor=function(kind){var p=prefs();var fam=NC.familyOf(kind);var s=p.sounds&&p.sounds[fam];return NC.SOUNDS.some(function(x){return x[0]===s;})?s:NC.DEFAULT_SOUND[fam];};
   NC.volume=function(){var p=prefs();var v=p.sounds&&typeof p.sounds.volume==='number'?p.sounds.volume:0.8;return Math.max(0,Math.min(1,v));};
 
@@ -228,21 +228,48 @@
       var key=row.id+':'+count;
       if(rungHas(key))return'already';
       rungAdd(key);
-      if(NC.viewing(row.link))return'viewing';                                   // it is on screen — the chat shows it
-      if(!NC.thisTabAlerts())return'other-tab';
+      if(NC.viewing(row.link)){NC._log(row,source,'viewing');return'viewing';}   // it is on screen — the chat shows it
+      if(!NC.thisTabAlerts()){NC._log(row,source,'other-tab');return'other-tab';}
       var kind=kindOf(row);
       var focused=document.visibilityState==='visible'&&document.hasFocus();
       var silenced=NC.silenced();
-      if(!silenced&&prefOn(kind,'sound'))NC.play(NC.soundFor(kind));
-      if(focused){if(!(NC.dndActive()||NC.quietNow()))NC.card(row);}   // device mute silences sound only; DND/quiet hours silence pop-ups too
-      else if(!silenced&&prefOn(kind,'desktop')){try{if(typeof _bbDesktopShow==='function')_bbDesktopShow(row);}catch(e){}}
-      return'alerted';
+      var fire=function(){
+        if(!silenced&&prefOn(kind,'sound'))NC.play(NC.soundFor(kind));
+        if(focused){if(!(NC.dndActive()||NC.quietNow()))NC.card(row);}   // device mute silences sound only; DND/quiet hours silence pop-ups too
+        else{NC._missedAdd(row);if(!silenced&&prefOn(kind,'desktop')){try{if(typeof _bbDesktopShow==='function')_bbDesktopShow(row);}catch(e){}}}
+        NC._log(row,source,focused?'rang+card':'rang (tab in background)');
+      };
+      /* v132 — this tab is in the background: if the same person has Bridge FOCUSED on another device
+         (phone in hand, laptop asleep on the desk…), that device alerts — stay quiet here. Same rule the
+         push server uses. Falls back to ringing if the check fails. */
+      if(!focused){NC._otherDeviceFocused().then(function(yes){if(yes){NC._log(row,source,'quiet — another device is active');NC._missedAdd(row);}else fire();}).catch(fire);return'deferred';}
+      fire();return'alerted';
     }catch(e){return'error';}
   };
+  NC._otherDeviceFocused=function(){
+    return new Promise(function(res){
+      try{var s=sb_();if(!s||!uid_())return res(false);
+        var since=new Date(Date.now()-45000).toISOString();
+        s.from('user_presence').select('device_id,focused').eq('user_id',uid_()).eq('focused',true).gte('last_seen',since).then(function(r){var rows=(r&&r.data)||[];res(rows.some(function(x){return x.device_id!==NC.deviceId();}));}).catch(function(){res(false);});
+        setTimeout(function(){res(false);},1500);
+      }catch(e){res(false);}
+    });
+  };
+  /* ── why did it ring? — a small per-device log shown in Settings → My notifications ── */
+  function logKey(){return'bb_ring_log_'+(uid_()||'anon');}
+  NC._log=function(row,source,decision){try{var m=JSON.parse(ls(logKey(),'[]'))||[];m.unshift({t:Date.now(),k:kindOf(row),x:String(row.text||'').slice(0,90),s:source,d:decision,n:row.count||1,id:row.id});if(m.length>40)m.length=40;lsSet(logKey(),JSON.stringify(m));}catch(e){}};
+  NC.ringLog=function(){try{return JSON.parse(ls(logKey(),'[]'))||[];}catch(e){return[];}};
+  NC.clearRingLog=function(){lsDel(logKey());};
+  /* ── alerts that rang while this tab was in the background are shown as cards when you come back ── */
+  NC._missed=[];
+  NC._missedAdd=function(row){try{if(!NC._missed.some(function(x){return x.id===row.id;}))NC._missed.push(row);if(NC._missed.length>5)NC._missed.shift();}catch(e){}};
+  NC._missedFlush=function(){try{if(!(document.visibilityState==='visible'&&document.hasFocus()))return;var rows=NC._missed.splice(0);rows.forEach(function(r){var loc=(DB.notifications||[]).find(function(x){return x.id===r.id;});if(loc&&loc.read)return;if(NC.viewing(r.link))return;NC.card(r);});}catch(e){}};
+  window.addEventListener('focus',function(){setTimeout(NC._missedFlush,300);});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')setTimeout(NC._missedFlush,300);});
 
   /* ─────────────────────────── in-app card (tab focused) ─────────────────────────── */
-  var KIND_ICON={mention:'msg',chat:'msg',ticket:'ticket',okr:'flag',checklist:'check',approval:'approve',feedback:'msg',reminder:'clock',escalation:'alert',general:'bell'};
-  var KIND_TITLE={mention:'You were tagged',chat:'New message',ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',general:'Bridge'};
+  var KIND_ICON={mention:'msg',chat:'msg',dm:'msg',ticket:'ticket',okr:'flag',checklist:'check',approval:'approve',feedback:'msg',reminder:'clock',escalation:'alert',attendance:'clock',people:'users',access:'shield',general:'bell'};
+  var KIND_TITLE={mention:'You were tagged',chat:'New message',dm:'Direct message',ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',attendance:'Attendance',people:'People',access:'Access changed',general:'Bridge'};
   NC.card=function(row){
     try{
       var host=document.getElementById('bb-nc-host');
@@ -303,6 +330,8 @@
       try{window._notifPersisted=window._notifPersisted||{};window._notifPersisted[row.id]=1;}catch(e){}
       var known=(DB.notifications||[]).some(function(x){return x.id===row.id;});
       if(!known){try{DB.notifications.unshift(rowToLocal(row));_invalidateNotifCache();}catch(e){}}
+      /* v132 — an access change: pull the fresh profile + roles so tabs/buttons update within seconds */
+      if(row.kind==='access'&&typeof _accessRefresh==='function'){try{_accessRefresh();}catch(e){}}
       NC.handle(row,'insert');repaint();
     }catch(e){}
   };
@@ -399,7 +428,7 @@
       +(q.on?'<div class="bb-quiet-times"><label>From <input type="time" class="ui-input" value="'+E(q.from)+'" onchange="BBNotify.setQuiet({from:this.value});BBNotify._paintDnd()"></label><label>To <input type="time" class="ui-input" value="'+E(q.to)+'" onchange="BBNotify.setQuiet({to:this.value});BBNotify._paintDnd()"></label></div>':'')
       +row('Mute sounds on this device','Only this browser or phone — alerts still arrive silently',tog(muted,'BBNotify.setDeviceMuted('+(muted?'false':'true')+');rr()','Mute sounds on this device'));
     /* 2 · Sounds */
-    var fams=[['chat','Messages','Every chat message on your boards'],['mention','Mentions','When someone @tags you'],['other','Everything else','Tickets, OKRs, checklists, approvals, reminders…']];
+    var fams=[['chat','Messages','Every chat message on your boards'],['mention','Mentions & direct messages','When someone @tags you or messages you directly'],['attendance','Attendance','Clock-in / clock-out reminders'],['other','Everything else','Tickets, OKRs, checklists, approvals, reminders…']];
     var sndBody=fams.map(function(f){
       var cur=NC.soundFor(f[0]==='other'?'ticket':f[0]);
       var sel='<div class="bb-snd-pick"><select class="ui-select" aria-label="'+E(f[1]+' sound')+'" onchange="BBNotify.setSound(\''+f[0]+'\',this.value)">'+NC.SOUNDS.map(function(s){return '<option value="'+s[0]+'"'+(s[0]===cur?' selected':'')+'>'+s[1]+(s[0]==='none'?'':' — '+s[2])+'</option>';}).join('')+'</select>'
@@ -430,12 +459,20 @@
       :'<button onclick="App._bbPushEnable()" class="ui-btn ui-btn-primary ui-btn-sm">Enable</button>';
     var devBody=row('Desktop pop-ups','System notifications while Bridge is open in a background tab',deskExtra)
       +row('Push when Bridge is closed','Notifications on this device even when the app or tab isn’t open',pushExtra)
-      +row('Preview an alert','See and hear exactly what you’ll get','<div class="bb-test">'+[['chat','Message'],['mention','Mention'],['ticket','Ticket']].map(function(x){return '<button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="BBNotify.test(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div>',{stack:true});
+      +row('Preview an alert','See and hear exactly what you’ll get','<div class="bb-test">'+[['chat','Message'],['dm','Direct message'],['attendance','Attendance'],['ticket','Ticket']].map(function(x){return '<button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="BBNotify.test(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div>',{stack:true});
     return NC._settingsCSS()
       +card('Do Not Disturb','Pause everything except the Inbox',dndBody,'clock')
       +card('Sounds','One tone per family so you know what happened without looking',sndBody,'bell')
       +card('What notifies you','Saved to your profile — the same on every device',kindsBody,'users')
-      +card('This device','Applies only to the browser or phone you are using now',devBody,'grid');
+      +card('This device','Applies only to the browser or phone you are using now',devBody,'grid')
+      +card('Why did it ring?','The last alerts this device decided on — what rang, what stayed quiet, and why',NC._ringLogHTML(),'help');
+  };
+  NC._ringLogHTML=function(){
+    var L=NC.ringLog();
+    if(!L.length)return '<div style="font-size:12.5px;color:var(--c-text-3);padding:6px 0">Nothing yet on this device. When a sound plays, it shows up here with the reason.</div>';
+    var fmt=function(t){var d=new Date(t);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
+    var rows=L.slice(0,25).map(function(e){var rang=/^rang/.test(e.d||'');return '<div style="display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--c-border)"><span style="flex-shrink:0;width:8px;height:8px;border-radius:50%;margin-top:6px;background:'+(rang?'#428059':'var(--c-border-2)')+'"></span><div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc_(e.x||'')+'</div><div style="font-size:11px;color:var(--c-text-3)">'+fmt(e.t)+' · '+esc_(e.k||'')+(e.n>1?' ×'+e.n:'')+' · '+esc_(e.s||'')+' → <b style="color:'+(rang?'#346A47':'var(--c-text-2)')+'">'+esc_(e.d||'')+'</b></div></div></div>';}).join('');
+    return rows+'<div style="margin-top:8px"><button class="ui-btn ui-btn-subtle ui-btn-sm" onclick="BBNotify.clearRingLog();rr()">Clear log</button></div>';
   };
   NC._settingsCSS=function(){return '<style id="bb-set-css">'
    +'.bb-set-card{background:#fff;border:1px solid #EDE7DC;border-radius:18px;box-shadow:0 1px 2px rgba(35,28,22,.04);overflow:hidden;margin-bottom:14px}'

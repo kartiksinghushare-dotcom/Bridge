@@ -927,9 +927,11 @@ function notificationsPage(){
   const unackFb=myFb.filter(fb=>!fb.acknowledged);
 
   const tab=S.filters.ntab||'All';
-  const TABS=['All','Approvals','Escalations','Feedback','Workspace'];
+  const TABS=['All','Approvals','Escalations','Feedback','Workspace','Attendance','People'];
 
-  function notifType(text){
+  function notifType(text,n){
+    /* v132 — rows carry a server-stamped kind; trust it first */
+    if(n&&n.kind){if(n.kind==='attendance')return'attendance';if(n.kind==='people'||n.kind==='access')return'people';if(n.kind==='dm')return'workspace';}
     if(!text)return'general';
     /* v3.20 — WORKSPACE first. These carry their own markers (💬 mention, 🎫 ticket,
        ↪ moved, ⚡ automation, ⏰ reminder, 🔔 update). 💬 used to be read as "feedback",
@@ -951,20 +953,24 @@ function notificationsPage(){
     if(text.includes('overdue')||text.includes('Late')||text.includes('late'))return'late';
     return'general';
   }
-  const TYPE_CLR={approval:'#9C7386',edit:'#A5796A',escalation:'#54433C',feedback:'#96695B',workspace:'#A3705F',late:'#C25441',general:'#786A5F'};
-  const TYPE_BG={approval:'#F2E9D4',edit:'#ECE2D3',escalation:'#F5EFDF',feedback:'#EEE5D6',workspace:'#F6EAE3',late:'#FAEDE8',general:'#F7F3EE'};
-  const TYPE_ICON={approval:'approve',edit:'edit',escalation:'alert',feedback:'msg',workspace:'msg',late:'clock',general:'bell'};
+  const TYPE_CLR={approval:'#9C7386',edit:'#A5796A',escalation:'#54433C',feedback:'#96695B',workspace:'#A3705F',late:'#C25441',attendance:'#54433C',people:'#8A6152',general:'#786A5F'};
+  const TYPE_BG={approval:'#F2E9D4',edit:'#ECE2D3',escalation:'#F5EFDF',feedback:'#EEE5D6',workspace:'#F6EAE3',late:'#FAEDE8',attendance:'#EEE4D5',people:'#F6EAE3',general:'#F7F3EE'};
+  const TYPE_ICON={approval:'approve',edit:'edit',escalation:'alert',feedback:'msg',workspace:'msg',late:'clock',attendance:'clock',people:'users',general:'bell'};
 
   /* v3.20 — one source of truth per tab: the badge is counted from the very list the
      tab renders, so a tab can never again advertise 3 and then show an empty page. */
-  const apprNotifs=notifs.filter(n=>['approval','edit'].includes(notifType(n.text)));
-  const escNotifs =notifs.filter(n=>notifType(n.text)==='escalation');
-  const fbNotifs  =notifs.filter(n=>notifType(n.text)==='feedback');
-  const wsNotifs  =notifs.filter(n=>notifType(n.text)==='workspace');
+  const apprNotifs=notifs.filter(n=>['approval','edit'].includes(notifType(n.text,n)));
+  const escNotifs =notifs.filter(n=>notifType(n.text,n)==='escalation');
+  const fbNotifs  =notifs.filter(n=>notifType(n.text,n)==='feedback');
+  const wsNotifs  =notifs.filter(n=>notifType(n.text,n)==='workspace');
+  const attNotifs =notifs.filter(n=>notifType(n.text,n)==='attendance');
+  const pplNotifs =notifs.filter(n=>notifType(n.text,n)==='people');
 
   const filteredNotifs=tab==='Approvals'?apprNotifs
     :tab==='Escalations'?escNotifs
     :tab==='Workspace'?wsNotifs
+    :tab==='Attendance'?attNotifs
+    :tab==='People'?pplNotifs
     :notifs;
 
   const counts={
@@ -973,6 +979,8 @@ function notificationsPage(){
     Escalations:escNotifs.length,
     Feedback:myFb.length+fbNotifs.length,   // records + genuine feedback alerts = what renders
     Workspace:wsNotifs.length,
+    Attendance:attNotifs.length,
+    People:pplNotifs.length,
   };
 
   return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')
@@ -1002,6 +1010,10 @@ App._notifClick=(id)=>{
   n.read=true;_invalidateNotifCache();saveDB();
   try{sb.from('notifications').update({read:true}).eq('id',id).then(()=>{}).catch(()=>{});}catch(e){}   // v3.26: other devices clear instantly
   const t=n.text||'';
+  /* v132 — attendance / profile / home deep links (att:…, profile:…, home) */
+  if(n.link&&/^(att:|profile:|home$)/.test(String(n.link))&&typeof App._bbOpenLink==='function'){App._bbOpenLink(n.link,t,null);return;}
+  if(n.kind==='attendance'){App.go('home');return;}
+  if(n.kind==='access'){toast('Your access was updated — reloading…');setTimeout(()=>location.reload(),600);return;}
   // Navigate first with clean filters, then set the tab
   /* v3.20 — a Workspace mention/ticket alert belongs in the Workspace. It used to match
      on 💬 and dump you on the Feedback tab, which lists manager feedback only — so the

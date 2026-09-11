@@ -50,7 +50,7 @@ App.login=async()=>{
     const cachedUser=DB.users.find(x=>(x.email||'').toLowerCase()===email);
     if(cachedUser&&cachedUser.status==='Active'){
       S.uid=cachedUser.id;
-      S.route=cachedUser.role==='Admin'?'dashboard':'mychecklists';
+      S.route='home';
       // v3.14: signing in must adopt THIS person's remembered filters. restoreFilters
       // throws the whole map away if it was written by someone else — people close the
       // browser without signing out, and the next person must not inherit their view.
@@ -65,7 +65,7 @@ App.login=async()=>{
     const idx=DB.users.findIndex(x=>x.id===u.id);
     if(idx>-1)DB.users[idx]=u;else DB.users.push(u);
     S.uid=u.id;
-    if(!S.route||S.route==='login')S.route=u.role==='Admin'?'dashboard':'mychecklists';
+    if(!S.route||S.route==='login')S.route='home';
     // Same restore on the no-cache path (first sign-in on this device, or cache miss).
     try{restoreFilters(S.route);if(typeof App._okrReloadExpanded==='function')App._okrReloadExpanded();}catch(e){}
     saveDB();render();

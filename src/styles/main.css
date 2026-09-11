@@ -1298,3 +1298,16 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 }
 /* the tab strip fade is decided by JS (scrollWidth vs clientWidth); harmless on desktop */
 .ui-tabs.bb-can-scroll{position:relative}
+
+/* ═══════════ v132 — My Day · Attendance · Profile · Direct messages ═══════════ */
+.leaflet-container{font-family:inherit;border-radius:inherit}
+.leaflet-container .leaflet-control-zoom a{color:var(--c-text)}
+#modal .leaflet-container{z-index:1}
+.att-row .ui-btn-sm{min-width:0}
+@media(max-width:767px){
+  #content .att-row{grid-template-columns:52px 1fr auto!important;gap:8px!important}
+  #content .att-trow{grid-template-columns:1fr auto!important}
+  #content .prof-kv{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px!important}
+  #modal [style*="grid-template-columns:repeat(2,minmax(0,1fr))"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #att-btn{flex:1 1 auto}
+}

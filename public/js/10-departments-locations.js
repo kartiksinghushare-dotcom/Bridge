@@ -323,7 +323,7 @@ function locsPage(){
     const l=DB.locations.find(x=>x.id===sel);
     if(!l){S.filters.locSel=null;return locsPage();}
     const lCls=DB.checklists.filter(c=>(c.locationIds||[]).includes(l.id));
-    const TABS=[['docs','📁 Documents'],['checklists','✓ Checklists'],['info','ℹ Info']];
+    const TABS=[['geofence','📍 Geofence'],['docs','📁 Documents'],['checklists','✓ Checklists'],['info','ℹ Info']];
     return'<div class="fade">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
       +'<button onclick="App._closeLoc()" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #EDE7DC;background:#fff;cursor:pointer;display:grid;place-items:center;color:#786A5F">'+ic('back','w-4 h-4')+'</button>'
@@ -336,6 +336,7 @@ function locsPage(){
       +'<div style="display:flex;gap:4px;margin-bottom:16px;background:#F7F3EE;border-radius:12px;padding:4px">'
       +TABS.map(([k,ll])=>'<button onclick="App._setLocTab(this.dataset.k)" data-k="'+k+'" style="flex:1;padding:8px;border-radius:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;background:'+(stab===k?'#fff':'transparent')+';color:'+(stab===k?'#13171B':'#786A5F')+';box-shadow:'+(stab===k?'0 1px 4px rgba(0,0,0,.08)':'none')+'">'+ll+'</button>').join('')
       +'</div>'
+      +(stab==='geofence'?((typeof _geoLocTab==='function')?_geoLocTab(l):''):'')
       +(stab==='docs'?_scopeDocsTab('loc',l.id):'')
       +(stab==='checklists'
         ?('<div class="space-y-2">'
@@ -346,7 +347,7 @@ function locsPage(){
         :'')
       +(stab==='info'
         ?'<div class="bg-white rounded-2xl border border-ink-100 p-5 space-y-3">'
-          +[['Name',l.name],['Address',l.address||'—'],['Department',l.department||'All departments'],['Status',l.status||'Active']].map(([k,v])=>'<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin-bottom:2px">'+k+'</div><div style="font-size:14px;font-weight:600">'+esc(v)+'</div></div>').join('')
+          +[['Name',l.name],['Address',l.address||'—'],['Department',l.department||'All departments'],['Status',l.status||'Active'],['Geofence',l.geofenceEnabled&&l.lat!=null?('On · '+(l.radiusM||150)+' m radius'):'Off'],['Time zone',l.timezone||'Asia/Dubai']].map(([k,v])=>'<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin-bottom:2px">'+k+'</div><div style="font-size:14px;font-weight:600">'+esc(v)+'</div></div>').join('')
           +'</div>'
         :'')
       +'</div>';
@@ -357,7 +358,7 @@ function locsPage(){
     const da=(me()?.docAccess)||{};
     return Object.keys(da.locations||{}).includes(l.id);
   });
-  return'<div class="fade">'+hdr('Locations','Physical sites & areas',can('locations','create')?btnP('Add location','App.editLoc()','plus'):'')
+  return'<div class="fade">'+hdr('Locations','Physical sites & areas · set a geofence on each office so people can clock in there',can('locations','create')?btnP('Add location','App.editLoc()','plus'):'')
     +'<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">'
     +visibleLocs.map(l=>{
       const docs=(DB.documents||[]).filter(x=>x.type==='loc'&&x.scope===l.id).length;
@@ -368,6 +369,7 @@ function locsPage(){
         +chip(l.status||'Active')+'</div>'
         +'<div class="fd" style="font-size:15px;font-weight:800;margin-bottom:4px">'+esc(l.name)+'</div>'
         +'<div style="font-size:12px;color:#A59788;margin-bottom:8px">'+esc(l.address||l.department||'')+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:8px;background:'+(l.geofenceEnabled&&l.lat!=null?'#E9F1E8':'#F7F3EE')+';color:'+(l.geofenceEnabled&&l.lat!=null?'#346A47':'#A59788')+'">'+ic('pin','w-3 h-3')+(l.geofenceEnabled&&l.lat!=null?'Geofence on · '+(l.radiusM||150)+' m':'No geofence')+'</div>'
         +(docs||folders?'<div style="font-size:11px;font-weight:600;color:#96695B;margin-bottom:8px">'+folders+' folders · '+docs+' files</div>':'')
         +'<div style="font-size:11px;font-weight:600;color:#786A5F;text-align:right">Open →</div>'
         +'</div>';
@@ -376,7 +378,7 @@ function locsPage(){
     +'</div></div>';
 }
 App.editLoc=(id=null)=>{if(!can('locations',id?'edit':'create')){toast('You don’t have permission to do that','err');return;}const l=id?locById(id):null;openModal(`<div class="p-6"><div class="flex justify-between mb-4"><h2 class="fd text-xl font-bold">${l?'Edit':'New'} location</h2><button onclick="App.closeModal()" class="text-ink-400">${ic('x')}</button></div><div class="space-y-3">${fld('Location name','ln-n',l?.name||'')}${fld('Address','ln-a',l?.address||'')}${selF('Department (optional)','ln-d',[['','All departments'],...topDepts().map(d=>[d.name,d.name])],l?.department||'')}${selF('Status','ln-s',['Active','Inactive'],l?.status||'Active')}</div><div class="flex gap-2 mt-5"><button onclick="App.closeModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button><button onclick="App.saveLoc('${id||''}')" style="flex:1;padding:12px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">${l?'Save':'Create'}</button></div></div>`,'max-w-sm');};
-App.saveLoc=(id)=>{if(!can('locations',id?'edit':'create')){toast('You don’t have permission to do that','err');return;}const n=$('#ln-n')?.value.trim();if(!n){toast('Name required','err');return;}const data={name:n,address:$('#ln-a')?.value.trim()||'',department:$('#ln-d')?.value||'',status:$('#ln-s')?.value||'Active'};const obj=id?locById(id):{id:uid('loc'),...data};if(id)Object.assign(obj,data);else DB.locations.push(obj);log(fullName(me()),id?'Edited location':'Created location',n);toast(id?'Updated ✓':'Created ✓');saveDB();closeModal();render();sb.from('locations').upsert({id:obj.id,...data},{onConflict:'id'}).then(({error})=>{if(error)console.error('saveLoc:',error.message);}).catch(()=>{});};
+App.saveLoc=(id)=>{if(!can('locations',id?'edit':'create')){toast('You don’t have permission to do that','err');return;}const n=$('#ln-n')?.value.trim();if(!n){toast('Name required','err');return;}const data={name:n,address:$('#ln-a')?.value.trim()||'',department:$('#ln-d')?.value||'',status:$('#ln-s')?.value||'Active'};if(!id&&typeof _geoDefaultTz==='function')data.timezone=_geoDefaultTz();const obj=id?locById(id):{id:uid('loc'),...data};if(id)Object.assign(obj,data);else DB.locations.push(obj);log(fullName(me()),id?'Edited location':'Created location',n);toast(id?'Updated ✓':'Created ✓');saveDB();closeModal();render();sb.from('locations').upsert({id:obj.id,...data},{onConflict:'id'}).then(({error})=>{if(error)console.error('saveLoc:',error.message);}).catch(()=>{});};
 App.delLoc=async(id)=>{if(!can('locations','delete')){toast('You don’t have permission to delete locations','err');return;}const l=locById(id);if(!l)return;if(!(await confirmP({
   title:'Delete location',
   body:'<b>'+esc(l.name)+'</b> will be permanently deleted.',

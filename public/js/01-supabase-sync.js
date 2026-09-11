@@ -9,7 +9,12 @@ const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 const sb=supabase.createClient(SB_URL,SB_ANON,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 function _unesc(s){if(!s)return s;return String(s).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");}
 const _mQrow=q=>({id:q.id,text:q.text||'',type:q.type||'answer',options:q.options||[],photo:q.photo||false,approval:q.approval||false,comment:q.comment||false,isPublic:q.is_public!==false,createdBy:q.created_by||null,createdAt:q.created_at,departmentId:q.department_id||null,subDepartmentId:q.sub_department_id||null});
-function _mU(r){return(r||[]).map(p=>({id:p.id,firstName:_unesc(p.first_name)||'',lastName:_unesc(p.last_name)||'',email:p.email||'',phone:_unesc(p.phone)||'',position:_unesc(p.position)||'',department:_unesc(p.department)||'',role:p.role||'User',status:p.status||'Active',managerId:p.manager_id||null,managerHistory:p.manager_history||[],rules:p.rules||{past:true,future:true,edit:true},approval:p.approval_settings||{past:false,future:false,edited:false},docAccess:p.doc_access||{departments:{},locations:{}},questionsAccess:p.questions_access||false,emailEnabled:p.email_enabled!==false,cities:Array.isArray(p.cities)?p.cities:[],hrm:(p.hrm&&typeof p.hrm==='object')?p.hrm:null,notifyPrefs:(p.notify_prefs&&typeof p.notify_prefs==='object')?p.notify_prefs:{},password:'***'}));}
+/* v132 — locations carry a geofence (lat/lng/radius) and a time zone. */
+function _mLoc(l){return{id:l.id,name:l.name,address:l.address||'',department:l.department||'',status:l.status||'Active',lat:(l.lat===null||l.lat===undefined)?null:Number(l.lat),lng:(l.lng===null||l.lng===undefined)?null:Number(l.lng),radiusM:l.radius_m==null?150:Number(l.radius_m),geofenceEnabled:!!l.geofence_enabled,timezone:l.timezone||'Asia/Dubai'};}
+function _mU(r){return(r||[]).map(p=>({id:p.id,firstName:_unesc(p.first_name)||'',lastName:_unesc(p.last_name)||'',email:p.email||'',phone:_unesc(p.phone)||'',position:_unesc(p.position)||'',department:_unesc(p.department)||'',role:p.role||'User',status:p.status||'Active',managerId:p.manager_id||null,managerHistory:p.manager_history||[],rules:p.rules||{past:true,future:true,edit:true},approval:p.approval_settings||{past:false,future:false,edited:false},docAccess:p.doc_access||{departments:{},locations:{}},questionsAccess:p.questions_access||false,emailEnabled:p.email_enabled!==false,cities:Array.isArray(p.cities)?p.cities:[],hrm:(p.hrm&&typeof p.hrm==='object')?p.hrm:null,notifyPrefs:(p.notify_prefs&&typeof p.notify_prefs==='object')?p.notify_prefs:{},
+  /* v132 — rich profile */
+  avatarUrl:p.avatar_url||null,employeeId:_unesc(p.employee_id)||'',joiningDate:p.joining_date||null,birthDate:p.birth_date||null,wfhAllowed:!!p.wfh_allowed,attendanceRequired:p.attendance_required!==false,locationId:p.location_id||null,workSchedule:(p.work_schedule&&typeof p.work_schedule==='object')?p.work_schedule:{in:'09:00',out:'18:00',offDays:['Sun']},details:(p.details&&typeof p.details==='object')?p.details:{},
+  password:'***'}));}
 function _mC(r){return(r||[]).map(c=>({id:c.id,name:c.name||'',description:c.description||'',department:c.department||'',subDepartment:c.sub_department||'',frequency:c.frequency||'Daily',schedule:c.schedule||'',selectedDays:c.selected_days||[],selectedDates:(c.selected_dates||[]).map(x=>x==='L'?'L':Number(x)),customDates:c.custom_dates||[],startDate:c.start_date||'',endDate:c.end_date||'',locationIds:c.location_ids||[],assignees:c.assignees||[],tasks:c.tasks||[],questionIds:c.question_ids||[],questionConfigs:(()=>{const raw=c.question_configs||{};const fixed={};Object.keys(raw).forEach(k=>{const clean=k.startsWith('"')&&k.endsWith('"')?JSON.parse(k):k;fixed[clean]=raw[k];});return fixed;})(),scheduleTime:c.schedule_time||null,status:c.status||'Active',anyOne:c.any_one||false,createdBy:c.created_by||null}));}
 function _mDraft(r){return{id:r.id,checklistId:r.checklist_id,userId:r.user_id,date:r.date,questionResponses:r.question_responses||[],tasks:r.tasks||[],updatedAt:r.updated_at||null};}
 function _mS(r){return(r||[]).map(s=>({id:s.id,checklistId:s.checklist_id,userId:s.user_id,date:s.date,status:s.status||'Pending',submittedAt:s.submitted_at||null,tasks:s.tasks||[],questionResponses:s.question_responses||[],editCount:s.edit_count||0,editHistory:s.edit_history||[],checklistDeleted:s.checklist_deleted||false}));}
@@ -281,6 +286,7 @@ function _lazyForRoute(r){
   else if(r==='teamview'){_lazyLoad('checklists');_lazyLoadDate('teamview');}
   else if(r==='allcl'){_lazyLoad('checklists');_lazyLoadDate('allcl');_lazyLoadDate('teamview');}
   else if(r==='dashboard'){_lazyLoad('tickets');_lazyLoad('checklists');_lazyLoadDate('mychecklists');}
+  else if(r==='home'){_lazyLoad('tickets');_lazyLoad('checklists');_lazyLoadDate('mychecklists');_lazyLoad('notifications');}
   else if(r==='okr')_lazyLoad('okr');
 }
 
@@ -339,7 +345,7 @@ async function loadFromSB(){
   const _delDepts=new Set(DB.departments_deleted||[]);
   DB.departments=(depts||[]).filter(d=>!_delDepts.has(d.id)).map(d=>({id:d.id,name:d.name,parentId:d.parent_id||null}));
   const _delLocs=new Set(DB.locations_deleted||[]);
-  DB.locations=(locs||[]).filter(l=>!_delLocs.has(l.id)).map(l=>({id:l.id,name:l.name,address:l.address||'',department:l.department||'',status:l.status||'Active'}));
+  DB.locations=(locs||[]).filter(l=>!_delLocs.has(l.id)).map(_mLoc);
 
   // ── Checklists ──
   {
@@ -405,6 +411,7 @@ async function loadFromSB(){
   try{const _rpRow=(rpRows&&rpRows[0])||null;if(_rpRow&&_rpRow.value&&typeof _rpRow.value==='object')DB.roleProfiles={...(DB.roleProfiles||{}),..._rpRow.value};}catch(e){}
   _seedRoleProfiles();
   try{_permsV3Migrate();}catch(e){console.warn('[perms] migrate skipped:',e.message);}
+  try{if(typeof _attLoadSettings==='function')_attLoadSettings();}catch(e){}
 
   // ── One-time self-heal: legacy duplicate root departments (unused copies of Operations'
   //    sub-departments) get resurrected by stale sessions' whole-table sync. Drop them from

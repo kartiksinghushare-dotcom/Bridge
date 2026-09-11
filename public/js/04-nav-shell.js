@@ -4,14 +4,14 @@
    Load order matters — see index.html.
    ============================================================ */
 /* ===== NAVIGATION ===== */
-const NAV_ADM=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
-const NAV_USR=[['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
-const NAV_MGR=[['dashboard','grid','Dashboard'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
-const MOB_ADM=['dashboard','mychecklists','tickets','notifications','more'];
-const MOB_USR=['mychecklists','tickets','notifications','more'];
-const MOB_MGR=['dashboard','mychecklists','tickets','notifications','more'];
+const NAV_ADM=[['crm','msg','Workspace'],['home','grid','My Day'],['attendance','clock','Attendance'],['profile','user','Profile'],['dashboard','chart','Overview'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
+const NAV_USR=[['home','grid','My Day'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
+const NAV_MGR=[['home','grid','My Day'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
+const MOB_ADM=['home','mychecklists','crm','notifications','more'];
+const MOB_USR=['home','mychecklists','crm','notifications','more'];
+const MOB_MGR=['home','mychecklists','crm','notifications','more'];
 const NAV_ALL=[
-  ['hub:dash','grid','Dashboard',()=>!!_hubHome('dash')],
+  ['hub:dash','grid','My Day',()=>true],
   ['mychecklists','check','My Checklists',()=>true],
   ['okr','flag','OKR',()=>can('okr','view')],
   ['crm','msg','Workspace',()=>can('crm','view')],
@@ -31,7 +31,9 @@ const HUB_DEF={
   inbox:{label:'Inbox',tabs:[
     ['notifications','Alerts',()=>true],
     ['approvals','Approvals',()=>can('approvals','view')]]},
-  dash:{label:'Dashboard',tabs:[
+  dash:{label:'My Day',tabs:[
+    ['home','My Day',()=>true],
+    ['attendance','Attendance',()=>can('attendance','view')||can('attendance','clock')],
     ['dashboard','Overview',()=>can('analytics','view')]]},
   cl:{label:'Checklists',tabs:[
     ['checklists','Builder',()=>can('checklists','create')],
@@ -152,7 +154,7 @@ function _navBadgeFor(r){
   if(r==='notifications'){const n=_notifCount();return n?countBadge(n,'danger'):'';}
   if(r==='approvals'){const ab=_approvalPendingCount();return ab?countBadge(ab,'approve'):'';}
   if(r==='tickets'){const tkB=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;return tkB?countBadge(tkB,'rose'):'';}
-  if(r==='crm'&&window.CRM&&CRM._loaded){try{const vis=_crmVisibleBoardIds();const cb=CRM.convos.filter(c=>vis[c.boardId]&&_crmUnread(c)).length;return cb?countBadge(cb,'approve'):'';}catch(e){return'';}}
+  if(r==='crm'&&window.CRM&&CRM._loaded){try{const vis=_crmVisibleBoardIds();const cb=CRM.convos.filter(c=>(vis[c.boardId]||(typeof _crmIsDM==='function'&&_crmIsDM(c)&&_crmDMVisible(c)))&&_crmUnread(c)).length;return cb?countBadge(cb,'approve'):'';}catch(e){return'';}}
   if(r==='okr'||r==='hub:dash'){try{const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinForDate(o.id,_t)).length;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
   return '';
 }
@@ -183,7 +185,7 @@ function shell(content){
 
   return`<div style="min-height:100vh;display:flex">
   <aside class="sidebar hidden md:flex flex-col w-56 fixed inset-y-0 left-0 z-30 overflow-y-auto" style="${S.route==='crm'?'display:none !important;':''}background:#13171B;background-image:linear-gradient(177deg,#1A2026 0%,#101317 100%);color:#EDE6DC;border-right:1px solid rgba(255,255,255,.06)">
-    <button onclick="App.go('dashboard')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(209,182,143,.08)'" onmouseout="this.style.background='transparent'">
+    <button onclick="App.go('home')" style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;border-left:none;border-right:none;border-top:none;cursor:pointer;width:100%;text-align:left" onmouseover="this.style.background='rgba(209,182,143,.08)'" onmouseout="this.style.background='transparent'">
       <div class="nav-brand">B</div>
       <span class="fd" style="font-weight:600;font-size:14px;letter-spacing:.32em;color:#F4EFE8;text-transform:uppercase;padding-left:1px">Bridge</span>
     </button>
@@ -223,12 +225,13 @@ function shell(content){
       ${mob.map(r=>{
         if(r==='more')return`<button onclick="App.moreMenu()" aria-label="More" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--c-text-3);min-height:44px">${ic('menu','w-[22px] h-[22px]')}<span style="font-size:10px;font-weight:700">More</span></button>`;
         const m=[...NAV_ADM,...NAV_USR,...(typeof NAV_MGR!=='undefined'?NAV_MGR:[])].find(n=>n[0]===r);if(!m)return'';
+        if(r==='crm'&&!can('crm','view')){const m2=['tickets','ticket','Tickets'];const act2=S.route==='tickets';const nb2=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;return`<button onclick="App.go('tickets')" aria-label="Tickets" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;min-height:44px;color:${act2?'var(--c-brand)':'var(--c-text-3)'}">${ic(m2[1],'w-[22px] h-[22px]')}${nb2?`<span style="position:absolute;top:6px;right:calc(50% - 18px)">${countBadge(nb2,'danger')}</span>`:''}<span style="font-size:10px;font-weight:700">Tickets</span></button>`;}
         const act=S.route===r;
         let nb=0;
         if(r==='notifications')nb=_notifCount();
         if(r==='tickets')nb=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;
-        if(r==='crm'&&window.CRM&&CRM._loaded){try{const _v=_crmVisibleBoardIds();nb=CRM.convos.filter(c=>_v[c.boardId]&&_crmUnread(c)).length;}catch(e){nb=0;}}
-        return`<button onclick="App.go('${r}')" aria-label="${esc(m[2])}" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;min-height:44px;color:${act?'var(--c-brand)':'var(--c-text-3)'}">${ic(m[1],'w-[22px] h-[22px]')}${nb?`<span style="position:absolute;top:6px;right:calc(50% - 18px)">${countBadge(nb,'danger')}</span>`:''}<span style="font-size:10px;font-weight:700">${m[2].split(' ')[0]}</span></button>`;
+        if(r==='crm'&&window.CRM&&CRM._loaded){try{const _v=_crmVisibleBoardIds();nb=CRM.convos.filter(c=>(_v[c.boardId]||(typeof _crmIsDM==='function'&&_crmIsDM(c)&&_crmDMVisible(c)))&&_crmUnread(c)).length;}catch(e){nb=0;}}
+        return`<button onclick="App.go('${r}')" aria-label="${esc(m[2])}" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;min-height:44px;color:${act?'var(--c-brand)':'var(--c-text-3)'}">${ic(m[1],'w-[22px] h-[22px]')}${nb?`<span style="position:absolute;top:6px;right:calc(50% - 18px)">${countBadge(nb,'danger')}</span>`:''}<span style="font-size:10px;font-weight:700">${r==='home'?'My Day':r==='mychecklists'?'Checklists':m[2].split(' ')[0]}</span></button>`;
       }).join('')}
     </div>
   </nav></div>`;
@@ -284,7 +287,7 @@ App.logout=()=>{
   // logout so a shared browser never shows the next person the previous one's filtered view.
   clearAllFilters();try{if(typeof App._okrResetExpanded==='function')App._okrResetExpanded();}catch(e){}
   try{if(typeof _crmClearSel==='function')_crmClearSel();if(typeof _crmLiveStop==='function')_crmLiveStop();}catch(e){}
-  S.uid=null;S.route='dashboard';S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
+  S.uid=null;S.route='home';S.filters={};try{if(typeof _attLiveStop==='function')_attLiveStop();}catch(e){}S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
   closeModal();render();
   // Sign out Supabase in background
   sb.auth.signOut().catch(()=>{});
