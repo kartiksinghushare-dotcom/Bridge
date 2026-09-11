@@ -1318,7 +1318,56 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 /* v132.4 — page header on phones: title on its own line, actions become a full-width row of equal buttons */
 @media(max-width:767px){
   #content .bb-hdr{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
+  #content .bb-hdr>div:first-child{flex:0 0 auto!important}
+  #content .bb-hdr-actions>.ui-btn,#content .bb-hdr-actions>button{max-width:100%}
   #content .bb-hdr-actions{width:100%;flex-wrap:wrap}
   #content .bb-hdr-actions>.ui-btn,#content .bb-hdr-actions>button{flex:1 1 calc(50% - 4px);min-width:0;justify-content:center}
   #content .bb-hdr-actions:empty{display:none}
+}
+
+/* ════════════ v132.6 — phone alignment pass ════════════ */
+@media(max-width:767px){
+  /* KPI tiles: 3 tiles sit in one row; odd leftovers stretch across instead of dangling */
+  #content .bb-kpis:has(>:nth-child(3):last-child){grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+  #content .bb-kpis:has(>:nth-child(3):last-child)>*{padding:10px 8px!important}
+  #content .bb-kpis:has(>:nth-child(3):last-child) .fd{font-size:17px!important}
+  #content .bb-kpis>*:nth-child(odd):last-child:not(:first-child):not(:nth-child(3)){grid-column:1/-1}
+  #content .bb-kpis .stat-card-click>div:first-child span[style*="place-items:center"]{display:none!important} /* icon squares go; label stays */
+  #content .bb-kpis .stat-card-click>div:first-child{margin-bottom:6px!important}
+  #content .bb-kpis .stat-card-click>div:first-child span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* calendar cells: keep the hours, drop the in/out times on phones */
+  #content .att-cell .att-cell-times{display:none!important}
+  /* small 3-up stat cells inside cards (Team page) stay 3-up */
+  #content [style*="grid-template-columns:repeat(3,1fr)"][style*="text-align:center"]{grid-template-columns:repeat(3,1fr)!important}
+  /* Profile hero: avatar, then name block, then a full-width action row */
+  #content .prof-head{flex-direction:column!important;align-items:flex-start!important;gap:10px!important}
+  #content .prof-head>div:nth-child(2){min-width:0!important;width:100%;padding-bottom:0!important}
+  #content .prof-head h1{font-size:19px!important;letter-spacing:-.2px!important;text-transform:none!important}
+  #content .prof-head-actions{width:100%;padding-bottom:0!important;flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  #content .prof-head-actions::-webkit-scrollbar{display:none}
+  #content .prof-head-actions>.ui-btn{flex:1 0 auto;justify-content:center}
+  /* Alerts tabs: one scrolling row instead of a ragged wrap */
+  #content .bb-ntabs{flex-wrap:nowrap!important;padding-bottom:2px}
+  #content .bb-ntabs button{padding:7px 12px!important;font-size:13px!important}
+  /* Access Control → People: table becomes stacked cards */
+  #content .ac-people{min-width:0!important;width:100%!important}
+  #content .ac-people thead{display:none}
+  #content .ac-people,#content .ac-people tbody,#content .ac-people tr,#content .ac-people td{display:block;width:100%;min-width:0;white-space:normal!important}
+  #content .ac-people tr{padding:10px 12px 12px}
+  #content .ac-people td{padding:4px 0!important;text-align:left!important}
+  #content .ac-people td .ui-select{width:100%!important}
+  #content .ac-people td:last-child{display:flex;gap:6px;flex-wrap:wrap;padding-top:8px!important}
+  #content .ac-people td:last-child .ui-btn{flex:1 1 auto;justify-content:center}
+  /* Filter rows: search box takes the full first line, selects share the second */
+  #content .ui-card>div[style*="flex-wrap:wrap"]>input.ui-input{flex:1 1 100%!important;min-width:0!important}
+  #content .ui-card>div[style*="flex-wrap:wrap"]>select.ui-select{flex:1 1 40%!important;width:auto!important;min-width:0!important}
+  /* Range dropdown + label on Attendance */
+  #content .att-range{align-items:center}
+  /* Avatars in list rows never squash */
+  #content .att-trow>div:first-child>div:first-child,#content .prof-kv{min-width:0}
+  #content .prof-kv a,#content .prof-kv [style*="font-weight:700"]{overflow-wrap:anywhere}
+  /* Role editor: area name on its own line, its toggles in a wrapping row underneath */
+  #modal [data-rp-row]{grid-template-columns:1fr!important;gap:6px!important}
+  /* Card head titles + actions align in one line and wrap gracefully */
+  #content .ui-card-head{flex-wrap:wrap;gap:6px 10px;row-gap:6px}
 }

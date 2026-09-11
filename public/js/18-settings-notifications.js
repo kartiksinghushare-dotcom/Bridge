@@ -910,7 +910,7 @@ App._bbOpenLink=(link,text,nid)=>{
   try{
     var L=String(link||'');
     if(L==='home'||L.indexOf('att:in:')===0||L.indexOf('att:out:')===0){App.go('home');return;}
-    if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';S.filters.attDay=L.slice(9)||null;if(S.filters.attDay)S.filters.attYm=S.filters.attDay.slice(0,7);rr();return;}
+    if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';const d=L.slice(9)||'';if(/^\d{4}-\d{2}-\d{2}$/.test(d)){S.filters.attFrom=d;S.filters.attTo=d;S.filters.attPreset='custom';S.filters.attYm=d.slice(0,7);}rr();return;}
     if(L.indexOf('att:')===0){App.go('attendance');S.filters.attTab='my';var d=L.slice(4);if(/^\d{4}-\d{2}/.test(d))S.filters.attYm=d.slice(0,7);rr();return;}
     if(L.indexOf('profile:')===0){var parts=L.split(':');if(typeof App.openProfile==='function'){App.openProfile(parts[1]);if(parts[2]==='docs'){S.filters.profTab='docs';rr();}return;}}
   }catch(e){}

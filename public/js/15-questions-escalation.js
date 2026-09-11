@@ -993,11 +993,11 @@ function notificationsPage(){
 
   return '<div class="fade">'+hdr('Alerts','Everything that needs your attention lands here')
     // Tabs
-    +'<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'
+    +'<div class="hscroll bb-ntabs" style="gap:6px;margin-bottom:16px;flex-wrap:wrap">'
     +TABS.map(t=>{
       const active=tab===t;
       const badge=counts[t]?(' <span style="font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:'+(active?'rgba(255,255,255,0.25)':'#F4F0EA')+';color:'+(active?'#fff':'#786A5F')+'">'+counts[t]+'</span>'):'';
-      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:'+(active?'#13171B':'transparent')+';color:'+(active?'#fff':'#786A5F')+'">'+t+badge+'</button>';
+      return '<button onclick="App._setNTab(this.dataset.t)" data-t="'+t+'" style="padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;background:'+(active?'#13171B':'transparent')+';color:'+(active?'#fff':'#786A5F')+'">'+t+badge+'</button>';
     }).join('')
     +'</div>'
     // Feedback tab = manager feedback records AND genuine feedback alerts (never one without the other)

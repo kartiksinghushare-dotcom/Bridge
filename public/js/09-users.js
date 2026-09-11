@@ -385,12 +385,12 @@ function _loadXLSX(){
     document.head.appendChild(s);
   });
 }
-const _U_TPL_HEADERS=['First name*','Last name*','Email*','Password','Phone','Position','Department','Reports to (email)','Status (Active/Inactive)','Role','Email notifications (On/Off)'];
+const _U_TPL_HEADERS=['First name*','Last name*','Email*','Password','Phone','Position','Department','Reports to (email)','Status (Active/Inactive)','Role','Email notifications (On/Off)','Employee ID','Joining date (YYYY-MM-DD)','Date of birth (YYYY-MM-DD)','Gender','Nationality','Work location','Shift start (HH:MM)','Shift end (HH:MM)','Off days (e.g. Fri,Sat)','Must clock in (Yes/No)','Can work from home (Yes/No)','Emergency contact name','Emergency contact phone','Emergency contact relationship'];
 App._usersTemplate=async()=>{
   try{
     const X=await _loadXLSX();
     const wb=X.utils.book_new();
-    const ws=X.utils.aoa_to_sheet([_U_TPL_HEADERS,['Aisha','Khan','aisha@company.com','','+971 50 000 0000','Sales Executive',(topDepts()[0]||{}).name||'','','Active','Basic Employee','On']]);
+    const ws=X.utils.aoa_to_sheet([_U_TPL_HEADERS,['Aisha','Khan','aisha@company.com','','+971 50 000 0000','Sales Executive',(topDepts()[0]||{}).name||'','','Active','Basic Employee','On','EMP-001','2026-01-15','1995-06-20','Female','Indian',((DB.locations||[])[0]||{}).name||'','09:00','18:00','Sun','Yes','No','Omar Khan','+971 50 111 1111','Spouse']]);
     ws['!cols']=_U_TPL_HEADERS.map(h=>({wch:Math.max(16,h.length+2)}));
     X.utils.book_append_sheet(wb,ws,'Users');
     const roles=Object.values(DB.roleProfiles||{}).map(r=>r.name);
@@ -403,6 +403,9 @@ App._usersTemplate=async()=>{
       ...roles.map(r=>['     - '+r]),
       ['• Reports to: the manager\'s email — an existing user, or a user on an EARLIER row of this same file.'],
       ['• Status: Active or Inactive (blank = Active). Email notifications: On or Off (blank = On).'],
+      ['• Dates as YYYY-MM-DD. Times as HH:MM (24h). Off days: comma-separated Mon…Sun. Work location must match a location name:'],
+      ...(DB.locations||[]).filter(l=>l.status!=='Inactive').map(l=>['     - '+l.name]),
+      ['• Must clock in: Yes/No (blank = Yes). Can work from home: Yes/No (blank = No).'],
       ['• Rows with errors (missing name/email, duplicate or existing email…) are skipped and reported — the rest import fine.']];
     X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(help),'Help');
     X.writeFile(wb,'bridge_users_template.xlsx');
@@ -413,11 +416,13 @@ App._usersExport=async()=>{
   if(!can('employees','view'))return toast('You don\'t have permission to view users','err');
   try{
     const X=await _loadXLSX();
-    const rows=[['First name','Last name','Email','Phone','Position','Department','Reports to','Status','Role','Email notifications']];
+    const rows=[['First name','Last name','Email','Phone','Position','Department','Reports to','Status','Role','Email notifications','Employee ID','Joining date','Date of birth','Gender','Nationality','Work location','Shift start','Shift end','Off days','Must clock in','Can work from home','Emergency contact name','Emergency contact phone','Emergency contact relationship']];
+    const sens=can('employees','viewSensitive')||isAdmin();
     visU().filter(Boolean).forEach(u=>{
       const mgr=u.managerId?uById(u.managerId):null;
       const rp=(DB.roleProfiles||{})[u.hrm?.roleProfileId];
-      rows.push([u.firstName||'',u.lastName||'',u.email||'',u.phone||'',u.position||'',u.department||'',mgr?(mgr.email||fullName(mgr)):'',u.status||'',rp?rp.name:'',u.emailEnabled===false?'Off':'On']);
+      const ws=u.workSchedule||{},dt=u.details||{},em=dt.emergency||{},loc=u.locationId?locById(u.locationId):null;
+      rows.push([u.firstName||'',u.lastName||'',u.email||'',u.phone||'',u.position||'',u.department||'',mgr?(mgr.email||fullName(mgr)):'',u.status||'',rp?rp.name:'',u.emailEnabled===false?'Off':'On',u.employeeId||'',u.joiningDate||'',sens?(u.birthDate||''):'',dt.gender||'',dt.nationality||'',loc?loc.name:'',ws.in||'',ws.out||'',(ws.offDays||[]).join(','),u.attendanceRequired===false?'No':'Yes',u.wfhAllowed?'Yes':'No',sens?(em.name||''):'',sens?(em.phone||''):'',sens?(em.relation||''):'']);
     });
     const wb=X.utils.book_new();
     const ws=X.utils.aoa_to_sheet(rows);
@@ -466,20 +471,22 @@ App._uImpFile=async(input)=>{
 };
 function _uImpNorm(h){return String(h||'').toLowerCase().replace(/\(.*?\)/g,'').replace(/[^a-z]/g,'');}
 function _uImpGenPw(){const A='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';let p='';for(let i=0;i<10;i++)p+=A[Math.floor(Math.random()*A.length)];return p;}
+function _uImpDate(v){if(v==null||v==='')return '';if(typeof v==='number'&&isFinite(v)){const d=new Date(Math.round((v-25569)*864e5));return isNaN(d)?'':d.toISOString().slice(0,10);}const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const d=new Date(s);return isNaN(d)?'':d.toISOString().slice(0,10);}
+function _uImpTime(v){if(v==null||v==='')return '';if(typeof v==='number'&&isFinite(v)){const mins=Math.round((v%1)*1440);return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');}const m=String(v).trim().match(/^(\d{1,2}):(\d{2})/);return m?(m[1].padStart(2,'0')+':'+m[2]):'';}
 function _uImpParse(aoa){
   const body=document.getElementById('uimp-body');
   const rows=(aoa||[]).filter(r=>Array.isArray(r)&&r.some(c=>String(c||'').trim()!==''));
   if(rows.length<2){toast('The file has no data rows','err');if(body)body.innerHTML=_uImpPickHTML();return;}
   const H=rows[0].map(_uImpNorm);
   const col={};
-  [['firstname','fn'],['lastname','ln'],['email','email'],['password','pw'],['phone','phone'],['position','pos'],['department','dep'],['reportsto','mgr'],['status','status'],['role','role'],['emailnotifications','notif']].forEach(([k,key])=>{col[key]=H.findIndex(h=>h===k||h.indexOf(k)===0);});
+  [['firstname','fn'],['lastname','ln'],['email','email'],['password','pw'],['phone','phone'],['position','pos'],['department','dep'],['reportsto','mgr'],['status','status'],['role','role'],['emailnotifications','notif'],['employeeid','eid'],['joiningdate','join'],['dateofbirth','dob'],['gender','gender'],['nationality','nat'],['worklocation','loc'],['shiftstart','sin'],['shiftend','sout'],['offdays','off'],['mustclockin','req'],['canworkfromhome','wfh'],['emergencycontactname','emn'],['emergencycontactphone','emp'],['emergencycontactrelationship','emr']].forEach(([k,key])=>{col[key]=H.findIndex(h=>h===k||h.indexOf(k)===0);});
   if(col.fn<0||col.ln<0||col.email<0){toast('Missing required columns — keep the template\'s First name, Last name and Email headers','err');if(body)body.innerHTML=_uImpPickHTML();return;}
   const seen=new Set();
   const canRole=can('accessControl','manage');
   let roleWarned=false;
   const parsed=rows.slice(1).map((r,i)=>{
     const g=k=>col[k]>=0?String(r[col[k]]||'').trim():'';
-    const row={line:i+2,fn:g('fn'),ln:g('ln'),email:g('email').toLowerCase(),pw:g('pw'),phone:g('phone'),pos:g('pos'),dep:g('dep'),mgr:g('mgr').toLowerCase(),status:g('status'),role:g('role'),notif:g('notif'),roleId:null,errs:[],warns:[]};
+    const row={line:i+2,fn:g('fn'),ln:g('ln'),email:g('email').toLowerCase(),pw:g('pw'),phone:g('phone'),pos:g('pos'),dep:g('dep'),mgr:g('mgr').toLowerCase(),status:g('status'),role:g('role'),notif:g('notif'),eid:g('eid'),join:_uImpDate(r[col.join]),dob:_uImpDate(r[col.dob]),gender:g('gender'),nat:g('nat'),loc:g('loc'),sin:_uImpTime(r[col.sin]),sout:_uImpTime(r[col.sout]),off:g('off'),req:g('req'),wfh:g('wfh'),emn:g('emn'),emp:g('emp'),emr:g('emr'),roleId:null,errs:[],warns:[]};
     if(!row.fn||!row.ln)row.errs.push('name missing');
     if(!row.email)row.errs.push('email missing');
     else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email))row.errs.push('invalid email');
@@ -492,6 +499,12 @@ function _uImpParse(aoa){
       if(d)row.dep=d.name;else{row.warns.push('unknown department “'+row.dep+'” — left empty');row.dep='';}
     }
     row.status=/^inactive$/i.test(row.status)?'Inactive':'Active';
+    if(col.join>=0&&String(r[col.join]||'').trim()&&!row.join)row.warns.push('joining date not understood — use YYYY-MM-DD');
+    if(col.dob>=0&&String(r[col.dob]||'').trim()&&!row.dob)row.warns.push('date of birth not understood — use YYYY-MM-DD');
+    row.locId=null;if(row.loc){const L=(DB.locations||[]).find(x=>String(x.name).toLowerCase()===row.loc.toLowerCase());if(L)row.locId=L.id;else row.warns.push('unknown location “'+row.loc+'” — left empty');}
+    row.offDays=row.off?row.off.split(/[,;\/ ]+/).map(x=>x.trim().slice(0,3)).map(x=>x.charAt(0).toUpperCase()+x.slice(1).toLowerCase()).filter(x=>WKDAYS.includes(x)):null;
+    row.attReq=!/^(no|false|0|off)$/i.test(row.req||'');
+    row.wfhOk=/^(yes|true|1|on)$/i.test(row.wfh||'');
     row.emailEnabled=!/^(off|no|false|0)$/i.test(row.notif||'');
     if(row.role){
       const rp=Object.values(DB.roleProfiles||{}).find(x=>String(x.name).toLowerCase()===row.role.toLowerCase());
@@ -590,7 +603,11 @@ App._uImpRun=async()=>{
             if(canRole&&r.roleId&&DB.roleProfiles[r.roleId]){nu.hrm.roleProfileId=r.roleId;nu.hrm.permsV3=1;nu.hrm.isHR=false;}
             else{_permsV3Migrate();}
           }catch(e){}
-          sb.from('profiles').update({doc_access:pd.doc_access,questions_access:false,email_enabled:r.emailEnabled,hrm:nu.hrm||null}).eq('id',newId).then(()=>{}).catch(()=>{});
+          const extra={doc_access:pd.doc_access,questions_access:false,email_enabled:r.emailEnabled,hrm:nu.hrm||null,employee_id:r.eid||null,joining_date:r.join||null,birth_date:r.dob||null,location_id:r.locId||null,attendance_required:r.attReq!==false,wfh_allowed:!!r.wfhOk,
+            work_schedule:{in:r.sin||'09:00',out:r.sout||'18:00',offDays:r.offDays||['Sun']},
+            details:{gender:r.gender||'',nationality:r.nat||'',emergency:{name:r.emn||'',phone:r.emp||'',relation:r.emr||''}}};
+          Object.assign(nu,{employeeId:r.eid||'',joiningDate:r.join||null,birthDate:r.dob||null,locationId:r.locId||null,attendanceRequired:extra.attendance_required,wfhAllowed:extra.wfh_allowed,workSchedule:extra.work_schedule,details:extra.details});
+          sb.from('profiles').update(extra).eq('id',newId).then(()=>{}).catch(()=>{});
           results.push({r:r,ok:true});
         }
       }

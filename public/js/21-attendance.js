@@ -420,8 +420,8 @@ function _attRangeBar(){
   const r=_attRange();const p=S.filters.attPreset||'month';
   const opts=[['today','Today'],['yesterday','Yesterday'],['week','Last 7 days'],['month','This month'],['lastmonth','Last month'],['30','Last 30 days'],['90','Last 90 days'],['custom','Custom range…']];
   return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    <select class="ui-select" style="width:auto;min-width:160px;padding:7px 30px 7px 12px" onchange="App._attPreset(this.value)">${opts.map(([k,l])=>`<option value="${k}" ${p===k?'selected':''}>${l}</option>`).join('')}</select>
-    ${p==='custom'?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.from}" max="${todayISO()}" onchange="App._attSetRange(this.value,null)"/><span style="font-size:12px;color:var(--c-text-3)">to</span><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.to}" max="${todayISO()}" onchange="App._attSetRange(null,this.value)"/></div>`:`<span style="font-size:12.5px;color:var(--c-text-3)">${esc(_attRangeLabel(r))}</span>`}
+    <select class="ui-select" style="width:auto;min-width:150px;max-width:100%;padding:7px 30px 7px 12px" onchange="App._attPreset(this.value)">${opts.map(([k,l])=>`<option value="${k}" ${p===k?'selected':''}>${l}</option>`).join('')}</select>
+    ${p==='custom'?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.from}" max="${todayISO()}" onchange="App._attSetRange(this.value,null)"/><span style="font-size:12px;color:var(--c-text-3)">to</span><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${r.to}" max="${todayISO()}" onchange="App._attSetRange(null,this.value)"/></div>`:`<span style="font-size:12.5px;color:var(--c-text-3);flex:1 1 auto;min-width:0">${esc(_attRangeLabel(r))}</span>`}
   </div>`;
 }
 /* Load a whole range for a set of people (cached per range). */
@@ -471,7 +471,7 @@ function attendancePage(forceTab){
   else if(tab==='my')body=_attMyTab(S.uid);
   else body=_attTeamTab();
   const r=_attRange();
-  return `<div class="fade">${hdr('Attendance','Clock-ins, hours and work-from-home days',(canMng?btn('Rules',"App.go('attsettings')",{variant:'subtle',size:'sm',icon:'cog'}):'')+can('attendance','export')&&_attEnabled()?btn('Export CSV',`App._attExport('${tab}')`,{variant:'ghost',size:'sm',icon:'download',attrs:'title="Exports '+esc(_attRangeLabel(r))+'"'}):'')}${tabs}${body}</div>`;
+  return `<div class="fade">${hdr('Attendance','Clock-ins, hours and work-from-home days',(canMng?btn('Rules',"App.go('attsettings')",{variant:'subtle',size:'sm',icon:'cog'}):'')+(can('attendance','export')&&_attEnabled()?btn('Export CSV',`App._attExport('${tab}')`,{variant:'ghost',size:'sm',icon:'download',attrs:'title="Exports '+esc(_attRangeLabel(r))+'"'}):''))}${tabs}${body}</div>`;
 }
 /* ── Calendar for one person over the range ── */
 function _attMyTab(uid2){
@@ -502,7 +502,7 @@ function _attCalendar(u,r){
       cells.push(`<button ${inRange&&!future?`onclick="App._attDay('${u.id}','${iso}')"`:'disabled'} class="att-cell" style="border:1px solid ${isT?'var(--c-brand)':'var(--c-border)'};background:${status==='Present'||status==='In'?'#F1F6F0':status==='WFH'?'#FBF3EF':status==='Absent'?'#FBEFEB':'var(--c-surface)'};opacity:${inRange&&!future?1:.4}">
         <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:${isT?'800':'700'};color:${isT?'var(--c-brand)':'var(--c-text)'}">${d}</span><span style="width:7px;height:7px;border-radius:50%;background:${dot}"></span></div>
         <div style="font-size:11px;font-weight:700;color:var(--c-text);margin-top:4px;min-height:14px">${rs.length?_attFmtMins(mins):(status==='Absent'?'<span style="color:#A63528;font-weight:700">Absent</span>':status==='WFH'?'<span style="color:#8A6152">WFH</span>':status==='Off'?'<span style="color:var(--c-text-3);font-weight:600">Off</span>':'')}</div>
-        <div style="font-size:9.5px;color:var(--c-text-3);display:flex;gap:4px;flex-wrap:wrap;min-height:12px">${rs.length?_attHM(rs[0].inAt)+'–'+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt):'…'):''}${wfh&&rs.length?'<span>🏠</span>':''}${late?'<span style="color:#A97C33;font-weight:800">L</span>':''}${auto?'<span style="color:#C9584A;font-weight:800" title="Auto clock-out">A</span>':''}</div>
+        <div style="font-size:9.5px;color:var(--c-text-3);display:flex;gap:4px;flex-wrap:wrap;min-height:12px"><span class="att-cell-times">${rs.length?_attHM(rs[0].inAt)+'–'+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt):'…'):''}</span>${wfh&&rs.length?'<span>🏠</span>':''}${late?'<span style="color:#A97C33;font-weight:800">L</span>':''}${auto?'<span style="color:#C9584A;font-weight:800" title="Auto clock-out">A</span>':''}</div>
       </button>`);
     }
     return `<div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head" style="padding:11px 16px"><span class="ui-card-title" style="font-size:14px">${_attMonthLabel(ym)}</span>${canEdit?`<span style="font-size:11px;color:var(--c-text-3)">tap a day to edit</span>`:''}</div>
@@ -532,7 +532,7 @@ function _attTeamTab(){
   const q=(S.filters.attQ||'').toLowerCase();
   const list=people.filter(p=>!q||fullName(p).toLowerCase().includes(q)||String(p.department||'').toLowerCase().includes(q));
   if(S.filters.attPerson){const p=uById(S.filters.attPerson);if(p)return `<button onclick="S.filters.attPerson=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-bottom:12px">${ic('back','w-4 h-4')}Back to team</button>`+_attMyTab(p.id);}
-  const day=(S.filters.attDay&&S.filters.attDay>=r.from&&S.filters.attDay<=r.to)?S.filters.attDay:r.to;
+  const day=r.to>todayISO()?todayISO():r.to; // status column follows the range dropdown (its last day)
   const isToday=day===todayISO();
   let inN=0,wfhN=0,outN=0,absN=0;
   const rows=list.map(p=>{
@@ -553,7 +553,7 @@ function _attTeamTab(){
       <div style="text-align:right"><div class="fd" style="font-size:14px;font-weight:800">${rs.length?_attFmtMins(m):'—'}</div><div style="font-size:10.5px;color:var(--c-text-3)">${st.present}d · ${_attFmtMins(st.mins)}${st.absent?' · <span style="color:#A63528">'+st.absent+' absent</span>':''}</div></div>
     </div>`;}).join('');
   return _attRangeBar()+`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;color:var(--c-text-3)">Status on</span><input type="date" class="ui-input" style="width:auto;padding:6px 10px" value="${day}" min="${r.from}" max="${r.to}" onchange="S.filters.attDay=this.value;rr()"/>${isToday?'':`<button onclick="S.filters.attDay=null;S.filters.attTo=todayISO();rr()" class="ui-btn ui-btn-subtle ui-btn-sm">Today</button>`}</div><span style="font-size:12px;color:var(--c-text-3)">totals: ${esc(_attRangeLabel(r))}</span></div>
+      <span style="font-size:12px;color:var(--c-text-3)">Status as of <b style="color:var(--c-text)">${isToday?'today':esc(fmtD(day))}</b></span><span style="font-size:12px;color:var(--c-text-3)">totals: ${esc(_attRangeLabel(r))}</span></div>
     <div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${[['Clocked in',inN,'#346A47'],['Finished',outN,'#463830'],['WFH',wfhN,'#8A6152'],['Absent',absN,'#A63528'],['People',list.length,'#13171B']].map(([l,v,c])=>`<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3)">${l}</div><div class="fd" style="font-size:20px;font-weight:800;color:${c};margin-top:3px">${v}</div></div>`).join('')}</div>
     <div class="ui-card"><div style="padding:10px 12px;border-bottom:1px solid var(--c-border);display:flex;gap:8px;align-items:center"><input id="att-q" class="ui-input" placeholder="Search people…" value="${esc(S.filters.attQ||'')}" oninput="S.filters.attQ=this.value;App._searchRR('att-q')"/>${q?`<button onclick="S.filters.attQ='';rr()" class="ui-btn ui-btn-subtle ui-btn-sm">Clear</button>`:''}</div><div class="ui-card-pad" style="padding-top:2px">${rows||empty('users','Nobody in your scope','')}</div></div>`;
 }

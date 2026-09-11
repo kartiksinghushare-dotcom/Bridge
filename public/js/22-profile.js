@@ -55,7 +55,7 @@ function profilePage(){
   const head=`<div class="ui-card" style="overflow:hidden">
     <div style="height:74px;background:var(--grad-brand,linear-gradient(135deg,#54433C,#AF7B6D))"></div>
     <div class="ui-card-pad" style="padding-top:0">
-      <div style="display:flex;align-items:flex-end;gap:14px;margin-top:-34px;flex-wrap:wrap">
+      <div class="prof-head" style="display:flex;align-items:flex-end;gap:14px;margin-top:-34px;flex-wrap:wrap">
         <div style="position:relative;flex-shrink:0">
           <div style="width:88px;height:88px;border-radius:50%;border:4px solid var(--c-surface);background:var(--c-surface);box-shadow:var(--sh-sm);overflow:hidden;display:grid;place-items:center">${avatar(u,'w-20 h-20','text-2xl')}</div>
           ${P.editAvatar?`<button onclick="App._profAvatarPick('${u.id}')" title="Change photo" style="position:absolute;right:-2px;bottom:2px;width:30px;height:30px;border-radius:50%;border:2px solid var(--c-surface);background:var(--c-ink);color:#fff;display:grid;place-items:center;cursor:pointer">${ic('cam','w-3.5 h-3.5')}</button>`:''}
@@ -65,7 +65,7 @@ function profilePage(){
           <div style="font-size:13.5px;color:var(--c-text-2);margin-top:3px">${esc(u.position||'—')}${u.department?' · '+esc(u.department):''}${(()=>{const r=_roleOf(u);return r?' · <span style="color:var(--c-text-3)">'+esc(r.name)+'</span>':'';})()}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${chips.map(([t,i])=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--c-surface-2);color:var(--c-text-2)">${ic(i,'w-3 h-3')}${esc(t)}</span>`).join('')}</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px">
+        <div class="prof-head-actions" style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px">
           ${P.dm?btn('Message',`_dmOpenWith('${u.id}')`,{variant:'ghost',size:'sm',icon:'msg'}):''}
           ${!P.self&&can('employees','edit')?btn('Edit account',`App.editUser('${u.id}')`,{variant:'ghost',size:'sm',icon:'edit'}):''}
           ${!P.self&&can('accessControl','view')?btn('Access',`App.go('accesscontrol');S.filters.acQ='${jsq(fullName(u))}';rr()`,{variant:'ghost',size:'sm',icon:'shield'}):''}
