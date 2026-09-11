@@ -191,6 +191,8 @@ function allClsPage(){
         <option value="">All locations</option>
         ${DB.locations.map(x=>`<option value="${x.id}" ${loc===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}
       </select>
+      ${(dep||loc)?`<button onclick="S.filters.aclDep='';S.filters.aclLoc='';S.filters.aclExp=null;S.filters.aclU=null;rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}
+      <span style="font-size:11.5px;color:var(--c-text-3);font-weight:600">${(typeof cls!=='undefined'&&cls)?cls.length+' checklist'+(cls.length===1?'':'s'):''}</span>
     </div>
     <!-- Sticky calendar strip (same as Team view) -->
     <div style="position:sticky;top:52px;z-index:10;background:rgba(247,243,238,.95);backdrop-filter:blur(12px);margin:0 -16px;padding:0 16px 10px">
@@ -323,18 +325,19 @@ function approvalsPage(){
       : ''
     )
     // ── Feedback tab (kept for backwards compat but not shown in TABS) ──
-    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#E6DED3':'#E0CDB9')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#A59788">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#13171B;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
+    +(tab==='Feedback'?(()=>{const myFeedback=DB.feedback.filter(fb=>fb.userId===S.uid);return myFeedback.length?myFeedback.map(fb=>{const mgr=uById(fb.managerId);const cl=clById(fb.checklistId);return'<div style="background:#fff;border-radius:16px;border:1px solid '+(fb.acknowledged?'#E6DED3':'#E0CDB9')+';padding:16px;margin-bottom:10px"><div style="font-size:14px;font-weight:700">'+esc(cl?.name||'Checklist')+'</div><div style="font-size:12px;color:#A59788">From '+(mgr?esc(fullName(mgr)):'Manager')+'</div><p style="font-size:13px;margin-top:8px">'+esc(fb.text)+'</p>'+(fb.acknowledged?'':'<button onclick="App._ackFb(this.dataset.id)" data-id="'+fb.id+'" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:#13171B;color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer">Acknowledge</button>')+'</div>';}).join(''):empty('msg','No feedback','Feedback appears here when managers send it.')})():'')
     +'</div></div>';
 }
 
 App._decide=async(id,status)=>{
+  if(!can('approvals','decide')){toast('You don’t have permission to decide approvals','err');return;}
   // Guard: cannot approve your own submission
   const _appr=DB.approvals.find(x=>x.id===id);
   if(_appr&&_appr.requesterId===S.uid&&status==='Approved'){toast('Cannot approve your own submission','err');return;}
   const a=DB.approvals.find(x=>x.id===id);if(!a)return;
   if(a.status!=='Pending'){toast('Already '+a.status.toLowerCase(),'warn');return;}
   // Immediately disable buttons to prevent double-click
-  document.querySelectorAll(`[data-id="${id}"]`).forEach(b=>{b.disabled=true;b.style.opacity='0.5';});
+  document.querySelectorAll(`button[data-id="${id}"][onclick*="_decide"]`).forEach(b=>{b.disabled=true;b.style.opacity='0.5';});
   a.status=status;
   const u=uById(a.requesterId),c=clById(a.checklistId);
   const s=DB.submissions.find(x=>x.checklistId===a.checklistId&&x.userId===a.requesterId&&x.date===a.date);

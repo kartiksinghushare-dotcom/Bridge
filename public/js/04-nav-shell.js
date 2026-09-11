@@ -45,6 +45,7 @@ const HUB_DEF={
   admin:{label:'Administration',tabs:[
     ['settings','Settings',()=>can('settings','view')],
     ['accesscontrol','Access Control',()=>can('accessControl','view')],
+    ['attsettings','Attendance',()=>can('attendance','manage')],
     ['departments','Departments',()=>can('departments','view')],
     ['locations','Locations',()=>can('locations','view')],
     ['audit','Audit',()=>can('audit','view')]]},
@@ -260,24 +261,7 @@ App.moreMenu=()=>{
 /* W1.4 / X3: role-aware quick-add "+" menu. Reuses existing create handlers — no new logic,
    just a single discoverable entry point. Each action is gated by the same can()/role checks
    that gate its page button, so a user only sees actions they can actually perform. */
-App.saveProfile=async()=>{
-  const u=me();if(!u)return;
-  const fn=($('#ep-fn')?.value||'').trim();
-  const ln=($('#ep-ln')?.value||'').trim();
-  if(!fn||!ln){toast('Name required','err');return;}
-  // Update locally immediately
-  u.firstName=fn;u.lastName=ln;
-  u.phone=($('#ep-ph')?.value||'').trim();
-  u.position=($('#ep-pos')?.value||'').trim();
-  saveDB();toast('Profile updated ✓');render();
-  // Sync to Supabase in background
-  sb.from('profiles').update({
-    first_name:u.firstName,last_name:u.lastName,
-    phone:u.phone,position:u.position
-  }).eq('id',u.id).then(({error})=>{
-    if(error)console.error('saveProfile sync:',error.message);
-  }).catch(()=>{});
-};
+/* App.saveProfile removed in v132.2 — profile editing lives in 22-profile.js */
 App.changePw=async()=>{const cur=($('#pw-cur')?.value||'').trim();const nw=($('#pw-new')?.value||'').trim();if(!cur||!nw){toast('Fill both fields','err');return;}if(nw.length<6){toast('Min 6 characters','err');return;}const u=me();const{error:se}=await sb.auth.signInWithPassword({email:u.email,password:cur});if(se){toast('Current password incorrect','err');return;}const{error}=await sb.auth.updateUser({password:nw});if(error){toast(error.message,'err');return;}toast('Password updated');const c=$('#pw-cur'),n=$('#pw-new');if(c)c.value='';if(n)n.value='';};
 // _showNotifs removed — now using notificationsPage route
 App.logout=()=>{

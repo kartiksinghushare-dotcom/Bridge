@@ -5,75 +5,18 @@
    ============================================================ */
 /* ===== AUDIT / NOTIF / PROFILE / SETTINGS ===== */
 
-function auditPage(){return`<div class="fade">${hdr('Audit Logs','')}<div class="bg-white rounded-2xl border border-ink-100 shadow-soft overflow-hidden"><div class="divide-y divide-ink-50 max-h-[70vh] overflow-y-auto">${DB.audit.map(l=>`<div class="px-4 py-3 flex items-center gap-2.5 text-sm"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span><div class="flex-1 min-w-0"><span class="font-semibold">${esc(l.actor)}</span> <span class="text-ink-500">${esc(l.action.toLowerCase())}</span>${l.target?` <span class="font-medium">${esc(l.target)}</span>`:''}</div><span class="text-[11px] text-ink-300 shrink-0">${new Date(l.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')||empty('audit','No logs yet','')}</div></div></div>`;}
+function auditPage(){
+  const L=(DB.audit||[]);const q=(S.filters.auditQ||'').toLowerCase().trim();
+  const list=q?L.filter(l=>[l.actor,l.action,l.target].some(x=>String(x||'').toLowerCase().includes(q))):L;
+  const shown=list.slice(0,500);
+  return`<div class="fade">${hdr('Audit Logs',L.length+' entr'+(L.length===1?'y':'ies')+(q?' · '+list.length+' match':'')+' · newest first')}
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><input id="audit-q" class="ui-input" style="flex:1;min-width:200px" placeholder="Search by person, action or target…" value="${esc(S.filters.auditQ||'')}" oninput="S.filters.auditQ=this.value;App._searchRR('audit-q')"/>${q?`<button onclick="S.filters.auditQ='';rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}</div>
+  <div class="bg-white rounded-2xl border border-ink-100 shadow-soft overflow-hidden"><div class="divide-y divide-ink-50 max-h-[70vh] overflow-y-auto">${shown.map(l=>`<div class="px-4 py-3 flex items-center gap-2.5 text-sm"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span><div class="flex-1 min-w-0"><span class="font-semibold">${esc(l.actor||'')}</span> <span class="text-ink-500">${esc(String(l.action||'').toLowerCase())}</span>${l.target?` <span class="font-medium">${esc(l.target)}</span>`:''}</div><span class="text-[11px] text-ink-300 shrink-0">${l.time?new Date(l.time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div>`).join('')||empty('audit',q?'No matching entries':'No logs yet','')}${list.length>500?`<div style="padding:10px 16px;font-size:12px;color:var(--c-text-3)">Showing the latest 500 of ${list.length}.</div>`:''}</div></div></div>`;}
 App._goNotifFeedback=()=>{S.route="notifications";S.search="";S.expandedCl=null;S.afOpen=null;S.tvUser=null;S.filters={ntab:"Feedback"};render();window.scrollTo(0,0);};
 
 /* v3.23 — the Profile page became the "Profile" tab of Settings (everyone can open Settings now:
    personal tabs for all, workspace-wide tabs for admins). */
-function _profileTab(){
-  const u=me();
-  return`<div>
-  <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">
-    <div class="flex items-center gap-4 mb-5">
-      ${avatar(u,'w-14 h-14','text-xl')}
-      <div>
-        <h2 class="fd text-xl font-bold">${esc(fullName(u))}</h2>
-        <p class="text-ink-400 text-sm">${isAdmin()?'Admin':isMgr()?'Manager':'Member'} · ${esc(u.department||'')}</p>
-        <div class="mt-1.5">${chip(u.status)}</div>
-      </div>
-    </div>
-    <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3 border-t border-ink-100 pt-4 mb-4">
-      ${[['Email',u.email],['Phone',u.phone||'—'],['Department',u.department||'—'],['Role',u.role],
-         ['Reports to',u.managerId?fullName(uById(u.managerId)):'—'],
-         ['Direct reports',subTree(u.id).length]].map(([k,v])=>`
-        <div><div class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">${k}</div>
-        <div class="font-medium text-sm mt-0.5">${esc(String(v))}</div></div>`).join('')}
-    </div>
-    <!-- Edit form -->
-    <div class="border-t border-ink-100 pt-4">
-      <h3 class="fd font-semibold text-sm mb-3">Edit profile</h3>
-      <div class="grid sm:grid-cols-2 gap-3 mb-3">
-        ${fld('First name','ep-fn',u.firstName||'')}
-        ${fld('Last name','ep-ln',u.lastName||'')}
-        ${fld('Phone','ep-ph',u.phone||'','tel')}
-        ${fld('Position','ep-pos',u.position||'')}
-      </div>
-      <button id="ep-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App.saveProfile().finally(()=>{const b=document.getElementById('ep-save-btn');if(b){b.disabled=false;b.textContent='Save changes';}})" style="padding:10px 20px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Save changes</button>
-    </div>
-  </div>
-  <!-- Change password -->
-  <div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">
-    <h3 class="fd font-semibold text-sm mb-3">Change password</h3>
-    <div class="space-y-2">
-      ${fld('Current password','pw-cur','','password','')}
-      ${fld('New password','pw-new','','password','min 6 characters')}
-      <button id="pw-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Updating…';App.changePw().finally(()=>{const b=document.getElementById('pw-save-btn');if(b){b.disabled=false;b.textContent='Update password';}})" style="margin-top:8px;padding:10px 20px;border-radius:12px;background:#13171B;color:#fff;font-weight:600;font-size:14px;border:none;cursor:pointer">Update password</button>
-    </div>
-  </div>
-  <!-- Feedback history -->
-  ${(()=>{
-    const myFb=DB.feedback.filter(fb=>fb.userId===S.uid).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,5);
-    if(!myFb.length)return '';
-    return '<div class="bg-white rounded-2xl border border-ink-100 shadow-soft p-5 mb-4">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-      +'<h3 class="fd font-semibold text-sm">Recent Feedback</h3>'
-      +'<button onclick="App._goNotifFeedback()" style="font-size:12px;font-weight:600;color:#54433C;background:none;border:none;cursor:pointer">View all</button>'
-      +'</div>'
-      +myFb.map(fb=>{
-        const mgr=uById(fb.managerId);
-        const stClr=fb.status==='Responded'?'#463830':fb.status==='Acknowledged'?'#A5796A':'#96695B';
-        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #F4F0EA">'
-          +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:600">'+(fb.title||fb.type+' Feedback')+'</div>'
-          +'<div style="font-size:11px;color:#A59788;margin-top:2px">From '+(mgr?esc(fullName(mgr)):'Manager')+' · '+fmtD(fb.date||fb.createdAt?.slice(0,10))+'</div>'
-          +'</div>'
-          +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#F7F3EE;color:'+stClr+';flex-shrink:0">'+(fb.status||'Sent')+'</span>'
-          +'</div>';
-      }).join('')
-      +'</div>';
-  })()}
-  </div>`;
-}
+/* _profileTab removed in v132.2 — the Profile page (22-profile.js) replaced it. */
 
 
 function _fmtSize(b){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return Math.round(b/1024)+'KB';return(b/1048576).toFixed(1)+'MB';}
@@ -83,6 +26,7 @@ App._docNav=(id)=>{S.filters.docFolder=id;rr();};  // alias kept for compatibili
 App._delFolder=async(id)=>{
   const f=(DB.folders||[]).find(x=>x.id===id);
   if(!f)return;
+  if(!_docScopePerm(f.type,f.scope).edit){toast('You don’t have permission to delete folders here','err');return;}
   {const _sub=[];(function _c(fid){_sub.push(fid);(DB.folders||[]).filter(x=>x.parentId===fid).forEach(c=>_c(c.id));})(id);
    const _nSub=_sub.length-1,_nDoc=(DB.documents||[]).filter(x=>_sub.includes(x.folderId)).length;
    if(!(await confirmP({
@@ -166,6 +110,7 @@ App._previewUpload=(input)=>{
 
 App._doUpload=async()=>{
   const files=App._pendingFiles;if(!files?.length){toast('Select a file','err');return;}
+  if(!_docScopePerm(S.filters.docScope||'dept',S.filters.docScopeKey).upload){toast('You don’t have permission to upload here','err');return;}
   const btn=document.getElementById('ud-btn');
   const prog=document.getElementById('ud-progress');
   const bar=document.getElementById('ud-bar');
@@ -224,6 +169,7 @@ App._previewDoc=async(id)=>{
 
 App._delDoc=async(id)=>{
   const doc=(DB.documents||[]).find(x=>x.id===id);if(!doc)return;
+  if(!_docScopePerm(doc.type,doc.scope).edit){toast('You don’t have permission to delete files here','err');return;}
   if(!(await confirmP({
     title:'Delete file',
     body:'<b>'+esc(doc.name)+'</b> will be permanently deleted for everyone who can see this folder.',
@@ -242,6 +188,7 @@ App._delDoc=async(id)=>{
 /* `pre` (v3.14) re-ticks the given category keys — used when the delete confirmation is
    cancelled, so the dialog comes back exactly as the user had it instead of blank. */
 App._clearOperational=(pre)=>{
+  if(!can('settings','manage')){toast('You need Settings → Manage','err');return;}
   const _pre=Array.isArray(pre)?pre:[];
   const cats=[
     {key:'submissions',  label:'Submissions',    icon:'✅', desc:'All checklist submission records',    count:()=>DB.submissions.length},
@@ -293,6 +240,7 @@ App._clearOperational=(pre)=>{
 };
 
 App._execClear=async()=>{
+  if(!can('settings','manage')){toast('You need Settings → Manage','err');return;}
   const catMap={
     submissions: {local:()=>{DB.submissions=[];Object.keys(RUN).forEach(k=>delete RUN[k]);},table:'submissions'},
     checklists:  {local:()=>{DB.checklists=[];DB.checklists_deleted=[];},table:'checklists'},
@@ -332,7 +280,7 @@ App._execClear=async()=>{
   if(sel.includes('checklists')) await _del('checklists');
   await Promise.allSettled(sel.filter(k=>k!=='checklists'&&k!=='questions').map(_del));
   if(sel.includes('questions')) await _del('questions');
-  log(fullName(me()),'Cleared data',labels);
+  log(fullName(me()),'Cleared data',sel.join(', '));
   toast('Deleted: '+sel.length+' categor'+(sel.length===1?'y':'ies')+' ✓','ok');
   saveDB();S.route='dashboard';render();
 };
@@ -533,6 +481,7 @@ function _nsTogRow(key,label,desc){
     <button role="switch" aria-checked="${on?'true':'false'}" aria-label="${esc(label)}" class="tog ${on?'on':'off'}" onclick="App._nsTog(this,'${key}')"><span></span></button>
   </div>`;}
 App._nsTog=async(btn,key)=>{
+  if(!can('settings','edit')){toast('You need Settings → Edit','err');return;}
   if(!_ns)_ns=_nsDefault();
   const nowOn=btn.classList.contains('off');
   btn.classList.toggle('on',nowOn);btn.classList.toggle('off',!nowOn);
@@ -540,6 +489,7 @@ App._nsTog=async(btn,key)=>{
   _ns[key]=nowOn;await _saveNS();
 };
 App._nsSaveEmail=async()=>{
+  if(!can('settings','edit'))return toast('You need Settings → Edit','err');
   if(!_ns)_ns=_nsDefault();
   const name=($('#ns-from-name')?.value||'').trim();
   const addr=($('#ns-from-addr')?.value||'').trim();
@@ -584,7 +534,6 @@ function settingsPage(forceTab){
   let stab=forceTab||S.filters.stab||(admin?'inapp':'mynotif');if(stab==='profile'){stab=S.filters.stab='mynotif';}   /* v132: Profile is its own page now */
   if(!TABS.some(t=>t[0]===stab))stab=admin?'inapp':'mynotif';
   const tabBar=`<div class="ui-tabs" style="margin-bottom:20px">${TABS.map(([k,l])=>`<button class="ui-tab${stab===k?' on':''}" onclick="App._setSTab('${k}')">${l}</button>`).join('')}</div>`;
-  if(stab==='profile')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}${_profileTab()}</div>`;
   if(stab==='mynotif')return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div>${window.BBNotify?BBNotify.settingsHTML():(typeof _bbMyNotifCard==='function'?_bbMyNotifCard():'')}</div></div>`;
   if(!_ns){_loadNS().then(()=>rr());return`<div class="fade max-w-2xl">${hdr('Settings','')}${tabBar}<div style="padding:40px;text-align:center;color:#A59788;font-size:13px">Loading…</div></div>`;}
   const ns=_ns;
@@ -746,6 +695,7 @@ function settingsPage(forceTab){
   </div>`;
 
   App._saveTpl=async(key)=>{
+    if(!can('settings','edit'))return toast('You need Settings → Edit','err');
     if(!_ns)_ns=_nsDefault();
     if(!_ns.templates)_ns.templates={};
     const subj=($('#tpl-subj-'+key)?.value||'').trim();
@@ -756,6 +706,7 @@ function settingsPage(forceTab){
     toast('Template saved ✓');rr();
   };
   App._resetTpl=async(key)=>{
+    if(!can('settings','edit'))return toast('You need Settings → Edit','err');
     if(!_ns)_ns=_nsDefault();
     if(_ns.templates)delete _ns.templates[key];
     await _saveNS();

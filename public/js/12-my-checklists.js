@@ -141,7 +141,7 @@ function _clCard(c,date){
   // If sub exists and is not in Editing mode, tasks are locked — don't init a fresh RUN
   const isSubmitted=!!sub&&sub.status!=='Editing';
   // Only initialise fresh RUN if: no entry, date changed, OR not currently editing
-  if(!RUN[c.id]||(RUN[c.id].date!==date&&RUN[c.id].status!=='Editing')){
+  if(!RUN[c.id]||RUN[c.id].date!==date){
     // Restore questionResponses from an existing submission if available; otherwise from a saved draft.
     const _existSub=subForCl(c,S.uid,date);
     const _draft=(!_existSub)?(DB.drafts||[]).find(d=>d.checklistId===c.id&&d.userId===S.uid&&d.date===date):null;
@@ -222,7 +222,7 @@ function _clCard(c,date){
           } else {
             const _qr2=(sub?.questionResponses||[]).find(r=>r.questionId===q.id)||{};
             const photos2=_qrPhotoList(_qr2);
-            if(photos2.length)inputHtml+='<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+photos2.map(ph=>'<img src="'+ph+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:110px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #E6DED3;cursor:pointer"/>').join('')+'</div>';
+            if(photos2.length)inputHtml+='<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+photos2.map(ph=>'<img src="'+esc(ph)+'" loading="lazy" decoding="async" alt="Task response photo" onclick="App._bigImg(\''+ph.replace(/'/g,"\\'")+'\')" style="max-width:110px;max-height:80px;border-radius:8px;object-fit:cover;border:1px solid #E6DED3;cursor:pointer"/>').join('')+'</div>';
           }
           return`<div style="background:#FAF7F3;border:1px solid #EDE7DC;border-radius:12px;padding:12px 14px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -332,7 +332,7 @@ App._setQRComment=(clId,qId,val)=>{
   clearTimeout(App._saveT);App._saveT=setTimeout(()=>saveDB(),2000);
 };
 App._resubmit=(clId,date)=>{const sub=DB.submissions.find(s=>s.checklistId===clId&&s.userId===S.uid&&s.date===date);const ea=DB.approvals.find(a=>a.type==='Edit Request'&&a.checklistId===clId&&a.requesterId===S.uid&&a.date===date&&a.status==='Approved');if(ea){ea.status='Used';ea.usedAt=new Date().toISOString();ea.isResubmit=true;}if(sub){sub.editCount=(sub.editCount||0)+1;sub.editHistory=sub.editHistory||[];sub.editHistory.push({startedAt:new Date().toISOString(),editNumber:sub.editCount,by:S.uid});sub.status='Editing';RUN[clId]={id:sub.id,checklistId:clId,userId:S.uid,date,tasks:[],questionResponses:JSON.parse(JSON.stringify(sub.questionResponses||[])),status:'Editing',editCount:sub.editCount,editHistory:sub.editHistory};}else{delete RUN[clId];}log(fullName(me()),'Started resubmit',clById(clId)?.name||'');toast('Edit mode — make changes and resubmit');saveDB();render();};
-App._ackFb=(id)=>{const f=DB.feedback.find(x=>x.id===id);if(f){f.acknowledged=true;f.acknowledgedAt=new Date().toISOString();f.status=f.status==='Sent'?'Acknowledged':f.status;}saveDB();toast('Acknowledged ✓');render();};
+App._ackFb=(id)=>{const f=DB.feedback.find(x=>x.id===id);if(!f)return;if(f.userId!==S.uid&&!isAdmin()){toast('Not your feedback','err');return;}f.acknowledged=true;f.acknowledgedAt=new Date().toISOString();f.status=f.status==='Sent'?'Acknowledged':f.status;saveDB();toast('Acknowledged ✓');render();sb.from('feedback').update({acknowledged:true,acknowledged_at:f.acknowledgedAt,status:f.status}).eq('id',id).then(()=>{}).catch(()=>{});};
 
 // ── Photo persistence (Fix #5) ──
 // Uploads any base64 ("data:") question photos to Supabase Storage (reusing the existing

@@ -60,8 +60,8 @@ function ticketsPage(){
   if(isAdmin()||isSubAdmin()){
     // all tickets — no filter (Super Admin + Admin see everything regardless of escalation)
   } else if(isMgr()){
-    // Manager sees: assigned to them + tickets they personally created
-    tickets=tickets.filter(t=>t.assignedTo===S.uid);
+    // Manager sees: assigned to them + tickets they personally created / raised
+    tickets=tickets.filter(t=>t.assignedTo===S.uid||t.createdBy===S.uid||t.submitterId===S.uid);
   } else {
     // Regular user: ONLY tickets assigned directly to them
     tickets=tickets.filter(t=>t.assignedTo===S.uid);
@@ -167,7 +167,7 @@ function ticketsPage(){
     // List
     (tickets.length?
       '<div style="display:flex;flex-direction:column;gap:10px">'+tickets.map(tkCard).join('')+'</div>':
-      (_isLoading('tickets')?loadingState('Loading tickets…'):empty('ticket','No tickets','Tickets are created automatically when an escalation answer is submitted.'))
+      (_isLoading('tickets')?loadingState('Loading tickets…'):((f.tkQ||statusFilter||priorityFilter||f.tkAssignee)?empty('ticket','No matching tickets','Try another status, assignee or search — or clear the filters.'):empty('ticket','No tickets','Tickets are created automatically when an escalation answer is submitted.')))
     )+
   '</div>';
 }
@@ -238,7 +238,8 @@ App._resolveTicket=(id)=>{
 
 App._confirmResolve=(id)=>{
   const note=$('#tk-note')?.value?.trim()||'';
-  const t=(DB.tickets||[]).find(x=>x.id===id);if(!t)return;
+  const t=(DB.tickets||[]).find(x=>x.id===id);if(!t||t.status==='Resolved')return;   // v132.2: no double-resolve on a double tap
+  if(!(can('tickets','resolve')||can('tickets','manage')||t.assignedTo===S.uid)){toast('You don’t have permission to resolve tickets','err');return;}
   t.status='Resolved';t.resolvedAt=new Date().toISOString();t.resolveNote=note;
   // Notify the submitter
   if(t.submitterId&&t.submitterId!==S.uid){
@@ -277,7 +278,7 @@ App._delTicket=async(id)=>{
   DB.tickets=(DB.tickets||[]).filter(t=>t.id!==id);
   if(!DB.tickets_deleted)DB.tickets_deleted=[];
   if(!DB.tickets_deleted.includes(id))DB.tickets_deleted.push(id);
-  saveDB();rr();
+  toast('Ticket deleted','warn');saveDB();rr();
 };
 
 

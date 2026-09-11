@@ -35,7 +35,7 @@ function dashboardPage(){
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
       ${chartCard('tickets','Tickets by status','Everything currently open or done')}
-      ${(typeof _dashTicketsPanel==='function')?_dashTicketsPanel(null):''}
+      ${(typeof _dashTicketsPanel==='function')?_dashTicketsPanel(isAdmin()?null:_dashScope().users):''}
     </div></div>`;
 }
 /* Same scope rules as the Cards (analytics) tab: Super Admin sees everything, others see their team. */
@@ -43,7 +43,7 @@ function _dashScope(){
   const all=isAdmin();
   const team=all?null:new Set([S.uid,...subTree(S.uid).map(u=>u.id)]);
   return{subs:all?DB.submissions:DB.submissions.filter(s=>team.has(s.userId)),
-         tickets:all?(DB.tickets||[]):(DB.tickets||[]).filter(t=>t.assignedTo===S.uid),
+         tickets:all?(DB.tickets||[]):(DB.tickets||[]).filter(t=>team.has(t.assignedTo)),
          users:all?DB.users.filter(u=>u.status==='Active'):DB.users.filter(u=>u.status==='Active'&&team.has(u.id))};
 }
 /* _dashChartsPage removed — its KPIs/charts folded into the single dashboardPage above. */
@@ -57,7 +57,7 @@ function _drawDashCharts(){
      Gold = pending/in-progress, Carbon Black = rejected/not achieved, Nude = on track/editing, Sand Beige = neutral/closed */
   const C={brand:'#54433C',brandSoft:'rgba(84,67,60,.14)',green:'#54433C',greenSoft:'rgba(84,67,60,.14)',red:'#AF7B6D',amber:'#D1B68F',sky:'#E2B7A9',violet:'#936659',grey:'#D8CCC0',ink:'#13171B',copper:'#936659'};
   const mk=(key,cfg)=>{const cv=document.querySelector('canvas[data-dash-chart="'+key+'"]');if(!cv)return;cfg.options=cfg.options||{};cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;cfg.options.plugins=cfg.options.plugins||{};cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:T.tick,font:{size:10.5},boxWidth:14,padding:8}};_aCharts.push(new Chart(cv.getContext('2d'),cfg));};
-  const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
+  const dISO=(d)=>{const x=new Date();x.setDate(x.getDate()-d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');};   // local date, like todayISO()
   const fmtDay=(iso)=>{const d=new Date(iso+'T00:00:00');return d.toLocaleDateString(undefined,{day:'numeric',month:'short'});};
   // 1) daily stacked bars — 14 days
   const days=[];for(let i=13;i>=0;i--)days.push(dISO(i));

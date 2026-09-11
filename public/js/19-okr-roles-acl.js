@@ -313,7 +313,7 @@ function _baseCan(area,action){
     case 'checklists':return action==='view'?true:(sub||mgr);
     case 'analytics':return (sub||mgr||hr);
     case 'questions':return q||sub;
-    case 'tickets':return action==='manage'?(sub||mgr):true;
+    case 'tickets':return (action==='manage'||action==='delete')?(sub||mgr):true;
     case 'documentsOrg':return action==='approve'?hr:doc;
     case 'documentsPersonal':return true;
     case 'reports':return (action==='download')?(hr||_canReportLegacy()):(hr||mgr||_canReportLegacy());
@@ -3447,7 +3447,7 @@ function accessControlPage(){
   _seedRoleProfiles();
   const tab=S.filters.acTab||'people';
   const tabs=`<div class="ui-tabs" style="margin-bottom:14px">
-    <button class="ui-tab${tab==='people'?' on':''}" onclick="S.filters.acTab='people';rr()">People <span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;background:var(--c-surface-2);color:var(--c-text-2);margin-left:5px">${DB.users.filter(u=>u.status==='Active').length}</span></button>
+    <button class="ui-tab${tab==='people'?' on':''}" onclick="S.filters.acTab='people';rr()">People <span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;background:var(--c-surface-2);color:var(--c-text-2);margin-left:5px">${DB.users.length}</span></button>
     <button class="ui-tab${tab==='roles'?' on':''}" onclick="S.filters.acTab='roles';rr()">Roles <span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;background:var(--c-surface-2);color:var(--c-text-2);margin-left:5px">${Object.keys(DB.roleProfiles||{}).length}</span></button>
   </div>`;
   return `<div class="fade">${hdr('Access Control','Create roles → assign to people. Overrides handle the exceptions.')}${tabs}${_howBar('accesscontrol')}${tab==='roles'?_acRolesTab():_acPeopleTab()}</div>`;
@@ -3468,17 +3468,17 @@ function _acPeopleTab(){
     const nOv=Object.keys(u.hrm.perms||{}).length;
     const hrTag=u.hrm.isHR?'<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;background:#F7E5DE;color:#872E1F" title="HR approver stage">HR</span>':'';
     return `<tr id="acu-${u.id}" style="${hi===u.id?'background:var(--c-brand-soft);':''}border-bottom:1px solid var(--c-border)">
-      <td style="padding:11px 16px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${avatar(u,'w-8 h-8','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);display:flex;align-items:center;gap:6px">${esc(fullName(u))} ${hrTag}</div><div style="font-size:11px;color:var(--c-text-3)">${esc(u.department||'—')}${u.position?' · '+esc(u.position):''}</div></div></div></td>
+      <td style="padding:11px 16px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${avatar(u,'w-8 h-8','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);display:flex;align-items:center;gap:6px">${esc(fullName(u))} ${hrTag}${u.status!=='Active'?chip(u.status):''}</div><div style="font-size:11px;color:var(--c-text-3)">${esc(u.department||'—')}${u.position?' · '+esc(u.position):''}</div></div></div></td>
       <td style="padding:11px 8px">${canMng
         ?`<select onchange="App._acAssignRole('${u.id}',this.value)" class="ui-select" style="width:200px;font-size:12.5px;min-height:0;height:36px;padding:4px 26px 4px 12px">${roles.map(r=>`<option value="${r.id}" ${rid===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}${rid&&!DB.roleProfiles[rid]?`<option value="${esc(rid)}" selected>${esc(rid)} (missing)</option>`:''}${!rid?'<option value="" selected>— No role —</option>':''}</select>`
         :`<span style="font-size:12px;font-weight:700;color:var(--c-text-2)">${esc((DB.roleProfiles[rid]||{}).name||'— No role —')}</span>`}</td>
-      <td style="padding:11px 16px;text-align:right;white-space:nowrap"><button onclick="App._acPreview('${u.id}')" class="ui-btn ui-btn-subtle ui-btn-sm" title="What this person can actually see">${ic('eye','w-3.5 h-3.5')}Preview</button> <button onclick="App._acCustomize('${u.id}')" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('cog','w-3.5 h-3.5')}Personal${nOv?` <span style="font-size:9px;font-weight:800;color:#6B4E1F;background:#F8F0DE;padding:1px 5px;border-radius:8px">${nOv}</span>`:''}</button></td>
+      <td style="padding:11px 16px;text-align:right;white-space:nowrap">${(typeof _uCanProf==='function'&&_uCanProf(u))?`<button onclick="App.openProfile('${u.id}')" class="ui-btn ui-btn-subtle ui-btn-sm" title="Open profile">${ic('user','w-3.5 h-3.5')}</button> `:''}<button onclick="App._acPreview('${u.id}')" class="ui-btn ui-btn-subtle ui-btn-sm" title="What this person can actually see">${ic('eye','w-3.5 h-3.5')}Preview</button> <button onclick="App._acCustomize('${u.id}')" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('cog','w-3.5 h-3.5')}Personal${nOv?` <span style="font-size:9px;font-weight:800;color:#6B4E1F;background:#F8F0DE;padding:1px 5px;border-radius:8px">${nOv}</span>`:''}</button></td>
     </tr>`;
   }).join('');
   return `<div class="ui-card" style="padding:0;overflow:hidden">
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--c-border)">
       <input oninput="S.filters.acQ=this.value;App._searchRR('ac-q')" id="ac-q" value="${esc(S.filters.acQ||'')}" placeholder="Search people…" class="ui-input" style="flex:1;min-width:160px"/>
-      <select onchange="S.filters.acDep=this.value;rr()" class="ui-select" style="width:auto"><option value="">All departments</option>${DB.departments.map(d=>`<option ${S.filters.acDep===d.name?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
+      <select onchange="S.filters.acDep=this.value;rr()" class="ui-select" style="width:auto"><option value="">All departments</option>${topDepts().map(d=>`<option ${S.filters.acDep===d.name?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
     </div>
     <div style="overflow-x:auto"><table class="ac-people" style="width:100%;border-collapse:collapse">
       <thead><tr style="text-align:left;border-bottom:1px solid var(--c-border)">
@@ -3528,6 +3528,7 @@ function _acTogBtn(on,label,onclick,disabled){
     <span style="width:6px;height:6px;border-radius:50%;background:${on?'#D1B68F':'#D5C9BC'};flex-shrink:0"></span>${esc(label)}</button>`;
 }
 App._acCustomize=async(uid2)=>{
+  if(_ACD&&!document.getElementById('modal'))_ACD=null;   // v132.2: a draft abandoned via backdrop / X must not come back
   if(_ACD&&_ACD.uid!==uid2&&_ACD.dirty&&!(await confirmP({
     title:'Discard unsaved changes?',
     body:'You have unsaved permission changes for <b>'+esc(fullName(uById(_ACD.uid))||'the previous person')+'</b>. Switching now throws them away.',

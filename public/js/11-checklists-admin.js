@@ -8,7 +8,7 @@ function clsPage(){
   const myTeamIds=new Set([S.uid,...subTree(S.uid).map(u=>u.id)]);
 let list=can('allChecklists','view')?DB.checklists:DB.checklists.filter(c=>c.createdBy===S.uid||(c.assignees||[]).includes(S.uid));
   if(S.search)list=list.filter(c=>c.name.toLowerCase().includes(S.search.toLowerCase())||c.department.toLowerCase().includes(S.search.toLowerCase()));
-  return`<div class="fade">${hdr('Create Checklist',list.length+' configured',can('checklists','create')?btnP('New checklist','App.editCl()','plus'):'')}
+  return`<div class="fade">${hdr('Create Checklist',(S.search?list.length+' of '+DB.checklists.length+' shown':list.length+' configured'),can('checklists','create')?btnP('New checklist','App.editCl()','plus'):'')}
   <div class="space-y-2.5">
     ${list.map(c=>{
       const ass=(c.assignees||[]).map(uById).filter(Boolean);
@@ -171,7 +171,7 @@ function _freqUI(freq){
 
   if(freq==='Custom'){
     const now=new Date();const cy=now.getFullYear(),cm=now.getMonth();
-    const calYear=CLD._calYear||cy, calMonth=CLD._calMonth||cm;
+    const calYear=CLD._calYear??cy, calMonth=CLD._calMonth??cm;
     const firstDay=new Date(calYear,calMonth,1).getDay();
     const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
     const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -238,7 +238,7 @@ App._togCalDate=(iso)=>{
   // Re-render the calendar
   const sw=$('#cn-sched');if(sw)sw.innerHTML=_freqUI('Custom');
 };
-App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const w=$('#cn-cdt');if(w)w.innerHTML=(CLD.customDates||[]).map(d=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#13171B;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${fmtS(d)}<button onclick="App._remCD('${d}')" class="opacity-70 hover:opacity-100">${ic('x','w-3 h-3')}</button></span>`).join('');};
+App._remCD=d=>{CLD.customDates=(CLD.customDates||[]).filter(x=>x!==d);const sw=$('#cn-sched');if(sw)sw.innerHTML=_freqUI('Custom');};
 App._togLoc=(id,on,el)=>{if(!CLD.locationIds)CLD.locationIds=[];if(on&&!CLD.locationIds.includes(id))CLD.locationIds.push(id);if(!on)CLD.locationIds=CLD.locationIds.filter(x=>x!==id);el.closest('label').className=`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl border cursor-pointer transition ${on?'border-sky-300 bg-sky-50 text-sky-700':'border-ink-200 text-ink-600'}`;};
 App._togAsgn=(id,on,el)=>{if(!CLD.assignees)CLD.assignees=[];if(on&&!CLD.assignees.includes(id))CLD.assignees.push(id);if(!on)CLD.assignees=CLD.assignees.filter(a=>a!==id);el.closest('label').className=`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition text-xs ${on?'border-brand-300 bg-brand-50':'border-ink-100'}`;};
 
@@ -341,7 +341,7 @@ App.delCl=async(id)=>{
   const c=clById(id);if(!c)return;
   // ── Guard: a checklist that is still assigned to people must not be deleted. ──
   if((c.assignees||[]).length){
-    alert("Can't delete \""+(c.name||'this checklist')+"\" — it's assigned to "+c.assignees.length+' user'+(c.assignees.length>1?'s':'')+".\n\nOpen the checklist and remove everyone from Assignees first, or set its Status to Inactive to pause it. Past submissions are always kept.");
+    await infoP({title:"Can't delete this checklist",body:'<b>'+esc(c.name||'This checklist')+'</b> is still assigned to '+c.assignees.length+' user'+(c.assignees.length>1?'s':'')+'. Remove everyone from Assignees first, or set its Status to Inactive to pause it. Past submissions are always kept.'});
     return;
   }
   if(!(await confirmP({

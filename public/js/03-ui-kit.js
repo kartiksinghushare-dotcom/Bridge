@@ -106,6 +106,9 @@ const App={};window.App=App;App.closeModal=closeModal;
 
    Callers must be `async`. The promise resolves false on Cancel, on the X, on a
    backdrop click and on Escape — the safe answer is always "don't do it".        */
+/* infoP — an on-brand replacement for alert(): one OK button, same dialog. Native alert() can be
+   silenced for good by the browser's "prevent this page from creating additional dialogs" tick. */
+function infoP(o){o=Object.assign({danger:false,icon:'alert',confirmLabel:'OK',cancelLabel:''},o||{});return confirmP(o);}
 function confirmP(o){
   o=o||{};
   return new Promise(res=>{
@@ -126,7 +129,7 @@ function confirmP(o){
           <div style="font-size:13px;color:var(--c-text-2);line-height:1.6">${o.body||''}</div>
           ${list}${note}
         </div></div>`,
-      footer:`<button onclick="App._confirmEnd(0)" class="ui-btn ui-btn-ghost ui-btn-md">${esc(o.cancelLabel||'Cancel')}</button>`+
+      footer:(o.cancelLabel===''?'':`<button onclick="App._confirmEnd(0)" class="ui-btn ui-btn-ghost ui-btn-md">${esc(o.cancelLabel||'Cancel')}</button>`)+
              `<button onclick="App._confirmEnd(1)" class="ui-btn ${danger?'ui-btn-danger':'ui-btn-primary'} ui-btn-md">${esc(o.confirmLabel||'Delete')}</button>`});
     // Escape means "no" too (backdrop and X already route through closeModal).
     // The listener is detached by _confirmSettle on EVERY exit, not just the Escape one —

@@ -12,7 +12,7 @@ function teamViewPage(){
     // Managers see DIRECT reports only, not the full recursive tree
     const directReports=DB.users.filter(u=>u.managerId===S.uid&&u.id!==S.uid);
     const team=isAdmin()?subTree(S.uid):directReports;
-    if(!team.length)return myClsPage();
+    if(!team.length)return '<div class="fade">'+hdr('Team','')+empty('users','No team yet','Nobody reports to you at the moment. People appear here as soon as you are set as their manager (Users → Reports to).')+'</div>';
     return`<div class="fade">
       ${hdr('Team','Select a team member to view their checklists')}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
@@ -68,7 +68,8 @@ function teamViewPage(){
         <div class="fd" style="font-size:16px;font-weight:800">${esc(fullName(tvU))}</div>
         <div style="font-size:12px;color:#A59788">${esc(tvU.position||tvU.department)}</div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${(typeof _uCanProf==='function'&&_uCanProf(uById(S.tvUser)))?`<button onclick="App.openProfile('${S.tvUser}')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#F7F3EE;color:#3A312A;font-size:13px;font-weight:600;border:1px solid #EDE7DC;cursor:pointer">${ic('user','w-4 h-4')}Profile</button>`:''}
         <button onclick="App._userDrill(this.dataset.id)" data-id="${S.tvUser}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#F7F3EE;color:#3A312A;font-size:13px;font-weight:600;border:1px solid #EDE7DC;cursor:pointer">${ic('chart','w-4 h-4')}Stats</button>
         <button onclick="App._openSendFeedback(this.dataset.id)" data-id="${S.tvUser}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#13171B;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">${ic('msg','w-4 h-4')}Send feedback</button>
       </div>

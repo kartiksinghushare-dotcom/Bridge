@@ -40,6 +40,11 @@ App._importQCSV=(input)=>{
     if(!lines.length){toast('Empty file','err');return;}
     // Skip header row
     const start=lines[0].toLowerCase().startsWith('text')?1:0;
+    /* v132.2 — map columns by the header row (the template has 10 columns, older files 13), so the
+       photo / comment / approval flags land where they belong instead of in the number-condition slots. */
+    const hdrNames=start?lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/[^a-z0-9]/g,'')):null;
+    const colIdx=(name,fallback)=>{if(!hdrNames)return fallback;const i=hdrNames.indexOf(name);return i>=0?i:-1;};
+    const IX={text:colIdx('text',0),type:colIdx('type',1),o1:colIdx('option1',2),o2:colIdx('option2',3),o3:colIdx('option3',4),o4:colIdx('option4',5),o5:colIdx('option5',6),condition:colIdx('condition',7),cval:colIdx('value',8),cval2:colIdx('value2',9),photo:colIdx('photorequired',10),comment:colIdx('commentrequired',11),approval:colIdx('approvalrequired',12)};
     const rows=lines.slice(start);
     if(!rows.length){toast('No data rows found','err');return;}
     let added=0,skipped=0;
@@ -52,7 +57,8 @@ App._importQCSV=(input)=>{
         else cur+=line[i];
       }
       cols.push(cur.trim());
-      const [text,type,o1,o2,o3,o4,o5,condition,cval,cval2,photo,comment,approval]=cols;
+      const g=k=>IX[k]>=0?cols[IX[k]]:undefined;
+      const text=g('text'),type=g('type'),o1=g('o1'),o2=g('o2'),o3=g('o3'),o4=g('o4'),o5=g('o5'),condition=g('condition'),cval=g('cval'),cval2=g('cval2'),photo=g('photo'),comment=g('comment'),approval=g('approval');
       if(!text||!type){skipped++;return;}
       const qtRaw=(type||'').toLowerCase().trim();
       const qtype=['passfail','yesno','tick','number','answer'].includes(qtRaw)?qtRaw:'answer';
@@ -167,7 +173,7 @@ function qCard(q){
   }
 
 function _qGroupHTML(list){
-  if(!list.length)return empty('help','No questions yet','Create questions or upload a CSV template.');
+  if(!list.length){const _f=!!(S.filters.qSearch||S.filters.qDept||S.filters.qSubDept);return empty('help',_f?'No matching questions':'No questions yet',_f?'Try a different search or clear the filters.':'Create questions or upload a CSV template.');}
   const C=S.filters.qColl=S.filters.qColl||{};
   const tops=topDepts();
   const used=new Set();
@@ -208,6 +214,7 @@ function questionsPage(){
       <select onchange="S.filters.qDept=this.value;S.filters.qSubDept='';rr()" class="ui-select" style="width:auto;min-width:150px;flex:0 0 auto"><option value="">All departments</option>${topDepts().map(d=>`<option value="${d.id}" ${(S.filters.qDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
       <select onchange="S.filters.qSubDept=this.value;rr()" class="ui-select" style="width:auto;min-width:160px;flex:0 0 auto" ${(S.filters.qDept&&(DB.departments||[]).some(d=>d.parentId===S.filters.qDept))?'':'disabled'}><option value="">All sub-departments</option>${(DB.departments||[]).filter(d=>d.parentId===(S.filters.qDept||'')).map(d=>`<option value="${d.id}" ${(S.filters.qSubDept||'')===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
 
+      ${(S.filters.qSearch||S.filters.qDept||S.filters.qSubDept)?`<button onclick="S.filters.qSearch='';S.filters.qDept='';S.filters.qSubDept='';rr()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear</button>`:''}
       ${can('questions','create')?`<button onclick="App._editQuestion(null)" style="display:inline-flex;align-items:center;gap:6px;background:#13171B;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:none;cursor:pointer">${ic('plus','w-4 h-4')} New question</button>`:''}
     </div>
     <!-- CSV Import / Export bar -->
@@ -252,8 +259,7 @@ App._delQuestion=async(id)=>{
   const _usedIn=(DB.checklists||[]).filter(c=>(c.questionIds||[]).includes(id));
   if(_usedIn.length){
     const _assignees=new Set();_usedIn.forEach(c=>(c.assignees||[]).forEach(a=>_assignees.add(a)));
-    const _names=_usedIn.slice(0,4).map(c=>'• '+(c.name||'Untitled')).join('\n')+(_usedIn.length>4?'\n• +'+(_usedIn.length-4)+' more':'');
-    alert("Can't delete this question — it's still used in "+_usedIn.length+' checklist'+(_usedIn.length>1?'s':'')+':\n'+_names+(_assignees.size?'\n\nThose checklists are assigned to '+_assignees.size+' user'+(_assignees.size>1?'s':''):'')+".\n\nOpen each checklist and remove this question first, then you can delete it.");
+    await infoP({title:"Can't delete this question",body:"It's still used in <b>"+_usedIn.length+' checklist'+(_usedIn.length>1?'s':'')+'</b>'+(_assignees.size?' assigned to '+_assignees.size+' user'+(_assignees.size>1?'s':''):'')+'. Open each checklist and remove this question first.',items:_usedIn.slice(0,4).map(c=>esc(c.name||'Untitled')).concat(_usedIn.length>4?['+'+(_usedIn.length-4)+' more']:[])});
     return;
   }
   if(!(await confirmP({
@@ -297,7 +303,7 @@ App._renderQModal=()=>{
     (q.options||[]).forEach((o,i)=>{
       rows+=`<div style="display:flex;align-items:center;gap:6px;background:#FAF7F3;border:1px solid #E6DED3;border-radius:9px;padding:7px 10px">
         <span style="font-size:11px;font-weight:700;color:#A59788;width:18px;text-align:center">${String.fromCharCode(65+i)}</span>
-        <input type="text" value="${o.text||''}" oninput="_QED.options[${i}].text=this.value" placeholder="Answer option…" style="flex:1;background:transparent;border:none;border-bottom:1px solid #E6DED3;font-size:13px;outline:none;padding:2px 0"/>
+        <input type="text" value="${esc(o.text||'')}" oninput="_QED.options[${i}].text=this.value" placeholder="Answer option…" style="flex:1;background:transparent;border:none;border-bottom:1px solid #E6DED3;font-size:13px;outline:none;padding:2px 0"/>
         <button onclick="_QED.options.splice(${i},1);App._renderQModal()" style="width:20px;height:20px;display:grid;place-items:center;border-radius:5px;border:none;background:transparent;color:#D5C9BC;cursor:pointer">${ic('x','w-3 h-3')}</button>
       </div>`;
     });
@@ -332,7 +338,7 @@ App._renderQModal=()=>{
 
   // Preview
   let prev='';
-  if(q.type==='answer')prev=(q.options||[]).map((o,i)=>`<div style="padding:7px 12px;border-radius:8px;border:1.5px solid #E6DED3;background:#fff;font-size:13px;margin-bottom:4px">${String.fromCharCode(65+i)}. ${o.text||'...'}</div>`).join('');
+  if(q.type==='answer')prev=(q.options||[]).map((o,i)=>`<div style="padding:7px 12px;border-radius:8px;border:1.5px solid #E6DED3;background:#fff;font-size:13px;margin-bottom:4px">${String.fromCharCode(65+i)}. ${esc(o.text||'...')}</div>`).join('');
   else if(q.type==='number')prev=`<input disabled placeholder="Enter a number…" style="width:100%;padding:9px;border-radius:9px;border:1.5px solid #E6DED3;font-size:14px;background:#FAF7F3"/>`;
   else if(q.type==='passfail')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#E0EDE0;color:#3F7D54;font-weight:700;font-size:13px;text-align:center">Pass</div><div style="flex:1;padding:9px;border-radius:9px;background:#F6E2DB;color:#B3402E;font-weight:700;font-size:13px;text-align:center">Fail</div></div>`;
   else if(q.type==='yesno')prev=`<div style="display:flex;gap:8px"><div style="flex:1;padding:9px;border-radius:9px;background:#E0EDE0;color:#3F7D54;font-weight:700;font-size:13px;text-align:center">Yes</div><div style="flex:1;padding:9px;border-radius:9px;background:#F6E2DB;color:#B3402E;font-weight:700;font-size:13px;text-align:center">No</div></div>`;
@@ -360,7 +366,7 @@ App._renderQModal=()=>{
     <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:70vh">
       <div>
         <label for="qed-text" style="display:block;font-size:11px;font-weight:700;color:#786A5F;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Question text *</label>
-        <input id="qed-text" type="text" value="${q.text||''}" oninput="_QED.text=this.value" placeholder="e.g. Is the area clean?" style="width:100%;box-sizing:border-box;border:1.5px solid #E6DED3;border-radius:10px;padding:10px 12px;font-size:14px;outline:none" />
+        <input id="qed-text" type="text" value="${esc(q.text||'')}" oninput="_QED.text=this.value" placeholder="e.g. Is the area clean?" style="width:100%;box-sizing:border-box;border:1.5px solid #E6DED3;border-radius:10px;padding:10px 12px;font-size:14px;outline:none" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -396,7 +402,7 @@ App._renderQModal=()=>{
     </div>
     <div style="padding:12px 18px;border-top:1px solid #EDE7DC;display:flex;gap:8px;background:#fff">
       <button onclick="App.closeModal()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid #EDE7DC;background:#fff;font-weight:600;font-size:14px;cursor:pointer">Cancel</button>
-      <button onclick="App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
+      <button id="q-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Saving…';App._saveQuestion()" style="flex:2;padding:11px;border-radius:11px;background:#13171B;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">${isExisting?'Save changes':'Create question'}</button>
     </div>
   `,'max-w-lg');
 
@@ -404,7 +410,7 @@ App._renderQModal=()=>{
 
 App._saveQuestion=()=>{
   if(!_QED)return;
-  if(!can('questions','create')&&!can('questions','edit')&&!can('questions','manage')){toast('You don’t have permission to do that','err');return;}
+  if(!can('questions','create')&&!can('questions','edit')&&!can('questions','manage')){toast('You don’t have permission to do that','err');const qb0=document.getElementById('q-save-btn');if(qb0){qb0.disabled=false;qb0.textContent=_QED?.createdAt?'Save changes':'Create question';}return;}
   const textEl=document.getElementById('qed-text');
   if(textEl)_QED.text=textEl.value.trim();
   const text=(_QED.text||'').trim();
@@ -474,7 +480,7 @@ App._showClQPicker=()=>{
             <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${bg};color:${clr};flex-shrink:0">${tl}</span>
             ${q.isPublic===false?`<span style="font-size:10px;flex-shrink:0" title="Private question">🔒</span>`:''}
             <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.text}</div>
+              <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</div>
               <div style="font-size:11px;color:#A59788">${(q.options||[]).length} option${(q.options||[]).length!==1?'s':''}</div>
             </div>
           </label>`;
@@ -510,7 +516,7 @@ App._showClQEscalation=()=>{
   const au=DB.users.filter(u=>u.status==='Active');
   const configs=CLD.questionConfigs||{};
 
-  const uOptsFn=(curVal)=>'<option value="">— No escalation —</option>'+au.map(u=>`<option value="${u.id}" ${curVal===u.id?'selected':''}>${fullName(u)}</option>`).join('');
+  const uOptsFn=(curVal)=>'<option value="">— No escalation —</option>'+au.map(u=>`<option value="${u.id}" ${curVal===u.id?'selected':''}>${esc(fullName(u))}</option>`).join('');
 
   let sectionsHtml=selectedIds.map(qid=>{
     const q=(DB.questions||[]).find(x=>x.id===qid);
@@ -530,7 +536,7 @@ App._showClQEscalation=()=>{
         const cur=qCfg[key]||'';
         optRows+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F1ECE3">
           <span style="width:20px;height:20px;border-radius:50%;background:#F2E9D4;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#7F6533;flex-shrink:0">${String.fromCharCode(65+i)}</span>
-          <span style="flex:1;font-size:13px;color:#3A312A">${o.text||''}</span>
+          <span style="flex:1;font-size:13px;color:#3A312A">${esc(o.text||'')}</span>
           <select onchange="(CLD.questionConfigs=CLD.questionConfigs||{})['${qid}']=(CLD.questionConfigs['${qid}']||{});CLD.questionConfigs['${qid}']['opt_${i}']=this.value||null" style="font-size:12px;background:#fff;border:1.5px solid #E6DED3;border-radius:8px;padding:4px 10px;outline:none;min-width:150px">${uOptsFn(cur)}</select>
         </div>`;
       });
@@ -569,7 +575,7 @@ App._showClQEscalation=()=>{
     return`<div style="background:#FAF7F3;border:1.5px solid #E6DED3;border-radius:12px;padding:12px 14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>
-        <span style="font-size:13px;font-weight:700;color:#13171B">${q.text}</span>
+        <span style="font-size:13px;font-weight:700;color:#13171B">${esc(q.text)}</span>
       </div>
       <div style="font-size:11px;font-weight:700;color:#A59788;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Escalate answer to</div>
       ${optRows}
@@ -895,7 +901,7 @@ function _notifTimeline(list,unreadIds,typeOf,CLR,BG,ICO){
   return '<div style="background:#fff;border-radius:16px;border:1px solid #E6DED3;overflow:hidden">'
     +'<div style="display:flex;flex-direction:column">'
     +list.map(function(n){
-      var type=typeOf(n.text);var clr=CLR[type];var bg=BG[type];var ico=ICO[type];
+      var type=typeOf(n.text,n);var clr=CLR[type];var bg=BG[type];var ico=ICO[type];
       var isNew=unreadIds.has(n.id);
       return '<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #F5F1EB;cursor:pointer;'+(isNew?'background:#FAF8F4':'background:#fff')+'" onclick="App._notifClick(this.dataset.id)" data-id="'+n.id+'">'
         +'<div style="width:36px;height:36px;border-radius:10px;background:'+bg+';display:grid;place-items:center;flex-shrink:0;margin-top:1px;color:'+clr+'">'+ic(ico,'w-4 h-4')+'</div>'
@@ -916,10 +922,12 @@ function notificationsPage(){
   const hadUnread=unreadIds.size>0;
   // Mark as read after a short delay so user can see what was unread
   if(hadUnread){
+    const _rIds=[...unreadIds];
     setTimeout(()=>{
       notifs.forEach(n=>n.read=true);
       _invalidateNotifCache();
       saveDB();
+      try{sb.from('notifications').update({read:true}).in('id',_rIds).then(()=>{}).catch(()=>{});}catch(e){}   // v132.2: other devices + reloads see them read too
     },1500);
   }
   // Feedback for this user
@@ -977,7 +985,7 @@ function notificationsPage(){
     All:notifs.length,
     Approvals:apprNotifs.length,
     Escalations:escNotifs.length,
-    Feedback:myFb.length+fbNotifs.length,   // records + genuine feedback alerts = what renders
+    Feedback:unackFb.length+fbNotifs.filter(n=>unreadIds.has(n.id)).length,   // live items only — like every other tab
     Workspace:wsNotifs.length,
     Attendance:attNotifs.length,
     People:pplNotifs.length,
@@ -1165,7 +1173,7 @@ App._saveSendFeedback=(userId)=>{
   DB.feedback.push({
     id:uid('fb'),title:title||type+' Feedback',type,
     checklistId:clId||null,userId,managerId:S.uid,
-    date:todayISO(),text,priority,taskName:taskName||null,
+    date:todayISO(),text,priority,taskName:null,
     level:'direct',acknowledged:false,status:'Sent',
     createdAt:new Date().toISOString()
   });

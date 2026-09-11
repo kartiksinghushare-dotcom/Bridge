@@ -78,7 +78,7 @@ function profilePage(){
   if(tab==='overview')body=_profOverview(u,P);
   else if(tab==='work')body=_profWork(u,P);
   else if(tab==='docs')body=_profDocs(u,P);
-  else if(tab==='attendance')body=(typeof _attMyTab==='function')?_attMyTab(u.id,(typeof _attYM==='function')?_attYM():todayISO().slice(0,7),`<div style="display:flex;align-items:center;gap:6px"><button onclick="App._attShiftMonth(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">${ic('back','w-4 h-4')}</button><span style="font-size:13.5px;font-weight:800;min-width:130px;text-align:center">${_attMonthLabel(_attYM())}</span><button onclick="App._attShiftMonth(1)" class="ui-btn ui-btn-ghost ui-btn-sm" ${_attYM()>=todayISO().slice(0,7)?'disabled':''}>${ic('chevR','w-4 h-4')}</button></div>`):'';
+  else if(tab==='attendance')body=(typeof _attMyTab==='function')?_attMyTab(u.id):'';
   else if(tab==='security')body=_profSecurity(u);
   const back=S.filters.profUid?`<button onclick="S.filters.profUid=null;App.go('users')" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-bottom:12px">${ic('back','w-4 h-4')}Back to people</button>`:'';
   return `<div class="fade">${back}${head}${tabsHTML}${body}</div>`;

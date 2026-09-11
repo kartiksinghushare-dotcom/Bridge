@@ -1815,6 +1815,7 @@ function _pageInner(){
   const r=S.route;
   if(r==='home')return homePage();
   if(r==='attendance'){if(can('attendance','view')||can('attendance','clock'))return attendancePage();return _reroute('home');}
+  if(r==='attsettings'){if(can('attendance','manage'))return attendancePage('settings');return _reroute('home');}
   if(r==='dashboard'){if(can('analytics','view'))return dashboardPage();return _reroute('home');}
   if(r==='users'){if(can('employees','view'))return usersPage();return _reroute('home');}
   if(r==='departments'){if(can('departments','view'))return deptsPage();return _reroute('home');}

@@ -38,6 +38,7 @@ function _dmHdrBtns(convo,peer){
 /* ── Sidebar section ── */
 function _dmNavHTML(collapsed){
   var list=_dmConvos();var un=list.filter(_crmUnread).length;var on=!!CRM.sel.dm;
+  var folded=_dmFolded()&&!on;   // collapsed by default; opens while you are inside Messages
   if(collapsed){
     return '<div class="crm-hub crm-hub-mini'+(on?' on':'')+'" style="position:relative;margin-bottom:8px"><button onclick="App._dmOpenList()" title="Direct messages" class="crm-mini-tile">'+ic('msg','w-4 h-4')+(un?'<span class="crm-mini-un">'+(un>99?'99+':un)+'</span>':'')+'</button></div>';
   }
@@ -45,11 +46,12 @@ function _dmNavHTML(collapsed){
     return '<button onclick="App._dmSel(\''+c.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:7px;padding:5px 6px 5px 10px;border:none;border-radius:7px;cursor:pointer;background:'+(act?'#13171B':'transparent')+';color:'+(act?'#fff':'#3A312A')+';font-size:12px;font-weight:'+(u2||act?'700':'600')+';margin-bottom:1px">'+avatar(p,'w-5 h-5','text-[8px]')+'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fullName(p))+'</span>'+(u2?'<span style="min-width:16px;height:16px;padding:0 5px;border-radius:8px;background:'+(act?'rgba(255,255,255,.25)':'#54433C')+';color:#fff;font-size:9px;font-weight:800;display:inline-grid;place-items:center">'+_crmUnreadN(c)+'</span>':(online?'<span style="width:7px;height:7px;border-radius:50%;background:#428059;flex-shrink:0"></span>':''))+'</button>';}).join('');
   return '<div class="crm-hub" style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #E8E0D5">'
     +'<div onclick="App._dmOpenList()" title="Direct messages — private one-to-one chats" style="display:flex;align-items:center;gap:5px;padding:6px 7px;color:'+(on&&!CRM.sel.convoId?'#fff':'#3A312A')+';background:'+(on&&!CRM.sel.convoId?'#13171B':'transparent')+';cursor:pointer;border-radius:7px">'
+      +'<span onclick="event.stopPropagation();App._dmFold()" title="'+(folded?'Show':'Hide')+' recent chats" style="color:'+(on&&!CRM.sel.convoId?'rgba(255,255,255,.6)':'#A8998A')+';display:grid;place-items:center;cursor:pointer">'+ic(folded?'chevR':'chevD','w-3 h-3')+'</span>'
       +'<span style="color:'+(on&&!CRM.sel.convoId?'rgba(255,255,255,.7)':'#A59788')+'">'+ic('msg','w-3.5 h-3.5')+'</span>'
       +'<span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Messages</span>'
       +(un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#54433C;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+un+'</span>':'')
       +(can('messages','send')?'<button title="New message" onclick="event.stopPropagation();App._dmNew()" style="border:none;background:transparent;color:'+(on&&!CRM.sel.convoId?'rgba(255,255,255,.8)':'#A59788')+';cursor:pointer;padding:0;display:grid;place-items:center;min-width:22px;min-height:22px">'+ic('plus','w-3 h-3')+'</button>':'')
-    +'</div>'+rows+(list.length>8?'<button onclick="App._dmOpenList()" style="width:100%;text-align:left;border:none;background:transparent;color:#786A5F;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">All messages ('+list.length+') →</button>':'')
+    +'</div>'+(folded?'':rows)+(!folded&&list.length>8?'<button onclick="App._dmOpenList()" style="width:100%;text-align:left;border:none;background:transparent;color:#786A5F;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">All messages ('+list.length+') →</button>':'')
     +'</div>';
 }
 
@@ -72,6 +74,8 @@ function _dmMain(searchHTML,dashHTML){
   return row1+'<div class="crm-mainrow" style="flex:1;display:flex;min-height:0">'+listCol+pane+'</div>';
 }
 
+function _dmFolded(){try{var v=localStorage.getItem('bridge_dm_folded');return v===null?true:v==='1';}catch(e){return true;}}
+App._dmFold=()=>{try{localStorage.setItem('bridge_dm_folded',_dmFolded()?'0':'1');}catch(e){}rr();};
 /* ── interactions ── */
 App._dmOpenList=()=>{CRM.sel.dm=true;CRM.sel.convoId=null;CRM.sel.threadId=null;CRM.sel.viewId=null;CRM._miniHub=null;CRM.search='';try{App._crmMobNav(false);}catch(e){}rr();};
 App._dmSel=(id)=>{var c=_crmConvo(id);if(!c||!_crmDMVisible(c))return;CRM.sel.dm=true;CRM.sel.viewId=null;CRM.sel.convoId=id;CRM.sel.threadId=null;CRM.compose.images=[];CRM._miniHub=null;try{App._crmMobNav(false);}catch(e){}_crmMarkRead(id);rr();_crmScrollBottom();};
