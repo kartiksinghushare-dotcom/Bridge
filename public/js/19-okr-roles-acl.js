@@ -118,7 +118,7 @@ const isHR=()=>{const u=me();return !!u&&(u.hrm?.isHR===true);};
 function _ensureHrm(u){if(!u)return u;if(!u.hrm||typeof u.hrm!=='object')u.hrm={};const h=u.hrm;if(h.isHR===undefined)h.isHR=false;if(h.roleProfileId===undefined)h.roleProfileId=null;return u;}
 const PERM_AREAS=[
   {key:'dashboard',label:'Dashboard',desc:'The Overview dashboard (company charts). Everyone always gets My Day.',actions:['view'],scoped:false,group:'System'},
-  {key:'attendance',label:'Attendance',desc:'Clock in / out with geofence, work-from-home days and the Attendance tab. “Sees” decides WHOSE attendance they can view and edit — their own always shows',actions:['view','clock','edit','delete','export','manage'],scoped:true,group:'Time'},
+  {key:'attendance',label:'Attendance',desc:'Clock in / out with geofence, work-from-home days and the Attendance tab. “Sees” decides WHOSE attendance they can view, approve and edit — their own always shows. “Approve” decides regularisation / partial-day / on-duty / comp-off requests and closes open shifts for people in scope; “Set schedule” changes their shift, rest days and worker category; “Edit” adds or corrects punches by hand (HR); “Manage” is the company-wide rules and public holidays',actions:['view','clock','approve','schedule','edit','delete','export','manage'],scoped:true,group:'Time'},
   {key:'myProfile',label:'My profile (own)',desc:'What a person may change on their OWN profile page',actions:['editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'],scoped:false,group:'People & Org'},
   {key:'employees',label:'Users',desc:'The people directory — create, edit, deactivate people, assign managers & roles. “Open profile” shows another person’s full profile; “Sensitive details” reveals birth date, ID numbers, emergency contact and documents; “Edit HR details” edits joining date, employee ID, schedule, work location and the WFH switch',actions:['view','create','edit','delete','deactivate','resetPassword','assignManager','assignRole','assign','manage','viewProfile','viewSensitive','editHr','manageWfh'],scoped:true,group:'People & Org'},
   {key:'hierarchy',label:'Hierarchy / Org chart',desc:'The reporting tree',actions:['view'],scoped:true,group:'People & Org'},
@@ -160,7 +160,7 @@ function _seedRoleProfiles(){
     admin:{id:'admin',name:'Administrator',description:'Full operational access across the whole organization — everything except Access Control.',builtin:true,perms:allOf(true)},
     manager:{id:'manager',name:'Team Lead / Manager',description:'Sees and acts on their team: approvals, checklists, tickets, team OKRs, reports.',builtin:true,perms:{
       dashboard:A('none','view'),
-      attendance:A('team','view','clock','export'),   // managers SEE their team's attendance; only HR edits it
+      attendance:A('team','view','clock','approve','schedule','export'),   // managers see their team, decide its requests, close open shifts and set schedules; only HR edits punches by hand
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
       messages:A('none','view','send','delete'),
       employees:A('team','view','viewProfile','viewSensitive'),
@@ -175,7 +175,7 @@ function _seedRoleProfiles(){
     }},
     hr:{id:'hr',name:'HR',description:'People operations — the only role that adds or corrects attendance by hand, edits HR details, manages WFH and everyone’s documents.',builtin:true,perms:{
       dashboard:A('none','view'),
-      attendance:A('everyone','view','clock','edit','delete','export','manage'),
+      attendance:A('everyone','view','clock','approve','schedule','edit','delete','export','manage'),
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
       messages:A('none','view','send','delete'),
       employees:A('everyone','view','create','edit','deactivate','resetPassword','assignManager','viewProfile','viewSensitive','editHr','manageWfh'),
@@ -203,7 +203,7 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='16'; // v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
+  const V='17'; // v17 (Bridge v133): Attendance gains “Approve” and “Set schedule” (HRMS Phase 1). v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
     if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
@@ -219,6 +219,15 @@ function _seedRoleProfiles(){
     if(!p.perms.messages)p.perms.messages=A('none','view','send','delete');
     if(p.perms.employees&&p.perms.employees.actions&&p.perms.employees.actions.view&&p.perms.employees.actions.viewProfile===undefined)p.perms.employees.actions.viewProfile=true;
     p._v132=1;
+  });
+  /* v133 one-time floor for CUSTOM roles: anyone who could already EDIT attendance for others can also approve
+     requests and set schedules for the same people — otherwise a custom HR-like role would silently lose the
+     Requests inbox the moment this ships. Admins can narrow it per role. */
+  Object.values(DB.roleProfiles).forEach(p=>{
+    if(p.builtin||p._v133)return;
+    const a=p.perms&&p.perms.attendance;
+    if(a&&a.actions&&a.actions.edit){a.actions.approve=true;a.actions.schedule=true;}
+    p._v133=1;
   });
 }
 
@@ -284,7 +293,7 @@ function _hrFloor(area,action){
   if(area==='leaveBalances')return action==='view'||action==='edit'||action==='grant';
   if(area==='hrSettings')return action==='view'||action==='edit';
   if(area==='leaveRequests')return action==='view'||action==='approve';
-  if(area==='attendance')return action==='view'||action==='edit';
+  if(area==='attendance')return action==='view'||action==='edit'||action==='approve'||action==='schedule';
   if(area==='documentsOrg')return action==='approve';
   return false;
 }
@@ -315,7 +324,7 @@ function _baseCan(area,action){
   const sub=isSubAdmin(),mgr=isMgr(),hr=isHR(),q=!!me()?.questionsAccess,doc=hasDocAccess();
   switch(area){
     case 'dashboard':return true;
-    case 'attendance':return (action==='view'||action==='clock')?true:(sub||hr||mgr);
+    case 'attendance':return (action==='view'||action==='clock')?true:((action==='approve'||action==='schedule')?(sub||hr||mgr):(sub||hr));
     case 'myProfile':return true;
     case 'messages':return true;
     case 'leaveRequests':return action==='approve'?(sub||mgr||hr):(action==='download'?(sub||hr):true);
@@ -1320,7 +1329,7 @@ function okrPage(){
   // ── My check-ins due today (combined task list — GROUP rule: any owner's update counts) ──
   const due=okrDueForUser(S.uid,today);
   const pendDue=due.filter(o=>!okrCheckinForDate(o.id,today));
-  const duePanel=due.length?`<div style="background:${pendDue.length?'var(--c-warn-soft)':'var(--c-success-soft)'};border:1px solid ${pendDue.length?'#EEDEC0':'#C8E2D0'};border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  const duePanel=due.length?`<div style="background:${pendDue.length?'var(--c-warn-soft)':'var(--c-success-soft)'};border:1px solid ${pendDue.length?'#EEDEC0':'#C8E2D0'};border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap" class="okr-due">
       <span style="width:38px;height:38px;border-radius:11px;background:var(--c-surface);color:${pendDue.length?'var(--c-warn-ink)':'var(--c-success-ink)'};display:grid;place-items:center;flex-shrink:0">${ic('clock','w-5 h-5')}</span>
       <div style="flex:1;min-width:180px">
         <div class="fd" style="font-size:14px;font-weight:800;color:var(--c-text)">OKR check-ins due today</div>

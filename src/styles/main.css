@@ -1307,6 +1307,8 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 @media(max-width:767px){
   #content .att-row{grid-template-columns:52px 1fr auto!important;gap:8px!important}
   #content .att-trow{grid-template-columns:1fr auto!important}
+  #content .att-inbox-row{grid-template-columns:auto 1fr!important}
+  #content .att-inbox-row .att-inbox-actions{grid-column:1/-1;justify-content:flex-end}
   #content .prof-kv{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px!important}
   #modal [style*="grid-template-columns:repeat(2,minmax(0,1fr))"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #att-btn{flex:1 1 auto}
@@ -1371,3 +1373,88 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   /* Card head titles + actions align in one line and wrap gracefully */
   #content .ui-card-head{flex-wrap:wrap;gap:6px 10px;row-gap:6px}
 }
+
+/* ═══ v133 — attendance: phone-first layout ═══ */
+.att-tiles-more{display:none}
+@media(max-width:767px){
+  /* My Day clock card: one big button, secondary actions in a row underneath */
+  #content .att-clock-row{flex-direction:column;align-items:stretch!important;gap:10px!important}
+  #content .att-clock-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
+  #content .att-clock-actions #att-btn{grid-column:1/-1;min-height:50px;font-size:15px;justify-content:center}
+  #content .att-clock-actions .ui-btn{justify-content:center;min-width:0}
+  #content .att-clock-actions .ui-btn:only-child{grid-column:1/-1}
+  /* range picker fills the line; custom dates side by side */
+  #content .att-range>select{flex:1 1 100%;width:100%!important}
+  #content .att-range>div{width:100%;display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center}
+  #content .att-range>div input{width:100%!important;min-width:0}
+  /* KPI tiles: six visible, the rest behind “More…” */
+  #content .att-kpis .att-tile-more{display:none}
+  #content .att-kpis.open .att-tile-more{display:block}
+  #content .att-kpis .att-tiles-more{display:block;grid-column:1/-1;background:none;border:none;color:var(--c-brand);font-weight:700;font-size:12px;padding:4px 0;cursor:pointer;text-align:center}
+  #content .att-kpis .att-tile{padding:8px 10px!important}
+  #content .att-kpis .att-tile .fd{font-size:17px!important}
+  /* manager inbox: text first, full-width action row */
+  #content .att-inbox-row{grid-template-columns:auto 1fr!important;gap:8px 10px!important}
+  #content .att-inbox-row .att-inbox-actions{grid-column:1/-1;display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
+  #content .att-inbox-row .att-inbox-actions .ui-btn{justify-content:center;min-height:42px}
+  #content .att-inbox-row .att-inbox-actions .ui-btn:only-child{grid-column:1/-1}
+  /* reports: cards instead of wide tables */
+  #content .att-rep-wrap{overflow:visible!important}
+  #content .att-rep,#content .att-rep tbody,#content .att-rep tr,#content .att-rep td{display:block;width:100%}
+  #content .att-rep thead{display:none}
+  #content .att-rep tr{border:1px solid var(--c-border);border-radius:12px;padding:8px 10px;margin:8px 0;background:var(--c-surface)}
+  #content .att-rep td{border:none!important;padding:3px 0!important;white-space:normal!important;display:flex;gap:8px;align-items:baseline;font-size:12.5px}
+  #content .att-rep td::before{content:attr(data-label);flex:0 0 38%;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-3)}
+  #content .att-rep td:empty{display:none}
+  #content .att-rep td.att-rep-empty{display:block;text-align:center}
+  #content .att-rep td.att-rep-empty::before{content:none}
+  #content .att-rep-pills .ui-btn{flex:0 0 auto;white-space:nowrap}
+  /* settings: label on top, control full width */
+  #content .att-set-row{flex-direction:column;align-items:stretch!important;gap:8px!important}
+  #content .att-set-ctl{display:flex;justify-content:flex-start}
+  #content .att-set-ctl .ui-select,#content .att-set-ctl input[type=time],#content .att-set-ctl input[type=date]{width:100%!important}
+  #content .att-set-ctl .att-num{width:100%}
+  #content .att-set-ctl .att-num input{flex:1;width:auto!important}
+  /* request type picker: three equal buttons */
+  #modal .att-req-pick{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #modal .att-req-pick .ui-btn{padding:8px 6px;font-size:12.5px}
+  /* holiday rows: remove button stays on the right */
+  #content .att-nowrap{flex-wrap:nowrap!important}
+  #content .att-cell>div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+}
+
+/* ═══ v133b — phone polish across pages ═══ */
+@media(max-width:767px){
+  /* clock card: the clock button always spans; when Request… is the only other button it spans too */
+  #content .att-clock-actions #att-btn{order:-1}
+  #content .att-clock-actions .ui-btn:not(#att-btn):first-child:nth-last-child(2){grid-column:1/-1}
+  /* team KPIs: three per row, compact */
+  #content .att-team-kpis{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+  #content .att-team-kpis>div{padding:8px 8px!important}
+  #content .att-team-kpis .fd{font-size:17px!important}
+  /* settings: number + toggle stay on one line */
+  #content .att-num-tog{width:100%}
+  #content .att-num-tog .att-num{flex:1}
+  /* questions: text wraps, chips + Edit on their own line */
+  #content .q-row{flex-wrap:wrap!important}
+  #content .q-row .q-text{white-space:normal!important;flex:1 1 60%!important}
+  #content .q-row .q-actions{flex:1 1 100%;justify-content:flex-end;padding-left:26px}
+  /* OKR: check-ins panel stacks, button full width */
+  #content .okr-due{flex-direction:column;align-items:stretch!important}
+  #content .okr-due>span{display:none!important}
+  #content .okr-due>.ui-btn{justify-content:center;width:100%}
+  /* hierarchy: hint that the tree scrolls sideways */
+  #content .oc{min-width:max-content}
+}
+
+/* ═══ v133c — toggles & bottom nav on phones ═══ */
+/* The bottom nav must not depend on the Tailwind CDN having loaded (fixed/bottom-0 came from utility classes only). */
+@media(max-width:767px){
+  #bottom-nav,.mob-nav{position:fixed!important;bottom:0!important;left:0!important;right:0!important;z-index:30!important}
+  /* Toggles: a proper 44×26 pill with a round knob — the generic "#content button{min-height:34px}" rule was
+     stretching them into 32×34 blocks with the knob stuck in the corner. */
+  #content .tog,#modal .tog,.tog{width:44px!important;height:26px!important;min-height:26px!important;max-height:26px!important;padding:0!important;border-radius:13px!important;flex:0 0 44px!important}
+  #content .tog span,#modal .tog span,.tog span{width:22px!important;height:22px!important;top:2px!important;left:2px!important}
+  #content .tog.on span,#modal .tog.on span,.tog.on span{transform:translateX(18px)!important}
+}
+@media(min-width:768px){#bottom-nav,.mob-nav{display:none!important}}

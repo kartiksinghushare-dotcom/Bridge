@@ -135,14 +135,14 @@ function qCard(q){
     const bg=Q_TYPE_BG[q.type]||'#F7F3EE';
     const tl=(Q_TYPES.find(t=>t.id===q.type)||{label:q.type}).label;
     let h=`<div style="background:#fff;border-radius:14px;border:1.5px solid ${exp?'#E7D9BC':'#EDE7DC'};overflow:hidden">`;
-    h+=`<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="App._togExpandQ('${q.id}')">`;
+    h+=`<div class="q-row" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="App._togExpandQ('${q.id}')">`;
     h+=`<span style="color:#C9BCAE;transition:transform .2s;transform:rotate(${exp?90:0}deg)">${ic('chevR','w-4 h-4')}</span>`;
     h+=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${bg};color:${clr}">${tl}</span>`;
     if(_qdep){h+=`<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:#F4F0EA;color:#786A5F;white-space:nowrap;flex-shrink:0">${esc(_qdep.name)}${_qsub?' › '+esc(_qsub.name):''}</span>`;}
-    h+=`<div style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</div>`;
+    h+=`<div class="q-text" style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.text)}</div>`;
     const isPub=q.isPublic!==false;
     const mine=canManageQ(q);
-    h+=`<div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
+    h+=`<div class="q-actions" style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">`;
     if(mine){
       h+=`<span title="Change via Edit" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1.5px solid ${isPub?'#BFDCC9':'#EEDEC0'};background:${isPub?'#EEE4D5':'#FBF7EB'};font-size:11px;font-weight:700;color:${isPub?'#346A47':'#7C5A26'}">${isPub?'🌐 Public':'🔒 Private'}</span>`;
       h+=`<button onclick="App._editQuestion('${q.id}')" style="padding:5px 12px;border-radius:8px;border:1.5px solid #EDE7DC;background:#fff;font-size:12px;font-weight:600;cursor:pointer">Edit</button>`;

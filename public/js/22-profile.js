@@ -23,6 +23,8 @@ function _profPerm(u){
     editEmergency:self?can('myProfile','editEmergency'):(can('employees','edit')&&inScope),
     editHr:(can('employees','editHr')&&(inScope||self))||admin,
     manageWfh:(can('employees','manageWfh')&&(inScope||self))||admin,
+    // v133: a manager with Attendance → "Set schedule" can change shift / rest days / category for people in their attendance scope (never their own)
+    editSchedule:(can('employees','editHr')&&(inScope||self))||admin||(!self&&can('attendance','schedule')&&scopeFilter('attendance')(u.id)),
     docsView:self||(can('documentsPersonal','view')&&scopeFilter('documentsPersonal')(u.id))||admin,
     docsUpload:self?can('myProfile','uploadDocs'):((can('documentsPersonal','upload')||can('documentsPersonal','create'))&&scopeFilter('documentsPersonal')(u.id)),
     docsDelete:self?can('myProfile','deleteDocs'):(can('documentsPersonal','delete')&&scopeFilter('documentsPersonal')(u.id)),
@@ -78,7 +80,7 @@ function profilePage(){
   if(tab==='overview')body=_profOverview(u,P);
   else if(tab==='work')body=_profWork(u,P);
   else if(tab==='docs')body=_profDocs(u,P);
-  else if(tab==='attendance')body=(typeof _attMyTab==='function')?_attMyTab(u.id):'';
+  else if(tab==='attendance')body=(typeof _attMyTab==='function')?_attMyTab(u.id)+((typeof _attMyRequestsCard==='function'&&typeof _attCanResolveFor==='function'&&_attCanResolveFor(u.id))?_attMyRequestsCard(u.id):''):'';
   else if(tab==='security')body=_profSecurity(u);
   const back=S.filters.profUid?`<button onclick="S.filters.profUid=null;App.go('users')" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-bottom:12px">${ic('back','w-4 h-4')}Back to people</button>`:'';
   return `<div class="fade">${back}${head}${tabsHTML}${body}</div>`;
@@ -110,12 +112,13 @@ function _profWork(u,P){
   return _profCard('Employment',_profKV([['Employee ID',esc(u.employeeId||'')],['Joining date',u.joiningDate?fmtD(u.joiningDate)+(_profTenure(u.joiningDate)?' <span style="color:var(--c-text-3);font-weight:500">· '+_profTenure(u.joiningDate)+'</span>':''):''],['Position',esc(u.position||'')],['Department',esc(u.department||'')],['Work location',loc?esc(loc.name):'<span style="color:var(--c-text-3);font-weight:500">Any office</span>'],['Employment type',esc((u.details||{}).employmentType||'')],['Contract end',(u.details||{}).contractEnd?fmtD(u.details.contractEnd):''],['Probation ends',(u.details||{}).probationEnd?fmtD(u.details.probationEnd):'']]),
       P.editHr?btn('Edit',`App._profEditWork('${u.id}')`,{variant:'ghost',size:'sm',icon:'edit'}):'')
     +_profCard('Schedule & attendance',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 20px;margin-bottom:12px">
-        <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Shift</div><div style="font-size:14px;font-weight:600;margin-top:2px">${esc(s.in)} – ${esc(s.out)}</div></div>
+        <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Worker category</div><div style="font-size:14px;font-weight:600;margin-top:2px">${esc(((typeof ATT_CATEGORIES!=='undefined'?ATT_CATEGORIES:[]).find(c=>c[0]===(s.category||'office'))||['','Office'])[1])}</div></div>
+        <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Shift</div><div style="font-size:14px;font-weight:600;margin-top:2px">${esc(s.in)} – ${esc(s.out)} <span style="font-size:11px;color:var(--c-text-3);font-weight:500">· ${(()=>{const m=hm2m(s.out)-hm2m(s.in);return m>0?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):'';})()}</span></div>${s.effectiveFrom?`<div style="font-size:11px;color:var(--c-text-3)">since ${fmtD(s.effectiveFrom)}${(s.history||[]).length?' · '+(s.history||[]).length+' earlier version'+((s.history||[]).length>1?'s':''):''}</div>`:''}</div>
         <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Off days</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${WKDAYS.map(d=>`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${(s.offDays||[]).includes(d)?'var(--c-ink)':'var(--c-surface-2)'};color:${(s.offDays||[]).includes(d)?'#fff':'var(--c-text-2)'}">${d}</span>`).join('')}</div></div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${pill(u.attendanceRequired!==false,'Must clock in')}${pill(!!u.wfhAllowed,'Can work from home')}</div>
       <p style="font-size:11.5px;color:var(--c-text-3);margin-top:10px;line-height:1.5">Shift times drive the late flag and the clock-in / clock-out reminders. “Can work from home” shows the WFH button on ${P.self?'your':'their'} My Day and lets ${P.self?'you':'them'} clock in without a geofence on those days.</p>`,
-      (P.editHr||P.manageWfh)?btn('Edit',`App._profEditSchedule('${u.id}')`,{variant:'ghost',size:'sm',icon:'edit'}):'');
+      (P.editSchedule||P.manageWfh)?btn('Edit',`App._profEditSchedule('${u.id}')`,{variant:'ghost',size:'sm',icon:'edit'}):'');
 }
 function _profSecurity(u){
   return _profCard('Change password',`<div style="display:grid;gap:10px;max-width:420px">${fld('Current password','pw-cur','','password','')}${fld('New password','pw-new','','password','min 6 characters')}<div><button id="pw-save-btn" onclick="if(this.disabled)return;this.disabled=true;this.textContent='Updating…';App.changePw().finally(()=>{const b=document.getElementById('pw-save-btn');if(b){b.disabled=false;b.textContent='Update password';}})" class="ui-btn ui-btn-primary ui-btn-md">Update password</button></div></div>`)
@@ -185,21 +188,41 @@ App._profSaveWork=async(uid2)=>{
   if(await _profSave(u,patch,'employment'))toast('Saved ✓');
 };
 App._profEditSchedule=(uid2)=>{
-  const u=uById(uid2);if(!u)return;const P=_profPerm(u);if(!(P.editHr||P.manageWfh))return toast('No permission','err');
-  const s={in:'09:00',out:'18:00',offDays:['Sun'],...(u.workSchedule||{})};
+  const u=uById(uid2);if(!u)return;const P=_profPerm(u);if(!(P.editSchedule||P.manageWfh))return toast('No permission','err');
+  const s={in:'09:00',out:'18:00',offDays:['Sun'],category:'office',...(u.workSchedule||{})};
+  const cats=(typeof ATT_CATEGORIES!=='undefined'?ATT_CATEGORIES:[['office','Office']]);
   modalShell({title:'Schedule & attendance',sub:fullName(u),size:'max-w-md',key:'prof-sched',
     body:`<div style="display:grid;gap:12px">
-      ${P.editHr?`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('Shift starts','ps-in',s.in,'time')}${fld('Shift ends','ps-out',s.out,'time')}</div>
-      <div><label class="ui-label">Off days</label><div style="display:flex;gap:6px;flex-wrap:wrap">${WKDAYS.map(d=>`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:20px;border:1.5px solid var(--c-border-2);cursor:pointer"><input type="checkbox" class="ps-off" value="${d}" ${(s.offDays||[]).includes(d)?'checked':''}/>${d}</label>`).join('')}</div></div>
-      ${mkTog('ps-req',u.attendanceRequired!==false,'Must clock in (gets reminders, counts as absent when missing)')}`:''}
+      ${P.editSchedule?`${selF('Worker category','ps-cat',cats,s.category||'office')}
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('Shift starts','ps-in',s.in,'time')}${fld('Shift ends','ps-out',s.out,'time')}</div>
+      <div><label class="ui-label">Rest days</label><div style="display:flex;gap:6px;flex-wrap:wrap">${WKDAYS.map(d=>`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:20px;border:1.5px solid var(--c-border-2);cursor:pointer"><input type="checkbox" class="ps-off" value="${d}" ${(s.offDays||[]).includes(d)?'checked':''}/>${d}</label>`).join('')}</div></div>
+      ${fld('Change applies from','ps-from',todayISO(),'date')}
+      <p style="font-size:11.5px;color:var(--c-text-3);margin-top:-6px;line-height:1.5">Days before this date keep the pattern that was live then — past absences, rest days and late flags are not rewritten.</p>
+      ${P.editHr?mkTog('ps-req',u.attendanceRequired!==false,'Must clock in (gets reminders, counts as absent when missing)'):''}`:''}
       ${P.manageWfh?mkTog('ps-wfh',!!u.wfhAllowed,'Can work from home (WFH button on My Day)'):''}
     </div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP('Save',`App._profSaveSchedule('${u.id}')`)});
 };
 App._profSaveSchedule=async(uid2)=>{
-  const u=uById(uid2);if(!u)return;const P=_profPerm(u);if(!(P.editHr||P.manageWfh))return;
+  const u=uById(uid2);if(!u)return;const P=_profPerm(u);if(!(P.editSchedule||P.manageWfh))return;
   const patch={};
-  if(P.editHr){const sched={in:$('#ps-in')?.value||'09:00',out:$('#ps-out')?.value||'18:00',offDays:$$('.ps-off:checked').map(x=>x.value)};patch.work_schedule=sched;patch.attendance_required=togV('ps-req');u.workSchedule=sched;u.attendanceRequired=patch.attendance_required;}
+  if(P.editSchedule){
+    const cur={in:'09:00',out:'18:00',offDays:['Sun'],category:'office',...(u.workSchedule||{})};
+    const nu={in:$('#ps-in')?.value||'09:00',out:$('#ps-out')?.value||'18:00',offDays:$$('.ps-off:checked').map(x=>x.value),category:$('#ps-cat')?.value||'office'};
+    const from=$('#ps-from')?.value||todayISO();
+    const changed=nu.in!==cur.in||nu.out!==cur.out||nu.category!==(cur.category||'office')||JSON.stringify([...(nu.offDays||[])].sort())!==JSON.stringify([...(cur.offDays||[])].sort());
+    let sched;
+    if(changed){
+      // Dated work pattern (HRMS §9.4): the outgoing version is kept in history with the date it was live from.
+      const hist=(cur.history||[]).slice();
+      hist.push({effectiveFrom:cur.effectiveFrom||null,in:cur.in,out:cur.out,offDays:cur.offDays||[],category:cur.category||'office'});
+      sched={...nu,effectiveFrom:from,history:hist.slice(-24),changedBy:S.uid,changedAt:new Date().toISOString()};
+      if(u.id!==S.uid&&typeof _attNotify==='function')_attNotify(u.id,'🗓 Your work schedule changes from '+fmtS(from)+': shift '+nu.in+'–'+nu.out+', rest day'+(nu.offDays.length===1?'':'s')+' '+(nu.offDays.join(', ')||'none')+'.','home','attendance');
+      log(fullName(me()),'Schedule changed',fullName(u)+' · from '+from+' · '+nu.in+'–'+nu.out+' · off '+nu.offDays.join('/')+' · '+nu.category);
+    }else sched={...cur};
+    patch.work_schedule=sched;u.workSchedule=sched;
+    if(P.editHr){patch.attendance_required=togV('ps-req');u.attendanceRequired=patch.attendance_required;}
+  }
   if(P.manageWfh){patch.wfh_allowed=togV('ps-wfh');const was=!!u.wfhAllowed;u.wfhAllowed=patch.wfh_allowed;if(was!==u.wfhAllowed&&u.id!==S.uid&&typeof _attNotify==='function')_attNotify(u.id,(u.wfhAllowed?'🏠 Work from home is now enabled on your profile.':'Work from home has been switched off on your profile.'),'home','attendance');}
   closeModal();rr();
   if(await _profSave(u,patch,'schedule'))toast('Saved ✓');

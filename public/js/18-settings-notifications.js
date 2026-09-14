@@ -316,6 +316,11 @@ const EMAIL_EVENTS=[
   {key:'attendance_reminder',label:'Attendance reminders (clock in / out, auto clock-out)',vars:'{{user_name}}, {{action_url}} — the server job sends these; edit wording here'},
   {key:'attendance_wfh',     label:'Work-from-home day (to the manager)',vars:'{{user_name}} (manager), {{wfh_user}}, {{date}}, {{action_url}}'},
   {key:'attendance_edited',  label:'Attendance edited by a manager',     vars:'{{user_name}}, {{actor}}, {{date}}, {{reason}}, {{action_url}}'},
+  /* v133 — HRMS attendance requests, open shifts, missed clock-in to the manager */
+  {key:'attendance_request', label:'Attendance request (to the approver)',vars:'{{user_name}} (approver), {{req_user}}, {{request}}, {{action_url}}'},
+  {key:'attendance_decided', label:'Attendance request decided',          vars:'{{user_name}}, {{request}}, {{date}}, {{status}}, {{actor}}, {{note}}, {{action_url}}'},
+  {key:'attendance_open_shift',label:'Open shift to resolve (to the manager)',vars:'{{user_name}} (manager), {{req_user}}, {{date}}, {{action_url}} — the server job sends these; edit wording here'},
+  {key:'attendance_missed_rm',label:'Missed clock-in (to the manager)',    vars:'{{user_name}} (manager), {{req_user}}, {{action_url}} — the server job sends these; edit wording here'},
   {key:'dm_message',         label:'Direct message received',            vars:'{{user_name}}, {{actor}}, {{preview}}, {{action_url}}'},
   {key:'people_event',       label:'Birthdays, anniversaries & document expiry',vars:'{{user_name}}, {{text}}, {{action_url}}'},
 ];
@@ -345,6 +350,10 @@ function _defaultTemplates(){
     attendance_reminder:{subject:'⏰ Attendance reminder',body:'Hi {{user_name}},\n\nThis is your attendance reminder from Bridge. Open My Day to clock in or out.\n\n{{action_url}}'},
     attendance_wfh:{subject:'🏠 {{wfh_user}} is working from home today',body:'Hi {{user_name}},\n\n{{wfh_user}} marked {{date}} as a work-from-home day.\n\n{{action_url}}'},
     attendance_edited:{subject:'✏️ Your attendance for {{date}} was edited',body:'Hi {{user_name}},\n\n{{actor}} edited your attendance for {{date}}.\n\nReason: {{reason}}\n\n{{action_url}}'},
+    attendance_request:{subject:'🕒 Attendance request from {{req_user}}',body:'Hi {{user_name}},\n\n{{request}}\n\nOpen Attendance → Requests to approve or reject it.\n\n{{action_url}}'},
+    attendance_decided:{subject:'{{status}}: {{request}} ({{date}})',body:'Hi {{user_name}},\n\nYour attendance request — {{request}} for {{date}} — was {{status}} by {{actor}}.\n\n{{note}}\n\n{{action_url}}'},
+    attendance_open_shift:{subject:'⏱ Open shift to close: {{req_user}} ({{date}})',body:'Hi {{user_name}},\n\n{{req_user}} clocked in on {{date}} and never clocked out. Bridge never guesses a clock-out time — please close the shift under Attendance → Requests with the time they actually left.\n\n{{action_url}}'},
+    attendance_missed_rm:{subject:'⏰ {{req_user}} hasn’t clocked in',body:'Hi {{user_name}},\n\n{{req_user}} was expected to clock in today and hasn’t yet.\n\n{{action_url}}'},
     dm_message:{subject:'💬 New message from {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} sent you a message on Bridge:\n\n"{{preview}}"\n\n{{action_url}}'},
     people_event:{subject:'🎉 {{text}}',body:'Hi {{user_name}},\n\n{{text}}\n\n{{action_url}}'},
   };
@@ -362,8 +371,8 @@ function _nsDefault(){return{
   email_feedback_received:false,email_deadline_reminder:true,email_escalation:true,
   inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
   email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
-  inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_dm_message:true,inapp_people_event:true,
-  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_dm_message:false,email_people_event:true,
+  inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_attendance_request:true,inapp_attendance_decided:true,inapp_attendance_open_shift:true,inapp_attendance_missed_rm:true,inapp_dm_message:true,inapp_people_event:true,
+  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_dm_message:false,email_people_event:true,
   templates:{},
 };}
 let _ns=null;
@@ -439,7 +448,7 @@ async function sendEmail(eventType, userId, vars){
   const user = userId ? uById(userId) : null;
   if(!user?.email){console.warn('sendEmail: no email for user',userId);return;}
   if(user.emailEnabled===false) return;
-  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
+  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
     var _np=user.notifyPrefs||{};var _c=_np.channels&&_np.channels[_k];if(_c&&_c.email===false)return;}catch(e){}
   if(!_ns) await _loadNS();
   if(!_ns.email_enabled) return;
@@ -454,7 +463,7 @@ async function sendEmail(eventType, userId, vars){
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
     okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
-    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',dm_message:'workspace',people_event:'profile',
+    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'workspace',people_event:'profile',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
@@ -570,9 +579,13 @@ function settingsPage(forceTab){
         ${_nsTogRow('inapp_attendance_reminder','Clock-in / clock-out reminders & auto clock-out','Server-side reminders after shift start / end, and the note when someone is clocked out automatically')}
         ${_nsTogRow('inapp_attendance_wfh','Work-from-home day → manager','Tell the manager when someone marks a WFH day')}
         ${_nsTogRow('inapp_attendance_edited','Attendance edited','Tell the person when a manager edits or adds one of their entries')}
+        ${_nsTogRow('inapp_attendance_request','Attendance request → approver','Regularisation, partial-day, on-duty and comp-off requests go to the manager')}
+        ${_nsTogRow('inapp_attendance_decided','Attendance request decided','Tell the person when their request is approved or rejected')}
+        ${_nsTogRow('inapp_attendance_open_shift','Open shift → manager','Next morning, when someone never clocked out (server job)')}
+        ${_nsTogRow('inapp_attendance_missed_rm','Missed clock-in → manager','Same-day push to the manager when a scheduled person hasn’t clocked in (server job)')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
         ${_nsTogRow('inapp_dm_message','Direct messages','New private messages (each person can silence their own in My notifications)')}
-        ${_nsTogRow('inapp_people_event','Birthdays, anniversaries & document expiry','To the manager (and the person, for documents) — 30 / 7 / 0 days before expiry')}
+        ${_nsTogRow('inapp_people_event','Birthdays, anniversaries & document expiry','To the manager (and the person, for documents) — 90 / 60 / 30 / 7 / 0 days before expiry')}
       </div>
     </div>
   </div>`;
@@ -636,6 +649,10 @@ function settingsPage(forceTab){
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
         ${_nsTogRow('email_attendance_reminder','Clock-in / clock-out reminders','Email with the reminder (server job, honours each person’s Attendance → Email switch)')}
         ${_nsTogRow('email_attendance_wfh','Work-from-home day → manager','Email the manager when someone marks a WFH day')}
+        ${_nsTogRow('email_attendance_request','Attendance request → approver','Email the manager when a request needs a decision')}
+        ${_nsTogRow('email_attendance_decided','Attendance request decided','Email the person the decision')}
+        ${_nsTogRow('email_attendance_open_shift','Open shift → manager','Morning email listing shifts to close (server job)')}
+        ${_nsTogRow('email_attendance_missed_rm','Missed clock-in → manager','Email as well as push (server job; off by default — push is enough)')}
         ${_nsTogRow('email_attendance_edited','Attendance edited','Email the person when a manager edits their entry')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
         ${_nsTogRow('email_dm_message','Direct messages','Email for every private message — off by default, in-app + push usually suffice')}
@@ -910,7 +927,9 @@ App._bbOpenLink=(link,text,nid)=>{
   try{
     var L=String(link||'');
     if(L==='home'||L.indexOf('att:in:')===0||L.indexOf('att:out:')===0){App.go('home');return;}
-    if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';const d=L.slice(9)||'';if(/^\d{4}-\d{2}-\d{2}$/.test(d)){S.filters.attFrom=d;S.filters.attTo=d;S.filters.attPreset='custom';S.filters.attYm=d.slice(0,7);}rr();return;}
+    if(L.indexOf('att:req:')===0){if(typeof App._attOpenReqLink==='function')App._attOpenReqLink(L.slice(8));else App.go('attendance');return;}
+    if(L.indexOf('att:open:')===0){App.go('attendance');S.filters.attTab='requests';rr();return;}
+    if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';const parts=L.slice(9).split(':');const d=parts[0]||'';if(/^\d{4}-\d{2}-\d{2}$/.test(d)){S.filters.attFrom=d;S.filters.attTo=d;S.filters.attPreset='custom';S.filters.attYm=d.slice(0,7);}S.filters.attPerson=(parts[1]&&typeof uById==='function'&&uById(parts[1]))?parts[1]:null;rr();return;}
     if(L.indexOf('att:')===0){App.go('attendance');S.filters.attTab='my';var d=L.slice(4);if(/^\d{4}-\d{2}/.test(d))S.filters.attYm=d.slice(0,7);rr();return;}
     if(L.indexOf('profile:')===0){var parts=L.split(':');if(typeof App.openProfile==='function'){App.openProfile(parts[1]);if(parts[2]==='docs'){S.filters.profTab='docs';rr();}return;}}
   }catch(e){}
