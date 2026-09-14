@@ -221,7 +221,30 @@ function _attIsOpenShift(a){
 function _attMins(a){if(!a||!a.inAt)return 0;if(_attIsOpenShift(a))return 0;const end=a.outAt?new Date(a.outAt):new Date();return Math.max(0,Math.round((end-new Date(a.inAt))/60000));}
 function _attFmtMins(m){m=Math.max(0,Math.round(m||0));const h=Math.floor(m/60),mm=m%60;return h+'h '+String(mm).padStart(2,'0')+'m';}
 function _attFmtHHMM(m){m=Math.max(0,Math.round(m||0));return Math.floor(m/60)+':'+String(m%60).padStart(2,'0');}
-function _attHM(iso){if(!iso)return '—';const d=new Date(iso);return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+/* ═══ TIME ZONES (spec §15.2) — every person lives in the time zone of their work location (Locations → geofence →
+   time zone); the workspace setting is only the default for people with no location. Times are shown, and late /
+   early / shift maths are done, in THAT zone — a Dubai manager looking at a Riyadh colleague sees Riyadh times. */
+function _attTzOf(u){const l=u&&u.locationId?locById(u.locationId):null;return (l&&l.timezone)||_attSettings().tz||'Asia/Dubai';}
+const _attTzFmt={};
+function _attTzParts(ts,tz){
+  try{
+    if(!_attTzFmt[tz])_attTzFmt[tz]=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const o={};_attTzFmt[tz].formatToParts(new Date(ts)).forEach(p=>{if(p.type!=='literal')o[p.type]=Number(p.value);});
+    if(o.hour===24)o.hour=0;return o;
+  }catch(e){const d=new Date(ts);return{year:d.getFullYear(),month:d.getMonth()+1,day:d.getDate(),hour:d.getHours(),minute:d.getMinutes(),second:d.getSeconds()};}
+}
+/* Wall-clock "YYYY-MM-DD" and minutes-since-midnight of an instant in a zone */
+function _attTzDate(iso,tz){const p=_attTzParts(iso,tz);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');}
+function _attTzMins(iso,tz){const p=_attTzParts(iso,tz);return p.hour*60+p.minute;}
+/* The instant at which a zone's wall clock reads dateStr + "HH:MM" (DST-safe: two-pass offset) */
+function _attZoned(dateStr,hm,tz){
+  const [y,m,d]=dateStr.split('-').map(Number);const [h,mi]=(hm||'00:00').split(':').map(Number);
+  const want=Date.UTC(y,m-1,d,h,mi||0,0);
+  const off=ts=>{const p=_attTzParts(ts,tz);return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)-ts;};
+  let ts=want-off(want);ts=want-off(ts);
+  return new Date(ts).toISOString();
+}
+function _attHM(iso,tz){if(!iso)return '—';if(tz){const p=_attTzParts(iso,tz);return String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');}const d=new Date(iso);return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
 function _attDayMins(uid2,date){return _attRowsFor(uid2,date).reduce((n,a)=>n+_attMins(a),0);}
 /* ═══ WORK PATTERN (spec §9.4) — per person, DATED. u.workSchedule = the current pattern {in,out,offDays,category,
    effectiveFrom} plus history:[{effectiveFrom,in,out,offDays,category}] of earlier versions. _attSchedule(u,date)
@@ -257,8 +280,8 @@ function _attDayKind(u,date){
 }
 /* Days before attendance tracking started (or before the person joined) are neither present nor absent. */
 function _attTracked(u,date){const from=_attSettings().tracking_from||'';if(from&&date<from)return false;if(u&&u.joiningDate&&date<u.joiningDate)return false;return true;}
-function _attInMins(a){const d=new Date(a.inAt);return d.getHours()*60+d.getMinutes();}
-function _attOutMins(a){const d=new Date(a.outAt);return d.getHours()*60+d.getMinutes();}
+function _attInMins(a){return _attTzMins(a.inAt,_attTzOf(uById(a.userId)));}
+function _attOutMins(a){return _attTzMins(a.outAt,_attTzOf(uById(a.userId)));}
 /* Late = first clock-in after shift start + grace. Grace is allowed N times a month (spec §9.6); once those are used
    up, an arrival inside the grace window counts as late too. An approved partial-day (late arrival) excuses the day. */
 function _attLateRaw(u,a,date){if(!a||!a.inAt)return false;const s=_attSchedule(u,date||a.date);return _attInMins(a)>hm2m(s.in)+Number(_attSettings().late_grace_min||0);}
@@ -326,7 +349,7 @@ App._attClockIn=async()=>{
   if(_attBusy)return;const u=me();if(!u)return;
   if(!_attEnabled())return toast('Attendance isn’t switched on yet','warn');
   if(!can('attendance','clock'))return toast('Your role can’t clock in — ask an admin','err');
-  const today=todayISO();
+  const today=_attTzDate(new Date().toISOString(),_attTzOf(u));
   if(_attOpenToday(S.uid))return toast('You are already clocked in','warn');
   _attBusy=true;_attSetBtn('Finding you…');
   try{
@@ -519,10 +542,24 @@ function _homeTodayChecklists(today){
 function _attCanEditFor(uid2){return !!uid2&&uid2!==S.uid&&can('attendance','edit')&&scopeFilter('attendance')(uid2);}
 /* ═══ Date range (shared by My / Team / Export) ═══ */
 function _attISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+/* Relative presets (Today, Last 7 days, This month…) are recomputed from TODAY on every render — the remembered
+   filter used to freeze the dates on the day they were chosen, so "Today" still showed last Friday. */
+function _attPresetRange(k){
+  const t=new Date();const iso=_attISO;let from,to=iso(t);
+  if(k==='today'){from=to;}
+  else if(k==='yesterday'){const d=new Date(t);d.setDate(d.getDate()-1);from=to=iso(d);}
+  else if(k==='week'){const d=new Date(t);d.setDate(d.getDate()-6);from=iso(d);}
+  else if(k==='lastmonth'){const f=new Date(t.getFullYear(),t.getMonth()-1,1);const l=new Date(t.getFullYear(),t.getMonth(),0);from=iso(f);to=iso(l);}
+  else if(k==='30'){const d=new Date(t);d.setDate(d.getDate()-29);from=iso(d);}
+  else if(k==='90'){const d=new Date(t);d.setDate(d.getDate()-89);from=iso(d);}
+  else{from=to.slice(0,8)+'01';}   // 'month' and anything unknown
+  return{from,to};
+}
 function _attRange(){
-  const t=todayISO();
-  let from=S.filters.attFrom,to=S.filters.attTo;
-  if(!from||!to){from=t.slice(0,8)+'01';to=t;}
+  const t=todayISO();const p=S.filters.attPreset||'month';
+  let from,to;
+  if(p==='custom'){from=S.filters.attFrom;to=S.filters.attTo;if(!from||!to){from=t.slice(0,8)+'01';to=t;}}
+  else{({from,to}=_attPresetRange(p));}
   if(from>to){const x=from;from=to;to=x;}
   if(to>t)to=t;
   return{from,to};
@@ -532,17 +569,8 @@ function _attMonthsBetween(from,to){const out=[];let d=new Date(from.slice(0,7)+
 function _attMonthLabel(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
 function _attRangeLabel(r){return r.from===r.to?fmtD(r.from):(fmtS(r.from)+' – '+fmtD(r.to));}
 App._attPreset=(k)=>{
-  const t=new Date();const iso=_attISO;
-  let from,to=iso(t);
-  if(k==='custom'){S.filters.attPreset='custom';rr();return;}
-  if(k==='today'){from=to;}
-  else if(k==='yesterday'){const d=new Date(t);d.setDate(d.getDate()-1);from=to=iso(d);}
-  else if(k==='week'){const d=new Date(t);d.setDate(d.getDate()-6);from=iso(d);}
-  else if(k==='month'){from=to.slice(0,8)+'01';}
-  else if(k==='lastmonth'){const f=new Date(t.getFullYear(),t.getMonth()-1,1);const l=new Date(t.getFullYear(),t.getMonth(),0);from=iso(f);to=iso(l);}
-  else if(k==='30'){const d=new Date(t);d.setDate(d.getDate()-29);from=iso(d);}
-  else if(k==='90'){const d=new Date(t);d.setDate(d.getDate()-89);from=iso(d);}
-  S.filters.attFrom=from;S.filters.attTo=to;S.filters.attPreset=k;rr();
+  if(k==='custom'){const r=_attRange();S.filters.attFrom=r.from;S.filters.attTo=r.to;S.filters.attPreset='custom';rr();return;}
+  const r=_attPresetRange(k);S.filters.attFrom=r.from;S.filters.attTo=r.to;S.filters.attPreset=k;rr();
 };
 App._attSetRange=(from,to)=>{if(from)S.filters.attFrom=from;if(to)S.filters.attTo=to;S.filters.attPreset='custom';rr();};
 function _attRangeBar(){
@@ -641,7 +669,7 @@ function _attMyTab(uid2,opts){
   return (mine?_attRangeBar():head+_attRangeBar())+`<div class="bb-kpis att-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">${tiles}${more}</div>`+_attCalendar(u,r)+legend;
 }
 function _attCalendar(u,r){
-  const canEdit=_attCanEditFor(u.id);
+  const canEdit=_attCanEditFor(u.id);const _tz=_attTzOf(u);
   const months=_attMonthsBetween(r.from,r.to);
   const today=todayISO();
   return months.map(ym=>{
@@ -659,7 +687,7 @@ function _attCalendar(u,r){
       cells.push(`<button ${inRange&&!future?`onclick="App._attDay('${u.id}','${iso}')"`:'disabled'} class="att-cell" style="border:1px solid ${isT?'var(--c-brand)':'var(--c-border)'};background:${bg};opacity:${inRange&&!future?1:.4}">
         <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:${isT?'800':'700'};color:${isT?'var(--c-brand)':'var(--c-text)'}">${d}</span><span style="width:7px;height:7px;border-radius:50%;background:${dot}"></span></div>
         <div style="font-size:11px;font-weight:700;color:var(--c-text);margin-top:4px;min-height:14px">${mid}</div>
-        <div style="font-size:9.5px;color:var(--c-text-3);display:flex;gap:4px;flex-wrap:wrap;min-height:12px"><span class="att-cell-times">${rs.length?_attHM(rs[0].inAt)+'–'+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt):'…'):''}</span>${wfh&&rs.length?'<span>🏠</span>':''}${f.late?'<span style="color:#A97C33;font-weight:800" title="Late">L</span>':''}${f.early?'<span style="color:#A97C33;font-weight:800" title="Left early">E</span>':''}${f.halfDay?'<span style="color:#A97C33;font-weight:800" title="Half day">½</span>':''}${f.otMins>0?'<span style="color:#463830;font-weight:800" title="Overtime '+_attFmtMins(f.otMins)+'">OT</span>':''}${f.autoOut?'<span style="color:#C9584A;font-weight:800" title="Auto clock-out">A</span>':''}${f.queued?'<span title="Synced late">↻</span>':''}${f.edited?'<span title="Corrected">✎</span>':''}</div>
+        <div style="font-size:9.5px;color:var(--c-text-3);display:flex;gap:4px;flex-wrap:wrap;min-height:12px"><span class="att-cell-times">${rs.length?_attHM(rs[0].inAt,_tz)+'–'+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt,_tz):'…'):''}</span>${wfh&&rs.length?'<span>🏠</span>':''}${f.late?'<span style="color:#A97C33;font-weight:800" title="Late">L</span>':''}${f.early?'<span style="color:#A97C33;font-weight:800" title="Left early">E</span>':''}${f.halfDay?'<span style="color:#A97C33;font-weight:800" title="Half day">½</span>':''}${f.otMins>0?'<span style="color:#463830;font-weight:800" title="Overtime '+_attFmtMins(f.otMins)+'">OT</span>':''}${f.autoOut?'<span style="color:#C9584A;font-weight:800" title="Auto clock-out">A</span>':''}${f.queued?'<span title="Synced late">↻</span>':''}${f.edited?'<span title="Corrected">✎</span>':''}</div>
       </button>`);
     }
     return `<div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head" style="padding:11px 16px"><span class="ui-card-title" style="font-size:14px">${_attMonthLabel(ym)}</span>${canEdit?`<span style="font-size:11px;color:var(--c-text-3)">tap a day to edit</span>`:''}</div>
@@ -671,12 +699,12 @@ App._attDay=(uid2,d)=>{
   const u=uById(uid2);if(!u)return;
   const rs=_attRowsFor(uid2,d);const status=_attDayStatus(u,d);const total=rs.reduce((n,a)=>n+_attMins(a),0);
   const canEdit=_attCanEditFor(uid2);const canResolve=_attCanResolveFor(uid2);
-  const f=_attDayFlags(u,d);const kind=_attDayKind(u,d);const sched=_attSchedule(u,d);
+  const f=_attDayFlags(u,d);const kind=_attDayKind(u,d);const sched=_attSchedule(u,d);const _tz=_attTzOf(u);
   const chipS=(t,bg,fg)=>`<span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;background:${bg};color:${fg}">${t}</span>`;
   const sess=rs.map(a=>{const li=a.inLocId?locById(a.inLocId):null;const lo=a.outLocId?locById(a.outLocId):null;const ed=a.editedBy?uById(a.editedBy):null;const openS=_attIsOpenShift(a);
-    const hist=(a.history||[]).map(h=>{const by=h.by?uById(h.by):null;const b=h.before||{};return `<div style="font-size:11px;color:var(--c-text-3);padding:4px 0 0;border-top:1px dashed var(--c-border);margin-top:6px">Original: ${_attHM(b.in)} → ${b.out?_attHM(b.out):'…'}${b.mode&&b.mode!==a.mode?' · '+esc(b.mode):''} · changed ${h.at?new Date(h.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''} by ${esc(by?fullName(by):'—')}${h.reason?' — '+esc(h.reason):''}</div>`;}).join('');
+    const hist=(a.history||[]).map(h=>{const by=h.by?uById(h.by):null;const b=h.before||{};return `<div style="font-size:11px;color:var(--c-text-3);padding:4px 0 0;border-top:1px dashed var(--c-border);margin-top:6px">Original: ${_attHM(b.in,_tz)} → ${b.out?_attHM(b.out,_tz):'…'}${b.mode&&b.mode!==a.mode?' · '+esc(b.mode):''} · changed ${h.at?new Date(h.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''} by ${esc(by?fullName(by):'—')}${h.reason?' — '+esc(h.reason):''}</div>`;}).join('');
     return `<div style="border:1px solid ${openS?'#E7B8AE':'var(--c-border)'};border-radius:12px;padding:10px 12px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:14px;font-weight:800;color:var(--c-text)">${_attHM(a.inAt)} → ${a.outAt?_attHM(a.outAt):(openS?'<span style="color:#A63528">not closed</span>':'<span style="color:#346A47">still in</span>')} <span style="font-size:12px;color:var(--c-text-3);font-weight:600">· ${openS?'unresolved':_attFmtMins(_attMins(a))}</span></div><div style="display:flex;gap:4px;flex-wrap:wrap">${a.mode==='wfh'?chipS('🏠 WFH','#F6EAE3','#8A6152'):a.mode==='onduty'?chipS('On duty','#EEE5D6','#4A3B34'):a.mode==='remote'?chipS('Remote','#E9F1E8','#346A47'):''}${rs[0]===a&&f.late?chipS('Late','#F9F1DF','#7C5A26'):''}${rs[rs.length-1]===a&&f.early?chipS('Left early','#F9F1DF','#7C5A26'):''}${a.autoOut?chipS('Auto clock-out','#F9E9E3','#7E2A1C'):''}${openS?chipS('Open shift','#F9E9E3','#7E2A1C'):''}${a.queued?chipS('Synced late','#F5EFDF','#463830'):''}${a.source==='regularised'?chipS('Regularised','#EEE5D6','#4A3B34'):''}</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:14px;font-weight:800;color:var(--c-text)">${_attHM(a.inAt,_tz)} → ${a.outAt?_attHM(a.outAt,_tz):(openS?'<span style="color:#A63528">not closed</span>':'<span style="color:#346A47">still in</span>')} <span style="font-size:12px;color:var(--c-text-3);font-weight:600">· ${openS?'unresolved':_attFmtMins(_attMins(a))}</span></div><div style="display:flex;gap:4px;flex-wrap:wrap">${a.mode==='wfh'?chipS('🏠 WFH','#F6EAE3','#8A6152'):a.mode==='onduty'?chipS('On duty','#EEE5D6','#4A3B34'):a.mode==='remote'?chipS('Remote','#E9F1E8','#346A47'):''}${rs[0]===a&&f.late?chipS('Late','#F9F1DF','#7C5A26'):''}${rs[rs.length-1]===a&&f.early?chipS('Left early','#F9F1DF','#7C5A26'):''}${a.autoOut?chipS('Auto clock-out','#F9E9E3','#7E2A1C'):''}${openS?chipS('Open shift','#F9E9E3','#7E2A1C'):''}${a.queued?chipS('Synced late','#F5EFDF','#463830'):''}${a.source==='regularised'?chipS('Regularised','#EEE5D6','#4A3B34'):''}</div></div>
       <div style="font-size:11.5px;color:var(--c-text-3);margin-top:5px;line-height:1.5">${li?'In at '+esc(li.name)+(a.inDist!=null?' ('+a.inDist+' m away)':''):(a.inLat!=null?'In at '+a.inLat.toFixed(4)+', '+a.inLng.toFixed(4):'')}${a.outAt?(lo?' · out at '+esc(lo.name)+(a.outDist!=null?' ('+a.outDist+' m)':''):''):''}${a.source==='manual'?' · added manually':''}${ed?' · edited by '+esc(fullName(ed))+(a.editReason?': '+esc(a.editReason):''):''}${a.note?'<br>'+esc(a.note):''}</div>
       ${hist}
       ${(canEdit||(openS&&canResolve))?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${openS&&canResolve?btn('Close this shift',`App._attResolve('${a.id}')`,{variant:'primary',size:'sm',icon:'clock'}):''}${canEdit?btn('Edit',`App._attEdit('${a.id}','${uid2}','${d}')`,{variant:'ghost',size:'sm',icon:'edit'}):''}</div>`:''}
@@ -710,7 +738,7 @@ function _attTeamTab(){
     const loc=first&&first.inLocId?locById(first.inLocId):null;
     const st=_attStats(p.id,r.from,r.to);
     return `<div class="att-trow" onclick="S.filters.attPerson='${p.id}';rr()" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--c-border);cursor:pointer">
-      <div class="att-nowrap" style="display:flex;align-items:center;gap:10px;min-width:0">${avatar(p,'w-9 h-9','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fullName(p))}</div><div style="font-size:11px;color:var(--c-text-3);display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:20px;${sc}">${status}</span>${rs.length?`<span>${_attHM(first.inAt)} → ${last.outAt?_attHM(last.outAt):'…'}</span>`:''}${loc?`<span>· ${esc(loc.name)}</span>`:''}${f.late?'<span style="font-weight:800;color:#A97C33">LATE</span>':''}${f.early?'<span style="font-weight:800;color:#A97C33">EARLY</span>':''}${f.halfDay?'<span style="font-weight:800;color:#A97C33">½ DAY</span>':''}${f.otMins>0?'<span style="font-weight:800;color:#463830">OT '+_attFmtMins(f.otMins)+'</span>':''}${f.autoOut?'<span style="font-weight:800;color:#C9584A">AUTO OUT</span>':''}${f.queued?'<span title="Synced late">↻</span>':''}${oldOpenS?'<span style="font-weight:800;color:#C9584A" title="Open shift from '+oldOpenS.date+'">OPEN '+fmtS(oldOpenS.date).toUpperCase()+'</span>':''}</div></div></div>
+      <div class="att-nowrap" style="display:flex;align-items:center;gap:10px;min-width:0">${avatar(p,'w-9 h-9','text-[11px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fullName(p))}</div><div style="font-size:11px;color:var(--c-text-3);display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:20px;${sc}">${status}</span>${rs.length?`<span>${_attHM(first.inAt,_attTzOf(p))} → ${last.outAt?_attHM(last.outAt,_attTzOf(p)):'…'}</span>`:''}${loc?`<span>· ${esc(loc.name)}</span>`:''}${f.late?'<span style="font-weight:800;color:#A97C33">LATE</span>':''}${f.early?'<span style="font-weight:800;color:#A97C33">EARLY</span>':''}${f.halfDay?'<span style="font-weight:800;color:#A97C33">½ DAY</span>':''}${f.otMins>0?'<span style="font-weight:800;color:#463830">OT '+_attFmtMins(f.otMins)+'</span>':''}${f.autoOut?'<span style="font-weight:800;color:#C9584A">AUTO OUT</span>':''}${f.queued?'<span title="Synced late">↻</span>':''}${oldOpenS?'<span style="font-weight:800;color:#C9584A" title="Open shift from '+oldOpenS.date+'">OPEN '+fmtS(oldOpenS.date).toUpperCase()+'</span>':''}</div></div></div>
       <div style="text-align:right"><div class="fd" style="font-size:14px;font-weight:800">${rs.length?_attFmtMins(m):'—'}</div><div style="font-size:10.5px;color:var(--c-text-3)">${st.present}d · ${_attFmtMins(st.mins)}${st.absent?' · <span style="color:#A63528">'+st.absent+' absent</span>':''}${st.openShift?' · <span style="color:#A63528">'+st.openShift+' open</span>':''}</div></div>
     </div>`;}).join('');
   return _attRangeBar()+`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
@@ -759,7 +787,7 @@ function _attSettingsTab(){
     +row('coc','Comp-off annual cap','Maximum comp-off days a person can accumulate in a year (KSA statute: 30).',num('comp_off_annual_cap','days',0,365)),'balances are handled by the leave module')
   +card('Tracking',
      row('from','Tracking started on','Days before this date are not counted as absent (the feature launch date, or when you started using it).',`<input type="date" value="${esc(s.tracking_from||'')}" class="ui-input" style="width:auto;padding:7px 10px" onchange="App._attSet('tracking_from',this.value)"/>`)
-    +row('tz','Time zone','Used by the server for reminders and end-of-day; each location can carry its own time zone on its geofence.',`<input value="${esc(s.tz||'Asia/Dubai')}" class="ui-input" style="width:150px;padding:7px 10px" onchange="App._attSet('tz',this.value)"/>`))
+    +row('tz','Default time zone','Only for people with no work location. Everyone else follows the time zone of their location (Locations → open a location → Geofence → Time zone): clock-in dates, late flags, reminders and reports all use it.',`<input value="${esc(s.tz||'Asia/Dubai')}" class="ui-input" style="width:150px;padding:7px 10px" onchange="App._attSet('tz',this.value)"/>`))
   +_attHolidaysCard()
   +`<p style="font-size:12px;color:var(--c-text-3);margin-top:12px;line-height:1.5">Per-person settings — <b>worker category</b> (office / warehouse / remote / consultant), <b>shift times, rest days and their effective date</b>, <b>who must clock in</b> and <b>who may work from home</b> — live on each profile (Users → open profile → Work). Managers with Attendance → “Set schedule” can change their own team’s.</p>`;
 }
@@ -770,8 +798,8 @@ App._attEdit=(id,uid2,date)=>{
   if(uid2===S.uid)return toast('You can’t change your own attendance — clock in and out from My Day, or ask HR','err');
   if(!_attCanEditFor(uid2))return toast('Only HR (Attendance → Edit) can add or change someone’s attendance','err');
   const a=id?(DB.attendance||[]).find(x=>x.id===id):null;
-  const u=uById(uid2);
-  const t=iso=>iso?new Date(iso).toTimeString().slice(0,5):'';
+  const u=uById(uid2);const tz=_attTzOf(u);
+  const t=iso=>iso?_attHM(iso,tz):'';
   modalShell({title:(a?'Edit':'Add')+' attendance — '+fullName(u),sub:fmtD(date)+' · a reason is required and the person is told',size:'max-w-md',key:'att-edit',
     body:`<div style="display:grid;gap:12px">
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('Clock in','ae-in',t(a&&a.inAt),'time')}${fld('Clock out','ae-out',t(a&&a.outAt),'time')}</div>
@@ -786,9 +814,10 @@ App._attEditSave=async(id,uid2,date)=>{
   const tin=$('#ae-in')?.value,tout=$('#ae-out')?.value,mode=$('#ae-mode')?.value||'office',note=($('#ae-note')?.value||'').trim(),reason=($('#ae-reason')?.value||'').trim();
   if(!tin)return toast('Clock-in time is required','err');
   if(!reason)return toast('Give a reason — it is shown to the person and kept in the audit log','err');
-  const mk=t=>t?new Date(date+'T'+t+':00').toISOString():null;
+  const tz=_attTzOf(uById(uid2));
+  const mk=t=>t?_attZoned(date,t,tz):null;
   // Night shifts: a clock-out earlier than the clock-in belongs to the next calendar day.
-  const mkOut=t=>{if(!t)return null;const d=new Date(date+'T'+t+':00');if(d<=new Date(date+'T'+tin+':00'))d.setDate(d.getDate()+1);return d.toISOString();};
+  const mkOut=t=>{if(!t)return null;let out=_attZoned(date,t,tz);if(new Date(out)<=new Date(mk(tin))){const d=new Date(date+'T00:00:00');d.setDate(d.getDate()+1);out=_attZoned(_attISO(d),t,tz);}return out;};
   const now=new Date().toISOString();
   const patch={clock_in_at:mk(tin),clock_out_at:mkOut(tout),mode,note,edited_by:S.uid,edited_at:now,edit_reason:reason,updated_at:now,auto_out:false};
   let err;
@@ -837,7 +866,7 @@ function _attBuildCsv(people,from,to){
       const base=[p.employeeId||'',fullName(p),p.email,p.department||'',loc?loc.name:'',sched.category||'office',d,dayAbbr(d),kind.label,st,kind.type==='SCHEDULED_WORKING'?sched.in+'-'+sched.out:'',kind.type==='SCHEDULED_WORKING'?_attFmtHHMM(f.stdMins):''];
       const tail=[_attFmtHHMM(f.mins),f.shortage?_attFmtHHMM(f.stdMins-f.mins):'',f.otMins?_attFmtHHMM(f.otMins):'',y(f.late),y(f.early),y(f.halfDay),y(f.absent),y(f.openShift),y(f.wfh),y(f.onDuty),y(f.restDayWork),y(f.queued),y(f.edited),y(f.autoOut),pend,rs.map(a=>a.note).filter(Boolean).join(' | ')];
       if(!rs.length){lines.push(base.concat(['',''],tail));return;}
-      rs.forEach((a,i)=>{lines.push(base.concat([_attHM(a.inAt),a.outAt?_attHM(a.outAt):''],i===0?tail:[_attFmtHHMM(_attMins(a))].concat(new Array(14).fill('')).concat([a.note||''])));});
+      rs.forEach((a,i)=>{lines.push(base.concat([_attHM(a.inAt,_attTzOf(p)),a.outAt?_attHM(a.outAt,_attTzOf(p)):''],i===0?tail:[_attFmtHHMM(_attMins(a))].concat(new Array(14).fill('')).concat([a.note||''])));});
     });});
   return lines.map(x=>x.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
 }

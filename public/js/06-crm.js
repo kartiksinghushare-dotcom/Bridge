@@ -333,6 +333,30 @@ const _crmStyle='<style>'
   /* the table keeps its own scroller but gains momentum + a visible edge */
   +'.crm-scroll{-webkit-overflow-scrolling:touch}'
 +'}'
++'.crm-lsearch{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #EDE7DC;background:#fff}'
++'.crm-lsearch input{flex:1;min-width:0;border:none;background:#F3EEE6;border-radius:20px;padding:9px 14px;font-size:15px;outline:none}'
++'.crm-lsearch button{width:34px;height:34px;border:none;background:transparent;color:#A59788;cursor:pointer;display:grid;place-items:center;border-radius:9px}'
++'.crm-lsnippet{display:flex;flex-direction:column;gap:2px;padding:6px 14px 10px 62px;margin-top:-6px;border-bottom:1px solid #F1ECE4;cursor:pointer;background:#FCFAF6}'
++'.crm-lsnippet-n{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788}'
++'.crm-lsnippet-t{font-size:12px;color:#5E5148;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
++'.crm-lsnippet mark,.crm-hit mark{background:#F5E4B8;color:#3E322B;border-radius:3px;padding:0 1px}'
++'.crm-msearch{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #EDE7DC;background:#FAF7F3;flex-shrink:0}'
++'.crm-msearch input{flex:1;min-width:0;border:1px solid #E6DED3;background:#fff;border-radius:20px;padding:8px 14px;font-size:14px;outline:none}'
++'.crm-msearch input:focus{border-color:#C9B8A0}'
++'.crm-msearch-n{font-size:12px;color:#786A5F;white-space:nowrap;min-width:64px;text-align:center}'
++'.crm-msearch button{width:32px;height:32px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;display:grid;place-items:center;border-radius:9px;flex-shrink:0}'
++'.crm-msg.crm-hit .crm-bub{box-shadow:0 0 0 2px #E9C97A!important;transition:box-shadow .2s}'
++'.crm-msg.crm-hit-cur .crm-bub{box-shadow:0 0 0 3px #D9A93F!important;background:#FFF3D0!important}'
++'@media(max-width:767px){.crm-search-desk{display:none!important}.crm-msearch{padding:6px 8px}.crm-msearch-n{min-width:52px;font-size:11px}}'
++'.crm-tcard{position:relative;background:#fff;border:1px solid #EDE7DC;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(35,28,22,.04)}'
++'.crm-tcard-head{display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:8px;border-bottom:1px solid #F4F0EA;margin-bottom:6px}'
++'.crm-tcard-t{font-size:14px;font-weight:700;color:#13171B;line-height:1.3}'
++'.crm-tcard-c{font-size:11.5px;color:#A59788;margin-top:1px}'
++'.crm-tcard-row{display:flex;align-items:center;gap:10px;padding:4px 0;min-height:34px}'
++'.crm-tcard-l{flex:0 0 84px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788}'
++'.crm-tcard-v{flex:1;min-width:0;display:flex;align-items:center}'
++'.crm-tcard-v>*{max-width:100%}'
++'.crm-tcard-del{width:30px;height:30px;border:none;background:transparent;color:#CEC1B3;cursor:pointer;border-radius:8px;display:grid;place-items:center;flex-shrink:0}'
 +'</style>';
 function _crmEmpty(icon,title,sub,btn){return'<div style="flex:1;display:grid;place-items:center;padding:40px"><div style="text-align:center;max-width:360px"><div style="width:56px;height:56px;border-radius:16px;background:#F7F4EF;color:#54433C;display:grid;place-items:center;margin:0 auto 14px">'+ic(icon,'w-7 h-7')+'</div><div class="fd" style="font-size:16px;font-weight:800;color:#13171B">'+esc(title)+'</div><div style="font-size:13px;color:#A59788;margin-top:5px;line-height:1.5">'+esc(sub)+'</div>'+(btn||'')+'</div></div>';}
 /* v3.22 — WhatsApp-style list row: 46px avatar · name + time · one-line preview with sender
@@ -442,6 +466,7 @@ function _crmDetailsPanel(convo,board){
     +'</div></div>';
 }
 function _crmChatPane(convo,board){
+  if(CRM.msgSearch&&convo)setTimeout(function(){_crmMsgSearchApply(true);},0);
   if(!convo)return '<div class="crm-chatpane" style="flex:1;display:flex;min-width:0;min-height:0">'+_crmEmpty('msg','No conversation selected',(_crmFilteredConvos().length?'Pick a conversation from the list.':'Tap + above the list to start a new chat.'),'')+'</div>';
   var meta;
   if(convo.isTicket){
@@ -470,7 +495,8 @@ function _crmChatPane(convo,board){
   if(CRM.fwdMsgId){fwd='<div style="position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.15);display:grid;place-items:center" onclick="App._crmForwardClose()"><div onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:340px;max-height:74%;display:flex;flex-direction:column;overflow:hidden"><div style="padding:12px 14px;border-bottom:1px solid #EDE7DC;font-weight:800;display:flex;align-items:center;justify-content:space-between">Forward to…<button onclick="App._crmForwardClose()" style="border:none;background:transparent;cursor:pointer;color:#A59788">'+ic('x','w-4 h-4')+'</button></div><div class="crm-scroll" style="overflow-y:auto;padding:6px">'+(_fl.length?_fl.slice(0,80).map(c=>'<button onclick="App._crmDoForward(\''+c.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+_crmCustAv(c.customer,24)+'<div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.customer||c.title||'—')+'</div><div style="font-size:11px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((_crmBoard(c.boardId)?_crmBoard(c.boardId).name:'')+' · '+(c.title||''))+'</div></div></button>').join(''):'<div style="padding:18px;text-align:center;color:#A59788;font-size:12.5px">No other conversations to forward to.</div>')+'</div></div></div>';}
   return'<div class="crm-chatpane" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative">'+fwd
     +'<div class="crm-chathdr" style="padding:9px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0">'+'<button class="crm-only-mob crm-tap" aria-label="Back" onclick="App._crmMobBack()" style="width:34px;height:34px;border:1px solid #E6DED3;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#3A312A;flex-shrink:0;margin-right:2px">'+ic('back','w-5 h-5')+'</button>'+(_dmPeer?avatar(_dmPeer,'w-[34px] h-[34px]','text-[12px]'):_crmCustAv(convo.customer,34))
-    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#13171B;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_dmPeer?fullName(_dmPeer):(convo.title||'—'))+'</div><div id="crm-chatsub" class="crm-chatsub" style="font-size:12px;color:#A59788;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(_dmPeer?_dmPeerStatus(_dmPeer):(esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')))+'</div></div>'+meta+(_dmPeer?_dmHdrBtns(convo,_dmPeer):_crmHdrBtns(convo,board))+'</div>'
+    +'<div style="flex:1;min-width:0"><div class="fd" style="font-size:15px;font-weight:800;color:#13171B;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_dmPeer?fullName(_dmPeer):(convo.title||'—'))+'</div><div id="crm-chatsub" class="crm-chatsub" style="font-size:12px;color:#A59788;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(_dmPeer?_dmPeerStatus(_dmPeer):(esc(convo.customer||'')+(convo.channel?' · '+esc(convo.channel):'')+(convo.createdAt?' · started '+_crmRel(convo.createdAt)+' ago':'')))+'</div></div>'+meta+'<button class="crm-hdr-btn" title="Search in this chat" aria-label="Search in this chat" onclick="App._crmMsgSearchTog()" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:'+(CRM.msgSearch?'#EEE4D5':'#fff')+';color:#786A5F;cursor:pointer;display:grid;place-items:center;flex-shrink:0">'+ic('search','w-4 h-4')+'</button>'+(_dmPeer?_dmHdrBtns(convo,_dmPeer):_crmHdrBtns(convo,board))+'</div>'
+    +(CRM.msgSearch?'<div class="crm-msearch"><span style="color:#A59788;display:grid;place-items:center">'+ic('search','w-4 h-4')+'</span><input id="crm-msearch" type="search" autocomplete="off" placeholder="Search in this chat…" value="'+esc(CRM.msgSearch.q||'')+'" oninput="App._crmMsgSearch(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();App._crmMsgSearchStep(event.shiftKey?-1:1);}if(event.key===\'Escape\')App._crmMsgSearchTog(false)"/><span id="crm-msearch-n" class="crm-msearch-n"></span><button aria-label="Previous match" onclick="App._crmMsgSearchStep(1)">'+ic('chevD','w-4 h-4 rotate-180')+'</button><button aria-label="Next match" onclick="App._crmMsgSearchStep(-1)">'+ic('chevD','w-4 h-4')+'</button><button aria-label="Close search" onclick="App._crmMsgSearchTog(false)">'+ic('x','w-4 h-4')+'</button></div>':'')
     +'<div class="crm-chatbody" style="flex:1;display:flex;min-height:0">'
       +'<div class="crm-threadcol" style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative" ondragover="App._crmDragOver(event)" ondragleave="App._crmDragLeave(event)" ondrop="App._crmDrop(event)">'
         +'<div id="crm-drop" style="display:none;position:absolute;inset:10px;z-index:40;background:rgba(84,67,60,.08);border:2px dashed #54433C;border-radius:12px;place-items:center;pointer-events:none"><div style="text-align:center;color:#3E322B;font-weight:700">'+ic('upload','w-7 h-7')+'<div style="margin-top:6px">Drop images to attach</div></div></div>'
@@ -484,8 +510,34 @@ function _crmMine(c){return c.assignedTo===S.uid||c.createdBy===S.uid||(!!c.assi
 function _crmFilteredConvos(){var lf=CRM.listFilter||'all';return CRM.convos.filter(function(c){return c.boardId===CRM.sel.boardId;}).filter(function(c){return lf==='unread'?_crmUnread(c):lf==='mine'?_crmMine(c):true;}).sort(function(a,b){return String(b.lastAt||'').localeCompare(String(a.lastAt||''));});}
 App._crmListFilter=(v)=>{CRM.listFilter=v;rr();};
 function _crmSearchResults(qArg){var q=String(qArg!=null?qArg:(CRM.search||'')).trim().toLowerCase();if(!q)return[];var vis=_crmVisibleBoardIds();return CRM.convos.filter(c=>vis[c.boardId]||(_crmIsDM(c)&&_crmDMVisible(c))).filter(c=>((c.title||'')+' '+(c.customer||'')+' '+(c.ticketType||'')+' '+(c.messages||[]).map(m=>m.text||'').join(' ')).toLowerCase().indexOf(q)>=0).sort((a,b)=>String(b.lastAt||'').localeCompare(String(a.lastAt||''))).slice(0,60);}
+/* WhatsApp-style: under a matching chat, show the message that matched (bold hit) and open it on tap */
+function _crmSearchSnippet(c,q){
+  q=String(q||'').trim().toLowerCase();if(!q)return'';
+  var hits=(c.messages||[]).filter(function(m){return !m.deletedAt&&(m.text||'').toLowerCase().indexOf(q)>=0;});
+  if(!hits.length)return'';
+  var m=hits[hits.length-1];var t=m.text||'';var i=t.toLowerCase().indexOf(q);var a=Math.max(0,i-32);var pre=(a>0?'…':'')+esc(t.slice(a,i)),hit=esc(t.slice(i,i+q.length)),post=esc(t.slice(i+q.length,i+q.length+60))+((i+q.length+60)<t.length?'…':'');
+  return'<div class="crm-lsnippet" onclick="App._crmOpenAtMsg(\''+c.id+'\',\''+m.id+'\')"><span class="crm-lsnippet-n">'+hits.length+' message'+(hits.length>1?'s':'')+'</span><span class="crm-lsnippet-t">'+pre+'<mark>'+hit+'</mark>'+post+'</span></div>';
+}
+App._crmListSearchTog=(open)=>{CRM.listSearchOpen=(open===undefined)?!CRM.listSearchOpen:!!open;if(!CRM.listSearchOpen)CRM.search='';rr();if(CRM.listSearchOpen)setTimeout(function(){var i=document.getElementById('crm-lsearch');if(i){i.focus();}},60);};
+/* typing only re-paints the list, never the whole page — keeps the keyboard and caret */
+App._crmListSearch=(v)=>{CRM.search=String(v||'');var l=document.getElementById('crm-list');if(l)l.innerHTML=_crmConvoListInner();};
+/* open a chat and scroll to one message, highlighting it briefly */
+App._crmOpenAtMsg=(cid,mid)=>{CRM.search='';CRM.listSearchOpen=false;App._crmOpenResult(cid);setTimeout(function(){var el=document.querySelector('.crm-msg[data-mid="'+mid+'"]');if(el){el.scrollIntoView({block:'center'});el.classList.add('crm-hit-cur');setTimeout(function(){el.classList.remove('crm-hit-cur');},2200);}},250);};
+/* ── in-chat search (magnifier in the chat header) ── */
+App._crmMsgSearchTog=(open)=>{CRM.msgSearch=(open===undefined?!CRM.msgSearch:open)?{q:'',i:0}:null;rr();if(CRM.msgSearch)setTimeout(function(){var i=document.getElementById('crm-msearch');if(i)i.focus();},60);};
+App._crmMsgSearch=(v)=>{if(!CRM.msgSearch)return;CRM.msgSearch.q=String(v||'');CRM.msgSearch.i=0;_crmMsgSearchApply(true);};
+App._crmMsgSearchStep=(d)=>{if(!CRM.msgSearch)return;var n=CRM.msgSearch.n||0;if(!n)return;CRM.msgSearch.i=((CRM.msgSearch.i||0)+d+n)%n;_crmMsgSearchApply(false);};
+function _crmMsgSearchApply(fromTyping){
+  var ms=CRM.msgSearch;var c=_crmConvo(CRM.sel.convoId);var wall=document.getElementById('crm-thread');if(!ms||!c||!wall)return;
+  var q=(ms.q||'').trim().toLowerCase();var byId={};(c.messages||[]).forEach(function(m){byId[m.id]=m;});
+  var hits=[];wall.querySelectorAll('.crm-msg[data-mid]').forEach(function(el){var m=byId[el.getAttribute('data-mid')];var ok=!!(q&&m&&!m.deletedAt&&(m.text||'').toLowerCase().indexOf(q)>=0);el.classList.toggle('crm-hit',ok);el.classList.remove('crm-hit-cur');if(ok)hits.push(el);});
+  // newest first, like WhatsApp: index 0 = last match
+  hits.reverse();ms.n=hits.length;if(ms.i>=hits.length)ms.i=0;
+  var cnt=document.getElementById('crm-msearch-n');if(cnt)cnt.textContent=q?(hits.length?((ms.i+1)+' of '+hits.length):'No matches'):'';
+  var cur=hits[ms.i];if(cur){cur.classList.add('crm-hit-cur');cur.scrollIntoView({block:'center',behavior:fromTyping?'auto':'smooth'});}
+}
 function _crmConvoListInner(){
-  if((CRM.search||'').trim()){var rs=_crmSearchResults();if(!rs.length)return'<div style="padding:26px 14px;text-align:center;color:#A59788;font-size:12.5px">No matches for “'+esc(CRM.search)+'”.</div>';return'<div style="padding:8px 12px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;background:#FAF7F3;border-bottom:1px solid #F1ECE4">'+rs.length+' result'+(rs.length>1?'s':'')+' across all boards</div>'+rs.map(c=>_crmConvoRow(c,CRM.sel.convoId,true)).join('');}
+  if((CRM.search||'').trim()){var rs=_crmSearchResults();if(!rs.length)return'<div style="padding:26px 14px;text-align:center;color:#A59788;font-size:12.5px">No matches for “'+esc(CRM.search)+'”.</div>';return'<div style="padding:8px 12px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;background:#FAF7F3;border-bottom:1px solid #F1ECE4">'+rs.length+' result'+(rs.length>1?'s':'')+' across all boards</div>'+rs.map(c=>_crmConvoRow(c,CRM.sel.convoId,true)+_crmSearchSnippet(c,CRM.search)).join('');}
   var cs=_crmFilteredConvos();if(!cs.length){var _lf2=CRM.listFilter||'all';return'<div style="padding:28px 14px;text-align:center;color:#A59788;font-size:12.5px">'+(_lf2==='unread'?'Nothing unread — all caught up \u{1F389}':_lf2==='mine'?'Nothing you created or that\u2019s assigned to you here.':'No '+esc((CRM.sel.category||'chats').toLowerCase())+' here yet.')+'</div>';}return cs.map(c=>_crmConvoRow(c,CRM.sel.convoId,false)).join('');
 }
 function crmPage(){
@@ -550,7 +602,7 @@ function crmPage(){
   var members=_crmBoardPeople(board);   // v3.22: board members + channel members
   var nonMembers=(DB.users||[]).filter(function(u){return u&&u.status!=='Disabled'&&!_crmIsEffMember(board,u.id);});
   var _dash='<button onclick="App.go(\'dashboard\')" title="Back to Dashboard" class="crm-dash" style="margin-left:6px;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #E6DED3;background:#fff;border-radius:10px;font-size:12.5px;font-weight:600;color:#3A312A;cursor:pointer;white-space:nowrap;flex-shrink:0">'+ic('grid','w-4 h-4')+'<span class="crm-hide-mob">Dashboard</span></button>';
-  var _search='<div class="crm-search" style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:#A59788;pointer-events:none">'+ic('search','w-4 h-4')+'</span><input id="crm-search" autocomplete="off" oninput="App._crmSearch(this.value)" onfocus="App._crmSearch(this.value)" onblur="setTimeout(function(){var d=document.getElementById(\'crm-search-dd\');if(d)d.style.display=\'none\';},180)" placeholder="Search everywhere…" style="width:230px;max-width:44vw;padding:8px 10px 8px 32px;border:1px solid #E6DED3;border-radius:10px;font-size:12.5px;outline:none"/><div id="crm-search-dd" class="crm-scroll" style="display:none;position:absolute;top:40px;right:0;z-index:80;width:330px;max-height:380px;overflow-y:auto;background:#fff;border:1px solid #E6DED3;border-radius:14px;box-shadow:0 16px 44px rgba(35,28,22,.18);padding:6px"></div></div>';
+  var _search='<button class="crm-only-mob crm-tap" aria-label="Search" onclick="App._crmListSearchTog()" style="width:34px;height:34px;border:1px solid #E6DED3;background:'+(CRM.listSearchOpen?'#EEE4D5':'#fff')+';border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#3A312A;flex-shrink:0">'+ic('search','w-5 h-5')+'</button><div class="crm-search crm-search-desk" style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:#A59788;pointer-events:none">'+ic('search','w-4 h-4')+'</span><input id="crm-search" autocomplete="off" oninput="App._crmSearch(this.value)" onfocus="App._crmSearch(this.value)" onblur="setTimeout(function(){var d=document.getElementById(\'crm-search-dd\');if(d)d.style.display=\'none\';},180)" placeholder="Search everywhere…" style="width:230px;max-width:44vw;padding:8px 10px 8px 32px;border:1px solid #E6DED3;border-radius:10px;font-size:12.5px;outline:none"/><div id="crm-search-dd" class="crm-scroll" style="display:none;position:absolute;top:40px;right:0;z-index:80;width:330px;max-height:380px;overflow-y:auto;background:#fff;border:1px solid #E6DED3;border-radius:14px;box-shadow:0 16px 44px rgba(35,28,22,.18);padding:6px"></div></div>';
   var mainInner;
   if(_dmOn){mainInner=_dmMain(_search,_dash);}
   else if(!CRM.hubs.length){mainInner=_crmEmpty('msg','Welcome to your Workspace','Create your first Hub — it holds your boards (chats & ticket tables) and filtered views.',canCreate?'<button onclick="App._crmNewHub()" style="margin-top:16px;padding:10px 20px;border:none;border-radius:11px;background:#54433C;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px">'+ic('plus','w-4 h-4')+'Create your first hub</button>':'<div style="margin-top:12px;font-size:12px;color:#A8998A">Ask an admin for Workspace access.</div>');}
@@ -567,7 +619,8 @@ function crmPage(){
       var _lf=CRM.listFilter||'all';var _bc=CRM.convos.filter(function(c){return c.boardId===CRM.sel.boardId;});
       var _lfCnt={all:_bc.length,unread:_bc.filter(_crmUnread).length,mine:_bc.filter(_crmMine).length};
       var lfRow='<div class="crm-lfrow">'+[['all','All'],['unread','Unread'],['mine','Mine']].map(function(x){var on=_lf===x[0];return '<button onclick="App._crmListFilter(\''+x[0]+'\')" class="crm-lchipf'+(on?' on':'')+'">'+x[1]+(_lfCnt[x[0]]&&x[0]!=='all'?' <b>'+_lfCnt[x[0]]+'</b>':'')+'</button>';}).join('')+'<span style="flex:1"></span>'+(canCreate?'<button class="crm-newchat" title="New chat" onclick="App._crmNewChatModal()">'+ic('plus','w-4 h-4')+'</button>':'')+'</div>';
-      var listCol='<div class="crm-listcol" style="width:23%;min-width:232px;max-width:290px;border-right:1px solid #EDE7DC;display:flex;flex-direction:column;min-height:0;background:#fff">'+lfRow+'<div class="crm-scroll" style="flex:1;overflow-y:auto" id="crm-list">'+_crmConvoListInner()+'</div>'+((canCreate&&_crmIsMob())?'<button class="crm-fab" onclick="App._crmNewChatModal()" aria-label="New chat">'+ic('plus','w-4 h-4')+'New chat</button>':'')+'</div>';
+      var _sbar=CRM.listSearchOpen?'<div class="crm-lsearch"><span style="color:#A59788;display:grid;place-items:center">'+ic('search','w-4 h-4')+'</span><input id="crm-lsearch" type="search" autocomplete="off" placeholder="Search chats and messages…" value="'+esc(CRM.search||'')+'" oninput="App._crmListSearch(this.value)" onkeydown="if(event.key===\'Escape\')App._crmListSearchTog(false)"/><button aria-label="Close search" onclick="App._crmListSearchTog(false)">'+ic('x','w-4 h-4')+'</button></div>':'';
+      var listCol='<div class="crm-listcol" style="width:23%;min-width:232px;max-width:290px;border-right:1px solid #EDE7DC;display:flex;flex-direction:column;min-height:0;background:#fff">'+_sbar+lfRow+'<div class="crm-scroll" style="flex:1;overflow-y:auto" id="crm-list">'+_crmConvoListInner()+'</div>'+((canCreate&&_crmIsMob())?'<button class="crm-fab" onclick="App._crmNewChatModal()" aria-label="New chat">'+ic('plus','w-4 h-4')+'New chat</button>':'')+'</div>';
       mainInner=row1+row2+'<div class="crm-mainrow" style="flex:1;display:flex;min-height:0">'+listCol+_crmChatPane((searching?_crmConvo(CRM.sel.convoId):convo),board)+'</div>';}else{var openC=_crmConvo(CRM.sel.convoId);if(openC&&openC.boardId===board.id){mainInner=row1+'<div style="flex:1;display:flex;flex-direction:column;min-height:0"><div style="padding:7px 14px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="App._crmBackToTable()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid #E6DED3;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:#3A312A">'+ic('back','w-4 h-4')+'Back to '+esc(inView?view.name:board.name)+'</button></div>'+_crmChatPane(openC,board)+'</div>';}else{CRM.sel.convoId=null;mainInner=row1+row2+(inView?_crmViewBarV(board,view):_crmViewBar(board))+_crmTable(board,inView?{filters:_crmViewFilters(view,board.id)}:{});}}
     }
   }
@@ -881,8 +934,15 @@ App._crmMobNav=(open)=>{
 };
 /* Message actions on touch: tap a message to reveal its bar, tap anywhere else to dismiss.
    Previously the bar was pinned open on every message and never went away after sending. */
+/* v133c — on phones the action bar (emoji · reply · ticket · delete) opens on a LONG PRESS only (like WhatsApp);
+   a plain tap on a bubble does nothing, so scrolling and tapping links never pop the bar by accident. */
+var CRM_LONG_PRESS_MS=800;
 App._crmMsgActs=(e,el)=>{
   if(window.matchMedia&&!window.matchMedia('(max-width:767px)').matches)return;   // desktop keeps hover
+  if(!(e&&e._crmLongPress)){   // a tap: only ever CLOSES an open bar
+    if(el.classList.contains('crm-actopen'))App._crmCloseMsgActs();
+    return;
+  }
   var t=e&&e.target;
   if(t&&t.closest&&(t.closest('.crm-macts')||t.closest('button')||t.closest('a')||t.closest('input')||t.closest('textarea')))return;
   var on=el.classList.contains('crm-actopen');
@@ -1663,6 +1723,19 @@ function _crmTable(board,opts){
       +'<button onclick="App._crmNtCancel()" title="Close (Esc)" style="display:block;width:100%;border:1px solid #E6DED3;background:#fff;color:#786A5F;border-radius:8px;padding:4px 0;margin-top:4px;cursor:pointer;font-weight:700;font-size:12px">×</button></td>';
     addRow='<tr style="background:#FAF8F4">'+ntc+ntAsg+ntSt+ntCols+ntAct+'</tr>';
   }
+  /* v133e — phones: the table is 600px+ wide and unreadable; show one card per ticket instead (title → opens the
+     ticket, status + assignee editable in place, extra columns underneath). The draft "new ticket" row keeps the table. */
+  if(_crmIsMob()&&!addRow){
+    var cards=rows.map(function(r){var due=_crmDueMeta(r);
+      return'<div class="crm-tcard">'
+        +'<div class="crm-tcard-head" onclick="App._crmSelConvo(\''+r.id+'\')"><div style="min-width:0;flex:1"><div class="crm-tcard-t">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div class="crm-tcard-c">'+esc(r.customer)+'</div>':'')+'</div>'+(due?'<span class="crm-lchip" style="color:'+due.color+';background:'+due.bg+'">'+(due.overdue?'\u26A0 ':'')+due.label+'</span>':'')+(can('crm','delete')?'<button class="crm-tcard-del" onclick="event.stopPropagation();App._crmDelConvo(\''+r.id+'\')" aria-label="Delete">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'<span style="color:#C9BCAE">'+ic('chevR','w-4 h-4')+'</span></div>'
+        +'<div class="crm-tcard-row"><span class="crm-tcard-l">Status</span><div class="crm-tcard-v">'+_crmRowStatus(r,board)+'</div></div>'
+        +'<div class="crm-tcard-row"><span class="crm-tcard-l">Assignee</span><div class="crm-tcard-v">'+_crmAsgCell(r,board)+'</div></div>'
+        +cols.map(function(col){return'<div class="crm-tcard-row"><span class="crm-tcard-l">'+esc(col.name)+'</span><div class="crm-tcard-v">'+_crmCell(r,col)+'</div></div>';}).join('')
+        +'</div>';}).join('');
+    if(!rows.length)cards='<div style="padding:44px 20px;text-align:center;color:#A59788;font-size:13px">'+(flt.length?'No tickets match the filter.':'No tickets yet.'+(canCr?' Tap <b style="color:#54433C">+ New ticket</b> to add the first one.':''))+'</div>';
+    return'<div class="crm-scroll crm-tcards" style="flex:1;overflow:auto;background:#F7F3EC;min-height:0;padding:10px 10px 90px">'+cards+'</div>';
+  }
   var body=rows.map(function(r){
     var tds='<td style="padding:6px 10px;border-bottom:1px solid #F4F0EA;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer"><div style="font-size:13px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div></td>';
     tds+='<td style="padding:2px 6px;border-bottom:1px solid #F4F0EA;overflow:hidden">'+_crmAsgCell(r,board)+'</td>';
@@ -1875,7 +1948,10 @@ function _crmRestoreSel(){
     if(!p.sel||!p.uid)return;
     if(S.uid&&p.uid!==S.uid)return;                   // someone else's position — ignore
     CRM.sel.hubId=p.sel.hubId||null;CRM.sel.boardId=p.sel.boardId||null;
-    CRM.sel.viewId=p.sel.viewId||null;CRM.sel.convoId=p.sel.convoId||null;CRM.sel.dm=!!p.sel.dm;
+    CRM.sel.viewId=p.sel.viewId||null;CRM.sel.dm=!!p.sel.dm;
+    // v133e: remember the hub / board, NOT the conversation — opening the Workspace should land on the newest
+    // chats (the list, newest first; on desktop the most recent chat opens), not on whatever was open last time.
+    CRM.sel.convoId=null;
   }catch(e){}
 }
 function _crmClearSel(){try{localStorage.removeItem(CRM_SEL_KEY);}catch(e){}_crmSelLastWritten='';}
@@ -2385,7 +2461,7 @@ App._crmOpenFromNotification=(link,text)=>{
   }
   var b=_crmBoard(c.boardId);CRM.sel.dm=false;
   CRM.sel.boardId=c.boardId;CRM.sel.hubId=b?b.hubId:CRM.sel.hubId;CRM.sel.viewId=null;
-  CRM.sel.convoId=c.id;CRM.sel.threadId=null;CRM.search='';CRM.compose.images=[];
+  CRM.sel.convoId=c.id;CRM.sel.threadId=null;CRM.search='';CRM.msgSearch=null;CRM.compose.images=[];
   try{_crmMarkRead(c.id);}catch(e){}
   render();window.scrollTo(0,0);
   _crmScrollBottom();
@@ -2549,6 +2625,14 @@ App._crmEmoPick=(ch)=>{if(!ch)return;var st=CRM._emo||{};_crmEmoRecPush(ch);try{
   /* dismiss emoji panel on outside tap / Esc */
   document.addEventListener('click',function(e){var h=document.getElementById('crm-emohost');if(!h||!h.classList.contains('on'))return;if(e.target.closest&&(e.target.closest('#crm-emohost')||e.target.closest('.crm-emobtn')))return;h.classList.remove('on');},true);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')App._crmEmoClose();});
+
+  /* long-press a message to open its action bar (touch devices) */
+  var lp=null;
+  document.addEventListener('touchstart',function(e){var ms=e.target.closest&&e.target.closest('.crm-msg[data-mid]');if(!ms)return;if(e.target.closest('.crm-macts')||e.target.closest('button')||e.target.closest('a')||e.target.closest('input')||e.target.closest('textarea'))return;var t=e.touches[0];
+    lp={el:ms,x:t.clientX,y:t.clientY,timer:setTimeout(function(){if(!lp)return;try{if(navigator.vibrate)navigator.vibrate(12);}catch(_){}var ev={target:ms,_crmLongPress:true,stopPropagation:function(){}};App._crmMsgActs(ev,ms);lp.fired=true;},CRM_LONG_PRESS_MS)};},{passive:true});
+  document.addEventListener('touchmove',function(e){if(!lp)return;var t=e.touches[0];if(Math.abs(t.clientX-lp.x)>10||Math.abs(t.clientY-lp.y)>10){clearTimeout(lp.timer);lp=null;}},{passive:true});
+  document.addEventListener('touchend',function(){if(!lp)return;clearTimeout(lp.timer);lp=null;},{passive:true});
+  document.addEventListener('touchcancel',function(){if(!lp)return;clearTimeout(lp.timer);lp=null;},{passive:true});
 
   /* swipe-right a message to reply in thread (touch devices) */
   var st=null;

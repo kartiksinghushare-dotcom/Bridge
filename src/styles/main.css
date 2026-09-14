@@ -1458,3 +1458,18 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   #content .tog.on span,#modal .tog.on span,.tog.on span{transform:translateX(18px)!important}
 }
 @media(min-width:768px){#bottom-nav,.mob-nav{display:none!important}}
+@media(max-width:767px){
+  /* chat search bars sit in flex COLUMNS — the generic "div with a Search input grows" rule must not stretch them */
+  #content .crm-fs div.crm-lsearch,#content .crm-fs div.crm-msearch,#content .crm-lsearch,#content .crm-msearch{flex:0 0 auto!important;width:100%!important}
+  #content .crm-fs .crm-lsearch input,#content .crm-fs .crm-msearch input{flex:1 1 auto!important;width:auto!important}
+}
+
+/* ═══ v133e — iOS Safari: no page-shifting ═══
+   1. Safari zooms the whole page when a form control with text smaller than 16px gets focus, and the page stays
+      shifted afterwards — every input / textarea / select is 16px on phones (only the person pinching should zoom).
+   2. Nothing may scroll the page sideways. */
+@media(max-width:767px){
+  input,textarea,select,#content select,#content .ui-select,#content input,#content textarea,#modal input,#modal select,#modal textarea,.crm-fs input,.crm-fs textarea,.crm-fs select{font-size:16px!important}
+  html,body{overflow-x:hidden!important;max-width:100vw;overscroll-behavior-x:none}
+  #app,#main-wrap,#content{max-width:100vw;overflow-x:clip}
+}

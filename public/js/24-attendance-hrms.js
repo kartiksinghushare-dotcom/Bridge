@@ -14,40 +14,61 @@ async function _attLoadHolidays(force){
   try{const{data,error}=await sb.from('public_holidays').select('*').order('date');if(!error){DB.holidays=(data||[]).map(_mHol);rr();}}
   catch(e){_attLoaded.holidays=false;console.warn('[att] holidays',e.message);}
 }
+/* Rows are stored one per date × location (location null = everywhere). The card shows them grouped. */
+function _attHolGroups(list){
+  const g={};(list||[]).forEach(h=>{const k=h.name+'|'+h.date;(g[k]=g[k]||{name:h.name,date:h.date,ids:[],locs:[],all:false}).ids.push(h.id);if(h.locationId)g[k].locs.push(h.locationId);else g[k].all=true;});
+  return Object.values(g).sort((a,b)=>a.date.localeCompare(b.date));
+}
 function _attHolidaysCard(){
   const yr=S.filters.attHolYear||todayISO().slice(0,4);
-  const list=(DB.holidays||[]).filter(h=>h.date.slice(0,4)===yr).sort((a,b)=>a.date.localeCompare(b.date));
-  const rows=list.map(h=>{const l=h.locationId?locById(h.locationId):null;return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--c-border)"><div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700;color:var(--c-text)">${esc(h.name)}</div><div style="font-size:11.5px;color:var(--c-text-3)">${fmtD(h.date)} · ${dayAbbr(h.date)} · ${l?esc(l.name):'All locations'}${h.date<todayISO()?'':' · upcoming'}</div></div>${btn('',`App._attHolDel('${h.id}')`,{variant:'subtle',size:'sm',icon:'trash',attrs:'title="Remove"'})}</div>`;}).join('');
+  const groups=_attHolGroups((DB.holidays||[]).filter(h=>h.date.slice(0,4)===yr));
+  const rows=groups.map(g=>{const where=g.all?'All locations':g.locs.map(id=>(locById(id)||{}).name||'?').join(', ');
+    return `<div class="att-hol-row" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--c-border)"><div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700;color:var(--c-text)">${esc(g.name)}</div><div style="font-size:11.5px;color:var(--c-text-3)">${fmtD(g.date)} · ${dayAbbr(g.date)} · ${esc(where)}${g.date<todayISO()?'':' · upcoming'}</div></div>${btn('',`App._attHolDel('${g.ids.join(',')}')`,{variant:'subtle',size:'sm',icon:'trash',attrs:'title="Remove"'})}</div>`;}).join('');
   const years=[String(Number(yr)-1),yr,String(Number(yr)+1)];
   return `<div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head"><span class="ui-card-title">Public holidays</span><div style="display:flex;gap:6px;align-items:center"><select class="ui-select" style="width:auto;padding:5px 26px 5px 10px;font-size:12px" onchange="S.filters.attHolYear=this.value;rr()">${years.map(y=>`<option ${y===yr?'selected':''}>${y}</option>`).join('')}</select>${btn('Add holiday','App._attHolAdd()',{variant:'primary',size:'sm',icon:'plus'})}</div></div>
     <div class="ui-card-pad" style="padding-top:2px">${rows||'<div style="padding:14px 0;font-size:12.5px;color:var(--c-text-3)">No holidays for '+yr+' yet. Add them as they are announced — leave and absence for those dates recalculate automatically, and nobody is expected to clock in.</div>'}
-    <p style="font-size:11.5px;color:var(--c-text-3);margin-top:10px;line-height:1.5">A holiday for “All locations” applies to everyone; pick a location to limit it (e.g. a KSA-only holiday). Working on a holiday raises a comp-off request, like a rest day.</p></div></div>`;
+    <p style="font-size:11.5px;color:var(--c-text-3);margin-top:10px;line-height:1.5">Pick the locations a holiday applies to (e.g. only the KSA branches). Working on a holiday raises a comp-off request, like a rest day.</p></div></div>`;
 }
 App._attHolAdd=()=>{
   if(!can('attendance','manage'))return toast('You need Attendance → Manage','err');
+  const locs=(DB.locations||[]).filter(l=>l.status!=='Inactive');
+  const locList=locs.map(l=>`<label class="att-hol-loc" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 10px;border:1.5px solid var(--c-border-2);border-radius:10px;cursor:pointer"><input type="checkbox" class="ah-loc" value="${l.id}" onchange="App._attHolLocTog()"/> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</span>${l.timezone?`<span style="font-size:10.5px;color:var(--c-text-3)">${esc(l.timezone.split('/').pop().replace('_',' '))}</span>`:''}</label>`).join('');
   modalShell({title:'Add public holiday',sub:'Announced late? That’s fine — approved leave across the date is recalculated.',size:'max-w-md',key:'att-hol',
-    body:`<div style="display:grid;gap:10px">${fld('Name','ah-name','','text','e.g. Eid Al Fitr')}<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('From','ah-from',todayISO(),'date')}${fld('To (optional, for multi-day)','ah-to','','date')}</div>${selF('Applies to','ah-loc',[['','All locations'],...(DB.locations||[]).filter(l=>l.status!=='Inactive').map(l=>[l.id,l.name])],'')}</div>`,
+    body:`<div style="display:grid;gap:10px">${fld('Name','ah-name','','text','e.g. Eid Al Fitr')}<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('From','ah-from',todayISO(),'date')}${fld('To (optional)','ah-to','','date')}</div>
+      <div><label class="ui-label">Applies to</label>
+        <label class="att-hol-loc" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;padding:8px 10px;border:1.5px solid var(--c-border-2);border-radius:10px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="ah-all" checked onchange="App._attHolLocTog(true)"/> All locations</label>
+        <div id="ah-locs" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;opacity:.45">${locList||'<div style="font-size:12px;color:var(--c-text-3)">No locations yet.</div>'}</div>
+      </div></div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP('Add','App._attHolSave()')});
+};
+App._attHolLocTog=(fromAll)=>{
+  const all=document.getElementById('ah-all');const box=document.getElementById('ah-locs');if(!all||!box)return;
+  if(fromAll){if(all.checked)box.querySelectorAll('.ah-loc').forEach(c=>c.checked=false);}
+  else{if([...box.querySelectorAll('.ah-loc')].some(c=>c.checked))all.checked=false;}
+  box.style.opacity=all.checked?'.45':'1';
 };
 App._attHolSave=async()=>{
   if(!can('attendance','manage'))return;
-  const name=($('#ah-name')?.value||'').trim(),from=$('#ah-from')?.value,to=$('#ah-to')?.value||from,locId=$('#ah-loc')?.value||null;
+  const name=($('#ah-name')?.value||'').trim(),from=$('#ah-from')?.value,to=$('#ah-to')?.value||from;
+  const all=!!$('#ah-all')?.checked;const locIds=all?[null]:[...document.querySelectorAll('.ah-loc:checked')].map(c=>c.value);
   if(!name||!from)return toast('Name and date are required','err');
+  if(!locIds.length)return toast('Pick at least one location, or tick “All locations”','err');
   const days=_attDaysBetween(from,to<from?from:to);
-  const rows=days.map(d=>({id:uid('ph'),date:d,name,location_id:locId,created_by:S.uid}));
+  const rows=[];days.forEach(d=>locIds.forEach(lid=>rows.push({id:uid('ph'),date:d,name,location_id:lid,created_by:S.uid})));
   const{error}=await sb.from('public_holidays').insert(rows);
   if(error)return toast('Couldn’t save — '+error.message,'err');
   DB.holidays=(DB.holidays||[]).concat(rows.map(_mHol));
-  log(fullName(me()),'Public holiday added',name+' · '+from+(to!==from?' – '+to:'')+(locId?' · '+(locById(locId)||{}).name:''));
+  log(fullName(me()),'Public holiday added',name+' · '+from+(to!==from?' – '+to:'')+' · '+(all?'all locations':locIds.map(id=>(locById(id)||{}).name).join(', ')));
   closeModal();toast('Holiday added ✓');rr();
 };
-App._attHolDel=async(id)=>{
+App._attHolDel=async(idsCsv)=>{
   if(!can('attendance','manage'))return toast('You need Attendance → Manage','err');
-  const h=(DB.holidays||[]).find(x=>x.id===id);if(!h)return;
+  const ids=String(idsCsv||'').split(',').filter(Boolean);const hs=(DB.holidays||[]).filter(x=>ids.includes(x.id));if(!hs.length)return;
+  const h=hs[0];
   if(!(await confirmP({title:'Remove this holiday?',body:'<b>'+esc(h.name)+'</b> · '+esc(fmtD(h.date))+'<br><span style="font-size:12px;color:var(--c-text-3)">The date becomes a normal working day again for everyone it applied to.</span>',confirmLabel:'Remove',cancelLabel:'Keep it'})))return;
-  DB.holidays=DB.holidays.filter(x=>x.id!==id);rr();
-  const{error}=await sb.from('public_holidays').delete().eq('id',id);
-  if(error){DB.holidays.push(h);rr();return toast('Couldn’t remove — '+error.message,'err');}
+  DB.holidays=DB.holidays.filter(x=>!ids.includes(x.id));rr();
+  const{error}=await sb.from('public_holidays').delete().in('id',ids);
+  if(error){DB.holidays=DB.holidays.concat(hs);rr();return toast('Couldn’t remove — '+error.message,'err');}
   log(fullName(me()),'Public holiday removed',h.name+' · '+h.date);
 };
 
@@ -97,9 +118,9 @@ App._attReqNew=(type,date)=>{
   let form='',note='';
   if(pick==='regularisation'){
     const used=_attReqCount(S.uid,'regularisation',ym),cap=Number(st.regularisation_monthly_cap||0);
-    const rs=_attRowsFor(S.uid,d);const first=rs[0],last=rs[rs.length-1];
+    const rs=_attRowsFor(S.uid,d);const first=rs[0],last=rs[rs.length-1];const _tz=_attTzOf(u);
     note=`<div style="font-size:11.5px;color:var(--c-text-3);line-height:1.5">${cap?used+' of '+cap+' used this month · ':''}${st.regularisation_window_days?'must be within '+st.regularisation_window_days+' day'+(st.regularisation_window_days>1?'s':'')+' of the date':''}. Your original punch is kept alongside the correction.</div>`;
-    form=`${fld('Date','ar-date',d,'date')}<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('Clock in should be','ar-in',first?new Date(first.inAt).toTimeString().slice(0,5):'','time')}${fld('Clock out should be','ar-out',last&&last.outAt?new Date(last.outAt).toTimeString().slice(0,5):'','time')}</div>`;
+    form=`${fld('Date','ar-date',d,'date')}<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fld('Clock in should be','ar-in',first?_attHM(first.inAt,_tz):'','time')}${fld('Clock out should be','ar-out',last&&last.outAt?_attHM(last.outAt,_tz):'','time')}</div>`;
   }else if(pick==='partial_day'){
     const used=_attReqCount(S.uid,'partial_day',ym),cap=Number(st.partial_day_instances_per_month||0);
     note=`<div style="font-size:11.5px;color:var(--c-text-3);line-height:1.5">${cap?used+' of '+cap+' used this month. ':''}Approved, the day is not flagged late / early.</div>`;
@@ -187,9 +208,9 @@ function _attInboxTab(){
   const hist=(DB.attRequests||[]).filter(r=>r.status!=='Pending'&&r.decidedBy===S.uid).slice(0,15);
   const nSel=Object.keys(sel).filter(k=>sel[k]).length;
   const row=it=>{const u=uById(it.userId);if(!u)return '';
-    if(it.kind==='open'){const a=it.a;return `<div class="att-inbox-row" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--c-border)"><span style="width:18px"></span><div class="att-nowrap" style="min-width:0;display:flex;align-items:center;gap:10px">${avatar(u,'w-8 h-8','text-[10px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text)">${esc(fullName(u))} <span style="font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:20px;background:#F9EBE5;color:#A63528">Open shift</span></div><div style="font-size:11.5px;color:var(--c-text-3)">${fmtD(a.date)} · clocked in ${_attHM(a.inAt)}, never clocked out${a.mode==='wfh'?' · WFH':''}</div></div></div><div class="att-inbox-actions" style="display:flex;gap:6px">${btn('Close shift',`App._attResolve('${a.id}')`,{variant:'primary',size:'sm',icon:'clock'})}</div></div>`;}
+    if(it.kind==='open'){const a=it.a;return `<div class="att-inbox-row" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--c-border)"><span style="width:18px"></span><div class="att-nowrap" style="min-width:0;display:flex;align-items:center;gap:10px">${avatar(u,'w-8 h-8','text-[10px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text)">${esc(fullName(u))} <span style="font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:20px;background:#F9EBE5;color:#A63528">Open shift</span></div><div style="font-size:11.5px;color:var(--c-text-3)">${fmtD(a.date)} · clocked in ${_attHM(a.inAt,_attTzOf(u))}, never clocked out${a.mode==='wfh'?' · WFH':''}</div></div></div><div class="att-inbox-actions" style="display:flex;gap:6px">${btn('Close shift',`App._attResolve('${a.id}')`,{variant:'primary',size:'sm',icon:'clock'})}</div></div>`;}
     const r=it.r;const p=r.payload||{};const rs=_attRowsFor(r.userId,r.date);
-    const detail=r.type==='regularisation'?('Now: '+(rs[0]?_attHM(rs[0].inAt)+' → '+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt):'…'):'no punch')+' · Asked: '+esc(p.in||'—')+' → '+esc(p.out||'—')):r.type==='comp_off'?(p.minutes?_attFmtMins(p.minutes)+' worked':'still clocked in')+' · '+esc(r.reason):esc(r.reason);
+    const detail=r.type==='regularisation'?('Now: '+(rs[0]?_attHM(rs[0].inAt,_attTzOf(u))+' → '+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt,_attTzOf(u)):'…'):'no punch')+' · Asked: '+esc(p.in||'—')+' → '+esc(p.out||'—')):r.type==='comp_off'?(p.minutes?_attFmtMins(p.minutes)+' worked':'still clocked in')+' · '+esc(r.reason):esc(r.reason);
     return `<div class="att-inbox-row" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--c-border)"><input type="checkbox" ${sel[r.id]?'checked':''} onchange="S.filters.attSel=S.filters.attSel||{};S.filters.attSel['${r.id}']=this.checked;rr()"/><div class="att-nowrap" style="min-width:0;display:flex;align-items:center;gap:10px">${avatar(u,'w-8 h-8','text-[10px]')}<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--c-text)">${esc(fullName(u))} <span style="font-weight:500;color:var(--c-text-2)">· ${esc(_attReqLabel(r))}</span> <span style="font-size:11px;color:var(--c-text-3)">${fmtS(r.date)}${r.dateTo&&r.dateTo!==r.date?' – '+fmtS(r.dateTo):''}</span></div><div style="font-size:11.5px;color:var(--c-text-3)">${detail}${r.type!=='comp_off'&&r.reason&&r.type!=='regularisation'?'':''}${r.type==='regularisation'?' — '+esc(r.reason):''}</div></div></div><div class="att-inbox-actions" style="display:flex;gap:6px">${btn('Approve',`App._attReqDecide(['${r.id}'],'Approved')`,{variant:'primary',size:'sm',icon:'check'})}${btn('Reject',`App._attReqDecide(['${r.id}'],'Rejected')`,{variant:'ghost',size:'sm',icon:'x'})}</div></div>`;};
   const histRows=hist.map(r=>{const u=uById(r.userId);return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--c-border);font-size:12px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><b>${esc(fullName(u))}</b> · ${esc(_attReqLabel(r))} · ${fmtS(r.date)}</span>${chip(r.status)}</div>`;}).join('');
   return `<div class="ui-card"><div class="ui-card-head"><span class="ui-card-title">Waiting for you <span style="font-weight:600;color:var(--c-text-3)">· ${items.length}</span></span><div style="display:flex;gap:6px">${nSel?btn('Approve '+nSel,'App._attReqDecide(Object.keys(S.filters.attSel).filter(k=>S.filters.attSel[k]),\'Approved\')',{variant:'primary',size:'sm',icon:'check'})+btn('Reject '+nSel,'App._attReqDecide(Object.keys(S.filters.attSel).filter(k=>S.filters.attSel[k]),\'Rejected\')',{variant:'ghost',size:'sm',icon:'x'}):(items.some(i=>i.kind==='req')?btn('Select all','S.filters.attSel={};_attInboxItems().forEach(i=>{if(i.kind===\'req\')S.filters.attSel[i.id]=true});rr()',{variant:'subtle',size:'sm'}):'')}</div></div>
@@ -231,9 +252,9 @@ App._attReqDecideGo=async(ids,status,note,optional)=>{
 /* What an approval DOES (the request is the audit record; the attendance row keeps its original in history) */
 async function _attReqApply(r){
   if(r.type==='regularisation'){
-    const p=r.payload||{};const now=new Date().toISOString();
-    const mk=t=>t?new Date(r.date+'T'+t+':00').toISOString():null;
-    const mkOut=t=>{if(!t)return null;const d=new Date(r.date+'T'+t+':00');if(p.in&&d<=new Date(r.date+'T'+p.in+':00'))d.setDate(d.getDate()+1);return d.toISOString();};
+    const p=r.payload||{};const now=new Date().toISOString();const tz=_attTzOf(uById(r.userId));
+    const mk=t=>t?_attZoned(r.date,t,tz):null;
+    const mkOut=t=>{if(!t)return null;let out=_attZoned(r.date,t,tz);if(p.in&&new Date(out)<=new Date(mk(p.in))){const d=new Date(r.date+'T00:00:00');d.setDate(d.getDate()+1);out=_attZoned(_attISO(d),t,tz);}return out;};
     const rs=_attRowsFor(r.userId,r.date);const a=rs[0];
     const reason='Regularisation approved: '+r.reason;
     if(a){
@@ -252,8 +273,8 @@ async function _attReqApply(r){
 App._attResolve=(id)=>{
   const a=(DB.attendance||[]).find(x=>x.id===id);if(!a)return;
   if(!_attCanResolveFor(a.userId))return toast('You need Attendance → Approve for this person','err');
-  const u=uById(a.userId);const s=_attSchedule(u,a.date);
-  modalShell({title:'Close open shift — '+fullName(u),sub:fmtD(a.date)+' · clocked in '+_attHM(a.inAt)+', never clocked out',size:'max-w-sm',key:'att-resolve',
+  const u=uById(a.userId);const s=_attSchedule(u,a.date);const tz=_attTzOf(u);
+  modalShell({title:'Close open shift — '+fullName(u),sub:fmtD(a.date)+' · clocked in '+_attHM(a.inAt,tz)+' ('+tz.split('/').pop().replace('_',' ')+' time), never clocked out',size:'max-w-sm',key:'att-resolve',
     body:`<div style="display:grid;gap:10px">${fld('They actually left at','ar-out',s.out,'time')}${fld('How do you know? *','ar-why','','text','e.g. saw them leave at 18:10 / confirmed on the phone')}<p style="font-size:11.5px;color:var(--c-text-3);line-height:1.5">The open punch stays in the record; your time and reason are added on top, and the person is told.</p></div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP('Close shift',`App._attResolveSave('${id}')`)});
 };
@@ -261,8 +282,9 @@ App._attResolveSave=async(id)=>{
   const a=(DB.attendance||[]).find(x=>x.id===id);if(!a||!_attCanResolveFor(a.userId))return;
   const t=$('#ar-out')?.value,why=($('#ar-why')?.value||'').trim();
   if(!t)return toast('Enter the clock-out time','err');if(!why)return toast('Say how you know — it goes in the audit trail','err');
-  const od=new Date(a.date+'T'+t+':00');if(od<=new Date(a.inAt))od.setDate(od.getDate()+1);   // night shift → next day
-  if(od-new Date(a.inAt)>36*36e5)return toast('That is more than 36 hours after the clock-in ('+_attHM(a.inAt)+') — check the time','err');
+  const tz=_attTzOf(uById(a.userId));
+  let od=new Date(_attZoned(a.date,t,tz));if(od<=new Date(a.inAt)){const nd=new Date(a.date+'T00:00:00');nd.setDate(nd.getDate()+1);od=new Date(_attZoned(_attISO(nd),t,tz));}   // night shift → next day
+  if(od-new Date(a.inAt)>36*36e5)return toast('That is more than 36 hours after the clock-in ('+_attHM(a.inAt,tz)+') — check the time','err');
   const out=od.toISOString();
   const now=new Date().toISOString();const reason='Open shift closed by manager: '+why;
   const hist=(a.history||[]).concat([{at:now,by:S.uid,reason,before:{in:a.inAt,out:null,mode:a.mode}}]);
@@ -312,7 +334,7 @@ function _attRepVerification(people,r){
     const pend=(DB.attRequests||[]).filter(x=>x.userId===p.id&&x.status==='Pending'&&x.date===d);if(pend.length)issues.push('Pending: '+pend.map(_attReqLabel).join(', '));
     if(!issues.length)return;
     const rs=_attRowsFor(p.id,d);
-    rows.push([`<b>${esc(fullName(p))}</b>`,esc(p.department||''),`<a href="#" onclick="event.preventDefault();App._attDay('${p.id}','${d}')" style="color:var(--c-brand);font-weight:700">${fmtS(d)} ${dayAbbr(d)}</a>`,esc(_attDayStatus(p,d)),rs.length?_attHM(rs[0].inAt)+' → '+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt):'…'):'',_attFmtHHMM(f.mins),issues.map(i=>`<span style="font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--c-surface-2);color:var(--c-text-2);margin-right:3px">${esc(i)}</span>`).join('')]);}));
+    rows.push([`<b>${esc(fullName(p))}</b>`,esc(p.department||''),`<a href="#" onclick="event.preventDefault();App._attDay('${p.id}','${d}')" style="color:var(--c-brand);font-weight:700">${fmtS(d)} ${dayAbbr(d)}</a>`,esc(_attDayStatus(p,d)),rs.length?_attHM(rs[0].inAt,_attTzOf(p))+' → '+(rs[rs.length-1].outAt?_attHM(rs[rs.length-1].outAt,_attTzOf(p)):'…'):'',_attFmtHHMM(f.mins),issues.map(i=>`<span style="font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--c-surface-2);color:var(--c-text-2);margin-right:3px">${esc(i)}</span>`).join('')]);}));
   const n=rows.length;
   const head=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:12.5px;color:var(--c-text-2)">Unresolved exceptions in range: <b style="color:${n?'#A63528':'#346A47'}">${n}</b></span><span style="font-size:11.5px;color:var(--c-text-3)">Payroll can only be released at zero — close open shifts, decide pending requests, and correct or excuse absences before the cut-off.</span></div>`;
   return head+_attRepTable(['Person','Department','Date','Status','Punches','Worked','Issues'],rows,'attendance-verification');

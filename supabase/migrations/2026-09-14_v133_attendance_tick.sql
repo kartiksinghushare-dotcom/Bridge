@@ -8,6 +8,8 @@
 --   · "Still clocked in" second nudge after clockout_reminder_hours on the clock.
 --   · Open shifts older than log_buffer_days are escalated once more to the manager and the manager's manager.
 --   · Every email goes through send-notification exactly as before; in-app rows carry kind 'attendance'.
+--   · v133c: each person's "today" / shift times are judged in THEIR work location's time zone (locations.timezone),
+--     falling back to attendance_settings.tz only for people with no location.
 create or replace function public.bridge_attendance_tick()
 returns void language plpgsql security definer set search_path to 'public' as $function$
 declare
@@ -15,7 +17,7 @@ declare
   ns jsonb; email_evt boolean; base_url text; anon text; mode text;
   in_on boolean; in_after int; rm_after int; out_on boolean; out_after int; out_hours int; buf_days int;
   sched jsonb; t_in time; t_out time; offdays jsonb; dow text; lnk text; txt text; nid text; pref jsonb; do_email boolean;
-  mgr record; mgr2 record; is_hol boolean; loc text; onduty boolean; end_ts timestamp;
+  mgr record; mgr2 record; is_hol boolean; loc text; onduty boolean; end_ts timestamp; p_now timestamp; p_today date;
 begin
   select value into st from workspace_settings where key='attendance_settings';
   tz := coalesce(st->>'tz','Asia/Dubai');
@@ -54,10 +56,13 @@ begin
     end loop;
   else
     -- spec §9.2: never close on a timer. Next local day (from 07:00), tell the person and the manager once.
-    if now_local::time >= time '07:00' then
-      for r in select a.id, a.user_id, a.date, a.clock_in_at, p.first_name, p.last_name, p.manager_id
-                 from attendance a join profiles p on p.id = a.user_id
-                where a.clock_out_at is null and a.clock_in_at is not null and a.date < today_local and a.rm_notified_at is null
+    -- per person: "next morning" is judged in THEIR location's time zone (spec §15.2)
+    begin
+      for r in select a.id, a.user_id, a.date, a.clock_in_at, p.first_name, p.last_name, p.manager_id, coalesce(l.timezone, tz) as ptz
+                 from attendance a join profiles p on p.id = a.user_id left join locations l on l.id = p.location_id
+                where a.clock_out_at is null and a.clock_in_at is not null and a.rm_notified_at is null
+                  and a.date < (now() at time zone coalesce(l.timezone, tz))::date
+                  and (now() at time zone coalesce(l.timezone, tz))::time >= time '07:00'
                   and a.clock_in_at < now() - interval '12 hours'   -- a night shift that started yesterday is still live this morning
       loop
         lnk := 'att:open:'||r.id;
@@ -67,7 +72,7 @@ begin
                 chr(9201)||' You didn''t clock out on '||to_char(r.date,'DD Mon')||'. Your manager will close the shift — tell them when you actually left.',
                 false, now(), 'att:'||r.date::text, 'attendance', 1, now());
         if r.manager_id is not null and coalesce((ns->>'inapp_attendance_open_shift')::boolean,true) then
-          txt := chr(9201)||' '||trim(coalesce(r.first_name,'')||' '||coalesce(r.last_name,''))||' clocked in on '||to_char(r.date,'DD Mon')||' at '||to_char(r.clock_in_at at time zone tz,'HH24:MI')||' and never clocked out — please close the shift.';
+          txt := chr(9201)||' '||trim(coalesce(r.first_name,'')||' '||coalesce(r.last_name,''))||' clocked in on '||to_char(r.date,'DD Mon')||' at '||to_char(r.clock_in_at at time zone r.ptz,'HH24:MI')||' and never clocked out — please close the shift.';
           insert into notifications (id,user_id,text,read,created_at,link,kind,count,updated_at)
           values ('n_'||substr(md5(random()::text||clock_timestamp()::text),1,12), r.manager_id::text, txt, false, now(), lnk, 'attendance', 1, now());
           select p.email, p.first_name, coalesce(p.email_enabled,true) as email_ok, p.notify_prefs into mgr from profiles p where p.id = r.manager_id;
@@ -85,8 +90,9 @@ begin
       end loop;
       -- escalation (§9.6 log_buffer_days): still open after the buffer → manager again + manager's manager, once
       for r in select a.id, a.user_id, a.date, p.first_name, p.last_name, p.manager_id
-                 from attendance a join profiles p on p.id = a.user_id
-                where a.clock_out_at is null and a.clock_in_at is not null and a.date < today_local - buf_days and a.rm_notified_at is not null
+                 from attendance a join profiles p on p.id = a.user_id left join locations l on l.id = p.location_id
+                where a.clock_out_at is null and a.clock_in_at is not null and a.rm_notified_at is not null
+                  and a.date < (now() at time zone coalesce(l.timezone, tz))::date - buf_days
                   and not exists (select 1 from notifications n where n.link = 'att:open:esc:'||a.id)
       loop
         txt := chr(9888)||' Still open after '||buf_days||' days: '||trim(coalesce(r.first_name,'')||' '||coalesce(r.last_name,''))||' on '||to_char(r.date,'DD Mon')||' — this blocks payroll until it is closed.';
@@ -104,27 +110,28 @@ begin
           values ('n_'||substr(md5(random()::text||clock_timestamp()::text),1,12), r.user_id::text, txt, false, now(), 'att:open:esc:'||r.id, 'attendance', 1, now());
         end if;
       end loop;
-    end if;
+    end;
   end if;
 
   -- 2) CLOCK-IN REMINDERS (person) + MISSED CLOCK-IN (manager): scheduled working day only.
-  for r in select p.id, p.email, p.first_name, p.last_name, p.manager_id, p.location_id, coalesce(p.email_enabled,true) as email_ok, p.work_schedule, p.notify_prefs
-             from profiles p where p.status='Active' and coalesce(p.attendance_required,true)
+  for r in select p.id, p.email, p.first_name, p.last_name, p.manager_id, p.location_id, coalesce(p.email_enabled,true) as email_ok, p.work_schedule, p.notify_prefs, coalesce(l.timezone, tz) as ptz
+             from profiles p left join locations l on l.id = p.location_id where p.status='Active' and coalesce(p.attendance_required,true)
   loop
+    p_now := now() at time zone r.ptz; p_today := p_now::date; dow := to_char(p_now,'Dy');
     sched := coalesce(r.work_schedule,'{}'::jsonb);
     -- dated pattern: if the current version isn't live yet, use the last history entry
-    if (sched->>'effectiveFrom') is not null and (sched->>'effectiveFrom')::date > today_local and jsonb_typeof(sched->'history')='array' and jsonb_array_length(sched->'history')>0 then
+    if (sched->>'effectiveFrom') is not null and (sched->>'effectiveFrom')::date > p_today and jsonb_typeof(sched->'history')='array' and jsonb_array_length(sched->'history')>0 then
       sched := sched->'history'->(jsonb_array_length(sched->'history')-1);
     end if;
     t_in := coalesce(nullif(sched->>'in',''),'09:00')::time;
     offdays := coalesce(sched->'offDays','["Sun"]'::jsonb);
     if offdays ? dow then continue; end if;
-    select exists (select 1 from public_holidays h where h.date = today_local and (h.location_id is null or r.location_id is null or h.location_id = r.location_id)) into is_hol;
+    select exists (select 1 from public_holidays h where h.date = p_today and (h.location_id is null or r.location_id is null or h.location_id = r.location_id)) into is_hol;
     if is_hol then continue; end if;
-    if exists (select 1 from attendance a where a.user_id=r.id and a.date=today_local) then continue; end if;
+    if exists (select 1 from attendance a where a.user_id=r.id and a.date=p_today) then continue; end if;
     -- person
-    if in_on and now_local >= (today_local + t_in) + (in_after||' minutes')::interval and now_local <= (today_local + t_in) + ((in_after+120)||' minutes')::interval then
-      lnk := 'att:in:'||today_local::text;
+    if in_on and p_now >= (p_today + t_in) + (in_after||' minutes')::interval and p_now <= (p_today + t_in) + ((in_after+120)||' minutes')::interval then
+      lnk := 'att:in:'||p_today::text;
       if not exists (select 1 from notifications n where n.user_id=r.id::text and n.link=lnk) then
         txt := chr(9200)||' Good morning '||coalesce(r.first_name,'')||' — you haven''t clocked in yet today. Tap to clock in.';
         insert into notifications (id,user_id,text,read,created_at,link,kind,count,updated_at)
@@ -143,10 +150,10 @@ begin
     end if;
     -- manager (§9.2: same-day notification to colleague AND RM)
     if in_on and r.manager_id is not null and coalesce((ns->>'inapp_attendance_missed_rm')::boolean,true)
-       and now_local >= (today_local + t_in) + (rm_after||' minutes')::interval and now_local <= (today_local + t_in) + ((rm_after+240)||' minutes')::interval then
-      select exists (select 1 from attendance_requests q where q.user_id=r.id and q.type='on_duty' and q.status='Approved' and q.date<=today_local and coalesce(q.date_to,q.date)>=today_local) into onduty;
+       and p_now >= (p_today + t_in) + (rm_after||' minutes')::interval and p_now <= (p_today + t_in) + ((rm_after+240)||' minutes')::interval then
+      select exists (select 1 from attendance_requests q where q.user_id=r.id and q.type='on_duty' and q.status='Approved' and q.date<=p_today and coalesce(q.date_to,q.date)>=p_today) into onduty;
       if not onduty then
-        lnk := 'att:team:'||today_local::text||':'||r.id::text;
+        lnk := 'att:team:'||p_today::text||':'||r.id::text;
         if not exists (select 1 from notifications n where n.user_id=r.manager_id::text and n.link=lnk) then
           txt := chr(9200)||' '||trim(coalesce(r.first_name,'')||' '||coalesce(r.last_name,''))||' hasn''t clocked in yet today (shift '||to_char(t_in,'HH24:MI')||').';
           insert into notifications (id,user_id,text,read,created_at,link,kind,count,updated_at)
@@ -170,12 +177,13 @@ begin
 
   -- 3) CLOCK-OUT REMINDERS: open session today, past schedule.out + N min, or past clockout_reminder_hours on the clock (once each per day).
   if out_on then
-    for r in select a.id as att_id, a.date, a.clock_in_at, p.id, p.email, p.first_name, coalesce(p.email_enabled,true) as email_ok, p.work_schedule, p.notify_prefs
-               from attendance a join profiles p on p.id=a.user_id
-              where a.clock_out_at is null and a.clock_in_at is not null and a.date >= today_local - 1
+    for r in select a.id as att_id, a.date, a.clock_in_at, p.id, p.email, p.first_name, coalesce(p.email_enabled,true) as email_ok, p.work_schedule, p.notify_prefs, coalesce(l.timezone, tz) as ptz
+               from attendance a join profiles p on p.id=a.user_id left join locations l on l.id = p.location_id
+              where a.clock_out_at is null and a.clock_in_at is not null and a.date >= (now() at time zone coalesce(l.timezone, tz))::date - 1
     loop
+      p_now := now() at time zone r.ptz; p_today := p_now::date;
       sched := coalesce(r.work_schedule,'{}'::jsonb);
-      if (sched->>'effectiveFrom') is not null and (sched->>'effectiveFrom')::date > today_local and jsonb_typeof(sched->'history')='array' and jsonb_array_length(sched->'history')>0 then
+      if (sched->>'effectiveFrom') is not null and (sched->>'effectiveFrom')::date > p_today and jsonb_typeof(sched->'history')='array' and jsonb_array_length(sched->'history')>0 then
         sched := sched->'history'->(jsonb_array_length(sched->'history')-1);
       end if;
       t_in := coalesce(nullif(sched->>'in',''),'09:00')::time;
@@ -183,7 +191,7 @@ begin
       -- shift end as a timestamp on the session's own date (next day for a night shift)
       end_ts := (r.date + t_out) + case when t_out < t_in then interval '1 day' else interval '0' end;
       lnk := null;
-      if now_local >= end_ts + (out_after||' minutes')::interval then lnk := 'att:out:'||r.date::text; txt := chr(9201)||' Still clocked in? Your shift ended at '||to_char(t_out,'HH24:MI')||' — tap to clock out.';
+      if p_now >= end_ts + (out_after||' minutes')::interval then lnk := 'att:out:'||r.date::text; txt := chr(9201)||' Still clocked in? Your shift ended at '||to_char(t_out,'HH24:MI')||' — tap to clock out.';
       elsif now() >= r.clock_in_at + (out_hours||' hours')::interval then lnk := 'att:out:long:'||r.date::text; txt := chr(9201)||' You''ve been clocked in for over '||out_hours||' hours — still working? Tap to clock out.';
       end if;
       if lnk is null then continue; end if;
