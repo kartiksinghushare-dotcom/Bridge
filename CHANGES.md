@@ -1,3 +1,10 @@
+# Bridge v140 — Workspace opens at the newest message · phone viewport locked (cache-buster `?v=140`)
+
+- **Workspace tab → chat opens at the latest message** and is marked read. It used to paint the chat at the top (31 Aug…) when you came in from the tab / bottom nav; only tapping a chat scrolled down.
+- **Phones: the page never moves.** The workspace is fitted to the visible viewport (keyboard open or closed) and the document itself is locked while the Workspace is open — no bounce, no sideways drift, composer stays above the keyboard.
+
+---
+
 # Bridge v139 — Workspace on phones, follow-ups (cache-buster `?v=139`)
 
 - **Opens on the newest activity** — Workspace lands on the board (or Messages) with the most recent message, never on a board remembered from an earlier day; a notification deep link still wins.

@@ -349,6 +349,19 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
 /* the direct-message list honours pin / archive too */
 (function(){if(typeof _dmConvos!=='function')return;var _o=_dmConvos;_dmConvos=function(){var lf=CRM.listFilter||'all';return _o().filter(function(c){var ar=!!_crmPrefs(c.id).archived;return lf==='archived'?ar:!ar;}).sort(function(a,b){var pa=_crmPrefs(a.id).pinned?1:0,pb=_crmPrefs(b.id).pinned?1:0;if(pa!==pb)return pb-pa;return String(b.lastAt||'').localeCompare(String(a.lastAt||''));});};})();
 
+
+/* ═══ 14. v140 — entering the Workspace (tab / bottom nav) opens the chat at its NEWEST message and marks it read;
+   on phones the whole workspace is fitted to the visible viewport (keyboard open or closed) so the page never moves ═══ */
+(function(){var _o=crmPage;crmPage=function(){var wasOpen=!!document.getElementById('crm-thread');var h=_o.apply(this,arguments);try{var cid=CRM&&CRM.sel&&CRM.sel.convoId;
+  if(cid&&(!wasOpen||CRM._paintedConvo!==cid)){CRM._paintedConvo=cid;setTimeout(function(){try{_crmScrollBottom();if(document.visibilityState!=='hidden')_crmMarkRead(cid);_crmLoadImagesFor(cid);}catch(e){}},0);}
+  if(!cid)CRM._paintedConvo=null;}catch(e){}return h;};})();
+function _cpFitViewport(){try{
+  if(!window.visualViewport||!_crmIsMob()){document.documentElement.style.removeProperty('--vvh');document.documentElement.style.removeProperty('--vvt');return;}
+  var vv=window.visualViewport;document.documentElement.style.setProperty('--vvh',Math.round(vv.height)+'px');document.documentElement.style.setProperty('--vvt',Math.round(vv.offsetTop)+'px');
+  if(document.querySelector('.crm-fs')&&(window.scrollY||window.scrollX))window.scrollTo(0,0);
+}catch(e){}}
+(function(){if(!window.visualViewport)return;var t=null;var f=function(){if(t)return;t=setTimeout(function(){t=null;_cpFitViewport();},40);};window.visualViewport.addEventListener('resize',f);window.visualViewport.addEventListener('scroll',f);window.addEventListener('orientationchange',f);document.addEventListener('focusin',function(e){if(e.target&&e.target.closest&&e.target.closest('.crm-fs'))setTimeout(_cpFitViewport,120);});_cpFitViewport();})();
+
 /* ═══ 13. styles ═══ */
 (function(){
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus3-css">'
@@ -449,6 +462,10 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
   +'.crm-fs .crm-vplay{min-width:36px!important;min-height:36px!important}.crm-fs .crm-vrate{min-height:24px!important}.crm-fs .crm-pinx,.crm-fs .crm-rbx{min-height:32px!important;min-width:32px!important}'
   +'.crm-fs .crm-rec-del{min-width:44px;min-height:44px}'
   +'body.cp-sheet-open{overflow:hidden}'
+  +'body:has(.crm-fs){position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}'
+  +'.crm-fs{top:var(--vvt,0px)!important;bottom:auto!important;height:calc(var(--vvh,100dvh) - 60px - env(safe-area-inset-bottom))!important}'
+  +'.crm-fs.crm-hasconvo{height:var(--vvh,100dvh)!important;padding-bottom:0!important}'
+  +'.crm-fs.crm-hasconvo .crm-composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))!important}'
   +'#crm-thread,#crm-tthread{overflow-x:hidden!important;overscroll-behavior-x:none}'
   +'.crm-msg[data-swipe]{touch-action:pan-y}'
   +'#cp-sheet .cp-card{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;max-width:100vw!important;transform:none!important;margin:0!important}'
