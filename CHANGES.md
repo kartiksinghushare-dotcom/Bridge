@@ -1,3 +1,13 @@
+# Bridge v138 — Workspace on phones, simplified (cache-buster `?v=138`)
+
+- **Long press a message (1.5 s)** shows the floating bar on the bubble — quick emojis, Reply, Thread, Forward, ⋯ — the same bar as desktop hover. **Swipe right = quoted reply** (WhatsApp); the thread only opens from the thread icon. ⋯ opens the sheet with copy, star, pin, message info, edit, delete.
+- **Board tab strip**: one ⋯ button on phones (members, rename, delete, remove-from-view) instead of three buttons squeezed next to the tabs, so every board tab is reachable.
+- **Chat list**: no trash button on every row and no duplicate “+” chip (the New chat button stays); long press / swipe left a row for pin, mute, mark unread, archive, chat info, delete.
+- **Thread panel** fills the whole screen inside a chat (the main composer no longer peeks out underneath).
+- Bubbles no longer trigger the iOS text-selection callout during a long press.
+
+---
+
 # Bridge v137 — Workspace chat: WhatsApp parity (cache-buster `?v=137`)
 
 `public/js/25-chat-plus.js` (new) · `06-crm.js`, `23-dm.js`, `01-supabase-sync.js`, `index.html`.

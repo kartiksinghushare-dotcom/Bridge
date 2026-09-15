@@ -187,12 +187,13 @@ App._crmStarred=(cidOnly)=>{var ids=Object.keys(CRM.stars||{});var rows=[];ids.f
 App._crmMsgMenu=(ev,cid,mid)=>{if(ev&&ev.stopPropagation)ev.stopPropagation();var c=_crmConvo(cid);var m=c&&(c.messages||[]).find(function(x){return x.id===mid;});if(!m||m.deletedAt)return;
   var part=_crmCanPart(cid);var own=!m.fromCustomer&&m.senderId===S.uid;var mob=_crmIsMob();
   var it=function(icon,label,fn,cls){return'<button class="cp-item'+(cls?' '+cls:'')+'" onclick="'+fn+'">'+ic(icon,'w-4 h-4')+'<span>'+label+'</span></button>';};
-  var h='';
-  if(mob&&part)h+='<div class="cp-emorow">'+_CRM_EMO.map(function(e){return'<button onclick="_cpSheetClose();App._crmReact(\''+cid+'\',\''+mid+'\',\''+encodeURIComponent(e)+'\')">'+e+'</button>';}).join('')+'<button class="cp-emoplus" onclick="_cpSheetClose();App._crmEmoOpen(event,\'react\',\''+cid+'\',\''+mid+'\')">+</button></div>';
+  var fromBar=!!(ev&&ev.target);var h='';
+  if(mob&&part&&!fromBar)h+='<div class="cp-emorow">'+_CRM_EMO.map(function(e){return'<button onclick="_cpSheetClose();App._crmReact(\''+cid+'\',\''+mid+'\',\''+encodeURIComponent(e)+'\')">'+e+'</button>';}).join('')+'<button class="cp-emoplus" onclick="_cpSheetClose();App._crmEmoOpen(event,\'react\',\''+cid+'\',\''+mid+'\')">+</button></div>';
   h+='<div class="cp-list">';
+  if(!fromBar){
   if(part&&!m.parentId)h+=it('reply','Reply','App._crmQuote(\''+cid+'\',\''+mid+'\')');
   if(part&&!m.parentId)h+=it('msg','Reply in thread','_cpSheetClose();App._crmOpenThread(\''+mid+'\')');
-  if(part)h+=it('forward','Forward…','App._crmForward(\''+mid+'\')');
+  if(part)h+=it('forward','Forward…','App._crmForward(\''+mid+'\')');}
   if(m.text)h+=it('copy','Copy text','App._crmCopy(\''+cid+'\',\''+mid+'\')');
   h+=it('star',_crmIsStarred(mid)?'Unstar':'Star','App._crmStar(\''+cid+'\',\''+mid+'\')');
   if(part&&!m.parentId)h+=it('pin',m.pinnedAt?'Unpin':'Pin','App._crmPin(\''+cid+'\',\''+mid+'\')');
@@ -200,14 +201,15 @@ App._crmMsgMenu=(ev,cid,mid)=>{if(ev&&ev.stopPropagation)ev.stopPropagation();va
   if(own&&part&&_crmCanEdit(m))h+=it('edit','Edit','_cpSheetClose();App._crmEditMsg(\''+cid+'\',\''+mid+'\')');
   if((own&&part)||can('crm','delete'))h+=it('trash','Delete','_cpSheetClose();App._crmDelMsg(\''+cid+'\',\''+mid+'\')','cp-item-del');
   h+='</div>';
-  if(mob){_cpSheet(h,{});return;}
+  if(mob){try{App._crmCloseMsgActs();}catch(e){}_cpSheet(h,{});return;}
   /* desktop: small popover next to the ⋯ */
   var pop=document.getElementById('cp-pop');if(!pop){pop=document.createElement('div');pop.id='cp-pop';document.body.appendChild(pop);document.addEventListener('click',function(e){if(!e.target.closest('#cp-pop'))pop.classList.remove('on');},true);}
   pop.innerHTML=h;pop.classList.add('on');var r=ev&&ev.target&&ev.target.closest('button')?ev.target.closest('button').getBoundingClientRect():{left:innerWidth/2,bottom:innerHeight/2};
   var W=220,H=pop.offsetHeight||300;var x=Math.min(Math.max(8,r.left-W/2),innerWidth-W-8);var y=r.bottom+6;if(y+H>innerHeight-8)y=Math.max(8,r.top-H-6);pop.style.left=x+'px';pop.style.top=y+'px';};
 document.addEventListener('click',function(e){var p=document.getElementById('cp-pop');if(p&&p.classList.contains('on')&&e.target.closest&&e.target.closest('#cp-pop .cp-item'))setTimeout(function(){p.classList.remove('on');},0);},true);
-/* phones: a long press opens the sheet (was: an inline action bar) */
-(function(){var _o=App._crmMsgActs;App._crmMsgActs=function(e,el){if(!_crmIsMob())return _o(e,el);if(!(e&&e._crmLongPress))return;var t=e&&e.target;if(t&&t.closest&&(t.closest('button')||t.closest('a')||t.closest('input')||t.closest('textarea')))return;var mid=el.getAttribute('data-mid');if(mid&&CRM.sel.convoId)App._crmMsgMenu(null,CRM.sel.convoId,mid);};})();
+/* v138 — phones: a long press (CRM_LONG_PRESS_MS) shows the floating bar on the bubble — quick emojis · Reply · Thread ·
+   Forward · ⋯ — exactly like desktop hover. ⋯ opens the sheet with the rest (copy, star, pin, info, edit, delete). */
+try{CRM_LONG_PRESS_MS=1500;}catch(e){}
 App._crmCopy=async(cid,mid)=>{var c=_crmConvo(cid);var m=c&&(c.messages||[]).find(function(x){return x.id===mid;});_cpSheetClose();if(!m||!m.text)return;try{await navigator.clipboard.writeText(m.text);toast('Copied');}catch(e){try{var ta=document.createElement('textarea');ta.value=m.text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied');}catch(x){toast('Copy failed','err');}}};
 /* “Message info” — read / delivered / not yet, per member, from crm_reads (last_seen_at ≥ message time = read) */
 App._crmMsgInfo=(cid,mid)=>{var c=_crmConvo(cid);var m=c&&(c.messages||[]).find(function(x){return x.id===mid;});if(!m)return;var b=_crmBoard(c.boardId);
@@ -296,6 +298,17 @@ App._crmLeaveBoard=async(bid)=>{var b=_crmBoard(bid);if(!b)return;if(!(await _cr
   b.members=(b.members||[]).filter(function(x){return x!==S.uid;});CRM.sel.convoId=null;if(CRM.sel.boardId===bid)CRM.sel.boardId=null;rr();
   try{await sb.from('crm_board_members').delete().eq('board_id',bid).eq('user_id',S.uid);}catch(e){}toast('You left “'+b.name+'”');};
 
+/* ═══ 11b. board actions on phones — one ⋯ instead of three buttons in the tab strip ═══ */
+App._crmBoardMenu=(bid)=>{var b=_crmBoard(bid);if(!b)return;var inView=!!CRM.sel.viewId;var v=inView?_crmView(CRM.sel.viewId):null;
+  var it=function(icon,label,fn,cls){return'<button class="cp-item'+(cls?' '+cls:'')+'" onclick="_cpSheetClose();'+fn+'">'+ic(icon,'w-4 h-4')+'<span>'+label+'</span></button>';};
+  var h='<div class="cp-list">';
+  if(inView){if(_crmViewCanEdit(v))h+=it('x','Remove board from this view','App._crmViewHideBoard(\''+bid+'\')');}
+  else{
+    if(_crmCanBoardMembers())h+=it('users','Board members · '+_crmBoardPeople(b).length,'App._crmTogMembers()');
+    if(can('crm','rename'))h+=it('edit','Rename board','App._crmRenameBoard(\''+bid+'\')');
+    if(can('crm','delete'))h+=it('trash','Delete board','App._crmDelBoard(\''+bid+'\')','cp-item-del');
+  }
+  h+='</div>';if(h==='<div class="cp-list"></div>')return;_cpSheet(h,{title:b.name});};
 /* ═══ 12. chat-list row: long press or swipe left → pin / mute / archive / mark unread ═══ */
 App._crmRowMenu=(cid)=>{var c=_crmConvo(cid);if(!c)return;var pf=_crmPrefs(cid),muted=_crmMuted(cid);var peer=_crmIsDM(c)?_crmDMPeer(c):null;
   var it=function(icon,label,fn,cls){return'<button class="cp-item'+(cls?' '+cls:'')+'" onclick="'+fn+'">'+ic(icon,'w-4 h-4')+'<span>'+label+'</span></button>';};
@@ -304,7 +317,8 @@ App._crmRowMenu=(cid)=>{var c=_crmConvo(cid);if(!c)return;var pf=_crmPrefs(cid),
     +it(muted?'bell':'bellOff',muted?'Unmute':'Mute…',muted?'App._crmMute(\''+cid+'\',\'\')':'App._crmMuteAsk(\''+cid+'\')')
     +(_crmUnread(c)?'':it('msg','Mark as unread','App._crmMarkUnread(\''+cid+'\')'))
     +it('archive',pf.archived?'Unarchive':'Archive','App._crmArchive(\''+cid+'\','+(pf.archived?'false':'true')+')')
-    +it('info','Chat info','App._crmChatInfo(\''+cid+'\')')+'</div>',{});};
+    +it('info','Chat info','App._crmChatInfo(\''+cid+'\')')
+    +((peer?can('messages','delete'):can('crm','delete'))?it('trash','Delete chat','_cpSheetClose();'+(peer?'App._dmDelete':'App._crmDelConvo')+'(\''+cid+'\')','cp-item-del'):'')+'</div>',{});};
 (function(){
   var lp=null,sw=null;
   document.addEventListener('touchstart',function(e){var row=e.target.closest&&e.target.closest('#crm-list .crm-row[data-cid]');if(!row)return;if(e.target.closest('button'))return;var t=e.touches[0];
@@ -425,6 +439,11 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
   +'.crm-fs .crm-vplay{min-width:36px!important;min-height:36px!important}.crm-fs .crm-vrate{min-height:24px!important}.crm-fs .crm-pinx,.crm-fs .crm-rbx{min-height:32px!important;min-width:32px!important}'
   +'.crm-fs .crm-rec-del{min-width:44px;min-height:44px}'
   +'body.cp-sheet-open{overflow:hidden}'
+  +'.crm-hasconvo .crm-thread-panel{bottom:0!important;height:100dvh!important;padding-bottom:env(safe-area-inset-bottom)}'
+  +'.crm-warow .crm-del{display:none!important}'
+  +'.crm-msg,.crm-msg *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.crm-msg input,.crm-msg textarea{-webkit-user-select:text;user-select:text}'
+  +'.crm-tabsrow .crm-bctl-desk{display:none!important}'
+  +'.crm-fs .crm-lfrow .crm-newchat{display:none!important}'
   +'}'
   +'</style>');
 })();
