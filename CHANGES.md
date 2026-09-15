@@ -1,3 +1,12 @@
+# Bridge v139 — Workspace on phones, follow-ups (cache-buster `?v=139`)
+
+- **Opens on the newest activity** — Workspace lands on the board (or Messages) with the most recent message, never on a board remembered from an earlier day; a notification deep link still wins.
+- **Swipe-to-reply no longer moves the page** — the message list can't scroll sideways and the swipe is a vertical-pan-only gesture area.
+- **Chat info / Contact info sheet** is pinned edge-to-edge at the bottom on phones (no off-centre card).
+- Long press on a message (1.5 s) shows the floating bar from v138.
+
+---
+
 # Bridge v138 — Workspace on phones, simplified (cache-buster `?v=138`)
 
 - **Long press a message (1.5 s)** shows the floating bar on the bubble — quick emojis, Reply, Thread, Forward, ⋯ — the same bar as desktop hover. **Swipe right = quoted reply** (WhatsApp); the thread only opens from the thread icon. ⋯ opens the sheet with copy, star, pin, message info, edit, delete.

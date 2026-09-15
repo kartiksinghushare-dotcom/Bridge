@@ -32,7 +32,17 @@ async function _cpLoadExtras(){
   try{var r2=await sb.from('crm_convo_prefs').select('*').eq('user_id',S.uid);CRM.prefs={};((r2&&r2.data)||[]).forEach(function(x){CRM.prefs[x.conversation_id]={mutedUntil:x.muted_until||null,archived:!!x.archived,pinned:!!x.pinned};});}catch(e){}
   CRM._extrasLoaded=true;
 }
-(function(){var _o=_crmLoad;_crmLoad=async function(){await _o.apply(this,arguments);try{await _cpLoadExtras();}catch(e){}try{if(S.route==='crm')rr();}catch(e){}};})();
+/* v139 — opening the Workspace lands on the board (or Messages) with the NEWEST activity, never on a board remembered
+   from days ago. A deep link from a notification still wins. Runs once per sign-in. */
+function _cpLandNewest(){try{
+  if(CRM._landed||CRM.sel.convoId||CRM._openAfterLoad)return;CRM._landed=true;
+  var best=null,bt='';_crmVisibleBoards().forEach(function(b){(CRM.convos||[]).forEach(function(c){if(c.boardId===b.id&&!_crmPrefs(c.id).archived&&String(c.lastAt||'')>bt){bt=String(c.lastAt);best=b;}});});
+  var dmT='';if(typeof _dmConvos==='function')_dmConvos().forEach(function(c){if(String(c.lastAt||'')>dmT)dmT=String(c.lastAt);});
+  if(best&&bt>=dmT){CRM.sel.viewId=null;CRM.sel.dm=false;CRM.sel.boardId=best.id;CRM.sel.hubId=best.hubId;}
+  else if(dmT){CRM.sel.dm=true;CRM.sel.viewId=null;}
+  CRM.sel.convoId=null;CRM.sel.threadId=null;
+}catch(e){}}
+(function(){var _o=_crmLoad;_crmLoad=async function(){await _o.apply(this,arguments);try{await _cpLoadExtras();}catch(e){}try{_cpLandNewest();}catch(e){}try{if(S.route==='crm'){rr();_crmScrollBottom();}}catch(e){}};})();
 async function _cpSavePref(cid,patch){
   CRM.prefs=CRM.prefs||{};var cur=CRM.prefs[cid]||{};CRM.prefs[cid]=Object.assign({},cur,patch);
   var row={user_id:S.uid,conversation_id:cid,muted_until:CRM.prefs[cid].mutedUntil||null,archived:!!CRM.prefs[cid].archived,pinned:!!CRM.prefs[cid].pinned,updated_at:new Date().toISOString()};
@@ -439,6 +449,10 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
   +'.crm-fs .crm-vplay{min-width:36px!important;min-height:36px!important}.crm-fs .crm-vrate{min-height:24px!important}.crm-fs .crm-pinx,.crm-fs .crm-rbx{min-height:32px!important;min-width:32px!important}'
   +'.crm-fs .crm-rec-del{min-width:44px;min-height:44px}'
   +'body.cp-sheet-open{overflow:hidden}'
+  +'#crm-thread,#crm-tthread{overflow-x:hidden!important;overscroll-behavior-x:none}'
+  +'.crm-msg[data-swipe]{touch-action:pan-y}'
+  +'#cp-sheet .cp-card{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;max-width:100vw!important;transform:none!important;margin:0!important}'
+  +'#cp-sheet .cp-body{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}'
   +'.crm-hasconvo .crm-thread-panel{bottom:0!important;height:100dvh!important;padding-bottom:env(safe-area-inset-bottom)}'
   +'.crm-warow .crm-del{display:none!important}'
   +'.crm-msg,.crm-msg *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.crm-msg input,.crm-msg textarea{-webkit-user-select:text;user-select:text}'
