@@ -1,3 +1,24 @@
+# Bridge v137 — Workspace chat: WhatsApp parity (cache-buster `?v=137`)
+
+`public/js/25-chat-plus.js` (new) · `06-crm.js`, `23-dm.js`, `01-supabase-sync.js`, `index.html`.
+DB (additive, **already applied**): `crm_messages` gains `reply_to`, `forwarded`, `attachments`, `sticker`, `link_preview`, `pinned_at`, `pinned_by` (and `crm_messages_lite` carries them) · new tables `crm_stars`, `crm_convo_prefs` (own rows only) · `profiles.last_seen_at` (kept fresh by a trigger on the presence heartbeat) · private storage bucket `chat-media` (signed links, 50 MB) · both notification fan-out triggers now skip muted chats and describe voice notes / files / stickers · new edge function `link-preview`. Record: `supabase/migrations/2026-09-15_v137_chat_plus.sql`, `supabase/functions/link-preview/index.ts`.
+
+- **Voice notes** — the send button becomes a mic when the box is empty; tap to record (red dot + timer, bin to cancel, ➤ to send). Inline player with waveform, seek, 1×/1.5×/2×; one note plays at a time.
+- **Any file** — the paperclip takes photos, PDFs, Excel, Word, videos, anything up to 50 MB (drag-and-drop and paste on desktop). Files show as a card (type badge, name, size, download); videos play inline; photos stay inline as before. Files live in a private bucket and open through short-lived signed links.
+- **Quoted replies** — Reply quotes the message inside the bubble (sender + snippet / photo thumbnail); tapping the quote scrolls to the original and flashes it. Swipe right on a phone to reply. “Reply in thread” is still there for side conversations. Replying tags the person you replied to.
+- **Forward** — any message, to several chats or people at once (search + tick), photos / files / voice notes travel with it, marked “Forwarded”.
+- **Edit for 15 minutes**, delete for everyone (attachments are removed from storage too).
+- **Message info** — on your own messages: who read it (with time), who it was delivered to, who hasn’t got it yet.
+- **Last seen** — direct-message header shows “Online” or “Last seen today at 14:05”; group header shows members and how many are online; typing indicator unchanged.
+- **Pin** (per chat, everyone sees it) — a pinned bar under the header; tap to jump, tap again to cycle when there are several, list icon shows them all. **Star** (per person) — ★ on the bubble, “Starred messages” from Chat info.
+- **Link previews** — the first link in a message gets a card (site, title, description, image), fetched once server-side so nobody’s browser touches the page.
+- **Message actions** — desktop: hover bar (react, reply, thread, forward, ⋯ for copy / star / pin / info / edit / delete). Phone: long press opens a bottom sheet with the emoji row and the same actions.
+- **Emoji + stickers** — the picker has an Emoji page (all categories + recent) and a Stickers page (six packs) that sends a large sticker.
+- **Chat info** — tap the chat name: members with online / last seen, Media · Files · Links tabs, Mute (8 h / 1 week / always — @tags still get through), Pinned, Starred, Search, pin chat to top, archive, leave board. Contact info for direct messages.
+- **Chat list** — long press (or swipe left, or right-click) a row: pin to top, mute, mark as unread, archive, chat info. Pinned chats stay on top, muted chats show a bell-off icon and a grey badge, archived chats sit under an “Archived” filter.
+
+---
+
 # Bridge v133 — Attendance, HRMS Phase 1 (spec §7, §9, §11, §12): no timer clock-outs · requests · comp off · holidays · dated work patterns · reports
 
 `public/js/24-attendance-hrms.js` (new) · `21-attendance.js`, `22-profile.js`, `19-okr-roles-acl.js`, `18-settings-notifications.js`, `index.html` + cache-buster `?v=135`.
