@@ -664,9 +664,9 @@ function settingsPage(forceTab){
   // ── TEMPLATES TAB ──
   const defaults=_defaultTemplates();
   const expandedTpl=S.filters.tplKey||null;
-  const templatesTab=`<div class="space-y-2">
+  const templatesTab=`<div class="space-y-2 ns-tpl">
     <div style="padding:4px 0 10px">
-      <div style="font-size:13px;color:#A59788;line-height:1.6">
+      <div class="ns-tpl-intro" style="font-size:13px;color:#A59788;line-height:1.6">
         Customise the subject and body for each email. Use these variables anywhere in your text:
         <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
           ${['{{user_name}}','{{checklist_name}}','{{date}}','{{status}}','{{manager_name}}','{{action_url}}','{{app_url}}'].map(v=>`<code style="background:#F1ECE3;border-radius:6px;padding:2px 8px;font-size:12px;color:#3A312A">${v}</code>`).join('')}

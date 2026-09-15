@@ -458,8 +458,11 @@
       :!(typeof _bbPushSupported==='function'&&_bbPushSupported())?'<span class="bb-hint bb-bad">'+(/iP(hone|ad)/.test(navigator.userAgent||'')?'On iPhone: Share → Add to Home Screen, then open Bridge from there':'Not supported in this browser')+'</span>'
       :(typeof _bbPushHere==='function'&&_bbPushHere())?'<span class="bb-hint bb-ok">'+icn('check','w-3 h-3')+' On</span> <button onclick="App._bbPushDisableHere()" class="ui-btn ui-btn-ghost ui-btn-sm">Turn off here</button>'
       :'<button onclick="App._bbPushEnable()" class="ui-btn ui-btn-primary ui-btn-sm">Enable</button>';
-    var devBody=row('Desktop pop-ups','System notifications while Bridge is open in a background tab',deskExtra)
-      +row('Push when Bridge is closed','Notifications on this device even when the app or tab isn’t open',pushExtra)
+    /* v136 — on phones the status text ("Blocked in the browser…", "On iPhone: Share → Add to Home Screen…") is a
+       sentence, not a chip: stack it under the label instead of squeezing it beside a 3-line description. */
+    var _ph=(function(){try{return window.matchMedia('(max-width:640px)').matches;}catch(e){return false;}})();
+    var devBody=row('Desktop pop-ups','System notifications while Bridge is open in a background tab',deskExtra,{stack:_ph})
+      +row('Push when Bridge is closed','Notifications on this device even when the app or tab isn’t open',pushExtra,{stack:_ph})
       +row('Preview an alert','See and hear exactly what you’ll get','<div class="bb-test">'+[['chat','Message'],['dm','Direct message'],['attendance','Attendance'],['ticket','Ticket']].map(function(x){return '<button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="BBNotify.test(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div>',{stack:true});
     return NC._settingsCSS()
       +card('Do Not Disturb','Pause everything except the Inbox',dndBody,'clock')
@@ -502,7 +505,9 @@
    +'.bb-set-note{font-size:11.5px;color:#A8998A;line-height:1.5;padding:10px 0 2px}'
    +'.bb-hint{font-size:11.5px;color:#A8998A;display:inline-flex;align-items:center;gap:4px}.bb-ok{color:#2F7A57;font-weight:700}.bb-bad{color:#936659}'
    +'.bb-test{display:flex;gap:8px;flex-wrap:wrap}'
-   +'@media(max-width:640px){.bb-set-row.stack .bb-set-lbl,.bb-set-row.stack .bb-set-right{flex-basis:100%}.bb-set-body{padding:2px 14px 10px}.bb-set-head{padding:12px 14px}.bb-set-row{padding:11px 0}.bb-chip{min-height:38px}.bb-chips .bb-chip{min-height:36px}.bb-test .ui-btn{flex:1}}'
+   +'@media(max-width:640px){.bb-set-row.stack .bb-set-lbl,.bb-set-row.stack .bb-set-right{flex-basis:100%}.bb-set-body{padding:2px 14px 10px}.bb-set-head{padding:12px 14px}.bb-set-row{padding:11px 0}.bb-chip{min-height:38px}.bb-chips .bb-chip{min-height:36px}.bb-test .ui-btn{flex:1}'
+   +'.bb-set-right{flex:0 1 auto;min-width:0;max-width:100%}.bb-hint{white-space:normal;line-height:1.4;max-width:100%}.bb-set-row.stack .bb-set-right{justify-content:flex-start;gap:8px;margin-top:2px}'
+   +'.bb-set-row.stack .bb-set-right .ui-btn{min-height:38px}.bb-vol{padding-top:4px}}'
    +'</style>';};
   /* chip toggle: flips one kind × channel, saves, asks for the browser permission when turning Desktop/Push on */
   App._bbChip=async function(btn,kind,ch){

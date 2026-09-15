@@ -83,17 +83,24 @@ App._dmNew=()=>{
   if(!can('messages','send'))return toast('Your role can’t send direct messages','err');
   CRM._dmPickQ='';App._dmRenderPick();
 };
-App._dmRenderPick=()=>{
-  var q=(CRM._dmPickQ||'').toLowerCase();
+/* v136 — typing only re-renders the result list (#dm-pick-res); the modal and the search box stay put, so the
+   keyboard never closes and the caret never jumps on phones. */
+function _dmPickResults(){
+  var q=(CRM._dmPickQ||'').trim().toLowerCase();
   var people=(DB.users||[]).filter(function(u){return u&&u.id!==S.uid&&u.status==='Active';}).filter(function(u){return !q||fullName(u).toLowerCase().indexOf(q)>=0||String(u.department||'').toLowerCase().indexOf(q)>=0||String(u.position||'').toLowerCase().indexOf(q)>=0;}).sort(function(a,b){return fullName(a).localeCompare(fullName(b));});
-  var recent=_dmConvos().map(_crmDMPeer).filter(Boolean).slice(0,5);
-  var row=function(u){var on=!!(window._bbOnline&&window._bbOnline[u.id]);return '<button onclick="_dmOpenWith(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:8px 10px;border:none;background:transparent;border-radius:10px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-9 h-9','text-[11px]')+'<span style="min-width:0;flex:1"><span style="display:block;font-size:13px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fullName(u))+'</span><span style="display:block;font-size:11px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc([u.position,u.department].filter(Boolean).join(' · ')||u.email||'')+'</span></span>'+(on?'<span style="font-size:10px;font-weight:800;color:#346A47">● Online</span>':'')+'</button>';};
+  var recent=q?[]:_dmConvos().map(_crmDMPeer).filter(Boolean).slice(0,5);
+  var row=function(u){var on=!!(window._bbOnline&&window._bbOnline[u.id]);return '<button type="button" class="dm-pick-row" onclick="_dmOpenWith(\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:8px 10px;border:none;background:transparent;border-radius:10px;cursor:pointer;min-height:48px" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-9 h-9','text-[11px]')+'<span style="min-width:0;flex:1"><span style="display:block;font-size:13px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(fullName(u))+'</span><span style="display:block;font-size:11px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc([u.position,u.department].filter(Boolean).join(' · ')||u.email||'')+'</span></span>'+(on?'<span style="font-size:10px;font-weight:800;color:#346A47;white-space:nowrap">● Online</span>':'')+'</button>';};
+  var h='display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin:12px 4px 4px';
+  return (recent.length?'<div style="'+h+'">Recent</div>'+recent.map(row).join(''):'')
+    +'<div style="'+h+'">'+(q?'Matches':'Everyone')+' · '+people.length+'</div><div style="max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch">'+(people.map(row).join('')||'<div style="padding:18px;text-align:center;color:#A59788;font-size:12.5px">Nobody matches.</div>')+'</div>';
+}
+App._dmPickInput=(el)=>{CRM._dmPickQ=el.value;var r=document.getElementById('dm-pick-res');if(r)r.innerHTML=_dmPickResults();else App._dmRenderPick();};
+App._dmRenderPick=()=>{
   modalShell({title:'New message',sub:'Private — only you and the person you pick can read it',size:'max-w-md',key:'dm-pick',
-    body:'<div><input id="dm-pick-q" value="'+esc(CRM._dmPickQ||'')+'" placeholder="Search by name, role or department…" class="ui-input rf" oninput="CRM._dmPickQ=this.value;App._dmRenderPick();setTimeout(function(){var e=document.getElementById(\'dm-pick-q\');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},0)"/>'
-      +(!q&&recent.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin:12px 4px 4px">Recent</div>'+recent.map(row).join(''):'')
-      +'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;margin:12px 4px 4px">'+(q?'Matches':'Everyone')+' · '+people.length+'</div><div style="max-height:46vh;overflow-y:auto">'+(people.map(row).join('')||'<div style="padding:18px;text-align:center;color:#A59788;font-size:12.5px">Nobody matches.</div>')+'</div></div>',
+    body:'<div><input id="dm-pick-q" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" value="'+esc(CRM._dmPickQ||'')+'" placeholder="Search by name, role or department…" class="ui-input rf" oninput="App._dmPickInput(this)"/>'
+      +'<div id="dm-pick-res">'+_dmPickResults()+'</div></div>',
     footer:btnG('Close','App.closeModal()')});
-  setTimeout(function(){var e=document.getElementById('dm-pick-q');if(e&&!e.value)e.focus();},60);
+  setTimeout(function(){var e=document.getElementById('dm-pick-q');if(e&&!e.value&&!(typeof _crmIsMob==='function'&&_crmIsMob()))e.focus();},60);
 };
 /* Open (or create) the DM with a person. Called from the picker, profiles and the Users list. */
 async function _dmOpenWith(uid2){
