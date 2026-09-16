@@ -1,3 +1,12 @@
+# Bridge v155 — Forgot password (cache-buster `?v=155`)
+
+- **"Forgot password?" on the sign-in page** → enter your email → Bridge emails a reset link (Supabase auth email). The confirmation reads the same whether or not the address exists.
+- **Opening the link shows "Choose a new password"** (new + confirm, min 6 chars); saving signs you in straight away.
+- **The link is honoured for 10 minutes only**: new SQL function `pw_reset_window_ok()` checks `auth.users.recovery_sent_at`; an older link (or an already-used one) shows "This link has expired" with a button to request a new one.
+- Migration: `supabase/migrations/2026-09-16_v155_pw_reset_window.sql` (already applied to the project).
+
+---
+
 # Bridge v154 — rename Ticket / Assignee / Status by clicking the header (cache-buster `?v=154`)
 
 - **Click the Ticket, Assignee or Status header name** on desktop → a small Rename box, saved for that board only.
