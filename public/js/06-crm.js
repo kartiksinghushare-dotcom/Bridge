@@ -215,10 +215,16 @@ const _crmStyle='<style>'
 +'.crm-chrow:hover .crm-chx{display:grid!important}'
 +'.crm-row:hover .crm-del{display:grid!important}'
 +'.crm-brd:hover .crm-bdel{display:grid!important}'
-+'.crm-hub:hover .crm-hdel{display:grid!important}'
+/* v142 — hover reveals only where a real pointer exists (phones treat a tap as hover); the message bar never opens on
+   hover any more: desktop shows a small ⋯ at the bubble's corner, phones use a 2 s hold */
++'@media(hover:hover){.crm-hub:hover .crm-hdel{display:grid!important}'
 +'.crm-tab:hover .crm-tx{display:inline-flex!important}'
-+'.crm-msg:hover .crm-macts{display:flex!important}'
-+'.crm-colh:hover .crm-colx{display:inline-flex!important}'
++'.crm-msg:hover .crm-mmore{opacity:1}'
++'.crm-colh:hover .crm-colx{display:inline-flex!important}}'
++'.crm-msg.crm-actopen .crm-macts{display:flex!important}'
++'.crm-mmore{position:absolute;top:2px;right:2px;width:24px;height:24px;min-height:24px!important;border:none;border-radius:8px;background:rgba(255,255,255,.92);color:#786A5F;display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity .12s;z-index:3;box-shadow:0 1px 3px rgba(35,28,22,.15)}'
++'.crm-msg.crm-mine .crm-mmore{right:2px}.crm-msg.crm-actopen .crm-mmore{opacity:1}'
++'@media(max-width:767px){.crm-mmore{display:none!important}}'
 +'.crm-scroll::-webkit-scrollbar{width:9px;height:9px}.crm-scroll::-webkit-scrollbar-thumb{background:#E4DBD0;border-radius:9px}.crm-scroll::-webkit-scrollbar-track{background:transparent}'
 +'.crm-cell:focus{border-color:#54433C!important;background:#fff!important}.crm-trow:hover{background:#FAF7F3}'
 /* v3.20 @-mention chip: readable on BOTH bubble colours */
@@ -438,7 +444,7 @@ function _crmLinkCard(lp){if(!lp||!lp.url||!(lp.title||lp.description||lp.image)
 function _crmIsStarred(mid){return !!((CRM.stars||{})[mid]);}
 function _crmMsg(m,cid,thread,prev){
   var replies0=function(mm){return ((_crmConvo(cid)||{messages:[]}).messages||[]).filter(function(x){return x.parentId===mm.id;});};
-  var editing=CRM.editMsgId===m.id;var _co=_crmConvo(cid);var _bd=_co?_crmBoard(_co.boardId):null;var _isChat=_bd?(_crmBS(_bd).type==='chat'):(_co&&_crmIsDM(_co));var mine=_isChat?(m.senderId===S.uid):(!m.fromCustomer);
+  var editing=CRM.editMsgId===m.id;var _co=_crmConvo(cid);var _bd=_co?_crmBoard(_co.boardId):null;var _isChat=_bd?(_crmBS(_bd).type==='chat'):(_co&&_crmIsDM(_co));var mine=_isChat?(m.senderId===S.uid):(!m.fromCustomer);var _isDMc=!!(_co&&typeof _crmIsDM==='function'&&_crmIsDM(_co));
   var who=m.fromCustomer?(m.name||'Customer'):(uById(m.senderId)?fullName(uById(m.senderId)):'You');
   var av=m.fromCustomer?_crmCustAv(m.name,24):(uById(m.senderId)?avatar(uById(m.senderId),'w-[24px] h-[24px]','text-[8px]'):_crmCustAv('You',24));
   var grouped=false;
@@ -451,19 +457,20 @@ function _crmMsg(m,cid,thread,prev){
   var flags=(m.pinnedAt?'<span class="crm-mflag" title="Pinned">'+ic('pin','w-3 h-3')+'</span>':'')+(_crmIsStarred(m.id)?'<span class="crm-mflag" title="Starred">'+ic('star','w-3 h-3')+'</span>':'');
   var meta='<span class="crm-meta'+((bigemo||isStick)?' crm-meta-out':'')+'">'+flags+(m.edited?'<i class="crm-edited">edited</i>':'')+_crmTime(m.at)+(mine&&m.senderId===S.uid?_crmTicks(m,cid):'')+'</span>';
   var bub=mine?'crm-bub-mine':'crm-bub-their';
-  if(m.deletedAt){var _dn=(m.deletedBy===S.uid)?'You':(uById(m.deletedBy)?_crmFirst(uById(m.deletedBy)):'Someone');var _dl='<div class="crm-line" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+'<div class="crm-msg'+(mine?' crm-mine':'')+'" data-mid="'+m.id+'" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'"><div class="crm-bub '+bub+(grouped?'':' crm-tail')+' crm-deleted" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+'<span class="crm-delx">\u{1F6AB}</span>'+esc(_dn)+' deleted this message<span class="crm-meta">'+_crmTime(m.at)+'</span></div>'+((!thread&&!m.parentId&&replies0(m).length)?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#54433C;font-size:11.5px;font-weight:700;cursor:pointer">'+replies0(m).length+' repl'+(replies0(m).length===1?'y':'ies')+'</button>':'')+'</div></div>';return _dl;}
+  if(m.deletedAt){var _dn=(m.deletedBy===S.uid)?'You':(uById(m.deletedBy)?_crmFirst(uById(m.deletedBy)):'Someone');var _dl='<div class="crm-line" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+'<div class="crm-msg'+(mine?' crm-mine':'')+'" data-mid="'+m.id+'" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'"><div class="crm-bub '+bub+(grouped?'':' crm-tail')+' crm-deleted" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine&&!_isDMc)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+'<span class="crm-delx">\u{1F6AB}</span>'+esc(_dn)+' deleted this message<span class="crm-meta">'+_crmTime(m.at)+'</span></div>'+((!thread&&!m.parentId&&replies0(m).length)?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#54433C;font-size:11.5px;font-weight:700;cursor:pointer">'+replies0(m).length+' repl'+(replies0(m).length===1?'y':'ies')+'</button>':'')+'</div></div>';return _dl;}
   var fwd=m.forwarded?'<div class="crm-fwd">'+ic('forward','w-3 h-3')+'Forwarded</div>':'';
   var quote=(m.replyTo&&!editing)?_crmQuoteHTML(cid,m.replyTo):'';
   var inner;
   if(editing){inner='<textarea id="crm-edit-'+m.id+'" rows="2" style="width:280px;max-width:60vw;border:1px solid #E6DED3;border-radius:10px;padding:8px;font-size:13.5px;font-family:inherit;outline:none">'+esc(m.text)+'</textarea><div style="display:flex;gap:6px;margin-top:5px;justify-content:flex-end"><button onclick="App._crmCancelEdit()" style="font-size:11px;padding:4px 9px;border:1px solid #E6DED3;background:#fff;border-radius:7px;cursor:pointer">Cancel</button><button onclick="App._crmSaveEdit(\''+cid+'\',\''+m.id+'\')" style="font-size:11px;padding:4px 9px;border:none;background:#54433C;color:#fff;border-radius:7px;cursor:pointer">Save</button></div>';}
-  else if(isStick){inner='<div class="crm-bub '+bub+' crm-stick" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+fwd+quote+'<span class="crm-stickg">'+esc(m.sticker)+'</span>'+meta+'</div>';}
+  else if(isStick){inner='<div class="crm-bub '+bub+' crm-stick" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine&&!_isDMc)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+fwd+quote+'<span class="crm-stickg">'+esc(m.sticker)+'</span>'+meta+'</div>';}
   else{var mediaOnly=(((m.images||[]).length||(m.imageCount||0))&&!m.text&&!hasAtt);
-    inner='<div class="crm-bub '+bub+(grouped?'':' crm-tail')+(bigemo?' crm-bigemo':'')+(mediaOnly?' crm-media':'')+(hasAtt?' crm-hasatt':'')+'" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine&&!bigemo)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+fwd+quote+_crmAttHTML(m,mine)+(m.text?'<span class="crm-txt">'+_crmAt(m.text)+'</span>':'')+_crmImgs(m.images,m)+_crmLinkCard(m.linkPreview)+meta+'</div>';}
+    inner='<div class="crm-bub '+bub+(grouped?'':' crm-tail')+(bigemo?' crm-bigemo':'')+(mediaOnly?' crm-media':'')+(hasAtt?' crm-hasatt':'')+'" title="'+_crmDT(m.at)+'">'+((!grouped&&!mine&&!bigemo&&!_isDMc)?'<div class="crm-who-in" style="color:'+_crmWhoColor(m)+'">'+esc(who)+'</div>':'')+fwd+quote+_crmAttHTML(m,mine)+(m.text?'<span class="crm-txt">'+_crmAt(m.text)+'</span>':'')+_crmImgs(m.images,m)+_crmLinkCard(m.linkPreview)+meta+'</div>';}
   var replies=(!thread&&!m.parentId)?((_crmConvo(cid)||{messages:[]}).messages||[]).filter(x=>x.parentId===m.id):[];
   var opener=replies.length?'<button onclick="App._crmOpenThread(\''+m.id+'\')" style="margin-top:3px;border:none;background:transparent;color:#54433C;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px">'+ic('msg','w-3 h-3')+replies.length+' repl'+(replies.length===1?'y':'ies')+'</button>':'';
   var col='<div class="crm-msg'+(mine?' crm-mine':'')+anim+'" data-mid="'+m.id+'"'+((!thread&&!editing)?' data-swipe="1"':'')+' onclick="App._crmMsgActs(event,this)" style="position:relative;max-width:78%;display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start')+'">'
     +'<span class="crm-swhint">'+ic('reply','w-3.5 h-3.5')+'</span>'
     +inner+_crmReactChips(m,cid)+opener
+    +((editing||m.fromCustomer)?'':'<button type="button" class="crm-mmore" title="Message options" aria-label="Message options" onclick="event.stopPropagation();App._crmMsgActsTog(this)">'+ic('more','w-3.5 h-3.5')+'</button>')
     +(editing?'':_crmMsgActions(m,cid,thread))+'</div>';
   return'<div class="crm-line" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+col+'</div>';
 }
@@ -1009,6 +1016,8 @@ App._crmMsgActs=(e,el)=>{
   if(!on){el.classList.add('crm-actopen');try{var _rc=el.getBoundingClientRect();if(_rc.top<175)el.classList.add('crm-actbelow');}catch(_e){}if(_wall)_wall.classList.add('crm-focusing');}else{if(_wall)_wall.classList.remove('crm-focusing');}
   if(e&&e.stopPropagation)e.stopPropagation();
 };
+App._crmMsgActsTog=(btn)=>{var el=btn.closest('.crm-msg');if(!el)return;var on=el.classList.contains('crm-actopen');App._crmCloseMsgActs();if(!on){el.classList.add('crm-actopen');try{var rc=el.getBoundingClientRect();if(rc.top<175)el.classList.add('crm-actbelow');}catch(e){}}};
+document.addEventListener('click',function(e){if(!document.querySelector('.crm-msg.crm-actopen'))return;if(e.target.closest&&(e.target.closest('.crm-macts')||e.target.closest('.crm-mmore')||e.target.closest('#crm-emohost')))return;App._crmCloseMsgActs();},true);
 App._crmCloseMsgActs=()=>{document.querySelectorAll('.crm-msg.crm-actopen').forEach(function(m){m.classList.remove('crm-actopen','crm-actbelow');});document.querySelectorAll('.crm-wall.crm-focusing').forEach(function(w){w.classList.remove('crm-focusing');});};
 /* Ticket details as a bottom sheet on small screens. */
 App._crmMobDetails=(open)=>{CRM._mobDetails=(open===undefined)?!CRM._mobDetails:!!open;rr();};
@@ -2824,7 +2833,7 @@ App._crmSndTog=(btn)=>{var on=!_bbPrefOn('chat','sound');try{_bbNPSetChannel('ch
 (function(){
   if(window._crmPlus3)return;window._crmPlus3=true;
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus3-css">'
-   +'.crm-macts{display:none;position:absolute;top:-18px;background:#fff;border:1px solid #EAE3D8;border-radius:22px;box-shadow:0 6px 20px rgba(35,28,22,.16),0 1px 3px rgba(35,28,22,.08);padding:3px 6px;gap:1px;align-items:center;z-index:25}'
+   +'.crm-macts{display:none;position:absolute;top:auto;bottom:calc(100% + 6px);background:#fff;border:1px solid #EAE3D8;border-radius:22px;box-shadow:0 6px 20px rgba(35,28,22,.16),0 1px 3px rgba(35,28,22,.08);padding:3px 6px;gap:1px;align-items:center;z-index:25}'
    +'.crm-mine .crm-macts{right:2px;left:auto}'
    +'.crm-msg:not(.crm-mine) .crm-macts{left:2px;right:auto}'
    +'.crm-ma-emos{display:inline-flex;align-items:center}'

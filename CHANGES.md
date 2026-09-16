@@ -1,3 +1,19 @@
+# Bridge v143 — keyboard, Messages list (cache-buster `?v=143`)
+
+- **Composer stays above the keyboard** on phones: the workspace now really follows the visible viewport (the earlier rule was being overridden by the page-level layout rule), the list scrolls to the latest message when the keyboard opens, and the safe-area padding drops while the keyboard is up.
+- **Messages (1-to-1) list**: the “Search people…” box was growing to fill the screen and pushing the people to the bottom — fixed; the list starts right under the search box.
+- 1-to-1 chats no longer print the other person's name inside every bubble (it's in the header, like WhatsApp).
+
+---
+
+# Bridge v142 — message options: ⋯ on desktop, 2 s hold on phones (cache-buster `?v=142`)
+
+- **Desktop**: every bubble gets a small ⋯ in its top-right corner on hover; clicking it opens the bar (emojis · reply · thread · forward · ⋯). The bar no longer opens on hover, sits above the bubble instead of over the sender's name, and closes on any click outside.
+- **Phones**: nothing opens on a tap; hold a message for 2 s to get the bar.
+- **Channels drawer**: the hub row no longer sprouts edit / delete icons on a tap (those were hover reveals; hover reveals now exist only on devices with a real pointer). Tap the chevron to expand, the name to open.
+
+---
+
 # Bridge v141 — single-tap navigation on phones · 2 s hold for the message bar (cache-buster `?v=141`)
 
 - **One tap, not two.** iOS treats any element with an inline hover handler as "hover first, tap second" — that is why hub rows, board rows, chat rows and many buttons needed a double tap. On touch screens those hover handlers are now stripped as the page renders.

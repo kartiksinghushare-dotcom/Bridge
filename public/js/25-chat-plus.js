@@ -357,7 +357,8 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
   if(!cid)CRM._paintedConvo=null;}catch(e){}return h;};})();
 function _cpFitViewport(){try{
   if(!window.visualViewport||!_crmIsMob()){document.documentElement.style.removeProperty('--vvh');document.documentElement.style.removeProperty('--vvt');return;}
-  var vv=window.visualViewport;document.documentElement.style.setProperty('--vvh',Math.round(vv.height)+'px');document.documentElement.style.setProperty('--vvt',Math.round(vv.offsetTop)+'px');
+  var vv=window.visualViewport;document.documentElement.style.setProperty('--vvh',Math.round(vv.height)+'px');document.documentElement.style.setProperty('--vvt',Math.round(vv.offsetTop)+'px');document.documentElement.classList.toggle('cp-kb',(window.innerHeight-vv.height)>120);
+  var th=document.getElementById('crm-thread');if(th&&(th.scrollHeight-th.scrollTop-th.clientHeight)<200)setTimeout(function(){th.scrollTop=th.scrollHeight;},50);
   if(document.querySelector('.crm-fs')&&(window.scrollY||window.scrollX))window.scrollTo(0,0);
 }catch(e){}}
 (function(){if(!window.visualViewport)return;var t=null;var f=function(){if(t)return;t=setTimeout(function(){t=null;_cpFitViewport();},40);};window.visualViewport.addEventListener('resize',f);window.visualViewport.addEventListener('scroll',f);window.addEventListener('orientationchange',f);document.addEventListener('focusin',function(e){if(e.target&&e.target.closest&&e.target.closest('.crm-fs'))setTimeout(_cpFitViewport,120);});_cpFitViewport();})();
@@ -482,9 +483,14 @@ try{CRM_LONG_PRESS_MS=2000;}catch(e){}
   +'#content .crm-fs .crm-msg.crm-actopen .crm-macts,#content .crm-fs .crm-msg.crm-actopen:hover .crm-macts{display:flex!important}'
   +'.crm-msg:active .crm-bub{transform:none!important}'
   +'body:has(.crm-fs){position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}'
-  +'.crm-fs{top:var(--vvt,0px)!important;bottom:auto!important;height:calc(var(--vvh,100dvh) - 60px - env(safe-area-inset-bottom))!important}'
-  +'.crm-fs.crm-hasconvo{height:var(--vvh,100dvh)!important;padding-bottom:0!important}'
-  +'.crm-fs.crm-hasconvo .crm-composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))!important}'
+  /* v143 — these must beat the page-level .crm-fs rules (they are injected inside #content, after this sheet) */
+  +'#content .crm-fs,#content .crm-fs.crm-fs{top:var(--vvt,0px)!important;bottom:auto!important;height:calc(var(--vvh,100dvh) - 60px - env(safe-area-inset-bottom))!important;max-height:none!important}'
+  +'#content .crm-fs.crm-hasconvo{height:var(--vvh,100dvh)!important;padding-bottom:0!important}'
+  +'#content .crm-fs.crm-hasconvo .crm-composer{padding-bottom:calc(8px + env(safe-area-inset-bottom))!important}'
+  +'html.cp-kb #content .crm-fs.crm-hasconvo .crm-composer{padding-bottom:8px!important}'
+  /* the "Search people…" box in Messages must not grow (a generic rule turns any div holding a Search input into flex:1) */
+  +'#content .crm-fs .crm-listcol>div:has(>input){flex:0 0 auto!important;width:100%!important}'
+  +'#content .crm-fs #crm-list{flex:1 1 auto!important}'
   +'#crm-thread,#crm-tthread{overflow-x:hidden!important;overscroll-behavior-x:none}'
   +'.crm-msg[data-swipe]{touch-action:pan-y}'
   +'#cp-sheet .cp-card{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;max-width:100vw!important;transform:none!important;margin:0!important}'
