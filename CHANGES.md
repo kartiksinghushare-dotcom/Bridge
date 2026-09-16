@@ -1,3 +1,12 @@
+# Bridge v141 — single-tap navigation on phones · 2 s hold for the message bar (cache-buster `?v=141`)
+
+- **One tap, not two.** iOS treats any element with an inline hover handler as "hover first, tap second" — that is why hub rows, board rows, chat rows and many buttons needed a double tap. On touch screens those hover handlers are now stripped as the page renders.
+- **Message bar only on a 2-second hold.** A tap used to leave the bubble in iOS's sticky :hover state, which showed the bar while scrolling or on a plain touch. The bar now appears only after a 2 s hold (`CRM_LONG_PRESS_MS`), never from a tap.
+- **Phone drawer**: expanding / collapsing a hub keeps the drawer open instead of closing it on every tap.
+- **Security**: `chat-media` files — anyone signed in can read and upload; only the uploader can replace or delete a file (was: any signed-in user).
+
+---
+
 # Bridge v140 — Workspace opens at the newest message · phone viewport locked (cache-buster `?v=140`)
 
 - **Workspace tab → chat opens at the latest message** and is marked read. It used to paint the chat at the top (31 Aug…) when you came in from the tab / bottom nav; only tapping a chat scrolled down.

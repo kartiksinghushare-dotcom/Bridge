@@ -220,3 +220,10 @@ begin
 end $$;
 drop trigger if exists user_presence_last_seen on public.user_presence;
 create trigger user_presence_last_seen after insert or update on public.user_presence for each row execute function public.bridge_presence_to_profile();
+
+-- ── v141: chat-media — anyone signed in can read / upload; only the uploader can replace or delete a file ──
+drop policy if exists chat_media_auth_all on storage.objects;
+create policy chat_media_read on storage.objects for select to authenticated using (bucket_id = 'chat-media');
+create policy chat_media_insert on storage.objects for insert to authenticated with check (bucket_id = 'chat-media');
+create policy chat_media_owner_write on storage.objects for update to authenticated using (bucket_id = 'chat-media' and owner = auth.uid()) with check (bucket_id = 'chat-media' and owner = auth.uid());
+create policy chat_media_owner_delete on storage.objects for delete to authenticated using (bucket_id = 'chat-media' and owner = auth.uid());

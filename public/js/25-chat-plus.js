@@ -362,6 +362,22 @@ function _cpFitViewport(){try{
 }catch(e){}}
 (function(){if(!window.visualViewport)return;var t=null;var f=function(){if(t)return;t=setTimeout(function(){t=null;_cpFitViewport();},40);};window.visualViewport.addEventListener('resize',f);window.visualViewport.addEventListener('scroll',f);window.addEventListener('orientationchange',f);document.addEventListener('focusin',function(e){if(e.target&&e.target.closest&&e.target.closest('.crm-fs'))setTimeout(_cpFitViewport,120);});_cpFitViewport();})();
 
+
+/* ═══ 15. v141 — touch fixes ═══
+   · iOS treats an element with an inline onmouseover as "hover first, click second": the first tap only hovered, so rows and
+     buttons needed two taps. On touch screens those inline hover handlers are stripped as they render.
+   · The message bar must never appear from a tap or while scrolling (a tap makes iOS apply :hover); only a 2 s hold opens it.
+   · Expanding / collapsing a hub inside the phone drawer keeps the drawer open. */
+try{CRM_LONG_PRESS_MS=2000;}catch(e){}
+(function(){
+  var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
+  if(!touch)return;
+  var strip=function(root){try{(root.querySelectorAll?root:document).querySelectorAll('[onmouseover],[onmouseout]').forEach(function(el){el.removeAttribute('onmouseover');el.removeAttribute('onmouseout');});}catch(e){}};
+  strip(document);var t=null;
+  try{new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=null;strip(document);},30);}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+})();
+(function(){var _o=App._crmTogHub;App._crmTogHub=function(id){var r=_o.apply(this,arguments);try{if(_crmIsMob())App._crmMobNav(true);}catch(e){}return r;};})();
+
 /* ═══ 13. styles ═══ */
 (function(){
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus3-css">'
@@ -462,6 +478,9 @@ function _cpFitViewport(){try{
   +'.crm-fs .crm-vplay{min-width:36px!important;min-height:36px!important}.crm-fs .crm-vrate{min-height:24px!important}.crm-fs .crm-pinx,.crm-fs .crm-rbx{min-height:32px!important;min-width:32px!important}'
   +'.crm-fs .crm-rec-del{min-width:44px;min-height:44px}'
   +'body.cp-sheet-open{overflow:hidden}'
+  +'#content .crm-fs .crm-msg:hover .crm-macts,#content .crm-fs .crm-msg:active .crm-macts,#content .crm-fs .crm-msg:focus-within .crm-macts{display:none!important}'
+  +'#content .crm-fs .crm-msg.crm-actopen .crm-macts,#content .crm-fs .crm-msg.crm-actopen:hover .crm-macts{display:flex!important}'
+  +'.crm-msg:active .crm-bub{transform:none!important}'
   +'body:has(.crm-fs){position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}'
   +'.crm-fs{top:var(--vvt,0px)!important;bottom:auto!important;height:calc(var(--vvh,100dvh) - 60px - env(safe-area-inset-bottom))!important}'
   +'.crm-fs.crm-hasconvo{height:var(--vvh,100dvh)!important;padding-bottom:0!important}'
