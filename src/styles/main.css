@@ -1501,9 +1501,9 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 }
 @media(max-width:767px){
   /* v136 — phone ticket ROWS: the pinned Ticket column + compact cells set in 06-crm.js win over the v3.15 min-widths */
-  #content .crm-fs .crm-scroll.crm-mobtable > table{min-width:100%!important;width:max-content!important;table-layout:fixed}
+  #content .crm-fs .crm-scroll.crm-mobtable > table{min-width:0!important;width:100%!important;table-layout:fixed}
   #content .crm-fs .crm-scroll.crm-mobtable > table th,#content .crm-fs .crm-scroll.crm-mobtable > table td{min-width:0!important;box-sizing:border-box}
-  #content .crm-fs .crm-scroll.crm-mobtable > table th:first-child,#content .crm-fs .crm-scroll.crm-mobtable > table td:first-child{min-width:150px!important}
+  #content .crm-fs .crm-scroll.crm-mobtable > table th:first-child,#content .crm-fs .crm-scroll.crm-mobtable > table td:first-child{min-width:0!important;width:auto!important;max-width:none!important}
   #content .crm-fs .crm-scroll.crm-mobtable > table th:last-child,#content .crm-fs .crm-scroll.crm-mobtable > table td:last-child{width:40px!important;min-width:40px!important;max-width:40px!important}
   #content .crm-fs .crm-mobtable button{min-height:32px!important}
   /* the board-tab strip: tabs scroll, the board actions stay pinned on the right instead of covering the last tab */

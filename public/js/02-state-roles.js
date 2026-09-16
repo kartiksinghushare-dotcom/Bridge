@@ -110,7 +110,7 @@ let S={uid:null,route:'dashboard',search:'',calDate:todayISO(),calWk:0,expandedC
    to sign in on that machine would inherit their filters (including other people's ids
    in the owner chips). A uid mismatch discards the whole map.                        */
 const FILTERS_KEY='bridge_filters_v1';
-const FILTERS_TRANSIENT=['okrMSOpen','okrQtrOpen','uSel','aclWk','aclDate','attSel','attReqType'];
+const FILTERS_TRANSIENT=['okrMSOpen','okrQtrOpen','uSel','aclWk','aclDate','attSel','attReqType','profUid'];   /* v150: whose profile is open is never remembered — Profile in the menu is always yours */
 let _filtersByRoute={},_filtersUid=null,_filtersLastWritten='';
 try{
   const _fp=JSON.parse(localStorage.getItem(FILTERS_KEY)||'{}')||{};

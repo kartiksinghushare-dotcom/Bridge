@@ -352,8 +352,8 @@ function _dmArchivedN(){try{return (CRM.convos||[]).filter(function(c){return _c
 
 /* ═══ 14. v140 — entering the Workspace (tab / bottom nav) opens the chat at its NEWEST message and marks it read;
    on phones the whole workspace is fitted to the visible viewport (keyboard open or closed) so the page never moves ═══ */
-(function(){var _o=crmPage;crmPage=function(){var wasOpen=!!document.getElementById('crm-thread');var h=_o.apply(this,arguments);try{var cid=CRM&&CRM.sel&&CRM.sel.convoId;
-  if(cid&&(!wasOpen||CRM._paintedConvo!==cid)){CRM._paintedConvo=cid;setTimeout(function(){try{_crmScrollBottom();if(document.visibilityState!=='hidden')_crmMarkRead(cid);_crmLoadImagesFor(cid);}catch(e){}},0);}
+(function(){var _o=crmPage;crmPage=function(){var wasOpen=!!document.getElementById('crm-thread');var preCid=CRM&&CRM.sel?CRM.sel.convoId:null;var h=_o.apply(this,arguments);try{var cid=CRM&&CRM.sel&&CRM.sel.convoId;
+  if(cid&&(!wasOpen||CRM._paintedConvo!==cid||preCid!==cid)){CRM._paintedConvo=cid;setTimeout(function(){try{_crmScrollBottom();if(document.visibilityState!=='hidden')_crmMarkRead(cid);_crmLoadImagesFor(cid);}catch(e){}},0);}
   if(!cid)CRM._paintedConvo=null;}catch(e){}return h;};})();
 function _cpFitViewport(){try{
   if(!window.visualViewport||!_crmIsMob()){document.documentElement.style.removeProperty('--vvh');document.documentElement.style.removeProperty('--vvt');return;}
@@ -380,17 +380,26 @@ try{CRM_LONG_PRESS_MS=1000;}catch(e){}
 
 
 /* ═══ 16. v147 — profile from the menu is always MY profile · columns manager · ticket (i) sheet · board switcher ═══ */
-(function(){var _go=App.go;App.go=function(r){try{if(r==='profile'&&typeof S!=='undefined'&&S.filters)S.filters.profUid=null;}catch(e){}return _go.apply(this,arguments);};})();
+(function(){var _go=App.go;App.go=function(r){try{if(r==='profile'&&typeof S!=='undefined'&&S.filters)S.filters.profUid=null;}catch(e){}var out=_go.apply(this,arguments);try{if(r==='profile'&&S.filters&&S.filters.profUid){S.filters.profUid=null;rr();}}catch(e){}return out;};})();
 
 App._crmColsManage=(bid)=>{if(!can('crm','edit'))return toast('You need Workspace → Edit','err');var b=_crmBoard(bid);if(!b)return;b.settings=b.settings||{};
-  var cols=(b.settings.columns||[]).filter(function(c){return c.type!=='remind';});
-  var row=function(label,sub,ctl,cls){return'<div class="cp-colrow'+(cls?' '+cls:'')+'"><div class="cp-pbody"><span class="cp-pname">'+label+'</span>'+(sub?'<span class="cp-psub">'+sub+'</span>':'')+'</div>'+(ctl||'')+'</div>';};
-  var h='<div class="cp-sh-s">Rename the first column, drag ⋮⋮ to reorder, tap a name to edit its type or options.</div>'
-    +'<div class="cp-colrow"><div class="cp-pbody"><span class="cp-psub">First column label</span><input id="cp-title-label" class="cp-input" value="'+esc(b.settings.titleLabel||'Ticket')+'" placeholder="Ticket" maxlength="30" onchange="App._crmTitleLabel(\''+bid+'\',this.value)"/></div></div>'
-    +row('Assignee','built-in','<span class="cp-fixed">fixed</span>','cp-dim')+row('Status','built-in','<span class="cp-fixed">fixed</span>','cp-dim')
-    +'<div id="cp-collist" data-bid="'+bid+'">'+cols.map(function(c,i){return'<div class="cp-colrow cp-drag" data-cid="'+c.id+'"><span class="cp-grip" aria-label="Drag to reorder">⋮⋮</span><button class="cp-colname" onclick="_cpSheetClose();App._crmColModal(\''+bid+'\',\''+c.id+'\')">'+esc(c.name)+' <span class="cp-psub">'+esc(c.type)+'</span></button><span class="cp-colbtns"><button class="cp-coldel" onclick="_cpSheetClose();App._crmDelCol(\''+bid+'\',\''+c.id+'\')" aria-label="Delete column">'+ic('trash','w-3.5 h-3.5')+'</button></span></div>';}).join('')+'</div>'
+  var cols=(b.settings.columns||[]).filter(function(c){return c.type!=='remind';});var byId={};cols.forEach(function(c){byId[c.id]=c;});
+  var lblIn=function(key,val,ph){return'<input class="cp-input cp-lbl" value="'+esc(val)+'" placeholder="'+ph+'" maxlength="30" onchange="App._crmColLabel(\''+bid+'\',\''+key+'\',this.value)"/>';};
+  var h='<div class="cp-sh-s">Type to rename any column. Drag ⋮⋮ to reorder. Tap the pencil on a custom column to change its type or options.</div>'
+    +'<div class="cp-colrow"><div class="cp-pbody"><span class="cp-psub">First column</span>'+lblIn('title',b.settings.titleLabel||_crmLbl(b,'title'),'Ticket')+'</div></div>'
+    +'<div id="cp-collist" data-bid="'+bid+'">'+_crmColKeys(b).map(function(k){
+      if(k==='_asg'||k==='_st'){var kk=k==='_asg'?'asg':'st';return'<div class="cp-colrow cp-drag" data-cid="'+k+'"><span class="cp-grip" aria-label="Drag to reorder">⋮⋮</span><div class="cp-pbody"><span class="cp-psub">'+(k==='_asg'?'Assignee (built-in)':'Status (built-in)')+'</span>'+lblIn(kk,_crmLbl(b,kk),k==='_asg'?'Assignee':'Status')+'</div></div>';}
+      var c=byId[k];if(!c)return'';
+      return'<div class="cp-colrow cp-drag" data-cid="'+c.id+'"><span class="cp-grip" aria-label="Drag to reorder">⋮⋮</span><div class="cp-pbody"><span class="cp-psub">'+esc(c.type)+'</span><input class="cp-input cp-lbl" value="'+esc(c.name)+'" maxlength="40" onchange="App._crmColRename(\''+bid+'\',\''+c.id+'\',this.value)"/></div><span class="cp-colbtns"><button onclick="_cpSheetClose();App._crmColModal(\''+bid+'\',\''+c.id+'\')" aria-label="Edit column">'+ic('edit','w-3.5 h-3.5')+'</button><button class="cp-coldel" onclick="_cpSheetClose();App._crmDelCol(\''+bid+'\',\''+c.id+'\')" aria-label="Delete column">'+ic('trash','w-3.5 h-3.5')+'</button></span></div>';}).join('')+'</div>'
     +'<button class="cp-item" onclick="_cpSheetClose();App._crmColModal(\''+bid+'\')">'+ic('plus','w-4 h-4')+'<span>Add column</span></button>';
   _cpSheet(h,{title:'Columns · '+b.name,tall:true});setTimeout(_cpColDragInit,0);};
+function _cpSaveBoard(b,label){sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:label||'Board',silent:true});}
+App._crmTitleLabel=(bid,v)=>{App._crmColLabel(bid,'title',v);};
+App._crmColLabel=(bid,key,v)=>{var b=_crmBoard(bid);if(!b)return;b.settings=b.settings||{};b.settings.labels=b.settings.labels||{};var dflt={title:'Ticket',asg:'Assignee',st:'Status'}[key];v=String(v||'').trim()||dflt;b.settings.labels[key]=v;if(key==='title')b.settings.titleLabel=v;_cpSaveBoard(b,'Column label');rr();};
+App._crmColRename=(bid,cid,v)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var c=(b.settings.columns||[]).find(function(x){return x.id===cid;});if(!c)return;v=String(v||'').trim();if(!v)return;c.name=v;_cpSaveBoard(b,'Column name');rr();};
+App._crmColOrder=(bid,order)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var cols=(b.settings.columns||[]);var byId={};cols.forEach(function(c){byId[c.id]=c;});
+  var customs=order.filter(function(k){return byId[k];});var next=customs.map(function(id){return byId[id];}).concat(cols.filter(function(c){return customs.indexOf(c.id)<0;}));
+  b.settings.columns=next;b.settings.colOrder=order.slice();_cpSaveBoard(b,'Column order');rr();};
 /* drag-to-reorder (mouse + touch, pointer events): grab the ⋮⋮, the row follows the finger, others slide out of the way */
 function _cpColDragInit(){var list=document.getElementById('cp-collist');if(!list||list._dragOn)return;list._dragOn=true;var drag=null;
   list.addEventListener('pointerdown',function(e){var grip=e.target.closest('.cp-grip');if(!grip)return;var row=grip.closest('.cp-drag');if(!row)return;e.preventDefault();
@@ -403,10 +412,8 @@ function _cpColDragInit(){var list=document.getElementById('cp-collist');if(!lis
     var up=function(ev){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);if(!drag)return;drag.row.style.transform='';drag.row.classList.remove('dragging');
       var order=[].slice.call(list.querySelectorAll('.cp-drag')).map(function(r){return r.getAttribute('data-cid');});drag=null;App._crmColOrder(list.getAttribute('data-bid'),order);};
     document.addEventListener('pointermove',mv,{passive:false});document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);});}
-App._crmColOrder=(bid,order)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var cols=(b.settings.columns||[]);var byId={};cols.forEach(function(c){byId[c.id]=c;});var next=order.map(function(id){return byId[id];}).filter(Boolean).concat(cols.filter(function(c){return order.indexOf(c.id)<0;}));
-  if(next.map(function(c){return c.id;}).join()===cols.map(function(c){return c.id;}).join())return;b.settings.columns=next;sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column order',silent:true});rr();};
+
 App._crmTitleLabel=(bid,v)=>{var b=_crmBoard(bid);if(!b)return;b.settings=b.settings||{};b.settings.titleLabel=String(v||'').trim()||'Ticket';sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column label',silent:true});rr();};
-App._crmColMove=(bid,cid,dir)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var cols=(b.settings.columns||[]).slice();var i=cols.findIndex(function(c){return c.id===cid;});var j=i+dir;if(i<0||j<0||j>=cols.length)return;var t=cols[i];cols[i]=cols[j];cols[j]=t;b.settings.columns=cols;sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column order',silent:true});rr();App._crmColsManage(bid);};
 
 /* phones: (i) on a ticket row → every field in a sheet (assignee, status, columns, activity) + open chat / delete */
 App._crmTicketInfo=(cid)=>{var c=_crmConvo(cid);if(!c)return;var b=_crmBoard(c.boardId);
@@ -439,6 +446,7 @@ App._crmTicketInfo=(cid)=>{var c=_crmConvo(cid);if(!c)return;var b=_crmBoard(c.b
   +'.crm-earlier{display:block;margin:6px auto 10px;border:1px solid #E6DED3;background:#fff;color:#54433C;font-size:12px;font-weight:700;padding:7px 14px;border-radius:20px;cursor:pointer}'
   +'.cp-colrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px}.cp-colrow.cp-dim{opacity:.55}.cp-colname{flex:1;text-align:left;border:none;background:transparent;font-size:14px;font-weight:700;color:#13171B;cursor:pointer;padding:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}.cp-colbtns{display:inline-flex;gap:4px;flex-shrink:0}.cp-colbtns button{width:34px;height:34px;border:1px solid #E6DED3;background:#fff;border-radius:9px;cursor:pointer;color:#54433C;font-size:12px;display:grid;place-items:center}.cp-colbtns button:disabled{opacity:.3}.cp-colbtns .cp-coldel{color:#B3402E}.cp-fixed{font-size:10px;font-weight:800;text-transform:uppercase;color:#A59788}'
   +'.cp-grip{width:34px;height:34px;display:grid;place-items:center;color:#A59788;font-size:16px;letter-spacing:-3px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;flex-shrink:0;border-radius:9px}.cp-grip:active{cursor:grabbing}.cp-drag.dragging{background:#FBF4E7;box-shadow:0 8px 24px rgba(35,28,22,.18);position:relative;z-index:2;transition:none}.cp-drag{transition:transform .12s}'
+  +'.cp-lbl{margin-top:2px;padding:7px 10px;font-size:15px}'
   +'.cp-input{width:100%;box-sizing:border-box;border:1px solid #E6DED3;border-radius:10px;padding:9px 12px;font-size:16px;margin-top:4px;background:#fff}'
   +'.cp-tbody{padding:4px 6px}.cp-tbody select,.cp-tbody input{font-size:16px}'
   +'.crm-td-unread{background:#FBF7EF}'
@@ -541,7 +549,7 @@ App._crmTicketInfo=(cid)=>{var c=_crmConvo(cid);if(!c)return;var b=_crmBoard(c.b
   +'body.cp-sheet-open{overflow:hidden}'
   +'#content .crm-tabsrow .crm-btab:not(.crm-btab-on){display:none!important}#content .crm-tabsrow>button[onclick*="_crmNewBoard"]{display:none!important}'
   +'#content .crm-tabsrow .crm-btab-on{border-bottom-color:transparent!important;padding-left:4px!important}'
-  +'.crm-tinfo{width:34px;height:34px;min-height:34px!important;border:1px solid #E6DED3;background:#fff;color:#54433C;border-radius:9px;display:inline-grid;place-items:center;cursor:pointer}'
+  +'.crm-tinfo{width:32px;height:32px;min-height:32px!important;margin-right:4px;border:1px solid #E6DED3;background:#fff;color:#54433C;border-radius:9px;display:inline-grid;place-items:center;cursor:pointer}'
   +'#crm-thread{will-change:scroll-position;transform:translateZ(0)}'
   +'.crm-line{contain:layout style}'
   +'.crm-bub{box-shadow:0 1px 1px rgba(35,28,22,.10)!important}'

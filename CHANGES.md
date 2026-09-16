@@ -1,3 +1,32 @@
+# Bridge v152 — new chat asks for one thing (cache-buster `?v=152`)
+
+- **New conversation has a single "Chat name" field** — the Customer / Order ID and Subject boxes are gone; the name you type becomes the chat title.
+
+---
+
+# Bridge v151 — cleaner ticket grid (cache-buster `?v=151`)
+
+- **No Customer field on the quick-add row** — just the title plus the board columns.
+- **Thin vertical lines between columns**, a firmer header rule and uppercase column labels for a more professional grid.
+- **Date/time clear (×) is a small round button** that appears on hover/focus (always visible on phones and in the add row), with a subtle highlight; the picker sits in a single bordered field.
+
+---
+
+# Bridge v150 — Profile from the menu is always yours (cache-buster `?v=150`)
+
+- **More → Profile always opens your own profile.** The profile you last viewed under People is no longer remembered when you change tabs (`profUid` is transient), and the menu route clears it after navigation.
+
+---
+
+# Bridge v149 — columns: every name editable, built-ins movable · view → chat opens at newest (cache-buster `?v=149`)
+
+- **Every column name is editable per board** in the Columns manager — first column, Assignee, Status and every custom column (type them in place). Names show in the table header and the ticket details.
+- **Assignee and Status can be dragged** among the custom columns; the order is saved per board (`colOrder`) and applies to the table, the new-ticket row and desktop drag.
+- **Switching from a filtered view back to a chat opens at the latest message** (it used to paint at the top).
+- **Phones — ticket table fits the screen**: the name column takes the remaining width and ellipsises, Status and (i) always visible, no sideways scroll.
+
+---
+
 # Bridge v148 — drag to reorder columns (cache-buster `?v=148`)
 
 - Columns manager: grab the ⋮⋮ handle and drag a column up or down — works with a finger on phones and a mouse on desktop; the other rows slide out of the way and the order saves on release. (Arrows removed; header drag on desktop unchanged.)
