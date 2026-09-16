@@ -1,3 +1,17 @@
+# Bridge v154 — rename Ticket / Assignee / Status by clicking the header (cache-buster `?v=154`)
+
+- **Click the Ticket, Assignee or Status header name** on desktop → a small Rename box, saved for that board only.
+- In the Columns popup the name fields now **save as you type** (and Enter closes the keyboard), so a rename sticks even if you close the popup right away.
+
+---
+
+# Bridge v153 — drag Assignee / Status straight in the table header (cache-buster `?v=153`)
+
+- **Assignee and Status now have a ⋮⋮ grip in the table header** — drag them left or right among the other columns, exactly like custom columns. (Before, only the Columns manager could move them.)
+- Header drag saves the same per-board `colOrder` the Columns manager uses, so the two never disagree.
+
+---
+
 # Bridge v152 — new chat asks for one thing (cache-buster `?v=152`)
 
 - **New conversation has a single "Chat name" field** — the Customer / Order ID and Subject boxes are gone; the name you type becomes the chat title.

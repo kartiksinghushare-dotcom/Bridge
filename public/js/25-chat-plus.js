@@ -384,7 +384,7 @@ try{CRM_LONG_PRESS_MS=1000;}catch(e){}
 
 App._crmColsManage=(bid)=>{if(!can('crm','edit'))return toast('You need Workspace → Edit','err');var b=_crmBoard(bid);if(!b)return;b.settings=b.settings||{};
   var cols=(b.settings.columns||[]).filter(function(c){return c.type!=='remind';});var byId={};cols.forEach(function(c){byId[c.id]=c;});
-  var lblIn=function(key,val,ph){return'<input class="cp-input cp-lbl" value="'+esc(val)+'" placeholder="'+ph+'" maxlength="30" onchange="App._crmColLabel(\''+bid+'\',\''+key+'\',this.value)"/>';};
+  var lblIn=function(key,val,ph){return'<input class="cp-input cp-lbl" value="'+esc(val)+'" placeholder="'+ph+'" maxlength="30" enterkeyhint="done" onchange="App._crmColLabel(\''+bid+'\',\''+key+'\',this.value)" oninput="App._crmColLabelLive(\''+bid+'\',\''+key+'\',this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"/>';};
   var h='<div class="cp-sh-s">Type to rename any column. Drag ⋮⋮ to reorder. Tap the pencil on a custom column to change its type or options.</div>'
     +'<div class="cp-colrow"><div class="cp-pbody"><span class="cp-psub">First column</span>'+lblIn('title',b.settings.titleLabel||_crmLbl(b,'title'),'Ticket')+'</div></div>'
     +'<div id="cp-collist" data-bid="'+bid+'">'+_crmColKeys(b).map(function(k){
@@ -396,6 +396,8 @@ App._crmColsManage=(bid)=>{if(!can('crm','edit'))return toast('You need Workspac
 function _cpSaveBoard(b,label){sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:label||'Board',silent:true});}
 App._crmTitleLabel=(bid,v)=>{App._crmColLabel(bid,'title',v);};
 App._crmColLabel=(bid,key,v)=>{var b=_crmBoard(bid);if(!b)return;b.settings=b.settings||{};b.settings.labels=b.settings.labels||{};var dflt={title:'Ticket',asg:'Assignee',st:'Status'}[key];v=String(v||'').trim()||dflt;b.settings.labels[key]=v;if(key==='title')b.settings.titleLabel=v;_cpSaveBoard(b,'Column label');rr();};
+/* v154 — live save while typing (debounced) so a name sticks even if the sheet is closed before blur */
+App._crmColLabelLive=(bid,key,v)=>{clearTimeout(App._lblT);App._lblT=setTimeout(function(){App._crmColLabel(bid,key,v);},600);};
 App._crmColRename=(bid,cid,v)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var c=(b.settings.columns||[]).find(function(x){return x.id===cid;});if(!c)return;v=String(v||'').trim();if(!v)return;c.name=v;_cpSaveBoard(b,'Column name');rr();};
 App._crmColOrder=(bid,order)=>{var b=_crmBoard(bid);if(!b||!b.settings)return;var cols=(b.settings.columns||[]);var byId={};cols.forEach(function(c){byId[c.id]=c;});
   var customs=order.filter(function(k){return byId[k];});var next=customs.map(function(id){return byId[id];}).concat(cols.filter(function(c){return customs.indexOf(c.id)<0;}));

@@ -1791,17 +1791,23 @@ function _crmTable(board,opts){
   var _wst=function(k,d){var w=_w(k,d);return'width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px';};
   var hc='padding:9px 10px;font-size:11px;font-weight:800;color:#786A5F;border-bottom:1px solid #EDE7DC;background:#FAF7F1;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1';
   var _rzOr=function(k){return canStruct?_crmRz(board.id,k):'';};
+  /* v153 — every column (Assignee and Status included) can be dragged in the header, same as the Columns manager */
+  var _gripSvg='<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="2.5" r="1.3"/><circle cx="7" cy="2.5" r="1.3"/><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="3" cy="11.5" r="1.3"/><circle cx="7" cy="11.5" r="1.3"/></svg>';
+  var _dragAttrs=function(k){return canStruct?' class="crm-colh" data-cid="'+k+'" ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+k+'\')"':'';};
+  var _grip=function(k){return canStruct?'<span class="crm-grip" draggable="true" ondragstart="App._crmColDragStart(event,\''+board.id+'\',\''+k+'\')" ondragend="App._crmColDragEnd(event)" title="Drag to reorder">'+_gripSvg+'</span>':'';};
   var _tl=esc((board.settings&&board.settings.titleLabel)||_crmLbl(board,'title'));
-  var th='<th class="crm-thpin" style="'+hc+';position:relative;'+(_mob?'':_wst('_title',260))+'">'+_tl+_rzOr('_title')+'</th>';
+  /* v154 — click a built-in column name (Ticket / Assignee / Status) to rename it for this board */
+  var _lblSpan=function(key,txt){return canStruct?'<span onclick="App._crmRenameBuiltin(\''+board.id+'\',\''+key+'\')" title="Click to rename" style="cursor:pointer">'+txt+'</span>':txt;};
+  var th='<th class="crm-thpin" style="'+hc+';position:relative;'+(_mob?'':_wst('_title',260))+'">'+_lblSpan('title',_tl)+_rzOr('_title')+'</th>';
   var _keys=_mob?['_st']:_crmColKeys(board);   /* v147 — phones: name + status only; everything else lives behind (i) */
   var _colById={};cols.forEach(function(c){_colById[c.id]=c;});
   var _ordCols=[];   /* the custom columns in display order (used by the body too) */
   _keys.forEach(function(k){
-    if(k==='_asg'){th+='<th style="'+hc+';position:relative;'+_wst('_asg',170)+'">'+esc(_crmLbl(board,'asg'))+_rzOr('_asg')+'</th>';return;}
-    if(k==='_st'){th+='<th style="'+hc+';position:relative;'+(_mob?'width:118px;min-width:118px;max-width:118px':_wst('_st',150))+'">'+esc(_crmLbl(board,'st'))+_rzOr('_st')+'</th>';return;}
+    if(k==='_asg'){th+='<th'+_dragAttrs('_asg')+' style="'+hc+';position:relative;'+_wst('_asg',170)+'">'+_grip('_asg')+_lblSpan('asg',esc(_crmLbl(board,'asg')))+_rzOr('_asg')+'</th>';return;}
+    if(k==='_st'){th+='<th'+(_mob?'':_dragAttrs('_st'))+' style="'+hc+';position:relative;'+(_mob?'width:118px;min-width:118px;max-width:118px':_wst('_st',150))+'">'+(_mob?'':_grip('_st'))+_lblSpan('st',esc(_crmLbl(board,'st')))+_rzOr('_st')+'</th>';return;}
     var col=_colById[k];if(!col)return;_ordCols.push(col);
     th+='<th class="crm-colh" data-cid="'+col.id+'" '+(canStruct?'ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+col.id+'\')"':'')+' style="'+hc+';'+_wst(col.id,150)+';position:relative">'
-      +(canStruct?'<span class="crm-grip" draggable="true" ondragstart="App._crmColDragStart(event,\''+board.id+'\',\''+col.id+'\')" ondragend="App._crmColDragEnd(event)" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="2.5" r="1.3"/><circle cx="7" cy="2.5" r="1.3"/><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="3" cy="11.5" r="1.3"/><circle cx="7" cy="11.5" r="1.3"/></svg></span>':'')
+      +_grip(col.id)
       +'<span onclick="'+(canStruct?'App._crmColModal(\''+board.id+'\',\''+col.id+'\')':'')+'" title="'+(canStruct?'Click to edit column':'')+'" style="cursor:'+(canStruct?'pointer':'default')+'">'+esc(col.name)+' <span style="font-size:9px;color:#A8998A;font-weight:600">'+esc(col.type)+'</span></span>'
       +(canStruct?'<span class="crm-colx" style="display:none;position:absolute;right:8px;top:8px;background:#FAF7F1;padding-left:3px"><button onclick="event.stopPropagation();App._crmDelCol(\''+board.id+'\',\''+col.id+'\')" title="Delete column" style="border:none;background:transparent;cursor:pointer;color:#B3402E">\u2715</button></span>':'')
       +_rzOr(col.id)
@@ -1949,6 +1955,9 @@ App._crmColSave=async()=>{
   toast('Column saved \u2713');
 };
 /* ── Column drag-to-reorder ── */
+App._crmRenameBuiltin=async(boardId,key)=>{if(!can('crm','edit'))return;var b=_crmBoard(boardId);if(!b)return;var cur=key==='title'?((b.settings&&b.settings.titleLabel)||_crmLbl(b,'title')):_crmLbl(b,key);
+  var v=await _crmPromptP('Rename column','Only this board is affected.',{title:'Ticket',asg:'Assignee',st:'Status'}[key],'Save',cur);if(v==null)return;
+  if(App._crmColLabel)App._crmColLabel(boardId,key,v);else{b.settings=b.settings||{};b.settings.labels=b.settings.labels||{};b.settings.labels[key]=String(v).trim()||cur;if(key==='title')b.settings.titleLabel=b.settings.labels[key];rr();sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column label'});}};
 App._crmColDragStart=(e,boardId,colId)=>{CRM._dragCol={boardId:boardId,colId:colId,after:false};try{e.dataTransfer.setData('text/plain',colId);e.dataTransfer.effectAllowed='move';var th=e.target&&e.target.closest?e.target.closest('th'):null;if(th){th.classList.add('crm-dragging');try{e.dataTransfer.setDragImage(th,24,18);}catch(x){}}}catch(x){}};
 App._crmColDragEnd=()=>{CRM._dragCol=null;try{document.querySelectorAll('.crm-colh').forEach(function(t){t.classList.remove('crm-dragging','crm-drop-l','crm-drop-r');});}catch(x){}};
 App._crmColDragOver=(e)=>{var d=CRM._dragCol;if(!d)return;e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch(x){}var th=e.currentTarget;if(!th||th.getAttribute('data-cid')===d.colId){return;}
@@ -1960,12 +1969,12 @@ App._crmColDrop=async(e,boardId,targetColId)=>{
   e.preventDefault();var d=CRM._dragCol;CRM._dragCol=null;
   try{document.querySelectorAll('.crm-colh').forEach(function(t){t.classList.remove('crm-dragging','crm-drop-l','crm-drop-r');});}catch(x){}
   if(!d||d.boardId!==boardId||d.colId===targetColId)return;
-  var b=_crmBoard(boardId);if(!b||!b.settings)return;var cols=(b.settings.columns||[]).slice();
-  var from=cols.findIndex(function(c){return c.id===d.colId;});if(from<0)return;
-  var m=cols.splice(from,1)[0];
-  var to=cols.findIndex(function(c){return c.id===targetColId;});
-  if(to<0){cols.splice(from,0,m);}else{cols.splice(to+(d.after?1:0),0,m);}
-  b.settings.columns=cols;rr();
+  var b=_crmBoard(boardId);if(!b||!b.settings)return;
+  /* v153 — order over ALL columns (Assignee, Status, customs) and store it as colOrder, like the Columns manager */
+  var keys=_crmColKeys(b).slice();var from=keys.indexOf(d.colId);if(from<0)return;
+  keys.splice(from,1);var to=keys.indexOf(targetColId);if(to<0)return;keys.splice(to+(d.after?1:0),0,d.colId);
+  if(App._crmColOrder){App._crmColOrder(boardId,keys);return;}
+  b.settings.colOrder=keys;rr();
   sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column order'});
 };
 App._crmBackToTable=()=>{CRM.sel.convoId=null;CRM.sel.threadId=null;rr();};
