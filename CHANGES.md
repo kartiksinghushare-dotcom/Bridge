@@ -1,3 +1,10 @@
+# Bridge v146 — smoother chat on phones (cache-buster `?v=146`)
+
+- **Only the newest 80 messages are rendered** when a chat opens; “Show earlier messages (n)” loads 120 more at a time, and a jump from a quote / pin / star / search pulls in what it needs automatically. Long chats no longer put thousands of nodes on screen.
+- Dropped the blur effect on the sticky date pills and the `:has()` selectors that Safari re-evaluated on every change; the page lock uses a plain class instead; one lighter observer instead of two; GPU-composited message list; shorter bubble animations.
+
+---
+
 # Bridge v145 — ticket tables on phones, smaller (cache-buster `?v=145`)
 
 - Dropdowns, text and date cells in ticket tables are ~20% smaller on phones (drawn scaled so Safari still doesn't zoom when you tap one), header row tighter, and the New ticket / Column / Statuses / Filter toolbar is a compact single row that swipes sideways.

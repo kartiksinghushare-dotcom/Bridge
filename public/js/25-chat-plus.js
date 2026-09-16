@@ -81,7 +81,7 @@ App._crmQuote=(cid,mid)=>{if(!_crmCanPart(cid))return;CRM.compose.replyTo={cid:c
 App._crmQuoteClear=()=>{CRM.compose.replyTo=null;_crmRenderReplyBar();};
 /* jump to a message in the open chat (quote tap, pinned bar, starred list, message info) and flash it */
 App._crmJumpTo=(cid,mid)=>{_cpSheetClose();
-  var go=function(){var el=document.querySelector('#crm-thread .crm-msg[data-mid="'+mid+'"]');if(!el){toast('That message is in a thread or no longer here');return;}el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.add('crm-hit-cur');setTimeout(function(){el.classList.remove('crm-hit-cur');},2200);};
+  var tries=0;var go=function(){var el=document.querySelector('#crm-thread .crm-msg[data-mid="'+mid+'"]');if(!el&&document.querySelector('.crm-earlier')&&tries<3){tries++;App._crmShowEarlier(cid,true);setTimeout(go,220);return;}if(!el){toast('That message is in a thread or no longer here');return;}el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.add('crm-hit-cur');setTimeout(function(){el.classList.remove('crm-hit-cur');},2200);};
   if(CRM.sel.convoId!==cid){App._crmOpenResult(cid);setTimeout(go,320);}else go();};
 App._crmSendOrRec=(ev)=>{if(_crmComposerEmpty()){App._crmRecStart(ev);return;}App._crmSend();};
 
@@ -113,7 +113,7 @@ function _cpSignPending(){
   if(!need.length){apply();return;}
   _cpSign(Array.from(new Set(need))).then(apply);
 }
-(function(){try{var mo=new MutationObserver(function(){if(_cpSignTimer)return;_cpSignTimer=setTimeout(function(){_cpSignTimer=null;_cpSignPending();},60);});mo.observe(document.body,{childList:true,subtree:true});}catch(e){}})();
+(function(){try{var mo=new MutationObserver(function(){if(_cpSignTimer)return;_cpSignTimer=setTimeout(function(){_cpSignTimer=null;try{_cpSignPending();}catch(e){}try{if(window._cpStrip)_cpStrip(document);}catch(e){}try{document.documentElement.classList.toggle('cp-ws',!!document.querySelector('#content .crm-fs'));}catch(e){}},90);});mo.observe(document.body,{childList:true,subtree:true});}catch(e){}})();
 App._crmOpenFile=async(a)=>{var p=a.getAttribute('data-cp-path');if(!p)return;var u=a.getAttribute('data-cp-url');
   if(!u){await _cpSign([p]);u=_cpUrls[p]&&_cpUrls[p].url;}
   if(!u)return toast('Could not open the file — try again','err');
@@ -374,14 +374,14 @@ try{CRM_LONG_PRESS_MS=1000;}catch(e){}
   var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
   if(!touch)return;
   var strip=function(root){try{(root.querySelectorAll?root:document).querySelectorAll('[onmouseover],[onmouseout]').forEach(function(el){el.removeAttribute('onmouseover');el.removeAttribute('onmouseout');});}catch(e){}};
-  document.documentElement.classList.add('cp-touch');strip(document);var t=null;
-  try{new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=null;strip(document);},30);}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+  document.documentElement.classList.add('cp-touch');strip(document);window._cpStrip=strip;
 })();
 (function(){var _o=App._crmTogHub;App._crmTogHub=function(id){var r=_o.apply(this,arguments);try{if(_crmIsMob())App._crmMobNav(true);}catch(e){}return r;};})();
 
 /* ═══ 13. styles ═══ */
 (function(){
   document.head.insertAdjacentHTML('beforeend','<style id="crm-plus3-css">'
+  +'.crm-earlier{display:block;margin:6px auto 10px;border:1px solid #E6DED3;background:#fff;color:#54433C;font-size:12px;font-weight:700;padding:7px 14px;border-radius:20px;cursor:pointer}'
   /* quoted reply */
   +'.crm-quote{display:flex;align-items:center;gap:8px;min-width:min(200px,60vw);border-left:3px solid #D1B68F;background:rgba(0,0,0,.05);border-radius:8px;padding:5px 8px;margin:2px 0 6px;cursor:pointer;max-width:100%;min-width:0}'
     +'.crm-qbody{flex:1;min-width:0}.crm-qwho{font-size:11px;font-weight:800;line-height:1.2}.crm-qtxt{font-size:12px;color:#5E5148;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.35}'
@@ -479,11 +479,15 @@ try{CRM_LONG_PRESS_MS=1000;}catch(e){}
   +'.crm-fs .crm-vplay{min-width:36px!important;min-height:36px!important}.crm-fs .crm-vrate{min-height:24px!important}.crm-fs .crm-pinx,.crm-fs .crm-rbx{min-height:32px!important;min-width:32px!important}'
   +'.crm-fs .crm-rec-del{min-width:44px;min-height:44px}'
   +'body.cp-sheet-open{overflow:hidden}'
+  +'#crm-thread{will-change:scroll-position;transform:translateZ(0)}'
+  +'.crm-line{contain:layout style}'
+  +'.crm-bub{box-shadow:0 1px 1px rgba(35,28,22,.10)!important}'
+  +'.crm-anew-in,.crm-anew-out{animation-duration:.16s}'
   +'html.cp-touch #content .crm-fs .crm-row:hover .crm-del,html.cp-touch #content .crm-fs .crm-brd:hover .crm-bdel,html.cp-touch #content .crm-fs .crm-chrow:hover .crm-chx,html.cp-touch #content .crm-fs .crm-hub:hover .crm-hdel,html.cp-touch #content .crm-fs .crm-tab:hover .crm-tx,html.cp-touch #content .crm-fs .crm-colh:hover .crm-colx{display:none!important}'
   +'#content .crm-fs .crm-msg:hover .crm-macts,#content .crm-fs .crm-msg:active .crm-macts,#content .crm-fs .crm-msg:focus-within .crm-macts{display:none!important}'
   +'#content .crm-fs .crm-msg.crm-actopen .crm-macts,#content .crm-fs .crm-msg.crm-actopen:hover .crm-macts{display:flex!important}'
   +'.crm-msg:active .crm-bub{transform:none!important}'
-  +'body:has(.crm-fs){position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}'
+  +'html.cp-ws body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}'
   /* v143 — these must beat the page-level .crm-fs rules (they are injected inside #content, after this sheet) */
   +'#content .crm-fs,#content .crm-fs.crm-fs{top:var(--vvt,0px)!important;bottom:auto!important;height:calc(var(--vvh,100dvh) - 60px - env(safe-area-inset-bottom))!important;max-height:none!important}'
   +'#content .crm-fs.crm-hasconvo{height:var(--vvh,100dvh)!important;padding-bottom:0!important}'

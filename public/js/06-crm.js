@@ -482,7 +482,7 @@ function _crmMsg(m,cid,thread,prev){
     +inner+_crmReactChips(m,cid)+opener
     +((editing||m.fromCustomer)?'':'<button type="button" class="crm-mmore" title="Message options" aria-label="Message options" onclick="event.stopPropagation();App._crmMsgActsTog(this)">'+ic('more','w-3.5 h-3.5')+'</button>')
     +(editing?'':_crmMsgActions(m,cid,thread))+'</div>';
-  return'<div class="crm-line" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+col+'</div>';
+  return'<div class="crm-line'+(grouped?'':' crm-line-t')+'" style="display:flex;gap:7px;'+(mine?'flex-direction:row-reverse':'')+';align-items:flex-end;margin-top:'+(prev?(grouped?2:10):0)+'px">'+av+col+'</div>';
 }
 function _crmMentionItems(q){
   var b=_crmBoard(CRM.sel.boardId);var mem=_crmBoardPeople(b);q=(q||'').toLowerCase();
@@ -538,7 +538,12 @@ function _crmChatPane(convo,board){
     +(bgrps.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:6px 8px 2px">Groups</div>'+bgrps.map(function(g){var on=convo.assignedGroup===g.id;return'<button onclick="App._crmAssign(\''+convo.id+'\',\'grp:'+g.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:'+(on?'#EEE4D5':'transparent')+';border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\''+(on?'#EEE4D5':'transparent')+'\'"><span style="width:24px;height:24px;border-radius:50%;background:#EEE4D5;color:#3E322B;display:inline-grid;place-items:center;flex-shrink:0">'+ic('users','w-3 h-3')+'</span><span class="crm-mname" style="font-size:12.5px;font-weight:700;color:#13171B;flex:1">'+esc(g.name)+'</span><span style="font-size:10px;color:#A59788">'+((g.members||[]).length)+'</span></button>';}).join('')+'<div style="height:1px;background:#F1ECE4;margin:4px 6px"></div><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#A59788;padding:2px 8px">People</div>':'')
     +bmem.map(u=>'<button onclick="App._crmAssign(\''+convo.id+'\',\''+u.id+'\')" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;padding:6px 8px;border:none;background:transparent;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#F4F0EA\'" onmouseout="this.style.background=\'transparent\'">'+avatar(u,'w-6 h-6','text-[9px]')+'<span class="crm-mname" style="font-size:12.5px;font-weight:600;color:#13171B">'+esc(fullName(u))+'</span></button>').join('')+'</div></div>':(asgU?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#786A5F">'+avatar(asgU,'w-5 h-5','text-[8px]')+esc(_crmFirst(asgU))+'</span>':(asgG2?_crmGroupChip(asgG2):''));
   var top=(convo.messages||[]).filter(x=>!x.parentId);
-  var thread=top.length?_crmMsgsWithDates(top,convo.id,false):'<div style="flex:1;display:grid;place-items:center;color:#A8998A;font-size:12.5px">No messages yet — say hello \u{1F44B}</div>';
+  /* v146 — only the newest messages are put in the DOM (a long chat was thousands of nodes and scrolled like treacle on
+     phones); older ones come in with "Show earlier messages" or automatically when a search / jump needs them */
+  var CRM_WIN=80;var _win=(CRM._msgWin||{})[convo.id]||CRM_WIN;if(CRM.msgSearch)_win=Infinity;var hidden=Math.max(0,top.length-_win);
+  var earlier=hidden?'<button type="button" class="crm-earlier" onclick="App._crmShowEarlier(\''+convo.id+'\')">Show earlier messages ('+hidden+')</button>':'';
+  if(hidden)top=top.slice(hidden);
+  var thread=top.length?earlier+_crmMsgsWithDates(top,convo.id,false):'<div style="flex:1;display:grid;place-items:center;color:#A8998A;font-size:12.5px">No messages yet — say hello \u{1F44B}</div>';
   var canSend=_dmPeer?can('messages','send'):can('crm','create');
   // thread panel
   var tpanel='';
@@ -842,6 +847,7 @@ App._crmSaveEdit=async(cid,mid)=>{var el=document.getElementById('crm-edit-'+mid
    photos are wiped, replies in its thread are kept). The row is never removed from the database. */
 App._crmDelMsg=async(cid,mid)=>{var c=_crmConvo(cid);if(!c)return;var m=(c.messages||[]).find(x=>x.id===mid);if(!m||m.deletedAt)return;var own=!m.fromCustomer&&m.senderId===S.uid;if(!((own&&can('crm','create'))||can('crm','delete')))return toast('No permission','err');if(!(await _crmConfirmP('Delete message','This message'+((m.images||[]).length||(m.imageCount||0)||(m.attachments||[]).length?' and its attachment(s)':'')+' will be replaced by “deleted this message” for everyone.','Delete')))return;var at=new Date().toISOString();var _paths=(m.attachments||[]).map(function(a){return a.path;}).filter(Boolean);m.text='';m.images=[];m.imageCount=0;m.reactions={};m.attachments=[];m.sticker=null;m.linkPreview=null;m.deletedAt=at;m.deletedBy=S.uid;if(m.pinnedAt){m.pinnedAt=null;}rr();try{await sb.from('crm_messages').update({body:'',images:[],reactions:{},attachments:[],sticker:null,link_preview:null,pinned_at:null,deleted_at:at,deleted_by:S.uid}).eq('id',mid);}catch(e){}try{if(_paths.length)sb.storage.from('chat-media').remove(_paths).then(function(){}).catch(function(){});}catch(e){}};
 /* v137: App._crmForward / _crmDoForward live in 25-chat-plus.js (multi-select sheet, keeps files, marks “Forwarded”) */
+App._crmShowEarlier=(cid,all)=>{CRM._msgWin=CRM._msgWin||{};CRM._msgWin[cid]=all?Infinity:(((CRM._msgWin[cid]||80)+120));var t=document.getElementById('crm-thread');var keep=t?(t.scrollHeight-t.scrollTop):0;rr();var t2=document.getElementById('crm-thread');if(t2&&keep)t2.scrollTop=t2.scrollHeight-keep;};
 App._crmOpenThread=(mid)=>{CRM.sel.threadId=mid;rr();var t=document.getElementById('crm-tthread');if(t)t.scrollTop=t.scrollHeight;};
 App._crmCloseThread=()=>{CRM.sel.threadId=null;rr();};
 App._crmSendReply=async()=>{App._crmCloseMsgActs();if(!can('crm','create'))return;var el=document.getElementById('crm-tinput');var text=el?el.value.trim():'';if(!text)return;var c=_crmConvo(CRM.sel.convoId);if(!c)return;var pid=CRM.sel.threadId;var id=uid('msg'),at=new Date().toISOString();
@@ -2755,7 +2761,7 @@ App._crmEmoPick=(ch)=>{if(!ch)return;var st=CRM._emo||{};_crmEmoRecPush(ch);try{
   +'.crm-anew-out{animation:crmOut .24s cubic-bezier(.2,.8,.25,1);transform-origin:100% 100%}'
   /* date pills */
   +'.crm-datep{display:flex;justify-content:center;position:sticky;top:2px;z-index:6;margin:10px 0 3px}'
-  +'.crm-datep span{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7B6D62;background:rgba(255,255,255,.92);border:1px solid #EAE3D8;border-radius:20px;padding:3px 12px;box-shadow:0 1px 3px rgba(35,28,22,.08);backdrop-filter:blur(4px)}'
+  +'.crm-datep span{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7B6D62;background:rgba(255,255,255,.92);border:1px solid #EAE3D8;border-radius:20px;padding:3px 12px;box-shadow:0 1px 3px rgba(35,28,22,.08)}'
   /* reactions */
   +'.crm-reacts{display:flex;gap:3px;flex-wrap:wrap;margin-top:-7px;z-index:2;padding:0 4px}'
   +'.crm-mine .crm-reacts{justify-content:flex-end}'
@@ -2958,7 +2964,7 @@ App._crmSndTog=(btn)=>{var on=!_bbPrefOn('chat','sound');try{_bbNPSetChannel('ch
   +'.crm-bub.crm-deleted{color:#8A7B6D!important;font-style:italic}'
   +'.crm-delx{margin-right:5px;font-style:normal;opacity:.8}'
   +'.crm-line{margin-top:3px!important}'
-  +'.crm-line:has(.crm-tail){margin-top:9px!important}'
+  +'.crm-line.crm-line-t{margin-top:9px!important}'
   +'.crm-line:first-child,.crm-datep+.crm-line{margin-top:0!important}'
   +'.crm-datep span{background:#FBF8F3;color:#7B6D62;font-size:11px;text-transform:none;letter-spacing:0;font-weight:600;padding:4px 12px;border-color:#E9E1D6}'
   /* ── @mentions, WhatsApp way ── */
