@@ -497,28 +497,29 @@ function _crmMentionItems(q){
   return rows;
 }
 /* ── v3: Details side panel — every field of a ticket editable in one place ── */
-function _crmDetailsPanel(convo,board){
-  if(!convo||!convo.isTicket||CRM.detailsOpen===false)return'';
-  var canEd=can('crm','edit');var canAsg=can('crm','assign');
-  var dm=_crmDueMeta(convo);
+function _crmDetailsBody(convo,board,opts){
+  opts=opts||{};var canEd=can('crm','edit');var canAsg=can('crm','assign');
   var asgU=convo.assignedTo?uById(convo.assignedTo):null;
   var asgG=convo.assignedGroup?_crmGroup(convo.assignedGroup):null;
   var selSt='width:100%;box-sizing:border-box;border:1.5px solid #EAE3D8;border-radius:10px;padding:8px 10px;font-size:12.5px;font-weight:600;background:#fff;cursor:pointer;outline:none;color:#13171B';
   var fRow=function(label,inner){return'<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A8998A;margin-bottom:6px">'+label+'</div>'+inner+'</div>';};
   var cols=(board&&board.settings&&board.settings.columns)||[];
   var acts=_crmActFor(convo.id).slice(0,8);
-  return (CRM._mobDetails?'<div class="crm-dscrim crm-only-mob" onclick="App._crmMobDetails(false)"></div>':'')
-    +'<div class="crm-hide-mob crm-details'+(CRM._mobDetails?' crm-dopen':'')+'" style="width:284px;flex-shrink:0;border-left:1px solid #F0EAE2;background:#FBF9F5;display:flex;flex-direction:column;min-height:0">'
-    +(CRM._mobDetails?'<button class="crm-only-mob crm-tap" onclick="App._crmMobDetails(false)" aria-label="Close details" style="position:sticky;top:0;align-self:flex-end;border:none;background:transparent;font-size:20px;line-height:1;color:#786A5F;padding:8px 12px">\u00d7</button>':'')
-    +'<div style="padding:13px 16px;border-bottom:1px solid #F0EAE2;display:flex;align-items:center;justify-content:space-between;flex-shrink:0"><span class="fd" style="font-weight:800;font-size:13.5px;color:#13171B">Ticket details</span><button onclick="App._crmTogDetails()" style="border:none;background:transparent;color:#B8AA9C;cursor:pointer;display:grid;place-items:center">'+ic('x','w-3.5 h-3.5')+'</button></div>'
-    +'<div class="crm-scroll" style="flex:1;overflow-y:auto;padding:16px">'
-    +fRow('Assignee',canAsg?_crmAsgSelect(convo,board,selSt):(asgU?esc(fullName(asgU)):(asgG?_crmGroupChip(asgG):'\u2014')))
+  return fRow('Assignee',canAsg?_crmAsgSelect(convo,board,selSt):(asgU?esc(fullName(asgU)):(asgG?_crmGroupChip(asgG):'\u2014')))
     +fRow('Status',canEd?_crmStatusSel(board,convo,selSt):_crmStatusChip(board,convo.status))
     +fRow('Customer','<span style="font-size:12.5px;font-weight:700">'+esc(convo.customer||'\u2014')+'</span>')
     +(function(){var _dc=cols.filter(function(c){return c.type!=='remind';});return _dc.length?'<div style="border-top:1px dashed #EAE3D8;padding-top:12px">'+_dc.map(function(col){return fRow(esc(col.name),_crmCell(convo,col));}).join('')+'</div>':'';})()
     +fRow('Created','<span style="font-size:12px;color:#7B6D62">'+_crmDT(convo.createdAt)+(uById(convo.createdBy)?' <span style="color:#A8998A">by</span> <b style="color:#13171B">'+esc(fullName(uById(convo.createdBy)))+'</b>':'')+'</span>')
-    +(acts.length?'<div style="border-top:1px dashed #EAE3D8;padding-top:12px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A8998A;margin-bottom:6px">Activity</div>'+acts.map(function(a){var au=uById(a.actor);return '<div style="font-size:11.5px;color:#75675C;padding:3px 0;line-height:1.45"><b style="color:#13171B">'+esc(au?_crmFirst(au):'Someone')+'</b> '+esc(a.action)+(a.detail?' \u2014 '+esc(a.detail):'')+' <span style="color:#B8AA9C">\u00B7 '+_crmRel(a.at)+'</span></div>';}).join('')+'</div>':'')
-    +'</div></div>';
+    +(acts.length?'<div style="border-top:1px dashed #EAE3D8;padding-top:12px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#A8998A;margin-bottom:6px">Activity</div>'+acts.map(function(a){var au=uById(a.actor);return '<div style="font-size:11.5px;color:#75675C;padding:3px 0;line-height:1.45"><b style="color:#13171B">'+esc(au?_crmFirst(au):'Someone')+'</b> '+esc(a.action)+(a.detail?' \u2014 '+esc(a.detail):'')+' <span style="color:#B8AA9C">\u00B7 '+_crmRel(a.at)+'</span></div>';}).join('')+'</div>':'');
+}
+App._crmDetailsClose=()=>{if(_crmIsMob())App._crmMobDetails(false);else App._crmTogDetails();};
+/* ── v3: Details side panel — every field of a ticket editable in one place (v147: one close button, shared body) ── */
+function _crmDetailsPanel(convo,board){
+  if(!convo||!convo.isTicket||CRM.detailsOpen===false)return'';
+  return (CRM._mobDetails?'<div class="crm-dscrim crm-only-mob" onclick="App._crmMobDetails(false)"></div>':'')
+    +'<div class="crm-hide-mob crm-details'+(CRM._mobDetails?' crm-dopen':'')+'" style="width:284px;flex-shrink:0;border-left:1px solid #F0EAE2;background:#FBF9F5;display:flex;flex-direction:column;min-height:0">'
+    +'<div style="padding:13px 16px;border-bottom:1px solid #F0EAE2;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;background:#FBF9F5;z-index:2"><span class="fd" style="font-weight:800;font-size:13.5px;color:#13171B">Ticket details</span><button onclick="App._crmDetailsClose()" aria-label="Close" style="border:none;background:transparent;color:#B8AA9C;cursor:pointer;display:grid;place-items:center;width:32px;height:32px">'+ic('x','w-4 h-4')+'</button></div>'
+    +'<div class="crm-scroll" style="flex:1;overflow-y:auto;padding:16px">'+_crmDetailsBody(convo,board)+'</div></div>';
 }
 function _crmChatPane(convo,board){
   if(CRM.msgSearch&&convo)setTimeout(function(){_crmMsgSearchApply(true);},0);
@@ -668,7 +669,7 @@ function crmPage(){
   else if(!hub){mainInner=_crmEmpty('folder','Nothing to show','You haven’t been added to any board or filtered view yet — ask an admin for access.','');}
   else{
     var row1='<div class="crm-boardbar" style="padding:10px 16px;border-bottom:1px solid #EDE7DC;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0"><button class="crm-only-mob crm-tap" aria-label="Open hubs" onclick="App._crmMobNav()" style="width:34px;height:34px;border:1px solid #E6DED3;background:#fff;border-radius:9px;cursor:pointer;align-items:center;justify-content:center;color:#3A312A;flex-shrink:0">'+ic('menu','w-5 h-5')+'</button><div class="crm-hubname" style="font-size:16px;font-weight:800;color:#13171B;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(hub.name)+(view?' <span style="font-weight:800;color:#54433C;font-size:13px">· '+esc(view.name)+'</span>':'')+'</div>'+_crmHubPeopleBtn(hub)+'<div style="flex:1"></div>'+_search+_dash+'</div>';
-    var tabs=tabBoards.map(function(b){var on=b.id===CRM.sel.boardId;var _un=_crmUnreadCount(b.id);var _isC=_crmBS(b).type==='chat';var _brows=CRM.convos.filter(function(x){return x.boardId===b.id;});if(inView&&!_isC)_brows=_crmApplyFilters(_brows,_crmViewFilters(view,b.id));return'<button onclick="'+(inView?'App._crmSelVBoard':'App._crmSelBoard')+'(\''+b.id+'\')" class="crm-btab" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;background:transparent;border-bottom:2px solid '+(on?'#54433C':'transparent')+';color:'+(on?'#13171B':'#A59788')+';font-size:13px;font-weight:'+(on?'800':'600')+';cursor:pointer;white-space:nowrap">'+ic(_isC?'msg':'ticket','w-3.5 h-3.5')+esc(b.name)+' '+(_isC?'<span style="font-size:11px;color:'+(on?'#54433C':'#CEC1B3')+'">'+_brows.length+'</span>':_crmNotDoneBadge(b,_brows,on))+(_un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#54433C;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+_un+'</span>':'')+'</button>';}).join('');
+    var tabs=tabBoards.map(function(b){var on=b.id===CRM.sel.boardId;var _un=_crmUnreadCount(b.id);var _isC=_crmBS(b).type==='chat';var _brows=CRM.convos.filter(function(x){return x.boardId===b.id;});if(inView&&!_isC)_brows=_crmApplyFilters(_brows,_crmViewFilters(view,b.id));return'<button onclick="'+(inView?'App._crmSelVBoard':'App._crmSelBoard')+'(\''+b.id+'\')" class="crm-btab'+(on?' crm-btab-on':'')+'" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;background:transparent;border-bottom:2px solid '+(on?'#54433C':'transparent')+';color:'+(on?'#13171B':'#A59788')+';font-size:13px;font-weight:'+(on?'800':'600')+';cursor:pointer;white-space:nowrap">'+ic(_isC?'msg':'ticket','w-3.5 h-3.5')+esc(b.name)+' '+(_isC?'<span style="font-size:11px;color:'+(on?'#54433C':'#CEC1B3')+'">'+_brows.length+'</span>':_crmNotDoneBadge(b,_brows,on))+(_un?'<span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#54433C;color:#fff;font-size:9.5px;font-weight:800;display:inline-grid;place-items:center">'+_un+'</span>':'')+'</button>';}).join('');
     var boardCtl=board?('<button class="crm-only-mob crm-tap" aria-label="Board options" onclick="App._crmBoardMenu(\''+board.id+'\')" style="width:34px;height:34px;border-radius:9px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0">'+ic('more','w-4 h-4')+'</button><span class="crm-bctl-desk" style="display:inline-flex;align-items:center;gap:6px">'+(inView?(_crmViewCanEdit(view)?'<button title="Remove this board from the view — the board itself is not deleted" onclick="App._crmViewHideBoard(\''+board.id+'\')" class="crm-rmview" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;line-height:1">'+ic('x','w-3.5 h-3.5')+'<span class="crm-hide-mob">Remove from view</span><span class="crm-only-mob" style="display:none">Remove</span></button>':''):((_crmCanBoardMembers()?'<button title="Board members — who can access only this board" aria-label="Board members" onclick="App._crmTogMembers()" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;font-size:12px;font-weight:700">'+ic('users','w-3.5 h-3.5')+'<span class="crm-hide-mob">Board</span>'+members.length+'</button>':'')+(can('crm','rename')?'<button title="Rename board" onclick="App._crmRenameBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #E6DED3;background:#fff;color:#786A5F;cursor:pointer;display:grid;place-items:center">'+ic('edit','w-4 h-4')+'</button>':'')+(can('crm','delete')?'<button title="Delete board" onclick="App._crmDelBoard(\''+board.id+'\')" style="width:30px;height:30px;border-radius:8px;border:1px solid #E4A898;background:#fff;color:#B3402E;cursor:pointer;display:grid;place-items:center">'+ic('trash','w-4 h-4')+'</button>':'')))+'</span>'):'';  /* v3.15: inside a view only view actions show — board admin lives on the hub */
     var row2='<div class="crm-tabsrow" style="display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid #EDE7DC;overflow-x:auto;flex-shrink:0">'+tabs+(canCreate&&!inView?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" title="New board" style="padding:8px 11px;border:none;background:transparent;color:#54433C;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+ic('plus','w-3.5 h-3.5')+'Board</button>':'')+'<div style="flex:1;min-width:8px"></div><div style="display:flex;align-items:center;gap:6px;padding:6px 2px">'+boardCtl+'</div></div>';
     if(!board){mainInner=row1+row2+_crmEmpty('msg','No boards yet in this hub','Add a board — a chat, or a ticket table with its own columns, statuses, members & automations.',canCreate?'<button onclick="App._crmNewBoard(\''+hub.id+'\')" style="margin-top:14px;padding:9px 18px;border:none;border-radius:10px;background:#54433C;color:#fff;font-weight:700;cursor:pointer">Create a board</button>':'');}
@@ -1333,7 +1334,7 @@ function _crmViewBar(board){
   var shown=flt.length?_crmApplyFilters(rows,flt).length:rows.length;
   return'<div class="crm-viewbar" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #EDE7DC;background:#FCFAF7;flex-shrink:0;flex-wrap:wrap">'
     +(can('crm','create')?'<button onclick="App._crmRowAddOpen(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;border:none;background:#54433C;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0;box-shadow:0 2px 8px rgba(84,67,60,.32)">'+ic('plus','w-3.5 h-3.5')+'New ticket</button>':'')
-    +(can('crm','edit')?'<button onclick="App._crmColModal(\''+board.id+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #E6DED3;background:#fff;color:#786A5F;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('plus','w-3.5 h-3.5')+'Column</button>':'')
+    +(can('crm','edit')?'<button onclick="App._crmColsManage(\''+board.id+'\')" title="Add, rename, reorder columns" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #E6DED3;background:#fff;color:#786A5F;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('list','w-3.5 h-3.5')+'Columns</button>':'')
     +((can('crm','manage')||can('crm','edit'))?'<button onclick="App._crmStatusEditor(\''+board.id+'\')" title="Add, rename, recolor this board’s statuses" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid #E6DED3;background:#fff;color:#786A5F;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('approve','w-3.5 h-3.5')+'Statuses</button>':'')
     +'<button onclick="App._crmBoardFilter(\''+board.id+'\')" title="Filter tickets — every column is filterable" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1.5px solid '+(flt.length?'#54433C':'#E6DED3')+';background:'+(flt.length?'#EEE4D5':'#fff')+';color:'+(flt.length?'#3E322B':'#786A5F')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;line-height:1;flex-shrink:0">'+ic('filter','w-3.5 h-3.5')+(flt.length?'Filtered · '+flt.length:'Filter')+'</button>'
     +'<span style="flex:1"></span>'
@@ -1773,13 +1774,15 @@ function _crmTable(board,opts){
   var _mob=_crmIsMob();
   /* v136 — phones keep real ROWS (one ticket per line, swipe sideways) instead of tall cards: narrower default
      widths, the Ticket column stays pinned on the left while the rest scrolls. */
-  var _w=function(k,d){var w=parseInt(_cw[k],10);if(_mob)return Math.min((w&&w>=70)?w:d,k==='_title'?150:k==='_asg'?128:k==='_st'?124:120);return(w&&w>=70)?w:d;};
+  var _w=function(k,d){var w=parseInt(_cw[k],10);if(_mob)return Math.min((w&&w>=70)?w:d,k==='_title'?200:k==='_asg'?128:k==='_st'?130:120);return(w&&w>=70)?w:d;};
   var _wst=function(k,d){var w=_w(k,d);return'width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px';};
   var hc='padding:9px 10px;font-size:11px;font-weight:800;color:#786A5F;border-bottom:1px solid #EDE7DC;background:#FAF7F1;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1';
   var _rzOr=function(k){return canStruct?_crmRz(board.id,k):'';};
-  var th='<th class="crm-thpin" style="'+hc+';position:relative;'+_wst('_title',260)+'">Ticket'+_rzOr('_title')+'</th>'
-    +'<th style="'+hc+';position:relative;'+_wst('_asg',170)+'">Assignee'+_rzOr('_asg')+'</th>'
+  var _tl=esc((board.settings&&board.settings.titleLabel)||'Ticket');
+  var th='<th class="crm-thpin" style="'+hc+';position:relative;'+_wst('_title',260)+'">'+_tl+_rzOr('_title')+'</th>'
+    +(_mob?'':'<th style="'+hc+';position:relative;'+_wst('_asg',170)+'">Assignee'+_rzOr('_asg')+'</th>')
     +'<th style="'+hc+';position:relative;'+_wst('_st',150)+'">Status'+_rzOr('_st')+'</th>';
+  if(_mob)cols=[];   /* v147 — phones: name + status only; everything else lives behind (i) */
   cols.forEach(function(col){
     th+='<th class="crm-colh" data-cid="'+col.id+'" '+(canStruct?'ondragover="App._crmColDragOver(event)" ondragleave="App._crmColDragLeave(event)" ondrop="App._crmColDrop(event,\''+board.id+'\',\''+col.id+'\')"':'')+' style="'+hc+';'+_wst(col.id,150)+';position:relative">'
       +(canStruct?'<span class="crm-grip" draggable="true" ondragstart="App._crmColDragStart(event,\''+board.id+'\',\''+col.id+'\')" ondragend="App._crmColDragEnd(event)" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="2.5" r="1.3"/><circle cx="7" cy="2.5" r="1.3"/><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="3" cy="11.5" r="1.3"/><circle cx="7" cy="11.5" r="1.3"/></svg></span>':'')
@@ -1788,7 +1791,7 @@ function _crmTable(board,opts){
       +_rzOr(col.id)
     +'</th>';
   });
-  th+='<th style="'+hc+';width:52px"></th>';
+  th+='<th style="'+hc+';width:'+(_mob?44:52)+'px"></th>';
   var addRow='';
   if(canCr&&CRM._rowAdd===board.id&&CRM._ntDraft&&CRM._ntDraft.boardId===board.id){
     var _d=CRM._ntDraft;var canAsgN=can('crm','assign');
@@ -1820,12 +1823,13 @@ function _crmTable(board,opts){
   /* v133e — phones: the table is 600px+ wide and unreadable; show one card per ticket instead (title → opens the
      ticket, status + assignee editable in place, extra columns underneath). The draft "new ticket" row keeps the table. */
   var body=rows.map(function(r){
-    var tds='<td class="crm-tdpin" style="padding:6px 10px;border-bottom:1px solid #F4F0EA;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer"><div style="font-size:13px;font-weight:700;color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div></td>';
-    tds+='<td style="padding:2px 6px;border-bottom:1px solid #F4F0EA;overflow:hidden">'+_crmAsgCell(r,board)+'</td>';
+    var _un=_crmUnread(r);
+    var tds='<td class="crm-tdpin'+(_un?' crm-td-unread':'')+'" style="padding:6px 10px;border-bottom:1px solid #F4F0EA;overflow:hidden"><div onclick="App._crmSelConvo(\''+r.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px"><div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:'+(_un?'800':'700')+';color:#13171B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.title||r.customer||'\u2014')+'</div>'+(r.customer?'<div style="font-size:10.5px;color:#A59788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.customer)+'</div>':'')+'</div>'+(_un?'<span class="crm-unb" title="Unread messages">'+_crmUnreadN(r)+'</span>':'')+'</div></td>';
+    if(!_mob)tds+='<td style="padding:2px 6px;border-bottom:1px solid #F4F0EA;overflow:hidden">'+_crmAsgCell(r,board)+'</td>';
     tds+='<td style="padding:2px 6px;border-bottom:1px solid #F4F0EA;overflow:hidden">'+_crmRowStatus(r,board)+'</td>';
     cols.forEach(function(col){var cell=_crmCell(r,col);
       tds+='<td style="padding:2px 6px;border-bottom:1px solid #F4F0EA;overflow:hidden">'+cell+'</td>';});
-    tds+='<td style="padding:4px 8px;border-bottom:1px solid #F4F0EA;white-space:nowrap;text-align:right">'+(can('crm','delete')?'<button onclick="App._crmDelConvo(\''+r.id+'\')" title="Delete" style="border:none;background:transparent;color:#CEC1B3;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':'')+'</td>';
+    tds+='<td style="padding:4px 8px;border-bottom:1px solid #F4F0EA;white-space:nowrap;text-align:right">'+(_mob?'<button class="crm-tinfo" onclick="App._crmTicketInfo(\''+r.id+'\')" title="Details" aria-label="Ticket details">'+ic('info','w-4 h-4')+'</button>':(can('crm','delete')?'<button onclick="App._crmDelConvo(\''+r.id+'\')" title="Delete" style="border:none;background:transparent;color:#CEC1B3;cursor:pointer">'+ic('trash','w-3.5 h-3.5')+'</button>':''))+'</td>';
     return'<tr class="crm-trow">'+tds+'</tr>';
   }).join('');
   if(!rows.length&&!addRow)body='<tr><td colspan="99" style="padding:44px;text-align:center;color:#A59788;font-size:13px">'+(flt.length?((opts.filters!=null)?'No tickets match this view\u2019s conditions right now.':'No tickets match the filter \u2014 <b style="color:#54433C">Filter</b> above adjusts or clears it.'):('No tickets yet.'+(canCr?' Hit <b style="color:#54433C">+ New ticket</b> above to add the first one'+((canEd&&opts.filters==null)?', and <b>+ Column</b> to shape the table':'')+'.':'')))+'</td></tr>';

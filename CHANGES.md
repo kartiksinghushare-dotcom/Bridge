@@ -1,3 +1,20 @@
+# Bridge v148 — drag to reorder columns (cache-buster `?v=148`)
+
+- Columns manager: grab the ⋮⋮ handle and drag a column up or down — works with a finger on phones and a mouse on desktop; the other rows slide out of the way and the order saves on release. (Arrows removed; header drag on desktop unchanged.)
+
+---
+
+# Bridge v147 — profile fix · columns manager · ticket (i) on phones · board switcher (cache-buster `?v=147`)
+
+- **More → Profile opens your own profile** (it used to reopen the last person you looked at).
+- **Columns manager** (ticket board toolbar → Columns): rename the first column per board (“Ticket” → anything), reorder custom columns with ▲▼ (works on phones; drag still works on desktop), rename/edit/delete each, add new.
+- **Unread on tickets**: a ticket with messages you haven't seen shows a badge next to its name and a tinted row in the table.
+- **Phones — ticket table shows only name + status**; the (i) at the end opens a sheet with every field (assignee, status, columns, activity), “Open the ticket chat” and Delete.
+- **Ticket details on phones close with one ×** (there were two).
+- **Workspace opens on the Chat board** of the hub by default; on phones the tab strip shows only the current board and ⋯ lists every board to switch to (with unread counts), then the board actions.
+
+---
+
 # Bridge v146 — smoother chat on phones (cache-buster `?v=146`)
 
 - **Only the newest 80 messages are rendered** when a chat opens; “Show earlier messages (n)” loads 120 more at a time, and a jump from a quote / pin / star / search pulls in what it needs automatically. Long chats no longer put thousands of nodes on screen.
