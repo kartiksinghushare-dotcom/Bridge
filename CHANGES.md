@@ -1,3 +1,11 @@
+# Bridge v156 — forgot password tells you when the email is unknown (cache-buster `?v=156`)
+
+- **Unknown email → "No Bridge account uses this email"**; inactive account → "contact your admin"; only a real, active account gets the reset email.
+- The check runs on the server (`pw_reset_lookup(email)`, security definer) and is **rate-limited to 5 tries per email per 15 minutes** (`pw_reset_attempts` table, no direct access) so the screen cannot be used to harvest addresses.
+- Migration: `supabase/migrations/2026-09-16_v156_pw_reset_lookup.sql` (already applied).
+
+---
+
 # Bridge v155 — Forgot password (cache-buster `?v=155`)
 
 - **"Forgot password?" on the sign-in page** → enter your email → Bridge emails a reset link (Supabase auth email). The confirmation reads the same whether or not the address exists.

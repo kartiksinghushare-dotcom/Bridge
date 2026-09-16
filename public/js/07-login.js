@@ -55,12 +55,18 @@ App.forgotPwSend=async()=>{
   if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Enter a valid email address','err');return;}
   const btn=$('#fp-btn');if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
+    /* v156 — server-side, rate-limited lookup (5 tries per email per 15 min) so the answer is honest but can't be abused */
+    const{data:st,error:le}=await sb.rpc('pw_reset_lookup',{p_email:email});
+    if(le)throw le;
+    if(st==='not_found'){toast('No Bridge account uses this email — check the spelling or ask your admin','err');if(btn){btn.disabled=false;btn.textContent='Send reset link';}return;}
+    if(st==='inactive'){toast('This account is inactive — contact your admin','err');if(btn){btn.disabled=false;btn.textContent='Send reset link';}return;}
+    if(st==='too_many'){toast('Too many attempts — please wait 15 minutes and try again','err');if(btn){btn.disabled=false;btn.textContent='Send reset link';}return;}
+    if(st!=='ok'){toast('Enter a valid email address','err');if(btn){btn.disabled=false;btn.textContent='Send reset link';}return;}
     const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-    if(error&&!/rate|limit|seconds/i.test(error.message||''))throw error;
-    /* same message whether or not the address exists — nobody can use this screen to check who has an account */
+    if(error){if(/rate|limit|seconds/i.test(error.message||''))throw new Error('A link was sent recently — check your inbox, or wait a minute and try again');throw error;}
     $('#app').innerHTML=_pwShell(`
       <h2 class="fd" style="font-size:26px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px">Check your inbox</h2>
-      <p style="color:var(--c-text-2);font-size:14px;line-height:1.6;margin-bottom:8px">If <b>${email.replace(/</g,'&lt;')}</b> has a Bridge account, a reset link is on its way. Open it within <b>10 minutes</b> to choose a new password.</p>
+      <p style="color:var(--c-text-2);font-size:14px;line-height:1.6;margin-bottom:8px">A reset link has been sent to <b>${email.replace(/</g,'&lt;')}</b>. Open it within <b>10 minutes</b> to choose a new password.</p>
       <p style="color:var(--c-text-3);font-size:12.5px;line-height:1.6">Nothing there? Check spam, or wait a minute and try again.</p>
       <button onclick="S.uid=null;render()" class="ui-btn ui-btn-primary ui-btn-md" style="width:100%;margin-top:22px">Back to sign in</button>`);
   }catch(err){toast(err.message||'Could not send the email','err');if(btn){btn.disabled=false;btn.textContent='Send reset link';}}
