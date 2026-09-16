@@ -212,9 +212,11 @@ async function _crmLoad(){
 const _crmStyle='<style>'
 +'.crm-only-mob{display:none!important}'
 /* ── desktop hover affordances ── */
-+'.crm-chrow:hover .crm-chx{display:grid!important}'
+/* v144 — hover reveals only where a real pointer exists: on iOS a hover that shows something makes the first tap a
+   "hover" and the second the click (the double-tap on channel and chat rows) */
++'@media(hover:hover){.crm-chrow:hover .crm-chx{display:grid!important}'
 +'.crm-row:hover .crm-del{display:grid!important}'
-+'.crm-brd:hover .crm-bdel{display:grid!important}'
++'.crm-brd:hover .crm-bdel{display:grid!important}}'
 /* v142 — hover reveals only where a real pointer exists (phones treat a tap as hover); the message bar never opens on
    hover any more: desktop shows a small ⋯ at the bubble's corner, phones use a 2 s hold */
 +'@media(hover:hover){.crm-hub:hover .crm-hdel{display:grid!important}'
@@ -363,7 +365,15 @@ const _crmStyle='<style>'
 +'.crm-mobtable td{padding:3px 5px!important}'
 +'.crm-mobtable td.crm-tdpin{position:sticky;left:0;z-index:1;background:#fff;box-shadow:1px 0 0 #EDE7DC;padding:6px 8px!important}'
 +'.crm-mobtable td.crm-tdpin>div>div:first-child{font-size:12.5px!important}'
-+'.crm-mobtable .crm-cell,.crm-mobtable select,.crm-mobtable input:not([type="checkbox"]){min-height:36px!important;padding:4px 6px!important;font-size:16px!important}'
++'.crm-mobtable .crm-cell,.crm-mobtable select,.crm-mobtable input:not([type="checkbox"]){font-size:16px!important;transform:scale(.8);transform-origin:left center;width:125%!important;max-width:125%!important;min-height:34px!important;height:34px;padding:2px 6px!important;margin:-4px 0!important;line-height:1.2!important}'
++'.crm-mobtable td.crm-tdpin>div>div:nth-child(2){font-size:10px!important}'
++'.crm-mobtable .crm-dtwrap{width:100%}.crm-mobtable .crm-dtwrap input{width:110%!important;max-width:110%!important}'
++'.crm-mobtable .crm-dtclr{transform:scale(.85)}'
++'.crm-mobtable th{font-size:9.5px!important;padding:6px 6px!important}'
++'.crm-fs .crm-viewbar{padding:6px 10px!important;gap:6px!important;flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}'
++'.crm-fs .crm-viewbar::-webkit-scrollbar{display:none}'
++'.crm-fs .crm-viewbar button,.crm-fs .crm-viewbar .ui-btn{font-size:11.5px!important;padding:6px 10px!important;min-height:32px!important;height:32px!important;white-space:nowrap;flex-shrink:0}'
++'.crm-fs .crm-viewbar svg{width:13px;height:13px}'
 +'.crm-mobtable .crm-grip,.crm-mobtable .crm-colx,.crm-mobtable .crm-rz{display:none!important}'
 +'.crm-mobtable button{min-height:32px!important}'
 +'}'

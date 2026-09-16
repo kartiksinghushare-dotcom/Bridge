@@ -1,3 +1,16 @@
+# Bridge v145 — ticket tables on phones, smaller (cache-buster `?v=145`)
+
+- Dropdowns, text and date cells in ticket tables are ~20% smaller on phones (drawn scaled so Safari still doesn't zoom when you tap one), header row tighter, and the New ticket / Column / Statuses / Filter toolbar is a compact single row that swipes sideways.
+
+---
+
+# Bridge v144 — 1 s hold · true single tap on rows (cache-buster `?v=144`)
+
+- Hold to open the message bar is now **1 second**.
+- **Single tap on channel / chat rows.** Remaining cause of the double tap: CSS hover reveals (the trash icon on chat rows, board rows, hub rows). On iOS a hover that shows something turns the first tap into a hover. All hover reveals now exist only on devices with a real pointer, and are force-hidden on touch screens.
+
+---
+
 # Bridge v143 — keyboard, Messages list (cache-buster `?v=143`)
 
 - **Composer stays above the keyboard** on phones: the workspace now really follows the visible viewport (the earlier rule was being overridden by the page-level layout rule), the list scrolls to the latest message when the keyboard opens, and the safe-area padding drops while the keyboard is up.
