@@ -275,7 +275,7 @@ function _attOnLeave(uid2,date){try{return (typeof leaveCovering==='function')?l
 function _attDayKind(u,date){
   const h=_attHoliday(u,date);if(h)return{type:'PUBLIC_HOLIDAY',label:'Public holiday',expectsPunch:false,compOff:true,holiday:h};
   if(_attIsOff(u,date))return{type:'REST_DAY',label:'Rest day',expectsPunch:false,compOff:true};
-  const lv=_attOnLeave(u.id,date);if(lv)return{type:'ON_LEAVE',label:'On leave',expectsPunch:false,compOff:false,leave:lv};
+  const lv=_attOnLeave(u.id,date);if(lv)return{type:'ON_LEAVE',label:'On leave',expectsPunch:false,compOff:false,leave:lv,leaveName:lv.name||''};
   return{type:'SCHEDULED_WORKING',label:'Working day',expectsPunch:u.attendanceRequired!==false,compOff:false};
 }
 /* Days before attendance tracking started (or before the person joined) are neither present nor absent. */
@@ -472,7 +472,7 @@ function _attClockCard(){
   const modeLbl=m=>m==='wfh'?'Working from home':m==='onduty'?'On duty':m==='remote'?'Remote':(loc?esc(loc.name):'On site');
   const state=open&&!openOld
     ?`<div class="att-nowrap" style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:#428059;box-shadow:0 0 0 4px rgba(66,128,89,.18)"></span><div><div style="font-size:13px;font-weight:800;color:var(--c-success-ink)">Clocked in · ${modeLbl(open.mode)}</div><div style="font-size:12px;color:var(--c-text-3)">since ${_attHM(open.inAt)} · <b id="att-elapsed" style="color:var(--c-text)">${_attFmtMins(_attMins(open))}</b> so far${open.queued?' · <span style="color:var(--c-warn-ink)">waiting to sync</span>':''}</div></div></div>`
-    :`<div class="att-nowrap" style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:${openOld?'#C9584A':'var(--c-border-2)'}"></span><div><div style="font-size:13px;font-weight:800;color:var(--c-text)">${openOld?'Open shift from '+fmtS(open.date):(rows.length?'Clocked out':'Not clocked in yet')}</div><div style="font-size:12px;color:var(--c-text-3)">${openOld?'You didn’t clock out on '+fmtS(open.date)+' — your manager will set the time. You can still clock in today.':(rows.length?('Today: '+_attFmtMins(total)+' · last out '+_attHM(rows[rows.length-1].outAt)):(off?('Today is a '+kind.label.toLowerCase()+(kind.holiday?' — '+esc(kind.holiday.name):'')):('Shift '+sched.in+' – '+sched.out)))}</div></div></div>`;
+    :`<div class="att-nowrap" style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:${openOld?'#C9584A':'var(--c-border-2)'}"></span><div><div style="font-size:13px;font-weight:800;color:var(--c-text)">${openOld?'Open shift from '+fmtS(open.date):(rows.length?'Clocked out':'Not clocked in yet')}</div><div style="font-size:12px;color:var(--c-text-3)">${openOld?'You didn’t clock out on '+fmtS(open.date)+' — your manager will set the time. You can still clock in today.':(rows.length?('Today: '+_attFmtMins(total)+' · last out '+_attHM(rows[rows.length-1].outAt)):(off?(kind.type==='ON_LEAVE'?'You’re on '+esc((kind.leaveName||'leave').toLowerCase())+' today':'Today is a '+kind.label.toLowerCase()+(kind.holiday?' — '+esc(kind.holiday.name):'')):('Shift '+sched.in+' – '+sched.out)))}</div></div></div>`;
   const btnHTML=open&&!openOld
     ?`<button id="att-btn" onclick="App._attClockOut()" class="ui-btn ui-btn-primary ui-btn-md" style="min-width:150px;background:var(--c-danger)">${ic('clock','w-[18px] h-[18px]')}Clock out</button>`
     :(canClock?`<button id="att-btn" onclick="App._attClockIn()" class="ui-btn ui-btn-brand ui-btn-md" style="min-width:150px">${ic('clock','w-[18px] h-[18px]')}Clock in</button>`:'');
@@ -480,7 +480,7 @@ function _attClockCard(){
   const reqBtn=canClock?`<button onclick="App._attReqNew()" class="ui-btn ui-btn-ghost ui-btn-md" title="Fix a missed punch, ask for a late arrival / early leave, or log on-duty work">Request…</button>`:'';
   const hint=!open&&!wfh&&!manual&&!fences.length?'<div style="font-size:11.5px;color:var(--c-warn-ink);background:var(--c-warn-soft);border-radius:10px;padding:8px 11px;margin-top:10px">No office has a geofence yet — clock-in will work once an admin sets one up under Locations.</div>':
     (!open&&wfh?'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:10px">Work-from-home day — clock in from anywhere; your manager has been told.</div>':
-    (!open&&off&&!rows.length?'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:10px">Working today anyway? Clocking in on a '+kind.label.toLowerCase()+' sends a comp-off request to your manager automatically.</div>':
+    (!open&&off&&!rows.length?(kind.type==='ON_LEAVE'?'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:10px">No clock-in expected while you’re on leave. If your plans changed, cancel the leave under Leaves first.</div>':'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:10px">Working today anyway? Clocking in on a '+kind.label.toLowerCase()+' sends a comp-off request to your manager automatically.</div>'):
     (!open&&manual&&!wfh?'<div style="font-size:11.5px;color:var(--c-text-3);margin-top:10px">'+(_attOnDuty(S.uid,today)?'On duty today — clock in from wherever you are.':'No geofence for your role — clock in from wherever you work.')+'</div>':'')));
   const sessions=rows.length>1||(rows.length===1&&rows[0].outAt)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${rows.map(a=>`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--c-surface-2);color:var(--c-text-2)">${_attHM(a.inAt)} → ${a.outAt?_attHM(a.outAt):'…'}${a.autoOut?' <span title="Auto clocked out">⚠</span>':''}${a.queued?' <span title="Synced late">↻</span>':''}</span>`).join('')}</div>`:'';
   return `<div class="ui-card att-clock" style="padding:16px 18px;background:linear-gradient(135deg,#FFFFFF,#FAF5EC)">
@@ -493,7 +493,7 @@ function _attClockCard(){
 function _homeGreeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
 function homePage(){
   const u=me();if(!u)return '';
-  _attLoadMine();_attLiveStart();
+  _attLoadMine();_attLiveStart();try{if(typeof _lvBoot==='function')_lvBoot();}catch(e){}
   const today=todayISO();
   // today's work
   let clsDue=0,clsDone=0;try{const cls=myCls(S.uid,today);clsDue=cls.length;clsDone=cls.filter(c=>{const s=subForCl(c,S.uid,today);return s&&s.status!=='Editing';}).length;}catch(e){}
@@ -514,6 +514,7 @@ function homePage(){
   return `<div class="fade">
     ${hdr(_homeGreeting()+', '+esc(u.firstName||'there')+' 👋',fmtD(today)+' · here’s your day at a glance')}
     ${_attClockCard()}
+    ${(typeof _lvHomeBanner==='function')?(()=>{try{return _lvHomeBanner();}catch(e){return '';}})():''}
     <div class="bb-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
       ${tile('Checklists',clsDone+'/'+clsDue,clsDue?(clsDue-clsDone)+' still to submit':'nothing due today','check',"App.go('mychecklists')",'#54433C')}
       ${okrDue?tile('OKR check-ins',okrDue,'due today','flag',"App.go('okr')",'#936659'):''}
@@ -521,6 +522,7 @@ function homePage(){
       ${tile('Alerts',alertsN,alertsN?'unread':'inbox is clear','bell',"App.go('notifications')",'#AF7B6D')}
       ${apprN?tile('Approvals',apprN,'waiting for you','approve',"App.go('approvals')",'#13171B'):''}
       ${attReqN?tile('Attendance',attReqN,'requests & open shifts','clock',"App.go('attendance');S.filters.attTab='requests';rr()",'#A63528'):''}
+      ${(typeof _lvHomeTiles==='function')?(()=>{try{return _lvHomeTiles(tile);}catch(e){return '';}})():''}
       ${tkN?tile('My tickets',tkN,'open or in progress','ticket',"App.go('tickets')",'#A97C33'):''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
@@ -683,7 +685,7 @@ function _attCalendar(u,r){
       const f=inRange?_attDayFlags(u,iso):{};const wfh=!!f.wfh;
       const isT=iso===today;const future=iso>today;
       const bg=status==='Present'||status==='Remote'||status.indexOf('In')===0?'#F1F6F0':status==='Late'||status==='Half day'?'#FBF7EB':status==='WFH'?'#FBF3EF':status==='Absent'||status==='Open shift'?'#FBEFEB':status==='Holiday'?'#FAF5E9':'var(--c-surface)';
-      const mid=rs.length?_attFmtMins(mins)+(f.openShift?' <span style="color:#A63528">open</span>':''):(status==='Absent'?'<span style="color:#A63528;font-weight:700">Absent</span>':status==='WFH'?'<span style="color:#8A6152">WFH</span>':status==='Off'?'<span style="color:var(--c-text-3);font-weight:600">Off</span>':status==='Holiday'?'<span style="color:#7F6533;font-weight:600">Holiday</span>':status==='On duty'?'<span style="color:#4A3B34;font-weight:600">On duty</span>':status==='On leave'?'<span style="color:#4A3B34;font-weight:600">Leave</span>':'');
+      const mid=rs.length?_attFmtMins(mins)+(f.openShift?' <span style="color:#A63528">open</span>':''):(status==='Absent'?'<span style="color:#A63528;font-weight:700">Absent</span>':status==='WFH'?'<span style="color:#8A6152">WFH</span>':status==='Off'?'<span style="color:var(--c-text-3);font-weight:600">Off</span>':status==='Holiday'?'<span style="color:#7F6533;font-weight:600">Holiday</span>':status==='On duty'?'<span style="color:#4A3B34;font-weight:600">On duty</span>':status==='On leave'?'<span style="color:#4A3B34;font-weight:600">'+esc(((_attDayKind(u,iso).leaveName||'Leave').replace(/ leave$/i,'')))+'</span>':'');
       cells.push(`<button ${inRange&&!future?`onclick="App._attDay('${u.id}','${iso}')"`:'disabled'} class="att-cell" style="border:1px solid ${isT?'var(--c-brand)':'var(--c-border)'};background:${bg};opacity:${inRange&&!future?1:.4}">
         <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:${isT?'800':'700'};color:${isT?'var(--c-brand)':'var(--c-text)'}">${d}</span><span style="width:7px;height:7px;border-radius:50%;background:${dot}"></span></div>
         <div style="font-size:11px;font-weight:700;color:var(--c-text);margin-top:4px;min-height:14px">${mid}</div>
@@ -710,7 +712,7 @@ App._attDay=(uid2,d)=>{
       ${(canEdit||(openS&&canResolve))?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${openS&&canResolve?btn('Close this shift',`App._attResolve('${a.id}')`,{variant:'primary',size:'sm',icon:'clock'}):''}${canEdit?btn('Edit',`App._attEdit('${a.id}','${uid2}','${d}')`,{variant:'ghost',size:'sm',icon:'edit'}):''}</div>`:''}
     </div>`;}).join('');
   const reqs=(DB.attRequests||[]).filter(r=>r.userId===uid2&&(r.date===d||(r.type==='on_duty'&&r.date<=d&&(r.dateTo||r.date)>=d))).map(r=>`<div style="font-size:12px;color:var(--c-text-2);padding:6px 0;border-top:1px solid var(--c-border)"><b>${esc(_attReqLabel(r))}</b> · ${chip(r.status)}${r.reason?'<div style="font-size:11.5px;color:var(--c-text-3)">'+esc(r.reason)+'</div>':''}</div>`).join('');
-  const summary=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${chipS(kind.label+(kind.holiday?' · '+esc(kind.holiday.name):''),'var(--c-surface-2)','var(--c-text-2)')}${kind.type==='SCHEDULED_WORKING'?chipS('Shift '+sched.in+'–'+sched.out+' · '+_attFmtMins(_attStdMins(u,d)),'var(--c-surface-2)','var(--c-text-2)'):''}${f.halfDay?chipS('Half day','#F9F1DF','#7C5A26'):''}${f.shortage&&!f.halfDay?chipS('Short by '+_attFmtMins(f.stdMins-f.mins),'#F9F1DF','#7C5A26'):''}${f.otMins>0?chipS('OT '+_attFmtMins(f.otMins),'#EEE5D6','#4A3B34'):''}${f.restDayWork?chipS('Comp-off requested','#EEE5D6','#4A3B34'):''}</div>`;
+  const summary=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${chipS(kind.label+(kind.holiday?' · '+esc(kind.holiday.name):'')+(kind.leaveName?' · '+esc(kind.leaveName):''),'var(--c-surface-2)','var(--c-text-2)')}${kind.type==='SCHEDULED_WORKING'?chipS('Shift '+sched.in+'–'+sched.out+' · '+_attFmtMins(_attStdMins(u,d)),'var(--c-surface-2)','var(--c-text-2)'):''}${f.halfDay?chipS('Half day','#F9F1DF','#7C5A26'):''}${f.shortage&&!f.halfDay?chipS('Short by '+_attFmtMins(f.stdMins-f.mins),'#F9F1DF','#7C5A26'):''}${f.otMins>0?chipS('OT '+_attFmtMins(f.otMins),'#EEE5D6','#4A3B34'):''}${f.restDayWork?chipS('Comp-off requested','#EEE5D6','#4A3B34'):''}</div>`;
   const mine=uid2===S.uid&&can('attendance','clock');
   const fixBtn=mine&&d<=todayISO()&&_attRegularisable(d)?btn('Fix a missed / wrong punch',`App._attReqNew('regularisation','${d}')`,{variant:'ghost',size:'md',icon:'edit'}):'';
   modalShell({title:fmtD(d)+' · '+dayAbbr(d),sub:fullName(u)+' · '+status+(total?' · '+_attFmtMins(total):''),size:'max-w-md',key:'att-day',

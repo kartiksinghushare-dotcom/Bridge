@@ -321,6 +321,9 @@ const EMAIL_EVENTS=[
   {key:'attendance_decided', label:'Attendance request decided',          vars:'{{user_name}}, {{request}}, {{date}}, {{status}}, {{actor}}, {{note}}, {{action_url}}'},
   {key:'attendance_open_shift',label:'Open shift to resolve (to the manager)',vars:'{{user_name}} (manager), {{req_user}}, {{date}}, {{action_url}} — the server job sends these; edit wording here'},
   {key:'attendance_missed_rm',label:'Missed clock-in (to the manager)',    vars:'{{user_name}} (manager), {{req_user}}, {{action_url}} — the server job sends these; edit wording here'},
+  /* v159 — leave */
+  {key:'leave_request',      label:'Leave request (to the approver)',    vars:'{{user_name}} (approver), {{req_user}}, {{request}}, {{days}}, {{reason}}, {{action_url}}'},
+  {key:'leave_decided',      label:'Leave request decided',              vars:'{{user_name}}, {{request}}, {{status}}, {{actor}}, {{note}}, {{action_url}}'},
   {key:'dm_message',         label:'Direct message received',            vars:'{{user_name}}, {{actor}}, {{preview}}, {{action_url}}'},
   {key:'people_event',       label:'Birthdays, anniversaries & document expiry',vars:'{{user_name}}, {{text}}, {{action_url}}'},
 ];
@@ -353,6 +356,8 @@ function _defaultTemplates(){
     attendance_request:{subject:'🕒 Attendance request from {{req_user}}',body:'Hi {{user_name}},\n\n{{request}}\n\nOpen Attendance → Requests to approve or reject it.\n\n{{action_url}}'},
     attendance_decided:{subject:'{{status}}: {{request}} ({{date}})',body:'Hi {{user_name}},\n\nYour attendance request — {{request}} for {{date}} — was {{status}} by {{actor}}.\n\n{{note}}\n\n{{action_url}}'},
     attendance_open_shift:{subject:'⏱ Open shift to close: {{req_user}} ({{date}})',body:'Hi {{user_name}},\n\n{{req_user}} clocked in on {{date}} and never clocked out. Bridge never guesses a clock-out time — please close the shift under Attendance → Requests with the time they actually left.\n\n{{action_url}}'},
+    leave_request:{subject:'🌴 Leave request from {{req_user}}',body:'Hi {{user_name}},\n\n{{req_user}} asks for {{request}}.\n\nReason: {{reason}}\n\nOpen Leaves → Requests to approve or reject it.\n\n{{action_url}}'},
+    leave_decided:{subject:'{{status}}: {{request}}',body:'Hi {{user_name}},\n\nYour leave request — {{request}} — was {{status}} by {{actor}}.\n\n{{note}}\n\n{{action_url}}'},
     attendance_missed_rm:{subject:'⏰ {{req_user}} hasn’t clocked in',body:'Hi {{user_name}},\n\n{{req_user}} was expected to clock in today and hasn’t yet.\n\n{{action_url}}'},
     dm_message:{subject:'💬 New message from {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} sent you a message on Bridge:\n\n"{{preview}}"\n\n{{action_url}}'},
     people_event:{subject:'🎉 {{text}}',body:'Hi {{user_name}},\n\n{{text}}\n\n{{action_url}}'},
@@ -371,8 +376,8 @@ function _nsDefault(){return{
   email_feedback_received:false,email_deadline_reminder:true,email_escalation:true,
   inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
   email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
-  inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_attendance_request:true,inapp_attendance_decided:true,inapp_attendance_open_shift:true,inapp_attendance_missed_rm:true,inapp_dm_message:true,inapp_people_event:true,
-  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_dm_message:false,email_people_event:true,
+  inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_attendance_request:true,inapp_attendance_decided:true,inapp_attendance_open_shift:true,inapp_attendance_missed_rm:true,inapp_leave_request:true,inapp_leave_decided:true,inapp_leave_cancelled:true,inapp_leave_adjusted:true,inapp_dm_message:true,inapp_people_event:true,
+  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_leave_request:true,email_leave_decided:true,email_dm_message:false,email_people_event:true,
   templates:{},
 };}
 let _ns=null;
@@ -448,7 +453,7 @@ async function sendEmail(eventType, userId, vars){
   const user = userId ? uById(userId) : null;
   if(!user?.email){console.warn('sendEmail: no email for user',userId);return;}
   if(user.emailEnabled===false) return;
-  try{var _k=({crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
+  try{var _k=({leave_request:'leave',leave_decided:'leave',crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
     var _np=user.notifyPrefs||{};var _c=_np.channels&&_np.channels[_k];if(_c&&_c.email===false)return;}catch(e){}
   if(!_ns) await _loadNS();
   if(!_ns.email_enabled) return;
@@ -463,7 +468,7 @@ async function sendEmail(eventType, userId, vars){
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
     okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
-    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'workspace',people_event:'profile',
+    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',leave_request:'leaves',leave_decided:'leaves',dm_message:'workspace',people_event:'profile',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
@@ -583,6 +588,12 @@ function settingsPage(forceTab){
         ${_nsTogRow('inapp_attendance_decided','Attendance request decided','Tell the person when their request is approved or rejected')}
         ${_nsTogRow('inapp_attendance_open_shift','Open shift → manager','Next morning, when someone never clocked out (server job)')}
         ${_nsTogRow('inapp_attendance_missed_rm','Missed clock-in → manager','Same-day push to the manager when a scheduled person hasn’t clocked in (server job)')}
+      </div></div>
+      <div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head"><span class="ui-card-title">Leave</span></div><div class="ui-card-pad" style="padding-top:2px">
+        ${_nsTogRow('inapp_leave_request','Leave request → approver','Every request goes to the current approval level (manager, then Head of People when the flow says so)')}
+        ${_nsTogRow('inapp_leave_decided','Leave request decided','Tell the person at every step — level approved, final approval, rejection, correction')}
+        ${_nsTogRow('inapp_leave_cancelled','Leave withdrawn / cancelled → approvers','When a person withdraws a pending request or cancels approved leave')}
+        ${_nsTogRow('inapp_leave_adjusted','Balance adjusted','Tell the person when People posts an opening balance, correction or year-end entry')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
         ${_nsTogRow('inapp_dm_message','Direct messages','New private messages (each person can silence their own in My notifications)')}
         ${_nsTogRow('inapp_people_event','Birthdays, anniversaries & document expiry','To the manager (and the person, for documents) — 90 / 60 / 30 / 7 / 0 days before expiry')}
@@ -654,6 +665,10 @@ function settingsPage(forceTab){
         ${_nsTogRow('email_attendance_open_shift','Open shift → manager','Morning email listing shifts to close (server job)')}
         ${_nsTogRow('email_attendance_missed_rm','Missed clock-in → manager','Email as well as push (server job; off by default — push is enough)')}
         ${_nsTogRow('email_attendance_edited','Attendance edited','Email the person when a manager edits their entry')}
+      </div></div>
+      <div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head"><span class="ui-card-title">Leave</span></div><div class="ui-card-pad" style="padding-top:2px">
+        ${_nsTogRow('email_leave_request','Leave request → approver','Email the approver when a request needs a decision')}
+        ${_nsTogRow('email_leave_decided','Leave request decided','Email the person the decision')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
         ${_nsTogRow('email_dm_message','Direct messages','Email for every private message — off by default, in-app + push usually suffice')}
         ${_nsTogRow('email_people_event','Birthdays, anniversaries & document expiry','Email the manager / person for people events')}
@@ -753,6 +768,7 @@ var _BB_KINDS=[
  ['escalation','Escalations','A question or task escalates to you'],
  ['dm','Direct messages','Private one-to-one messages'],
  ['attendance','Attendance','Clock-in / clock-out reminders, auto clock-out, WFH and edits'],
+ ['leave','Leave','Requests, approvals, balance changes and “starts tomorrow” reminders'],
  ['people','People & documents','Birthdays, work anniversaries and document expiry'],
  ['access','Access changes','Your role or permissions were changed']
 ];
@@ -910,7 +926,7 @@ function _bbDesktopShow(row){
     if(viewing){_bbCloseSWNotif(link||row.id);return;}
     if(document.visibilityState==='visible'&&document.hasFocus())return;
     var text=String(row.text||'');var kind=_bbNotifKind(row);
-    var title=({mention:'You were tagged',chat:((row.count||1)>1?(row.count+' new messages'):'New message'),ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',dm:((row.count||1)>1?(row.count+' new messages'):'New message'),attendance:'Attendance',people:'People',access:'Access changed'})[kind]||'Bridge';
+    var title=({mention:'You were tagged',chat:((row.count||1)>1?(row.count+' new messages'):'New message'),ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',dm:((row.count||1)>1?(row.count+' new messages'):'New message'),attendance:'Attendance',leave:'Leave',people:'People',access:'Access changed'})[kind]||'Bridge';
     var body=text.replace(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*/u,'').slice(0,200);
     var n=new Notification(title,{body:body,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:link||row.id,renotify:true,data:{link:link,id:row.id}});
     n.onclick=function(){try{window.focus();}catch(e){}try{n.close();}catch(e){}try{App._bbOpenLink(link,text,row.id);}catch(e){}};
@@ -927,6 +943,7 @@ App._bbOpenLink=(link,text,nid)=>{
   try{
     var L=String(link||'');
     if(L==='home'||L.indexOf('att:in:')===0||L.indexOf('att:out:')===0){App.go('home');return;}
+    if(L.indexOf('leave')===0){if(typeof App._lvOpenLink==='function')App._lvOpenLink(L);else App.go('leaves');return;}
     if(L.indexOf('att:req:')===0){if(typeof App._attOpenReqLink==='function')App._attOpenReqLink(L.slice(8));else App.go('attendance');return;}
     if(L.indexOf('att:open:')===0){App.go('attendance');S.filters.attTab='requests';rr();return;}
     if(L.indexOf('att:team:')===0){App.go('attendance');S.filters.attTab='team';const parts=L.slice(9).split(':');const d=parts[0]||'';if(/^\d{4}-\d{2}-\d{2}$/.test(d)){S.filters.attFrom=d;S.filters.attTo=d;S.filters.attPreset='custom';S.filters.attYm=d.slice(0,7);}S.filters.attPerson=(parts[1]&&typeof uById==='function'&&uById(parts[1]))?parts[1]:null;rr();return;}

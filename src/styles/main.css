@@ -1510,3 +1510,56 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   #content .crm-tabsrow>div:last-child{position:sticky;right:0;background:#fff;box-shadow:-8px 0 8px -4px rgba(255,255,255,.95)}
   #content .crm-tabsrow>button{flex-shrink:0!important}
 }
+
+/* ═══════════ v159/v160 — Leave module (.lv-*) ═══════════ */
+.lv-hero .lv-hero-btn{background:#D1B68F!important;background-image:none!important;color:#13171B!important;border:none!important;min-width:130px;justify-content:center;box-shadow:0 6px 18px -8px rgba(209,182,143,.6)}
+.lv-hero .lv-hero-btn:hover{filter:brightness(1.05)}
+.lv-tcard:hover{border-color:var(--c-border-2)}
+.lv-page .ui-card{box-shadow:var(--sh-sm)}
+.lv-tcard{transition:border-color .15s,box-shadow .15s}
+.lv-tcard.on{box-shadow:var(--sh-sm)}
+.lv-row:hover{background:var(--c-surface-2)}
+.lv-inbox-row{touch-action:pan-y;will-change:transform}
+.lv-swipe-hint{display:none}
+.lv-adm-item:hover{background:var(--c-surface)!important}
+@media(min-width:768px){.lv-adm-nav{flex-direction:column;overflow:visible!important;gap:2px!important}.lv-adm-item{width:100%;text-align:left}}
+.lv-list-card{display:none}
+.lv-baltable td button{min-height:28px}
+@media(max-width:767px){
+  #content .lv-adm{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+  #content .lv-adm-side{position:static!important;min-width:0;overflow:hidden}
+  #content .lv-adm-nav{flex-direction:row!important;gap:6px!important;overflow-x:auto;padding:4px 2px!important;background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:14px}
+  #content .lv-adm-item{padding:8px 12px!important;font-size:12.5px!important}
+  #content .lv-adm-item svg{display:none}
+  #content .lv-tcards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #content .lv-hero{padding:16px!important}
+  #content .lv-hero-row{gap:12px!important}
+  #content .lv-hero-next{width:100%;min-width:0!important}
+  #content .lv-hero-btn{width:100%}
+  #content .lv-calfilters{width:100%}
+  #content .lv-calfilters input#lv-q{flex:1 1 100%;width:100%!important}
+  #content .lv-calfilters .ui-select{flex:1 1 55%}
+  #content .lv-calfilters .ui-btn{flex:1 1 40%;justify-content:center}
+  #content .lv-calnav>div:first-child{width:100%;justify-content:space-between}
+  #content .lv-bals{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  #content .lv-month-grid{grid-template-columns:repeat(7,1fr)!important}
+  #content .lv-bals .lv-bal{padding:9px 10px!important}
+  #content .lv-bals .lv-bal .fd{font-size:19px!important}
+  #content .lv-year{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 10px!important}
+  #content .lv-grid-card{display:none}
+  #content .lv-list-card{display:block}
+  #content .lv-inbox-row{grid-template-columns:auto 1fr!important;gap:8px 10px!important}
+  #content .lv-inbox-row .lv-inbox-actions{grid-column:1/-1;display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
+  #content .lv-inbox-row .lv-inbox-actions .ui-btn{justify-content:center;min-height:42px}
+  #content .lv-swipe-hint{display:block}
+  #content .lv-filters input#lv-bq{width:100%!important}
+  #content .lv-filters .ui-select,#content .lv-filters input[type=date]{flex:1 1 45%;min-width:0}
+  #content .lv-type-row{grid-template-columns:auto 1fr!important}
+  #content .lv-type-row>div:last-child{grid-column:1/-1;justify-content:flex-end}
+  #content .lv-ent-ids input{width:100%!important}
+  #content .lv-half .ui-btn{flex:1 1 auto;justify-content:center}
+  #content .lv-typepick{margin:0 -4px;padding:0 4px 4px}
+  .lt-level{grid-template-columns:auto 1fr!important}
+  .lt-level>button{grid-column:1/-1;justify-self:end}
+  #content .bb-hdr .bb-hdr-actions .ui-btn{min-height:40px}
+}

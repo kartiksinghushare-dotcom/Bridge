@@ -8,7 +8,7 @@
   /* v155 — a password-reset link (#type=recovery) shows the "choose a new password" screen instead of the app */
   if(window._pwRecovery){try{loadDB();}catch(e){}S.uid=null;await App.pwRecoveryBoot();return;}
   var _hashRoute=(window.location.hash||'').replace('#','').trim();_hashRoute=({bolt:'okr',workspace:'crm'})[_hashRoute]||_hashRoute;
-  const VALID_ROUTES=['home','attendance','attsettings','dashboard','crm','mychecklists','users','hierarchy','checklists','allcl','questions','approvals','notifications','analytics','locations','departments','settings','audit','teamview','profile','okr','tickets'];
+  const VALID_ROUTES=['home','attendance','attsettings','leaves','leavesettings','dashboard','crm','mychecklists','users','hierarchy','checklists','allcl','questions','approvals','notifications','analytics','locations','departments','settings','audit','teamview','profile','okr','tickets'];
   const _deepLink=VALID_ROUTES.includes(_hashRoute)?_hashRoute:null;
   try{const{data:{session}}=await sb.auth.getSession();if(session){
       // Load local cache first for instant UI

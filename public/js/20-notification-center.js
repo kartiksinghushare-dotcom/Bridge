@@ -268,8 +268,8 @@
   document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')setTimeout(NC._missedFlush,300);});
 
   /* ─────────────────────────── in-app card (tab focused) ─────────────────────────── */
-  var KIND_ICON={mention:'msg',chat:'msg',dm:'msg',ticket:'ticket',okr:'flag',checklist:'check',approval:'approve',feedback:'msg',reminder:'clock',escalation:'alert',attendance:'clock',people:'users',access:'shield',general:'bell'};
-  var KIND_TITLE={mention:'You were tagged',chat:'New message',dm:'Direct message',ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',attendance:'Attendance',people:'People',access:'Access changed',general:'Bridge'};
+  var KIND_ICON={mention:'msg',chat:'msg',dm:'msg',ticket:'ticket',okr:'flag',checklist:'check',approval:'approve',feedback:'msg',reminder:'clock',escalation:'alert',attendance:'clock',leave:'calendar',people:'users',access:'shield',general:'bell'};
+  var KIND_TITLE={mention:'You were tagged',chat:'New message',dm:'Direct message',ticket:'Ticket',okr:'OKR',checklist:'Checklist',approval:'Approval',feedback:'Feedback',reminder:'Reminder',escalation:'Escalation',attendance:'Attendance',leave:'Leave',people:'People',access:'Access changed',general:'Bridge'};
   NC.card=function(row){
     try{
       var host=document.getElementById('bb-nc-host');

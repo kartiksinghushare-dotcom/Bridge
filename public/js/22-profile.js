@@ -7,7 +7,7 @@
    ============================================================ */
 
 const PROF_DOC_CATS=['Passport','Visa','Emirates ID','Labour card','Contract','Certificate','Offer letter','Medical','Other'];
-const PROF_TABS=[['overview','Overview'],['work','Work'],['docs','Documents'],['attendance','Attendance'],['security','Security']];
+const PROF_TABS=[['overview','Overview'],['work','Work'],['docs','Documents'],['attendance','Attendance'],['leave','Leave'],['security','Security']];
 
 /* ── who may do what on THIS profile ── */
 function _profPerm(u){
@@ -30,6 +30,7 @@ function _profPerm(u){
     docsDelete:self?can('myProfile','deleteDocs'):(can('documentsPersonal','delete')&&scopeFilter('documentsPersonal')(u.id)),
     docsDownload:self||can('documentsPersonal','download')||admin,
     attendance:self||(can('attendance','view')&&scopeFilter('attendance')(u.id)),
+    leave:self||(can('leave','view')&&scopeFilter('leave')(u.id)),   // v159
     dm:!self&&can('messages','send')&&typeof _dmOpenWith==='function',
   };
 }
@@ -47,7 +48,7 @@ function profilePage(){
   _profLoadDocs(u.id);
   if(typeof _attLoadMine==='function'&&P.self)_attLoadMine();
   let tab=S.filters.profTab||'overview';
-  const tabs=PROF_TABS.filter(([k])=>{if(k==='security')return P.self;if(k==='docs')return P.docsView;if(k==='attendance')return P.attendance&&!P.self;return true;});
+  const tabs=PROF_TABS.filter(([k])=>{if(k==='security')return P.self;if(k==='docs')return P.docsView;if(k==='attendance')return P.attendance&&!P.self;if(k==='leave')return P.leave&&!P.self&&typeof _lvEnabled==='function'&&_lvEnabled();return true;});
   if(!tabs.some(t=>t[0]===tab))tab='overview';
   const mgr=u.managerId?uById(u.managerId):null;
   const loc=u.locationId?locById(u.locationId):null;
@@ -81,6 +82,7 @@ function profilePage(){
   else if(tab==='work')body=_profWork(u,P);
   else if(tab==='docs')body=_profDocs(u,P);
   else if(tab==='attendance')body=(typeof _attMyTab==='function')?_attMyTab(u.id)+((typeof _attMyRequestsCard==='function'&&typeof _attCanResolveFor==='function'&&_attCanResolveFor(u.id))?_attMyRequestsCard(u.id):''):'';
+  else if(tab==='leave')body=(typeof _lvProfileTab==='function')?_lvProfileTab(u,P):'';
   else if(tab==='security')body=_profSecurity(u);
   const back=S.filters.profUid?`<button onclick="S.filters.profUid=null;App.go('users')" class="ui-btn ui-btn-ghost ui-btn-sm" style="margin-bottom:12px">${ic('back','w-4 h-4')}Back to people</button>`:'';
   return `<div class="fade">${back}${head}${tabsHTML}${body}</div>`;
@@ -109,8 +111,11 @@ function _profWork(u,P){
   const s={in:'09:00',out:'18:00',offDays:['Sun'],...(u.workSchedule||{})};
   const loc=u.locationId?locById(u.locationId):null;
   const pill=(on,l)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:${on?'#E9F1E8':'var(--c-surface-2)'};color:${on?'#346A47':'var(--c-text-3)'}">${on?'✓':'✕'} ${l}</span>`;
-  return _profCard('Employment',_profKV([['Employee ID',esc(u.employeeId||'')],['Joining date',u.joiningDate?fmtD(u.joiningDate)+(_profTenure(u.joiningDate)?' <span style="color:var(--c-text-3);font-weight:500">· '+_profTenure(u.joiningDate)+'</span>':''):''],['Position',esc(u.position||'')],['Department',esc(u.department||'')],['Work location',loc?esc(loc.name):'<span style="color:var(--c-text-3);font-weight:500">Any office</span>'],['Employment type',esc((u.details||{}).employmentType||'')],['Contract end',(u.details||{}).contractEnd?fmtD(u.details.contractEnd):''],['Probation ends',(u.details||{}).probationEnd?fmtD(u.details.probationEnd):'']]),
+  return _profCard('Employment',_profKV([['Employee ID',esc(u.employeeId||'')],['Joining date',u.joiningDate?fmtD(u.joiningDate)+(_profTenure(u.joiningDate)?' <span style="color:var(--c-text-3);font-weight:500">· '+_profTenure(u.joiningDate)+'</span>':''):''],['Position',esc(u.position||'')],['Department',esc(u.department||'')],['Work location',loc?esc(loc.name):'<span style="color:var(--c-text-3);font-weight:500">Any office</span>'],['Employment type',esc((u.details||{}).employmentType||'')],['Contract end',(u.details||{}).contractEnd?fmtD(u.details.contractEnd):''],['Probation ends',(u.details||{}).probationEnd?fmtD(u.details.probationEnd)+(todayISO()<u.details.probationEnd?' <span style="font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:20px;background:#F9F1DF;color:#7C5A26">on probation</span>':''):''],
+      ['Employment status',P.editHr?`<select class="ui-select" style="width:auto;padding:5px 26px 5px 10px;font-size:13px" onchange="App._lvEmpStatus('${u.id}',this.value)">${[['active','Active'],['notice','Notice period'],['exit','Exited']].map(([v,l])=>`<option value="${v}" ${((u.details||{}).employmentStatus||'active')===v?'selected':''}>${l}</option>`).join('')}</select>`:esc({active:'Active',notice:'Notice period',exit:'Exited'}[(u.details||{}).employmentStatus||'active'])],
+      (typeof _lvEntitlement==='function'&&typeof _lvType==='function'&&_lvType('annual'))?['Annual leave band',(()=>{const e=_lvEntitlement(u,_lvType('annual'));return _lvN(e.entitlement)+' days / yr <span style="color:var(--c-text-3);font-weight:500">· '+e.workdays+'-day week'+(e.statutory>e.band?' · statutory floor':'')+'</span>';})()]:null].filter(Boolean)),
       P.editHr?btn('Edit',`App._profEditWork('${u.id}')`,{variant:'ghost',size:'sm',icon:'edit'}):'')
+    +((typeof _lvCompCard==='function')?_lvCompCard(u,P):'')
     +_profCard('Schedule & attendance',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 20px;margin-bottom:12px">
         <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Worker category</div><div style="font-size:14px;font-weight:600;margin-top:2px">${esc(((typeof ATT_CATEGORIES!=='undefined'?ATT_CATEGORIES:[]).find(c=>c[0]===(s.category||'office'))||['','Office'])[1])}</div></div>
         <div><div style="font-size:10px;font-weight:800;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.05em">Shift</div><div style="font-size:14px;font-weight:600;margin-top:2px">${esc(s.in)} – ${esc(s.out)} <span style="font-size:11px;color:var(--c-text-3);font-weight:500">· ${(()=>{const m=hm2m(s.out)-hm2m(s.in);return m>0?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):'';})()}</span></div>${s.effectiveFrom?`<div style="font-size:11px;color:var(--c-text-3)">since ${fmtD(s.effectiveFrom)}${(s.history||[]).length?' · '+(s.history||[]).length+' earlier version'+((s.history||[]).length>1?'s':''):''}</div>`:''}</div>

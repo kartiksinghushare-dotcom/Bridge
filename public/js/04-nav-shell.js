@@ -4,7 +4,7 @@
    Load order matters — see index.html.
    ============================================================ */
 /* ===== NAVIGATION ===== */
-const NAV_ADM=[['crm','msg','Workspace'],['home','grid','My Day'],['attendance','clock','Attendance'],['profile','user','Profile'],['dashboard','chart','Overview'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
+const NAV_ADM=[['crm','msg','Workspace'],['home','grid','My Day'],['attendance','clock','Attendance'],['leaves','calendar','Leaves'],['profile','user','Profile'],['dashboard','chart','Overview'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['users','users','Users'],['hierarchy','tree','Hierarchy'],['checklists','list','Create Checklist'],['allcl','list','All Checklists'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics'],['locations','pin','Locations'],['departments','dept','Departments'],['settings','cog','Settings'],['audit','audit','Audit'],['okr','chart','BOLT'],['accesscontrol','shield','Access Control']];
 const NAV_USR=[['home','grid','My Day'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['notifications','bell','Notifications']];
 const NAV_MGR=[['home','grid','My Day'],['mychecklists','check','My Checklists'],['tickets','ticket','Tickets'],['teamview','users','Team'],['users','user','My Users'],['checklists','list','Create Checklist'],['questions','help','Questions'],['approvals','approve','Approvals'],['notifications','bell','Notifications'],['analytics','chart','Analytics']];
 const MOB_ADM=['home','mychecklists','crm','notifications','more'];
@@ -17,6 +17,7 @@ const NAV_ALL=[
   ['crm','msg','Workspace',()=>can('crm','view')],
   ['hub:inbox','bell','Inbox',()=>true],
 
+  ['leaves','calendar','Leaves',()=>can('leave','view')||can('leave','apply')],   // v159 — desktop: Time section · app: More sheet
   ['hub:cl','list','Checklists',()=>!!_hubHome('cl')],
   ['questions','help','Questions',()=>can('questions','view')],
   ['tickets','ticket','Tickets',()=>can('tickets','view')],
@@ -46,6 +47,7 @@ const HUB_DEF={
     ['settings','Settings',()=>can('settings','view')],
     ['accesscontrol','Access Control',()=>can('accessControl','view')],
     ['attsettings','Attendance',()=>can('attendance','manage')],
+    ['leavesettings','Leaves',()=>can('leave','manage')],
     ['departments','Departments',()=>can('departments','view')],
     ['locations','Locations',()=>can('locations','view')],
     ['audit','Audit',()=>can('audit','view')]]},
@@ -61,12 +63,13 @@ function _hubStrip(k){
 const navFor=()=>NAV_ALL.filter(n=>{try{return !!n[3]();}catch(e){return false;}}).map(n=>[n[0],n[1],n[2]]);
 const NAV_DAILY=['hub:dash','mychecklists','okr','crm','hub:inbox']; // keep the daily strip tiny — everything else lives in named sections
 const NAV_SECTION_OF={
+  leaves:'Time',
   'hub:cl':'Work',questions:'Work',tickets:'Work',
   'hub:people':'People',
   'hub:admin':'Manage',
 };
 const NAV_SECTION_ICON={Time:'clock',Work:'list',People:'users',Manage:'cog'};
-const NAV_SECTION_ORDER=['Work','People','Manage'];
+const NAV_SECTION_ORDER=['Time','Work','People','Manage'];
 function navSectionsFor(){
   const flat=navFor();
   const daily=[],sections={};
@@ -154,6 +157,7 @@ function _navBadgeFor(r){
   if(r==='hub:inbox'){let n=0;try{n=_notifCount();}catch(e){}return n?countBadge(n,'danger'):'';}
   if(r==='notifications'){const n=_notifCount();return n?countBadge(n,'danger'):'';}
   if(r==='approvals'){const ab=_approvalPendingCount();return ab?countBadge(ab,'approve'):'';}
+  if(r==='leaves'){try{const n=(typeof _lvInboxItems==='function'&&typeof _lvEnabled==='function'&&_lvEnabled())?_lvInboxItems().length:0;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
   if(r==='tickets'){const tkB=(DB.tickets||[]).filter(t=>t.assignedTo===S.uid&&!(t.viewedBy||[]).includes(S.uid)).length;return tkB?countBadge(tkB,'rose'):'';}
   if(r==='crm'&&window.CRM&&CRM._loaded){try{const vis=_crmVisibleBoardIds();const cb=CRM.convos.filter(c=>(vis[c.boardId]||(typeof _crmIsDM==='function'&&_crmIsDM(c)&&_crmDMVisible(c)))&&_crmUnread(c)).length;return cb?countBadge(cb,'approve'):'';}catch(e){return'';}}
   if(r==='okr'||r==='hub:dash'){try{const _t=todayISO();const n=okrDueForUser(S.uid,_t).filter(o=>!okrCheckinForDate(o.id,_t)).length;return n?countBadge(n,'approve'):'';}catch(e){return'';}}
@@ -271,7 +275,7 @@ App.logout=()=>{
   // logout so a shared browser never shows the next person the previous one's filtered view.
   clearAllFilters();try{if(typeof App._okrResetExpanded==='function')App._okrResetExpanded();}catch(e){}
   try{if(typeof _crmClearSel==='function')_crmClearSel();if(typeof _crmLiveStop==='function')_crmLiveStop();}catch(e){}
-  S.uid=null;S.route='home';S.filters={};try{if(typeof _attLiveStop==='function')_attLiveStop();}catch(e){}S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
+  S.uid=null;S.route='home';S.filters={};try{if(typeof _attLiveStop==='function')_attLiveStop();if(typeof _lvLiveStop==='function')_lvLiveStop();_LVS=null;}catch(e){}S.filters={};S.expandedCl=null;S.tvUser=null;RUN={};CLD=null;_QED=null;
   closeModal();render();
   // Sign out Supabase in background
   sb.auth.signOut().catch(()=>{});

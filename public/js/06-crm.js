@@ -2000,6 +2000,8 @@ function _pageInner(){
   if(r==='home')return homePage();
   if(r==='attendance'){if(can('attendance','view')||can('attendance','clock'))return attendancePage();return _reroute('home');}
   if(r==='attsettings'){if(can('attendance','manage'))return attendancePage('settings');return _reroute('home');}
+  if(r==='leaves'){if(can('leave','view')||can('leave','apply'))return leavesPage();return _reroute('home');}   // v159
+  if(r==='leavesettings'){if(can('leave','manage'))return leavesPage('settings');return _reroute('home');}
   if(r==='dashboard'){if(can('analytics','view'))return dashboardPage();return _reroute('home');}
   if(r==='users'){if(can('employees','view'))return usersPage();return _reroute('home');}
   if(r==='departments'){if(can('departments','view'))return deptsPage();return _reroute('home');}

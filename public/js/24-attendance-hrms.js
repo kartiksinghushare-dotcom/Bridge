@@ -267,7 +267,8 @@ async function _attReqApply(r){
       const{error}=await sb.from('attendance').insert(row);if(error)throw new Error(error.message);_attMerge([row]);
     }
   }
-  // partial_day / on_duty / comp_off: the approved request itself is what the day engine reads (flags, on-duty, comp-off report).
+  if(r.type==='comp_off'){try{if(typeof _lvEnabled==='function'&&_lvEnabled()){const rate=Number((r.payload||{}).rate||_attSettings().comp_off_rate||1);_lvNotify(r.userId,'🎁 Comp off earned: +'+_lvN(rate)+' day for '+fmtS(r.date)+' — book it under Leaves → Compensatory off'+(_attSettings().comp_off_expiry_days?' within '+_attSettings().comp_off_expiry_days+' days':'')+'.','leave','leave_adjusted');}}catch(e){}}
+  // partial_day / on_duty: the approved request itself is what the day engine reads (flags, on-duty, comp-off report).
 }
 /* ── Close an open shift (manager) — spec §9.2: only on an event someone actually observed ── */
 App._attResolve=(id)=>{

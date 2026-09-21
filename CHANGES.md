@@ -1,3 +1,61 @@
+# Bridge v160 — Leave module: company calendar, comp-off claims, bulk edits, exports, hardened approvals (cache-buster `?v=160`)
+
+**Changed** `index.html` · `02-state-roles.js` · `21-attendance.js` · `24-attendance-hrms.js` · `27-leaves.js` · `28-leaves-admin.js` · `src/styles/main.css` · new `supabase/migrations/2026-09-21_v160_leave_calendar_guard.sql` (applied live).
+
+- **Everyone sees who is off.** Leaves → *Calendar* is now open to every user: month grid on desktop, "who's off" day list on phones, each entry showing the person, the leave type and the dates ("Maya · Annual · 21–22 Sept"), holidays, an "Off today … until" strip, department filter and "Only people off". My Day shows the same "Off today" strip for everyone. The data comes from a new `bridge_leave_calendar()` function that exposes only *who / when / what type* — never the reason, the attachment or balances; those stay scope-restricted. Tapping someone outside your scope opens a light card (name, type, dates, back-on date).
+- **My leave redesigned**: a dark hero with the annual balance, "next leave" (or "on leave until"), and Apply; type cards with icons; the detail card; requests; year calendar. Apply no longer reopens with stale past dates.
+- **Comp off**: *Claim comp off for a day I worked* (rest day / public holiday without a clock-in) raises the attendance comp-off request; approval now notifies the person that the credit is in their balance and when it expires; comp-off booking uses the Compensatory-off type as before.
+- **Bulk edit**: Balances → tick people → *Adjust N selected* posts the same opening balance / adjustment / encashment to every ledger in one go (each entry audited with your name).
+- **Exports** on every tab: My leave (requests + ledger), Calendar (month, who is off), Requests (inbox), plus the existing Balances and Reports CSVs.
+- **Attendance ↔ Leaves**: the clock card says "You're on annual leave today" (no clock-in expected, tells you to cancel the leave first if plans changed); the attendance calendar and day detail show the leave type name; Team view already shows *On leave*.
+- **Security (server side)**: approvers can now only move a request along its own flow — one level at a time, Approved only at the final level, Rejected with their own name — and cannot touch the person, type, dates, days, reason, attachment or flow (People with *Adjust* keep the audited correction path). `leave_settings` can only be written by leave managers. All enforced by Postgres triggers, not just the UI.
+- Requests inbox rows: coloured type chip, cleaner meta line; balance table shrinks to fit; admin side menu is a proper vertical menu on desktop and a pill strip on phones.
+
+---
+
+# Bridge v159 — Leave module (HRMS Phase 1) (cache-buster `?v=159`)
+
+**New files** `public/js/27-leaves.js` · `public/js/28-leaves-admin.js` · `supabase/migrations/2026-09-21_v159_leaves.sql` (already applied to the live project, additive only).
+**Changed** `index.html` · `02-state-roles.js` · `04-nav-shell.js` · `06-crm.js` · `18-settings-notifications.js` · `19-okr-roles-acl.js` · `20-notification-center.js` · `21-attendance.js` · `22-profile.js` · `99-boot.js` · `src/styles/main.css` · `supabase/functions/send-push/index.ts` (one line: kind label — redeploy optional).
+
+## Decisions built in (21 Sep 2026)
+- **Person = profile.** No separate employments table (Q1: no). Band, probation, employment status, compensation and balances all hang off `profiles` / their own tables keyed by `profiles.id`.
+- **UAE Labour Law defaults** (Federal Decree-Law 33/2021 + Cabinet Resolution 1/2022), every one of them a switch in Administration → Leaves: annual 30 calendar days statutory floor vs the 22 / 26 working-day policy bands (the higher wins); sick 90 days per service year after probation, 15 full / 30 half / 45 unpaid, certificate from 2 days, reported within 3 days; maternity 60 (45 + 15 half) + 45 unpaid; parental 5 working days; bereavement 5 / 3; study 10 working days after 2 years; Hajj 30 unpaid once (company policy); unpaid leave by agreement (annual-exhausted rule OFF, per law — switch); accrual **does not** continue during unpaid leave (switch); carry-forward capped at 5 days and never more than half the entitlement, expiring 31 Mar; exit settlement at basic wage.
+- **Notice**: tiered — 7 days for 1+ days, 30 days for 6+ (Q8). Managers / People can override with a reason.
+- **Approval default** (Q4): annual ≤ 5 days → reporting manager; 6+ days or an advance beyond 10 days negative → manager → Head of People; every flow editable per type.
+- Leave year 1 Jan – 31 Dec (Q6); half days on for annual and comp-off only (Q7); HR role = People Admin, Admin = configure + approve but no compensation, super admin = everything (Q9); statutory placeholders for the other types are editable (Q10).
+- Attendance rules stay under Administration → Attendance; Leaves links to them (Q5 — "properly structured, simple").
+
+## What people get
+- **Leaves** (desktop: Time section; phone: More sheet). *My leave*: a card per type (available at a glance), then **Accrued · Booked · Available** for the selected type — never one number — pay bands for sick, comp-off credits with expiry, the law note, my requests with a status timeline, and a 12-month calendar (leave by colour, pending striped, holidays, rest days).
+- **Apply** = bottom sheet on phones / dialog on desktop: type chips → dates → live mini-calendar showing exactly which days are used ("N working days will be used · available after: X") → half day → reason → camera / file attachment → every rule message inline (eligibility, notice, backdating, overlap, attachment, balance, advance) → Submit only when clean.
+- **Team**: month grid (desktop) / "who's off" day list (phone), off-today / pending / off-this-month tiles, search, apply on behalf (logged).
+- **Requests** inbox: only what waits for *you* (toggle: all in my scope), balance before → after on every row, SLA badge, bulk approve / reject, **swipe right = approve, left = reject** on phones, detail sheet with the approval timeline and balance impact.
+- **Balances** (People / HoD / Finance): person × type, filters, point-in-time date, projection to 31 Dec, tap a number for the append-only ledger, **Adjust** (opening balance from Keka, corrections, encashment), CSV.
+- **Reports**: leave balance (accrued / taken / booked / pending / available / projected / same date last year / carried), requests & SLA, liability (days × daily rate — amounts only for compensation viewers), **year-end** (projected balances vs cap, per-person decision, simulate, run → posts carry-forward / forfeiture / encashment to every ledger), document expiry.
+- **My Day**: annual-leave tile, "Leave requests waiting for you" tile, "You're on leave until…" banner, "Off today" strip for managers.
+- **Profile → Work**: probation chip, employment status (active / notice / exited — leave rules read it), annual-leave band; **Compensation card** (Head of People + super admin only, enforced by RLS — nobody else even gets the row). **Profile → Leave** tab for people in scope.
+- **Attendance**: an approved leave day now classifies as ON_LEAVE (never Absent, no clock-in expected) through the `leaveCovering()` hook that was reserved in v133.
+- **Notifications** (in-app / push / email, per-person toggles, templates): request → approver, level approved, decided, withdrawn / cancelled, balance adjusted, SLA nudge, "starts tomorrow".
+
+## Administration → Leaves (super admin / Head of People / People Admin)
+Overview (master switch, accrual start, **Run accruals now**, entity, people missing a joining date) · Leave types (add / edit / switch off; per type: pay treatment & bands, entitlement, unit, eligibility, dates & backdating, notice tiers, attachments, half days, sandwich, approval levels with conditions, year-end) · Accrual & balances · Year-end · Approvals & SLA · Holidays (shared with attendance) · Roles · Audit (actor · before → after for every change).
+
+## Data & server
+`leave_types` · `leave_requests` (state machine, approval flow snapshot, balance snapshot) · `leave_ledger` (append-only, 4 dp, UPDATE/DELETE blocked by trigger; accrual / taken / opening_balance / adjustment / carry_forward / forfeiture / encashment / correction / comp_off) · `leave_config_audit` · `compensation` · private storage bucket `leave-docs`. `bridge_leave_perm(action, target)` mirrors Access Control in Postgres for all of them; requesters can only withdraw / cancel-before-start their own rows; approve / adjust / pay are never possible on your own row. Hourly pg_cron job `bridge-leave-tick`: monthly accrual (prorated joiners, unpaid days excluded, statutory floor, idempotent), **taken** postings once a leave ends, SLA nudges, "starts tomorrow", carried-day expiry. Runs only while the module is switched on.
+
+## New built-in roles
+**Head of People** (everything incl. compensation) · **People Admin** (everything except compensation) · **Finance** (balances, liability, export). Built-ins re-seeded (v18); custom roles get a one-time leave floor derived from their attendance rights.
+
+## Go-live checklist
+1. Administration → Leaves → Overview: check the accrual start date (default 1 Jan 2026), then switch the module **on**.
+2. Set joining dates and probation ends on profiles (Overview lists who is missing one).
+3. Balances → Adjust → *Opening balance* for each person's Keka figure (as of the cut-over date) — or leave it to the automatic accrual from the start date.
+4. Assign Head of People / People Admin / Finance in Access Control (HR keeps working as People Admin).
+5. Later phases unchanged: payroll input file, Keka import, employee numbers, KSA entity, location → entity tagging.
+
+---
+
 # Bridge v158 — ticket chat = channel chat (cache-buster `?v=158`)
 
 - **Ticket conversations now render exactly like channel chats**: only *your* messages sit on the right; colleagues are on the left with their name and avatar (before, every staff message was pushed to the right as "mine", with no names).

@@ -119,6 +119,7 @@ function _ensureHrm(u){if(!u)return u;if(!u.hrm||typeof u.hrm!=='object')u.hrm={
 const PERM_AREAS=[
   {key:'dashboard',label:'Dashboard',desc:'The Overview dashboard (company charts). Everyone always gets My Day.',actions:['view'],scoped:false,group:'System'},
   {key:'attendance',label:'Attendance',desc:'Clock in / out with geofence, work-from-home days and the Attendance tab. “Sees” decides WHOSE attendance they can view, approve and edit — their own always shows. “Approve” decides regularisation / partial-day / on-duty / comp-off requests and closes open shifts for people in scope; “Set schedule” changes their shift, rest days and worker category; “Edit” adds or corrects punches by hand (HR); “Manage” is the company-wide rules and public holidays',actions:['view','clock','approve','schedule','edit','delete','export','manage'],scoped:true,group:'Time'},
+  {key:'leave',label:'Leaves',desc:'Leave balances, requests and approvals. “Sees” decides WHOSE leave they can view — their own always shows. “Apply for others” raises a request on someone’s behalf (logged); “Approve” decides requests for people in scope (never their own); “Adjust” posts opening balances / corrections to the ledger and runs year-end; “Manage” is Administration → Leaves (types, accrual, approval flows); “View / Edit compensation” is the pay record used for liability — Head of People and super admin only',actions:['view','apply','applyFor','approve','adjust','export','manage','viewCompensation','editCompensation'],scoped:true,group:'Time'},
   {key:'myProfile',label:'My profile (own)',desc:'What a person may change on their OWN profile page',actions:['editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'],scoped:false,group:'People & Org'},
   {key:'employees',label:'Users',desc:'The people directory — create, edit, deactivate people, assign managers & roles. “Open profile” shows another person’s full profile; “Sensitive details” reveals birth date, ID numbers, emergency contact and documents; “Edit HR details” edits joining date, employee ID, schedule, work location and the WFH switch',actions:['view','create','edit','delete','deactivate','resetPassword','assignManager','assignRole','assign','manage','viewProfile','viewSensitive','editHr','manageWfh'],scoped:true,group:'People & Org'},
   {key:'hierarchy',label:'Hierarchy / Org chart',desc:'The reporting tree',actions:['view'],scoped:true,group:'People & Org'},
@@ -142,7 +143,7 @@ const PERM_AREAS=[
   {key:'accessControl',label:'Access Control',desc:'The role-profile system itself',actions:['view','manage'],scoped:false,group:'System'},
 ];
 // Plain-language labels used by the Access Control editor + live summary.
-const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board',clock:'Clock in / out',send:'Send',viewProfile:'Open profile',viewSensitive:'Sensitive details',editHr:'Edit HR details',manageWfh:'Allow / block WFH',editDetails:'Edit own details',editAvatar:'Change photo',editEmergency:'Emergency contact',uploadDocs:'Upload documents',deleteDocs:'Delete documents'};
+const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board',clock:'Clock in / out',send:'Send',viewProfile:'Open profile',viewSensitive:'Sensitive details',editHr:'Edit HR details',manageWfh:'Allow / block WFH',editDetails:'Edit own details',apply:'Apply',applyFor:'Apply for others',adjust:'Adjust balances / year-end',viewCompensation:'View compensation',editCompensation:'Edit compensation',editAvatar:'Change photo',editEmergency:'Emergency contact',uploadDocs:'Upload documents',deleteDocs:'Delete documents'};
 /* Group order in the editors — Time & People first so the everyday areas are at the top. */
 const PERM_GROUP_ORDER=['System','Time','People & Org','Tasks & Tickets','Content','Insights'];
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
@@ -161,6 +162,7 @@ function _seedRoleProfiles(){
     manager:{id:'manager',name:'Team Lead / Manager',description:'Sees and acts on their team: approvals, checklists, tickets, team OKRs, reports.',builtin:true,perms:{
       dashboard:A('none','view'),
       attendance:A('team','view','clock','approve','schedule','export'),   // managers see their team, decide its requests, close open shifts and set schedules; only HR edits punches by hand
+      leave:A('team','view','apply','applyFor','approve','export'),
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
       messages:A('none','view','send','delete'),
       employees:A('team','view','viewProfile','viewSensitive'),
@@ -176,6 +178,7 @@ function _seedRoleProfiles(){
     hr:{id:'hr',name:'HR',description:'People operations — the only role that adds or corrects attendance by hand, edits HR details, manages WFH and everyone’s documents.',builtin:true,perms:{
       dashboard:A('none','view'),
       attendance:A('everyone','view','clock','approve','schedule','edit','delete','export','manage'),
+      leave:A('everyone','view','apply','applyFor','approve','adjust','export','manage'),   // v159: HR maps to People Admin (Q9) — no compensation
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
       messages:A('none','view','send','delete'),
       employees:A('everyone','view','create','edit','deactivate','resetPassword','assignManager','viewProfile','viewSensitive','editHr','manageWfh'),
@@ -190,9 +193,61 @@ function _seedRoleProfiles(){
       approvals:A('none','view','decide'),
       okr:A('self','view'),
     }},
+    /* v159 — HRMS spec §7.3: People roles for the leave module (editable by the super admin in Access Control) */
+    head_of_people:{id:'head_of_people',name:'Head of People',description:'Everything People: leave rules, approvals, balances, year-end — and the only role besides Super Admin that sees and updates compensation.',builtin:true,perms:{
+      dashboard:A('none','view'),
+      attendance:A('everyone','view','clock','approve','schedule','edit','delete','export','manage'),
+      leave:A('everyone','view','apply','applyFor','approve','adjust','export','manage','viewCompensation','editCompensation'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
+      messages:A('none','view','send','delete'),
+      employees:A('everyone','view','create','edit','deactivate','resetPassword','assignManager','assignRole','viewProfile','viewSensitive','editHr','manageWfh'),
+      hierarchy:A('everyone','view'),
+      documentsPersonal:A('everyone','view','create','edit','delete','upload','download'),
+      documentsOrg:A('everyone','view','create','upload','download'),
+      locations:A('none','view','manageGeofence'),
+      departments:A('none','view'),
+      checklists:A('self','view'),
+      tickets:A('self','view','create'),
+      crm:A('everyone','view','create','edit','convert','assign'),
+      approvals:A('none','view','decide'),
+      audit:A('none','view'),
+      okr:A('self','view'),
+    }},
+    people_admin:{id:'people_admin',name:'People Admin',description:'Day-to-day People operations: applies on behalf, approves, adjusts leave balances, configures rules, edits HR details and documents — never compensation.',builtin:true,perms:{
+      dashboard:A('none','view'),
+      attendance:A('everyone','view','clock','approve','schedule','edit','export','manage'),
+      leave:A('everyone','view','apply','applyFor','approve','adjust','export','manage'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs','deleteDocs'),
+      messages:A('none','view','send','delete'),
+      employees:A('everyone','view','create','edit','resetPassword','assignManager','viewProfile','viewSensitive','editHr','manageWfh'),
+      hierarchy:A('everyone','view'),
+      documentsPersonal:A('everyone','view','create','edit','upload','download'),
+      documentsOrg:A('everyone','view','create','upload','download'),
+      locations:A('none','view'),
+      departments:A('none','view'),
+      checklists:A('self','view'),
+      tickets:A('self','view','create'),
+      crm:A('everyone','view','create','edit','convert','assign'),
+      approvals:A('none','view','decide'),
+      okr:A('self','view'),
+    }},
+    finance:{id:'finance',name:'Finance',description:'Leave balances, liability and attendance reports with export — no approvals, no documents, no compensation edits.',builtin:true,perms:{
+      dashboard:A('none','view'),
+      attendance:A('everyone','view','clock','export'),
+      leave:A('everyone','view','apply','export'),
+      myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs'),
+      messages:A('none','view','send','delete'),
+      employees:A('everyone','view','viewProfile'),
+      analytics:A('none','view'),
+      checklists:A('self','view'),
+      tickets:A('self','view','create'),
+      crm:A('everyone','view','create','edit','convert','assign'),
+      okr:A('self','view'),
+    }},
     basic:{id:'basic',name:'Basic Employee',description:'A standard employee — their own checklists, attendance, leave and tickets.',builtin:true,perms:{
       dashboard:A('none','view'),
       attendance:A('self','view','clock'),
+      leave:A('self','view','apply'),
       myProfile:A('none','editDetails','editAvatar','editEmergency','uploadDocs'),
       messages:A('none','view','send','delete'),
       checklists:A('self','view'),
@@ -203,11 +258,14 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='17'; // v17 (Bridge v133): Attendance gains “Approve” and “Set schedule” (HRMS Phase 1). v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
+  const V='18'; // v18 (Bridge v159): Leaves area + Head of People / People Admin / Finance roles (HRMS leave module). v17 (Bridge v133): Attendance gains “Approve” and “Set schedule” (HRMS Phase 1). v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
+  let _upgraded=false;
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
-    if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;} // upgrade built-ins once; never touch custom roles
+    if(!cur||(cur.builtin&&cur._v!==V)){p._v=V;DB.roleProfiles[p.id]=p;_upgraded=true;} // upgrade built-ins once; never touch custom roles
   });
+  // v159: push the re-seeded built-ins to the server so Postgres (bridge_att_perm / bridge_leave_perm) reads the same roles the app does
+  if(_upgraded)setTimeout(()=>{try{if(typeof _syncRoleProfiles==='function'&&S.uid)_syncRoleProfiles();}catch(e){}},4000);
   /* v132 one-time floor for CUSTOM roles: nobody should lose the ability to clock in, message a
      colleague or edit their own profile just because their role was created before these areas
      existed. Adds ONLY the everyday self-scoped switches; admins can widen or narrow per role. */
@@ -228,6 +286,19 @@ function _seedRoleProfiles(){
     const a=p.perms&&p.perms.attendance;
     if(a&&a.actions&&a.actions.edit){a.actions.approve=true;a.actions.schedule=true;}
     p._v133=1;
+  });
+  /* v159 one-time floor for CUSTOM roles: everyone can see and apply for their own leave; anyone who could already
+     approve attendance for others can approve leave for the same people; attendance Manage → leave Manage. */
+  Object.values(DB.roleProfiles).forEach(p=>{
+    if(p.builtin||p._v159)return;
+    p.perms=p.perms||{};
+    const a=p.perms.attendance;
+    if(!p.perms.leave){
+      const acts=['view','apply'];let scope='self';
+      if(a&&a.actions){if(a.actions.approve||a.actions.edit){acts.push('applyFor','approve');scope=a.scope||'team';}if(a.actions.export)acts.push('export');if(a.actions.manage){acts.push('manage','adjust');scope='everyone';}}
+      p.perms.leave=A(scope,...acts);
+    }
+    p._v159=1;
   });
 }
 
@@ -294,6 +365,7 @@ function _hrFloor(area,action){
   if(area==='hrSettings')return action==='view'||action==='edit';
   if(area==='leaveRequests')return action==='view'||action==='approve';
   if(area==='attendance')return action==='view'||action==='edit'||action==='approve'||action==='schedule';
+  if(area==='leave')return action!=='viewCompensation'&&action!=='editCompensation';
   if(area==='documentsOrg')return action==='approve';
   return false;
 }
@@ -327,6 +399,7 @@ function _baseCan(area,action){
     case 'attendance':return (action==='view'||action==='clock')?true:((action==='approve'||action==='schedule')?(sub||hr||mgr):(sub||hr));
     case 'myProfile':return true;
     case 'messages':return true;
+    case 'leave':return (action==='view'||action==='apply')?true:((action==='approve'||action==='applyFor')?(sub||mgr||hr):((action==='adjust'||action==='manage'||action==='export')?(sub||hr):false));   // v159 legacy (no role assigned) — mirrors bridge_leave_perm()
     case 'leaveRequests':return action==='approve'?(sub||mgr||hr):(action==='download'?(sub||hr):true);
     case 'leaveBalances':return action==='view'?(sub||mgr||hr):((action==='grant'||action==='edit')?hr:false);
     case 'hrSettings':return hr;

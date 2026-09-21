@@ -152,6 +152,7 @@ function titleFor(kind: string, r: Row): string {
     case "escalation": return "Escalation";
     case "dm": return (r.count && r.count > 1) ? `${r.count} new messages` : "Direct message";   // v132
     case "attendance": return "Attendance";
+    case "leave": return "Leave";
     case "people": return "People";
     case "access": return "Access changed";
     default: return "Bridge";
