@@ -324,6 +324,8 @@ const EMAIL_EVENTS=[
   /* v159 — leave */
   {key:'leave_request',      label:'Leave request (to the approver)',    vars:'{{user_name}} (approver), {{req_user}}, {{request}}, {{days}}, {{reason}}, {{action_url}}'},
   {key:'leave_decided',      label:'Leave request decided',              vars:'{{user_name}}, {{request}}, {{status}}, {{actor}}, {{note}}, {{action_url}}'},
+  {key:'leave_cancelled',    label:'Leave withdrawn / cancelled (to the approver)',vars:'{{user_name}} (approver), {{req_user}}, {{request}}, {{what}}, {{action_url}}'},
+  {key:'leave_adjusted',     label:'Leave balance adjusted',            vars:'{{user_name}}, {{type}}, {{days}}, {{reason}}, {{actor}}, {{action_url}}'},
   {key:'dm_message',         label:'Direct message received',            vars:'{{user_name}}, {{actor}}, {{preview}}, {{action_url}}'},
   {key:'people_event',       label:'Birthdays, anniversaries & document expiry',vars:'{{user_name}}, {{text}}, {{action_url}}'},
 ];
@@ -357,6 +359,8 @@ function _defaultTemplates(){
     attendance_decided:{subject:'{{status}}: {{request}} ({{date}})',body:'Hi {{user_name}},\n\nYour attendance request — {{request}} for {{date}} — was {{status}} by {{actor}}.\n\n{{note}}\n\n{{action_url}}'},
     attendance_open_shift:{subject:'⏱ Open shift to close: {{req_user}} ({{date}})',body:'Hi {{user_name}},\n\n{{req_user}} clocked in on {{date}} and never clocked out. Bridge never guesses a clock-out time — please close the shift under Attendance → Requests with the time they actually left.\n\n{{action_url}}'},
     leave_request:{subject:'🌴 Leave request from {{req_user}}',body:'Hi {{user_name}},\n\n{{req_user}} asks for {{request}}.\n\nReason: {{reason}}\n\nOpen Leaves → Requests to approve or reject it.\n\n{{action_url}}'},
+    leave_cancelled:{subject:'{{req_user}} {{what}} a leave request',body:'Hi {{user_name}},\n\n{{req_user}} {{what}} {{request}}.\n\n{{action_url}}'},
+    leave_adjusted:{subject:'Your {{type}} balance changed ({{days}} days)',body:'Hi {{user_name}},\n\n{{actor}} posted {{days}} days to your {{type}} balance.\n\nReason: {{reason}}\n\n{{action_url}}'},
     leave_decided:{subject:'{{status}}: {{request}}',body:'Hi {{user_name}},\n\nYour leave request — {{request}} — was {{status}} by {{actor}}.\n\n{{note}}\n\n{{action_url}}'},
     attendance_missed_rm:{subject:'⏰ {{req_user}} hasn’t clocked in',body:'Hi {{user_name}},\n\n{{req_user}} was expected to clock in today and hasn’t yet.\n\n{{action_url}}'},
     dm_message:{subject:'💬 New message from {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} sent you a message on Bridge:\n\n"{{preview}}"\n\n{{action_url}}'},
@@ -377,7 +381,7 @@ function _nsDefault(){return{
   inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
   email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
   inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_attendance_request:true,inapp_attendance_decided:true,inapp_attendance_open_shift:true,inapp_attendance_missed_rm:true,inapp_leave_request:true,inapp_leave_decided:true,inapp_leave_cancelled:true,inapp_leave_adjusted:true,inapp_dm_message:true,inapp_people_event:true,
-  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_leave_request:true,email_leave_decided:true,email_dm_message:false,email_people_event:true,
+  email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_leave_request:true,email_leave_decided:true,email_leave_cancelled:false,email_leave_adjusted:true,email_dm_message:false,email_people_event:true,
   templates:{},
 };}
 let _ns=null;
@@ -453,7 +457,7 @@ async function sendEmail(eventType, userId, vars){
   const user = userId ? uById(userId) : null;
   if(!user?.email){console.warn('sendEmail: no email for user',userId);return;}
   if(user.emailEnabled===false) return;
-  try{var _k=({leave_request:'leave',leave_decided:'leave',crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
+  try{var _k=({leave_request:'leave',leave_decided:'leave',leave_cancelled:'leave',leave_adjusted:'leave',crm_mention:'mention',crm_ticket:'ticket',crm_moved:'ticket',crm_decided:'ticket',crm_created:'ticket',crm_reminder:'reminder',deadline_reminder:'reminder',escalation:'escalation',feedback_received:'feedback',checklist_assigned:'checklist',submission_submitted:'checklist',submission_late:'checklist',submission_approved:'checklist',submission_rejected:'checklist',approval_requested:'approval',approval_decided:'approval',attendance_reminder:'attendance',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',dm_message:'dm',people_event:'people'})[eventType]||(String(eventType).indexOf('okr_')===0?'okr':'general');
     var _np=user.notifyPrefs||{};var _c=_np.channels&&_np.channels[_k];if(_c&&_c.email===false)return;}catch(e){}
   if(!_ns) await _loadNS();
   if(!_ns.email_enabled) return;
@@ -468,7 +472,7 @@ async function sendEmail(eventType, userId, vars){
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
     okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
-    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',leave_request:'leaves',leave_decided:'leaves',dm_message:'workspace',people_event:'profile',
+    attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',leave_request:'leaves',leave_decided:'leaves',leave_cancelled:'leaves',leave_adjusted:'leaves',dm_message:'workspace',people_event:'profile',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
   const allVars = {user_name:fullName(user), from_name:_ns.email_from_name||'Bridge', app_url:appUrl, action_url:actionUrl, ...vars};
@@ -669,6 +673,8 @@ function settingsPage(forceTab){
       <div class="ui-card" style="margin-bottom:12px"><div class="ui-card-head"><span class="ui-card-title">Leave</span></div><div class="ui-card-pad" style="padding-top:2px">
         ${_nsTogRow('email_leave_request','Leave request → approver','Email the approver when a request needs a decision')}
         ${_nsTogRow('email_leave_decided','Leave request decided','Email the person the decision')}
+        ${_nsTogRow('email_leave_cancelled','Leave withdrawn / cancelled → approver','Email the approver when a request is withdrawn or an approved leave is cancelled (off by default — the in-app alert is enough)')}
+        ${_nsTogRow('email_leave_adjusted','Balance adjusted','Email the person when People posts an opening balance, correction or year-end entry')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Direct messages & people</div>
         ${_nsTogRow('email_dm_message','Direct messages','Email for every private message — off by default, in-app + push usually suffice')}
         ${_nsTogRow('email_people_event','Birthdays, anniversaries & document expiry','Email the manager / person for people events')}

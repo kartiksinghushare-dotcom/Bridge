@@ -493,7 +493,8 @@ function _attClockCard(){
 function _homeGreeting(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
 function homePage(){
   const u=me();if(!u)return '';
-  _attLoadMine();_attLiveStart();try{if(typeof _lvBoot==='function')_lvBoot();}catch(e){}
+  _attLoadMine();_attLiveStart();if(!_ATTS)_attLoadSettings().then(()=>rr());   // v162: the clock card waits for the settings — repaint as soon as they land
+  try{if(typeof _lvBoot==='function')_lvBoot();}catch(e){}
   const today=todayISO();
   // today's work
   let clsDue=0,clsDone=0;try{const cls=myCls(S.uid,today);clsDue=cls.length;clsDone=cls.filter(c=>{const s=subForCl(c,S.uid,today);return s&&s.status!=='Editing';}).length;}catch(e){}

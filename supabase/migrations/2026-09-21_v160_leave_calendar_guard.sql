@@ -66,3 +66,25 @@ begin
 end $$;
 drop trigger if exists workspace_settings_leave_guard on public.workspace_settings;
 create trigger workspace_settings_leave_guard before insert or update on public.workspace_settings for each row execute function public.bridge_ws_guard();
+
+-- 4) Function grants: leave functions are never callable anonymously; the accrual tick only through a
+--    permission-checked wrapper (Administration → Leaves → Run now).
+revoke execute on function public.bridge_leave_perm(text, uuid) from anon, public;
+revoke execute on function public.bridge_leave_entitlement(uuid, text) from anon, public;
+revoke execute on function public.bridge_leave_calendar(date, date) from anon, public;
+revoke execute on function public.bridge_leave_tick() from anon, public, authenticated;
+revoke execute on function public.bridge_leave_tick_guarded() from anon, public, authenticated;
+revoke execute on function public.bridge_leave_ledger_guard() from anon, public, authenticated;
+revoke execute on function public.bridge_lr_guard_own() from anon, public, authenticated;
+revoke execute on function public.bridge_ws_guard() from anon, public, authenticated;
+revoke execute on function public.bridge_try_uuid(text) from anon, public;
+alter function public.bridge_try_uuid(text) set search_path = public;
+create or replace function public.bridge_leave_run_now() returns text
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or not bridge_leave_perm('manage', auth.uid()) then raise exception 'You need Leaves → Manage'; end if;
+  perform bridge_leave_tick_guarded();
+  return 'ok';
+end $$;
+revoke execute on function public.bridge_leave_run_now() from anon, public;
+grant execute on function public.bridge_leave_run_now() to authenticated;

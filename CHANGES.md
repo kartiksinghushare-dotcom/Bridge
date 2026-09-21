@@ -1,3 +1,26 @@
+# Bridge v162 — date ranges everywhere, mobile balances, alignment + three fixes (cache-buster `?v=162`)
+
+**Changed** `index.html` · `21-attendance.js` · `27-leaves.js` · `28-leaves-admin.js` · `src/styles/main.css`.
+
+- **Date range on every page**: one shared picker (This month · Last month · This quarter · This year · Last year · Last 7 days · Next 30 / 90 days · Custom dates) on Approvals (filter + "decided by you" in range), Balances (balances as of the last day of the range) and every Report (requests, liability, balance). Calendar keeps its month arrows, My leave its year arrows.
+- **Balances on phones** is now one compact card per person (name, department, tick box, adjust button, and a 2-column grid of type balances with "booked" underneath) instead of a stretched table; the table stays on desktop.
+- **Filters aligned**: search full width, departments / locations side by side, range picker full width, actions (Select all · CSV) on their own row; the same grid on desktop.
+- **Fixes from your notes**: (1) picking a leave type in Apply no longer throws the type strip back to the start — it stays where you scrolled and keeps the chosen type in view; (2) **My Day clock-in button** appeared only after a refresh — the card waited for the attendance settings and nothing repainted when they arrived; it now repaints as soon as they load; (3) attendance stat tiles sit in even rows of 5 on desktop (team tiles 6), leave type cards in rows of 4, calendar tiles in 3 — no more orphan tiles on a second row.
+- Approvals rows on phones no longer wrap the avatar above the name.
+
+---
+
+# Bridge v161 — real month calendar, simpler wording, security sweep (cache-buster `?v=161`)
+
+**Changed** `index.html` · `18-settings-notifications.js` · `27-leaves.js` · `28-leaves-admin.js` · `src/styles/main.css` · `supabase/migrations/2026-09-21_v160_leave_calendar_guard.sql` (grants section added; applied live).
+
+- **Calendar is now a proper month calendar** (Mon–Sun grid) for everyone. Each day shows how many people are off and their faces (dots on phones), holidays are marked, today is highlighted. **Tap any day** → a sheet listing who is off, the leave type, the dates, how many days, when they are back, and their department; tap a person for details. "Off today", "Off this month" and "Waiting for approval" tiles above; department filter; "Apply for this day" from the sheet.
+- **Simpler words** everywhere: *Earned · Booked · Available* (was Accrued), "You earn 2.17 days at the end of every month", "waiting for approval", "with Maya Lead", tab renamed *Approvals*, "All done — nothing to approve".
+- **Emails**: added *withdrawn / cancelled → approver* (off by default) and *balance adjusted → person* templates and switches, on top of request → approver and decision → person.
+- **Security**: leave-type colour / icon / key are sanitised before they reach the page; leave functions can no longer be called anonymously; the accrual job is only reachable through a permission-checked "Run now" (`bridge_leave_run_now`); guard triggers are not callable as RPC. Supabase security advisor re-run — the remaining warnings are pre-existing (older functions, leaked-password protection is an Auth dashboard toggle worth turning on).
+
+---
+
 # Bridge v160 — Leave module: company calendar, comp-off claims, bulk edits, exports, hardened approvals (cache-buster `?v=160`)
 
 **Changed** `index.html` · `02-state-roles.js` · `21-attendance.js` · `24-attendance-hrms.js` · `27-leaves.js` · `28-leaves-admin.js` · `src/styles/main.css` · new `supabase/migrations/2026-09-21_v160_leave_calendar_guard.sql` (applied live).
