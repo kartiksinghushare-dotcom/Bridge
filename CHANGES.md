@@ -1,3 +1,22 @@
+# Bridge v158 — ticket chat = channel chat (cache-buster `?v=158`)
+
+- **Ticket conversations now render exactly like channel chats**: only *your* messages sit on the right; colleagues are on the left with their name and avatar (before, every staff message was pushed to the right as "mine", with no names).
+- Phones: the TICKET chip is dropped from the chat header so the ticket title has room; the type still shows behind (i).
+- Long-press bar, swipe-reply, ⋯ menu, voice notes, files, forward, stickers — all already shared with channels; verified on a ticket.
+
+---
+
+# Bridge v157 — App Store readiness (cache-buster `?v=157`)
+
+- **Public legal pages** at `/legal/privacy.html`, `/legal/terms.html`, `/legal/support.html` (BloomingBox Gifts LLC, UAE law, device permissions, retention, deletion).
+- **Privacy · Terms · Support links** on the sign-in page and in the More menu.
+- **More → Delete my account**: type DELETE → request saved in `account_deletion_requests`, admins notified in-app + by email, the person is signed out. No data is deleted automatically.
+- **App icons** in `public/icons/` (App Store 1024, apple-touch 180, PWA 192/512/maskable, favicon); `index.html` points at them.
+- `capacitor.config.json` (com.bloomingbox.bridge → bridge.bloomingbox.com) and `APPSTORE.md` with the listing text, privacy questionnaire, Info.plist strings and the steps left for you.
+- Migration: `supabase/migrations/2026-09-21_v157_account_deletion.sql` (already applied).
+
+---
+
 # Bridge v156 — forgot password tells you when the email is unknown (cache-buster `?v=156`)
 
 - **Unknown email → "No Bridge account uses this email"**; inactive account → "contact your admin"; only a real, active account gets the reset email.

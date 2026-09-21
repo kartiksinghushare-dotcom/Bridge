@@ -321,6 +321,7 @@ const _crmStyle='<style>'
   +'#crm-thread{padding:8px 10px!important}'
   +'.crm-msg .crm-bub{font-size:12.5px!important;line-height:1.38!important;padding:6px 9px!important}'
   +'.crm-msg .crm-who{font-size:10px!important}'
++'.crm-tchip{display:none!important}'   /* v158 — phones: no TICKET chip in the header, the title needs the width */
   +'.crm-composer{padding:6px 8px!important}'
   +'.crm-composer textarea{min-height:38px!important;padding:8px 10px!important}'
   +'.crm-composer .crm-sendrow>label,.crm-composer .crm-sendrow>button{width:36px!important;height:36px!important;min-height:36px!important}'
@@ -464,12 +465,12 @@ function _crmLinkCard(lp){if(!lp||!lp.url||!(lp.title||lp.description||lp.image)
 function _crmIsStarred(mid){return !!((CRM.stars||{})[mid]);}
 function _crmMsg(m,cid,thread,prev){
   var replies0=function(mm){return ((_crmConvo(cid)||{messages:[]}).messages||[]).filter(function(x){return x.parentId===mm.id;});};
-  var editing=CRM.editMsgId===m.id;var _co=_crmConvo(cid);var _bd=_co?_crmBoard(_co.boardId):null;var _isChat=_bd?(_crmBS(_bd).type==='chat'):(_co&&_crmIsDM(_co));var mine=_isChat?(m.senderId===S.uid):(!m.fromCustomer);var _isDMc=!!(_co&&typeof _crmIsDM==='function'&&_crmIsDM(_co));
+  var editing=CRM.editMsgId===m.id;var _co=_crmConvo(cid);var _bd=_co?_crmBoard(_co.boardId):null;var _isChat=_bd?(_crmBS(_bd).type==='chat'):(_co&&_crmIsDM(_co));var mine=!m.fromCustomer&&m.senderId===S.uid;   /* v158 — tickets read like chats: only YOUR messages sit on the right */var _isDMc=!!(_co&&typeof _crmIsDM==='function'&&_crmIsDM(_co));
   var who=m.fromCustomer?(m.name||'Customer'):(uById(m.senderId)?fullName(uById(m.senderId)):'You');
   var av=m.fromCustomer?_crmCustAv(m.name,24):(uById(m.senderId)?avatar(uById(m.senderId),'w-[24px] h-[24px]','text-[8px]'):_crmCustAv('You',24));
   var grouped=false;
   if(prev&&!editing){var same=(!!m.fromCustomer===!!prev.fromCustomer)&&(m.fromCustomer?(m.name===prev.name):(m.senderId===prev.senderId));var dtms=0;try{dtms=new Date(m.at)-new Date(prev.at);}catch(e){}grouped=same&&dtms>=0&&dtms<5*60000;}
-  if(grouped||(mine&&_isChat))av='<div style="width:24px;flex-shrink:0"></div>';
+  if(grouped||mine)av='<div style="width:24px;flex-shrink:0"></div>';
   var hasAtt=!!(m.attachments&&m.attachments.length);
   var bigemo=!editing&&!hasAtt&&!m.sticker&&!(m.images||[]).length&&!(m.imageCount||0)&&_crmEmojiOnly(m.text);
   var isStick=!editing&&!!m.sticker;
@@ -539,7 +540,7 @@ function _crmChatPane(convo,board){
   if(!convo)return '<div class="crm-chatpane" style="flex:1;display:flex;min-width:0;min-height:0">'+_crmEmpty('msg','No conversation selected',(_crmFilteredConvos().length?'Pick a conversation from the list.':'Tap + above the list to start a new chat.'),'')+'</div>';
   var meta;
   if(convo.isTicket){
-    meta='<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#3E322B;background:#EEE4D5;border-radius:6px;padding:3px 8px">'+esc(convo.ticketType||'Ticket')+'</span></div>';
+    meta='<div class="crm-tchip" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#3E322B;background:#EEE4D5;border-radius:6px;padding:3px 8px">'+esc(convo.ticketType||'Ticket')+'</span></div>';
   }else{
     meta='';
   }
