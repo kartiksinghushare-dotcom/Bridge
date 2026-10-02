@@ -676,7 +676,7 @@ function okrOwnMetricLine(o){
 function _sbKids(o,showDrafts){return okrChildren(o.id).filter(k=>k.kind!=='kr'&&!k.quarterLabel&&(okrIsKPI(o)||k.kind!=='kpi')&&okrCanSee(k)&&(showDrafts||k.state!=='draft'));}
 function _sbExp(id){const m=S.filters.okrSbExp;return !!(m&&typeof m==='object'&&m[id]);}
 App._okrSbTog=(id)=>{const m=(S.filters.okrSbExp&&typeof S.filters.okrSbExp==='object')?S.filters.okrSbExp:{};if(m[id])delete m[id];else m[id]=true;S.filters.okrSbExp=m;rr();};
-App._okrSbExpandAll=(on)=>{const m={};if(on){const sd=!!S.filters.okrSbDrafts;(DB.okrs||[]).forEach(o=>{if(o.kind!=='kr'&&!o.quarterLabel&&_sbKids(o,sd).length)m[o.id]=true;});m.__kpis=true;}S.filters.okrSbExp=m;rr();};
+App._okrSbExpandAll=(on)=>{const m={};if(on){const sd=!!S.filters.okrSbDrafts;(DB.okrs||[]).forEach(o=>{if(o.kind!=='kr'&&!o.quarterLabel&&_sbKids(o,sd).length)m[o.id]=true;});}S.filters.okrSbExp=m;rr();};
 function _sbRow(o,depth,isHead,kidsN,exp){
   const st=okrStatusOf(o),f=okrFlagOf(o),pct=okrNoPct(o)?null:okrProgress(o);
   const krs=(okrIsKPI(o)?okrKRsOf(o.id):okrMeasuresOf(o.id)).filter(k=>okrCanSee(k)&&(k.state!=='draft'||S.filters.okrSbDrafts));
@@ -756,17 +756,18 @@ function okrScoreboardHTML(){
   const vis=okrVisible();
   const showDrafts=!!S.filters.okrSbDrafts;
   const rootsAll=okrVisibleRoots().filter(o=>!o.quarterLabel&&o.kind!=='kr'&&(showDrafts||o.state!=='draft'));
-  const roots=rootsAll.filter(okrIsObjective),kpiRoots=rootsAll.filter(okrIsKPI);
+  const roots=rootsAll.filter(okrIsObjective);
   const nss=roots.filter(o=>o.isNorthStar),others=roots.filter(o=>!o.isNorthStar);
   const live=vis.filter(o=>o.state!=='draft'&&!o.closed&&!o.quarterLabel);
-  const objs=live.filter(okrIsObjective),kpis=live.filter(okrIsKPI),krs=live.filter(o=>o.kind==='kr');
+  const objs=live.filter(okrIsObjective),krs=live.filter(o=>o.kind==='kr');
+  const kpis=live.filter(o=>okrIsKPI(o)&&o.parentId&&okrIsObjective(okrById(o.parentId)));   // only KPIs linked under an objective belong to the scoreboard
   const flagsOwn=live.map(o=>okrFlagOf(o)).filter(f=>f&&!f.inherited);
   const nBlocked=new Set(flagsOwn.filter(f=>f.flag==='blocked').map(f=>f.okrId)).size,nRisk=new Set(flagsOwn.filter(f=>f.flag==='at_risk').map(f=>f.okrId)).size;
   const nProp=live.filter(o=>o.targetConfirmed===false).length,nDec=live.filter(o=>o.needsDecision||(o.ownerTbd&&!okrOwners(o).length)).length;
   const nOff=objs.concat(kpis).filter(o=>{const s=okrStatusOf(o);return s==='Off track'||s==='Not achieved';}).length;
   const tile=(l,n,key,tone)=>`<button class="sb-stat ${n?'':'sb-stat-zero'} ${tone||''}" ${key?`onclick="App._okrSbList('${key}')"`:''} ${key?'':'disabled'}><span class="sb-stat-n">${n}</span><span class="sb-stat-l">${l}</span></button>`;
   const strip=`<div class="sb-strip">
-      ${tile('Objectives',objs.length,'objectives')}${tile('Key results',krs.length,'krs')}${tile('KPIs',kpis.length,'kpis')}
+      ${tile('Objectives',objs.length,'objectives')}${tile('Key results',krs.length,'krs')}${tile('Linked KPIs',kpis.length,'kpis')}
       ${tile('Blocked',nBlocked,'blocked','sb-red')}${tile('At risk',nRisk,'at_risk','sb-amber')}${tile('Off track',nOff,'off','sb-red')}
       ${tile('Proposed targets',nProp,'proposed','sb-amber')}${tile('Need a decision',nDec,'decision','sb-amber')}
     </div>`;
@@ -779,18 +780,10 @@ function okrScoreboardHTML(){
     </div>`;
   const loneKRs=okrVisibleRoots().filter(o=>o.kind==='kr'&&(showDrafts||o.state!=='draft'));
   if(!roots.length&&loneKRs.length)return`<div class="sb">${strip}${ctl}<section class="sb-sec"><div class="sb-thead"><span></span><span>Your key results</span><span>Value</span><span>Owner</span><span>Status</span></div>${loneKRs.map(k=>{const p=k.parentId?okrById(k.parentId):null;return`<div class="sb-row" onclick="App._okrProgressModal('${k.id}')"><div class="sb-c sb-lvl">${okrKRKindChip(k)}</div><div class="sb-c sb-obj"><div class="sb-title">${esc(k.title||'')}</div>${p?`<div class="sb-why">under ${esc(p.title||'')}</div>`:''}</div><div class="sb-c sb-krs"><div class="okr-krs">${okrKRLineHTML(k)}</div></div><div class="sb-c sb-own">${_sbOwnerCell(k)}</div><div class="sb-c sb-st"><div class="sb-stline">${okrStatusChip(okrStatusOf(k),true)}${(f=>f?okrFlagChip(f.flag,true,f):'')(okrFlagOf(k))}</div></div></div>`;}).join('')}</section></div>`;
-  const kpiSec=(()=>{
-    if(!kpiRoots.length)return'';
-    const open=_sbExp('__kpis');
-    const rows=[];if(open)kpiRoots.forEach(r=>{const kids=_sbKids(r,showDrafts),exp=_sbExp(r.id);rows.push(_sbRow(r,0,false,kids.length,exp));if(exp)_sbWalk(r,1,rows,showDrafts);});
-    return`<section class="sb-sec sb-kpis${open?'':' sb-closed'}">
-      <div class="sb-sec-head" onclick="App._okrSbTog('__kpis')" role="button" aria-expanded="${open?'true':'false'}"><button class="sb-chev${open?' on':''}" onclick="event.stopPropagation();App._okrSbTog('__kpis')" title="${open?'Collapse':'Expand'}">${ic('chevR','w-3.5 h-3.5')}</button>${okrKPIChip()}<span class="sb-sec-t">KPIs not linked to an objective</span><span class="sb-sec-n">${kpiRoots.length}</span><span class="sb-sec-s">tracked as before · link them from an objective’s panel (Link KPI) or its editor</span></div>
-      ${open?`<div class="sb-table"><div class="sb-thead"><span></span><span>KPI</span><span>Key results / target</span><span>Owner</span><span>Status</span></div>${rows.join('')}</div>`:''}
-    </section>`;})();
-  if(!roots.length&&!kpiRoots.length)return strip+ctl+empty('star','Nothing on the scoreboard yet',_okrCanCreate()?'Create an L0 objective, mark one as the North Star in its editor (Plan & governance), and add key results under each objective.':'No objectives are visible to you yet.');
   if(!roots.length){
-    const pending0=_okrV4Ready()?'':`<div class="sb-pending">${ic('alert','w-3.5 h-3.5')} Database update pending — objectives, key results, ramps, flags and the new fields will not save until migration <b>2026-10-02_v400_okr_v4.sql</b> has been applied. Everything below is a KPI (what Bridge tracked before).</div>`;
-    return`<div class="sb">${pending0}${strip}${ctl}<div class="sb-empty">${ic('star','w-5 h-5')}<div><b>No objectives yet.</b> ${_okrV4Ready()?(_okrCanCreate()?'Create an L0 objective (New L0 objective on the Objectives tab), mark the North Star in its editor, then link the KPIs below under it.':'Objectives will appear here once leadership creates them.'):'Objectives can be created once the database update has run.'}</div></div>${kpiSec}</div>`;
+    const pending0=_okrV4Ready()?'':`<div class="sb-pending">${ic('alert','w-3.5 h-3.5')} Database update pending — objectives, key results, ramps, flags and the new fields will not save until migration <b>2026-10-02_v400_okr_v4.sql</b> has been applied.</div>`;
+    const nKpi=vis.filter(o=>okrIsKPI(o)&&!o.quarterLabel&&!o.closed).length;
+    return`<div class="sb">${pending0}${strip}${ctl}<div class="sb-empty">${ic('star','w-5 h-5')}<div><b>No objectives yet.</b> ${_okrV4Ready()?(_okrCanCreate()?'Use <b>New objective</b> above to create the first one, mark the North Star in its editor (Plan & governance), then link KPIs under it from its panel.':'Objectives will appear here once leadership creates them.'):'Objectives can be created once the database update has run.'}${nKpi?` The ${nKpi} KPI${nKpi===1?'':'s'} Bridge already tracks live on the <a href="#" onclick="event.preventDefault();App._okrTab('objectives')" style="font-weight:700;text-decoration:underline">Objectives tab</a>.`:''}</div></div></div>`;
   }
   const sections=others.map(r=>{
     const kids=_sbKids(r,showDrafts),exp=_sbExp(r.id);
@@ -804,7 +797,7 @@ function okrScoreboardHTML(){
     </section>`;}).join('');
   setTimeout(()=>{try{_drawOKRCharts();}catch(e){}},60);
   const pending=_okrV4Ready()?'':`<div class="sb-pending">${ic('alert','w-3.5 h-3.5')} Database update pending — key results, ramps, flags and the new fields will not save until migration <b>2026-10-02_v400_okr_v4.sql</b> has been applied.</div>`;
-  return`<div class="sb">${pending}${strip}${ctl}${nss.map(_sbHero).join('')}${sections}${kpiSec}</div>`;
+  return`<div class="sb">${pending}${strip}${ctl}${nss.map(_sbHero).join('')}${sections}</div>`;
 }
 /* The strip's numbers open the exact list they count. */
 App._okrSbList=(key)=>{
@@ -812,7 +805,7 @@ App._okrSbList=(key)=>{
   let hits=[],title='';
   if(key==='objectives'){hits=vis.filter(okrIsObjective);title='Objectives';}
   else if(key==='krs'){hits=vis.filter(o=>o.kind==='kr');title='Key results';}
-  else if(key==='kpis'){hits=vis.filter(okrIsKPI);title='KPIs';}
+  else if(key==='kpis'){hits=vis.filter(o=>okrIsKPI(o)&&o.parentId&&okrIsObjective(okrById(o.parentId)));title='KPIs linked under objectives';}
   else if(key==='blocked'||key==='at_risk'){hits=vis.filter(o=>{const f=okrFlagOf(o);return f&&!f.inherited&&f.flag===key;});title=key==='blocked'?'Blocked — owner’s call':'At risk — owner’s call';}
   else if(key==='off'){hits=vis.filter(o=>o.kind!=='kr'&&['Off track','Not achieved'].includes(okrStatusOf(o)));title='Off track / not achieved';}
   else if(key==='proposed'){hits=vis.filter(o=>o.targetConfirmed===false);title='Proposed targets — confirm or adjust';}

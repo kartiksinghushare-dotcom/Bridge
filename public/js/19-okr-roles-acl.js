@@ -1435,8 +1435,9 @@ function okrPage(){
      (everything that was here before). */
   const tab=okrTab();
   const tabs=okrTabsHTML(tab);
-  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn('New L0 objective','App._okrEdit(null,null)',{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
-  const head=hdr('OKR','Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn('New L0 objective','App._okrEdit(null,null)',{variant:'primary',icon:'plus'}):''));
+  /* v4.1 — the Scoreboard button creates an OKR (objective); the Objectives tab button creates a KPI */
+  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
+  const head=hdr('OKR',_okrV4Ready()?'KPIs & objectives — the working tree; inputs roll up L2 → L1 → L0':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
   // ── Summary cards — clickable (v3.11): tap a number to see exactly which OKRs it counts ──
   //    v4.0: objectives only — key results live inside their objective, drafts aren't measured yet
   const visObj=vis.filter(o=>o.kind!=='kr'&&o.state!=='draft');

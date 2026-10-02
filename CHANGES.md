@@ -1,4 +1,4 @@
-# Bridge v167 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=167`)
+# Bridge v168 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=168`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -7,6 +7,11 @@
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
 4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Round six — Scoreboard is OKRs only; two create buttons
+- The "KPIs not linked to an objective" section is gone from the Scoreboard. KPIs appear there only as lines under the objective they are linked to; the strip tile is now **Linked KPIs** and "Off track" counts objectives + linked KPIs. Unlinked KPIs live on the Objectives tab, exactly as before.
+- **Scoreboard → "New objective"** creates an OKR (`kind = objective`). **Objectives tab → "New KPI"** creates a KPI. Before the migration both read "New L0 objective" and create a KPI.
+- Empty scoreboard explains the two steps (create an objective, link KPIs from its panel) and links to the Objectives tab.
 
 ### Database — migration APPLIED (2 Oct 2026, 15:35 Dubai)
 - `v400_okr_v4_one_scoreboard` applied to the shared Supabase project. Verified afterwards: 333 rows (316 live) all `kind='kpi'`, `state='active'`; column default `'kpi'`; the four original `okrs` policies untouched plus `okrs_select_owner_tbd`; `okr_alerts` present. Production frontend (old build) unaffected — it ignores the new columns and keeps inserting KPIs by default.
