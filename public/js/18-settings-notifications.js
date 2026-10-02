@@ -305,6 +305,10 @@ const EMAIL_EVENTS=[
   {key:'okr_update_added',  label:'OKR update added',      vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{value}}, {{comment}}, {{action_url}}'},
   {key:'okr_target_revised',label:'OKR target revised',    vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{old_target}}, {{new_target}}, {{reason}}, {{action_url}}'},
   {key:'okr_closed',        label:'OKR closed / reopened', vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{status}}, {{reason}}, {{action_url}}'},
+  /* v4.0 — alerts about the DATA, not the calendar */
+  {key:'okr_blocked',       label:'OKR flagged Blocked',   vars:'{{user_name}}, {{okr_title}}, {{actor}}, {{comment}}, {{date}}, {{action_url}}'},
+  {key:'okr_variance',      label:'OKR behind the plan (daily)',vars:'{{user_name}}, {{okr_title}}, {{actual}}, {{plan}}, {{gap}}, {{streak}}, {{action_url}}'},
+  {key:'okr_stale',         label:'OKR not updated (daily)',vars:'{{user_name}}, {{okr_title}}, {{days}}, {{expected}}, {{action_url}}'},
   /* Workspace. These templates already existed and were honoured by sendEmail, but were
      absent from this list, so nothing rendered an editor for them. */
   {key:'crm_automation',label:'Workspace automation (all boards)',vars:'{{user_name}}, {{rule}}, {{title}}, {{customer}}, {{board}}, {{status}}, {{priority}}, {{assignee}}, {{due_date}}, {{actor}}, {{action_url}}'},
@@ -351,6 +355,9 @@ function _defaultTemplates(){
     okr_checkin_due:{subject:'⏰ OKR check-in due today ({{count}})',body:'Hi {{user_name}},\n\nYou have {{count}} OKR check-in(s) scheduled for today ({{date}}):\n\n{{okr_titles}}\n\nOpen Bridge to submit your update — if a co-owner already submitted, you\'re covered.\n\n{{action_url}}'},
     okr_update_added:{subject:'📈 {{okr_title}} — updated by {{actor}}',body:'Hi {{user_name}},\n\n{{actor}} added an update on "{{okr_title}}": {{value}}\n\n{{comment}}\n\nThis counts for the whole owner group — nothing more to do for today\'s check-in.\n\n{{action_url}}'},
     okr_target_revised:{subject:'✏️ Target revised: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} revised the target on "{{okr_title}}": {{old_target}} → {{new_target}}\n\nReason: {{reason}}\n\nThe original target stays visible for comparison — the same updates feed both numbers.\n\n{{action_url}}'},
+    okr_blocked:{subject:'⛔ Blocked: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} flagged "{{okr_title}}" as BLOCKED on {{date}}.\n\n{{comment}}\n\nSomeone above the owner has to clear the way — open Bridge to see what is in the way and who can move it.\n\n{{action_url}}'},
+    okr_variance:{subject:'📉 Behind the plan: {{okr_title}}',body:'Hi {{user_name}},\n\n"{{okr_title}}" is behind the approved ramp.\n\nActual: {{actual}}\nPlan for today: {{plan}}\nGap: {{gap}} — {{streak}} update(s) in a row below the plan.\n\nOpen Bridge to see the ramp and the latest updates.\n\n{{action_url}}'},
+    okr_stale:{subject:'⏳ No update for {{days}} days: {{okr_title}}',body:'Hi {{user_name}},\n\n"{{okr_title}}" has not been updated for {{days}} days (an update was expected {{expected}}).\n\nA number nobody is watching is how the August outage went unflagged — please add this week\'s update, or close the objective if it no longer applies.\n\n{{action_url}}'},
     okr_closed:{subject:'🔒 OKR {{status}}: {{okr_title}}',body:'Hi {{user_name}},\n\n{{actor}} {{status}} the objective "{{okr_title}}".\n\n{{reason}}\n\n{{action_url}}'},
     attendance_reminder:{subject:'⏰ Attendance reminder',body:'Hi {{user_name}},\n\nThis is your attendance reminder from Bridge. Open My Day to clock in or out.\n\n{{action_url}}'},
     attendance_wfh:{subject:'🏠 {{wfh_user}} is working from home today',body:'Hi {{user_name}},\n\n{{wfh_user}} marked {{date}} as a work-from-home day.\n\n{{action_url}}'},
@@ -380,6 +387,10 @@ function _nsDefault(){return{
   email_feedback_received:false,email_deadline_reminder:true,email_escalation:true,
   inapp_okr_assigned:true,inapp_okr_update_added:true,inapp_okr_target_revised:true,inapp_okr_closed:true,
   email_okr_assigned:true,email_okr_checkin_due:true,email_okr_update_added:false,email_okr_target_revised:true,email_okr_closed:true,
+  inapp_okr_blocked:true,inapp_okr_variance:true,inapp_okr_stale:true,
+  email_okr_blocked:true,email_okr_variance:true,email_okr_stale:true,
+  /* v4.0 — thresholds the alerts use (the daily okr-reminders job reads these too) */
+  okr_alerts:{tolerance:15,variance_streak:2,stale_multiplier:2,digest_weekday:'Mon',digest_enabled:true},
   inapp_attendance_reminder:true,inapp_attendance_wfh:true,inapp_attendance_edited:true,inapp_attendance_request:true,inapp_attendance_decided:true,inapp_attendance_open_shift:true,inapp_attendance_missed_rm:true,inapp_leave_request:true,inapp_leave_decided:true,inapp_leave_cancelled:true,inapp_leave_adjusted:true,inapp_dm_message:true,inapp_people_event:true,
   email_attendance_reminder:true,email_attendance_wfh:true,email_attendance_edited:true,email_attendance_request:true,email_attendance_decided:true,email_attendance_open_shift:true,email_attendance_missed_rm:false,email_leave_request:true,email_leave_decided:true,email_leave_cancelled:false,email_leave_adjusted:true,email_dm_message:false,email_people_event:true,
   templates:{},
@@ -471,7 +482,7 @@ async function sendEmail(eventType, userId, vars){
     submission_rejected:'mychecklists', approval_requested:'approvals',
     approval_decided:'approvals', feedback_received:'notifications',
     deadline_reminder:'mychecklists', escalation:'tickets',crm_mention:'crm',crm_ticket:'crm',crm_approval:'crm',crm_decided:'crm',crm_reminder:'crm',crm_automation:'crm',
-    okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',
+    okr_assigned:'okr',okr_checkin_due:'okr',okr_update_added:'okr',okr_target_revised:'okr',okr_closed:'okr',okr_blocked:'okr',okr_variance:'okr',okr_stale:'okr',
     attendance_reminder:'home',attendance_wfh:'attendance',attendance_edited:'attendance',attendance_request:'attendance',attendance_decided:'attendance',attendance_open_shift:'attendance',attendance_missed_rm:'attendance',leave_request:'leaves',leave_decided:'leaves',leave_cancelled:'leaves',leave_adjusted:'leaves',dm_message:'workspace',people_event:'profile',
   };
   const actionUrl = appUrl + '/#' + (routeMap[eventType]||'');
@@ -584,6 +595,9 @@ function settingsPage(forceTab){
         ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
         ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
+        ${_nsTogRow('inapp_okr_blocked','OKR flagged Blocked','The moment an owner flags an update Blocked — to the owners above it and everyone who runs reviews')}
+        ${_nsTogRow('inapp_okr_variance','OKR behind the approved ramp','Daily (server job): actual below the plan by more than the tolerance for several updates in a row — owner + the objective above')}
+        ${_nsTogRow('inapp_okr_stale','OKR not updated','Daily (server job): no update for longer than the check-in cadence allows — owner, then the objective above')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
         ${_nsTogRow('inapp_attendance_reminder','Clock-in / clock-out reminders & auto clock-out','Server-side reminders after shift start / end, and the note when someone is clocked out automatically')}
         ${_nsTogRow('inapp_attendance_wfh','Work-from-home day → manager','Tell the manager when someone marks a WFH day')}
@@ -661,6 +675,10 @@ function settingsPage(forceTab){
         ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
         ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
+        ${_nsTogRow('email_okr_blocked','OKR flagged Blocked','Email the owners above and the reviewers the moment something is flagged Blocked')}
+        ${_nsTogRow('email_okr_variance','OKR behind the approved ramp (daily)','Server job — email when a number has sat below the ramp for several updates in a row')}
+        ${_nsTogRow('email_okr_stale','OKR not updated (daily)','Server job — email when an objective has gone quiet for longer than its cadence allows')}
+        ${_nsOkrAlertsCard()}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
         ${_nsTogRow('email_attendance_reminder','Clock-in / clock-out reminders','Email with the reminder (server job, honours each person’s Attendance → Email switch)')}
         ${_nsTogRow('email_attendance_wfh','Work-from-home day → manager','Email the manager when someone marks a WFH day')}
@@ -1020,3 +1038,29 @@ function _bbAfterBoot(){
   try{if('serviceWorker' in navigator&&!window._bbSWMsgBound){window._bbSWMsgBound=true;navigator.serviceWorker.addEventListener('message',function(ev){var d=ev.data||{};if(d.type==='bb-open'){try{App._bbOpenLink(d.link||'','');}catch(e){}}});}}catch(e){}
 }
 window._bbAfterBoot=_bbAfterBoot;
+
+/* ═══ v4.0 — OKR alert thresholds (read by the app AND by the okr-reminders server job) ═══ */
+function _nsOkrAlerts(){if(!_ns)_ns=_nsDefault();const d={tolerance:15,variance_streak:2,stale_multiplier:2,digest_weekday:'Mon',digest_enabled:true};_ns.okr_alerts=Object.assign({},d,(_ns.okr_alerts&&typeof _ns.okr_alerts==='object')?_ns.okr_alerts:{});return _ns.okr_alerts;}
+function _nsOkrAlertsCard(){
+  const a=_nsOkrAlerts();
+  const num=(k,label,desc,min,max,step,unit)=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F1ECE3">
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#13171B">${label}</div><div style="font-size:11.5px;color:#786A5F;margin-top:2px;line-height:1.45">${desc}</div></div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><input type="number" min="${min}" max="${max}" step="${step}" value="${a[k]}" onchange="App._nsOkrAlertSet('${k}',this.value)" class="ui-input" style="width:84px;min-height:36px;padding:4px 10px;text-align:right"/><span style="font-size:11.5px;color:#786A5F;min-width:52px">${unit}</span></div>
+    </div>`;
+  return`<div style="margin-top:18px;background:#FBF7F1;border:1px solid #EEE6DA;border-radius:14px;padding:4px 14px 2px">
+    <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 2px">OKR alert thresholds</div>
+    <div style="font-size:11.5px;color:#786A5F;padding:0 0 6px;line-height:1.5">What counts as “behind” and “quiet”. An objective can override the tolerance in its own editor; the other two apply everywhere.</div>
+    ${num('tolerance','Pace tolerance','How many percentage points below the plan (ramp or straight line) still reads <b>On track</b>. The classic Bridge value is 15.',0,100,1,'pts')}
+    ${num('variance_streak','Updates below plan before alerting','A single bad week is noise; this many updates in a row below the tolerance sends the “behind the plan” alert to the owner and the objective above.',1,12,1,'in a row')}
+    ${num('stale_multiplier','Quiet for … × the cadence','A weekly objective with 2× goes quiet after 14 days without an update; monthly after 60. The owner is told first, the objective above the next day.',1,6,0.5,'× cadence')}
+  </div>`;
+}
+App._nsOkrAlertSet=async(k,v)=>{
+  if(!can('settings','edit'))return toast('You need Settings → Edit','err');
+  const a=_nsOkrAlerts();const n=Number(v);
+  if(!isFinite(n))return toast('Enter a number','err');
+  if(k==='tolerance')a.tolerance=Math.max(0,Math.min(100,n));
+  else if(k==='variance_streak')a.variance_streak=Math.max(1,Math.min(12,Math.round(n)));
+  else if(k==='stale_multiplier')a.stale_multiplier=Math.max(1,Math.min(6,n));
+  await _saveNS();toast('Saved ✓');
+};

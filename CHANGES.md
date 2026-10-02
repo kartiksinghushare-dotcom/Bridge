@@ -1,3 +1,47 @@
+# Bridge v163 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=163`)
+
+**Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
+
+## Deploy order — this matters
+1. **Apply the migration first** (`supabase/migrations/2026-10-02_v400_okr_v4.sql`) in the Supabase SQL editor. It is additive only: new nullable/defaulted columns on `okrs` and `okr_checkins`, two new tables (`okr_reviews`, `okr_alerts`), indexes, RLS. Nothing existing is dropped, renamed or re-typed; it is safe to run twice.
+2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
+3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
+4. Open Access Control once as a Super Admin: built-in roles are re-seeded (seed v19) so Super Admin / Administrator / Manager gain **Run reviews** and **Confirm targets**. Custom roles are untouched — `Manage` already covers both, or switch them on per role.
+
+## QA pass (same day) — found by a scripted end-to-end suite (73 flows) + an independent code review, all fixed
+- **Stored XSS**: a key result's `unit` text was concatenated unescaped into KR lines / reviews — now every fragment goes through `esc()`.
+- **Pre-migration safety**: creating key results, drafts, ramps, flags or any v4 field is now *refused with a clear message* until the migration has run (previously it would have saved as a plain objective and silently lost the v4 data). "Add key result" buttons hide until then.
+- **Move dialog** now follows the v4 rules (nothing under a KR; a KR never top-level or under an annual/roll-up). **Bulk edit** never touches KRs; "Select all" excludes them; searching a KR shows its objective's card.
+- **Drafts**: never due, never counted in roll-ups; an annual saved as draft spawns draft quarters; the annual→quarter sync propagates state. `Draft` added to the status filter.
+- **Owner-TBD rows stay visible to their creator** after reload (new select policy `okrs_select_owner_tbd` in the migration — creator counts as owner while TBD).
+- **Reviews**: deterministic row id per period (`okrv_weekly_2026-W40`) so two reviewers can't collide; reviews refetch on tab open; no fake rows in `okr_logs`.
+- **Server job**: pages through PostgREST's 1,000-row cap (would have produced a flood of false "stale" alerts within weeks); "behind the plan" sign fixed for lower-is-better numbers; only `metric_type='krs'` objectives skip the variance test; non-duplicate insert errors are reported, not swallowed; done milestones / completed counts are never "stale".
+- Smaller: count/milestone KRs reset `direction`; `krs` objectives drop any ramp; editor-only switches never reach storage; `okrFlagOf` memoised per render; print CSS scoped to the OKR tabs; `okr_alerts.kind` check constraint; KR-only owners get a scoreboard section of their own.
+- Migration dry-run on a local Postgres: applies clean, re-runs idempotently, legacy rows get correct defaults, every constraint rejects what it should.
+- Second review round: combined due-today form also refuses flags pre-migration; server-job paging stops only on an empty page and orders by a unique tiebreak; flag cache invalidated on every check-in write/delete; a KR match never surfaces a quarter copy in the annual view; objectives that already reached their target are never "stale".
+
+## What changed — OKR
+- **Objective vs Key Result.** A node is now an *objective* (has a level, a why, can hold more levels) or a *key result* (`kind='kr'`): the number, date or count that proves it, rendered as a compact line **inside** the objective's card, never as a nested card. "Add key result" sits in every objective's panel; a new KR inherits owners, department, period and schedule from its objective.
+- **Four kinds of key result**: *Number to reach* (today's start → target), *Milestone — done by a date* (tick Done from the panel; overdue reads Off track), *Count of named items* (each item with its own date, ticked separately — "4 / 6 areas", never a blended %), *Floor + target* (a line that must never be crossed plus a level to build to; breaching the floor reads Off track whatever the % says).
+- **"By its key results"** is a new option under *How is this measured?* — the objective then has no number of its own and reads the **average of its active KRs**. An objective with its own number (the North Star's daily orders) keeps that number even with KRs underneath.
+- **Approved ramp (Appendix A).** Any number KR/objective can carry month-by-month checkpoints. When set, *On track* is judged against that curve (plan value interpolated per day) instead of a straight line, the graph draws it, the panel shows *plan today · actual · vs plan · next checkpoint*. Tolerance is per objective or the Settings default (15 pts). "Copy parent's shape" scales a parent's ramp onto a KR's own start → target. Paste accepts `Dec 26 | 540` or `2026-12-31, 540`.
+- **Owner's flag on every update**: On track / At risk / Blocked + one-line status, next to the computed status (filled chip = computed, outlined chip with a person = the owner's call). Objectives measured by KRs, milestones and counts take a flag-only update (no number). **Blocked** immediately notifies the owners up the tree and everyone who runs reviews (new event `okr_blocked`).
+- **North Star** flag on any root (UAE and KSA can each have one) → hero at the top of the Scoreboard. **Counts toward** links an engine's target to it: the hero shows *promised · delivered · measured* across all contributors, and the unattributed gap.
+- **Governance**: *Target confirmed* (off = PROPOSED tag + basis note, confirm from the panel), *Leading / lagging* on KRs, *Owner to be decided* (save without an owner), *Needs a decision* (+ note), *Draft* (not live: no counts, statuses, reminders or alerts), *Baseline as of*.
+- **Scoreboard tab** (default): North Star hero with ramp chart and engines table, then one section per L0 laid out like the proposal — Lvl · Objective (with its why) · Key results / target · Owner · Status. Strip on top: objectives, key results, blocked, at risk, off track, proposed targets, need a decision — each opens the exact list. Print-clean. Phones: stacked cards.
+- **Reviews tab** (Run reviews permission): **Weekly** — to update / updated / blocked / at risk / not updated, grouped by L0, with the owner's one-liners; **Monthly** — what moved (Δ since the previous month, biggest first), what's stuck, needs a decision (proposed targets, owners to name, drafts, flagged items). Each review can be signed off with notes (`okr_reviews`).
+- **Alerts** (Settings → Email/In-app → OKRs, + *OKR alert thresholds* card): `okr_variance` (actual below the ramp by more than the tolerance for N updates in a row → owners + the objective above), `okr_stale` (quiet for cadence × multiplier → owner, the objective above a day later), `okr_blocked`. Server job dedups via `okr_alerts` fingerprints.
+- Objectives tab (the old tree) keeps everything: roll-ups, annual↔quarters, revisions, bulk edit, export, deleted bin. Key results are excluded from roll-ups, levels and the summary counts (which now count objectives only, drafts excluded).
+
+## Workspace fixes
+- **Back from a ticket lands where you were.** The table's own scroll (and the page's, on phones) is snapshotted when a ticket is opened and restored on *Back*.
+- **Direct-message ticks are two-state**: one grey tick until the other person has actually opened the chat, then two blue. The in-between "delivered" double-grey state is kept for group boards only — in one-to-one chats it read as "seen" while the other person was effectively offline.
+
+## Backup
+`_backups/pre-okr-v4_2026-10-02.tar.gz` (project without node_modules) was taken before any change.
+
+---
+
 # Bridge v162 — date ranges everywhere, mobile balances, alignment + three fixes (cache-buster `?v=162`)
 
 **Changed** `index.html` · `21-attendance.js` · `27-leaves.js` · `28-leaves-admin.js` · `src/styles/main.css`.

@@ -726,7 +726,12 @@ App._crmTogHub=(id)=>{CRM.collapsedHubs[id]=!CRM.collapsedHubs[id];rr();};
 App._crmSelBoard=(id)=>{var b=_crmBoard(id);CRM.sel.dm=false;CRM.sel.boardId=id;CRM.sel.hubId=b?b.hubId:CRM.sel.hubId;CRM.sel.viewId=null;CRM.sel.convoId=null;CRM.sel.threadId=null;CRM.sel.category='Chats';CRM.search='';CRM.compose.images=[];rr();};
 /* Same as _crmSelBoard but KEEPS the active filtered view (tab clicks inside a view) */
 App._crmSelVBoard=(id)=>{CRM.sel.boardId=id;CRM.sel.convoId=null;CRM.sel.threadId=null;CRM.sel.category='Chats';CRM.search='';CRM.compose.images=[];rr();};
-App._crmSelConvo=(id)=>{CRM.sel.convoId=id;CRM.sel.threadId=null;CRM.compose.images=[];_crmMarkRead(id);rr();_crmScrollBottom();};
+App._crmSelConvo=(id)=>{_crmRememberTable();CRM.sel.convoId=id;CRM.sel.threadId=null;CRM.compose.images=[];_crmMarkRead(id);rr();_crmScrollBottom();};
+/* v4.0 — opening a ticket and coming back used to land at the top of the table: rr() replaces the
+   table element, so its own scrollTop (and the page's, on phones) was gone. Snapshot both on the
+   way in, put them back on the way out. */
+function _crmRememberTable(){try{var el=document.getElementById('crm-tablebox');CRM._tblScroll={boardId:CRM.sel.boardId,viewId:CRM.sel.viewId,top:el?el.scrollTop:0,left:el?el.scrollLeft:0,win:window.scrollY||document.documentElement.scrollTop||0};}catch(e){}}
+function _crmRestoreTable(){try{var st=CRM._tblScroll;if(!st||st.boardId!==CRM.sel.boardId||st.viewId!==CRM.sel.viewId)return;var put=function(){var el=document.getElementById('crm-tablebox');if(el){el.scrollTop=st.top;el.scrollLeft=st.left;}window.scrollTo(0,st.win);};put();requestAnimationFrame(put);setTimeout(put,60);}catch(e){}}
 App._crmOpenResult=(id)=>{var c=_crmConvo(id);if(!c)return;if(_crmIsDM(c)){return App._dmSel(id);}CRM.sel.dm=false;CRM.sel.boardId=c.boardId;var b=_crmBoard(c.boardId);CRM.sel.hubId=b?b.hubId:null;CRM.sel.viewId=null;CRM.sel.category=c.isTicket?(c.ticketType||'Chats'):'Chats';CRM.sel.convoId=id;CRM.sel.threadId=null;CRM.search='';CRM.compose.images=[];_crmMarkRead(id);rr();_crmScrollBottom();};
 App._crmSearch=(v)=>{
   var dd=document.getElementById('crm-search-dd');if(!dd)return;
@@ -1060,7 +1065,7 @@ if(!window._crmActsBound){
   },true);
   window.addEventListener('resize',function(){App._crmCloseMsgActs();});
 }
-App._crmMobBack=()=>{App._crmCloseMsgActs();CRM._mobDetails=false;CRM.sel.convoId=null;CRM.sel.threadId=null;rr();};
+App._crmMobBack=()=>{App._crmCloseMsgActs();CRM._mobDetails=false;CRM.sel.convoId=null;CRM.sel.threadId=null;rr();_crmRestoreTable();};
 
 App._crmTogMove=()=>{var d=document.getElementById('crm-move');if(d)d.style.display=d.style.display==='none'?'block':'none';};
 
@@ -1854,7 +1859,7 @@ function _crmTable(board,opts){
     return'<tr class="crm-trow">'+tds+'</tr>';
   }).join('');
   if(!rows.length&&!addRow)body='<tr><td colspan="99" style="padding:44px;text-align:center;color:#A59788;font-size:13px">'+(flt.length?((opts.filters!=null)?'No tickets match this view\u2019s conditions right now.':'No tickets match the filter \u2014 <b style="color:#54433C">Filter</b> above adjusts or clears it.'):('No tickets yet.'+(canCr?' Hit <b style="color:#54433C">+ New ticket</b> above to add the first one'+((canEd&&opts.filters==null)?', and <b>+ Column</b> to shape the table':'')+'.':'')))+'</td></tr>';
-  return'<div class="crm-scroll'+(_mob?' crm-mobtable':'')+'" style="flex:1;overflow:auto;background:#fff;min-height:0"><table class="crm-tbl" style="width:100%;border-collapse:collapse"><thead><tr>'+th+'</tr></thead><tbody>'+addRow+body+'</tbody></table></div>';
+  return'<div id="crm-tablebox" class="crm-scroll'+(_mob?' crm-mobtable':'')+'" style="flex:1;overflow:auto;background:#fff;min-height:0"><table class="crm-tbl" style="width:100%;border-collapse:collapse"><thead><tr>'+th+'</tr></thead><tbody>'+addRow+body+'</tbody></table></div>';
 }
 /* ── v3.16.4 New-ticket FORM: every column up front, then one Add button.
    Access rules match the table: title/customer come with crm→create; Status, Due date and
@@ -1978,7 +1983,7 @@ App._crmColDrop=async(e,boardId,targetColId)=>{
   b.settings.colOrder=keys;rr();
   sbWrite({table:'crm_boards',op:'update',id:b.id,match:{col:'id',val:b.id},values:{settings:b.settings}},{label:'Column order'});
 };
-App._crmBackToTable=()=>{CRM.sel.convoId=null;CRM.sel.threadId=null;rr();};
+App._crmBackToTable=()=>{CRM.sel.convoId=null;CRM.sel.threadId=null;rr();_crmRestoreTable();};
 App._crmSetCell=async(id,colId,val)=>{if(!can('crm','edit'))return;var c=_crmConvo(id);if(!c)return;if(!c.fields)c.fields={};c.fields[colId]=val;try{await sb.from('crm_conversations').update({fields:c.fields}).eq('id',id);}catch(e){}try{_crmRunAutos(_crmBoard(c.boardId),'column',c,{colId:colId,value:val});}catch(e){}};
 App._crmDelCol=async(boardId,colId)=>{if(!can('crm','edit'))return;var b=_crmBoard(boardId);if(!b||!b.settings)return;
   // Guard: a column that still holds values on any ticket cannot be deleted — clear the values first.
@@ -2630,7 +2635,11 @@ function _crmTickState(cid,at){
     if(!(x.seen&&String(x.seen)>=String(at)))allRead=false;
     if(!((x.seen&&String(x.seen)>=String(at))||(x.deliv&&String(x.deliv)>=String(at))))allDeliv=false;
     if(!allRead&&!allDeliv)break;}
-  return allRead?'read':(allDeliv?'delivered':'sent');
+  var st=allRead?'read':(allDeliv?'delivered':'sent');
+  /* v4.0 — direct messages: one grey tick until the other person has actually opened the chat, then two
+     blue. The in-between "delivered" double-grey state only applies to group boards. */
+  if(st==='delivered'&&c&&typeof _crmIsDM==='function'&&_crmIsDM(c))return'sent';
+  return st;
 }
 function _crmTickSvg(state){return state==='read'?_CRM_TK_TWO:(state==='delivered'?_CRM_TK_TWO:_CRM_TK_ONE);}
 function _crmTicks(m,cid){CRM._pend=CRM._pend||{};var pend=CRM._pend[m.id];var st=pend?'pending':_crmTickState(cid,m.at);return'<span class="crm-ticks'+(st==='read'?' crm-tk-read':'')+'" data-tk="'+m.id+'" title="'+(st==='read'?'Read by everyone':st==='delivered'?'Delivered to everyone':st==='pending'?'Sending…':'Sent')+'">'+(pend?_CRM_TK_CLOCK:_crmTickSvg(st))+'</span>';}
