@@ -1110,12 +1110,12 @@ function _okrDateAddM(iso,m){const d=new Date(iso+'T00:00:00');d.setMonth(d.getM
 
 /* ═══ Move an objective to another parent / level — the WHOLE subtree moves with it ═══ */
 let _OKRMV=null; // {id, targetId(''=top level), deptId, subDeptId}
-function _okrMoveOptions(excl){
+function _okrMoveOptions(excl,mv){
   const out=[];
   const walk=(o,depth)=>{
     if(excl.has(o.id))return;
-    if(o.kind==='kr')return; // v4.0: nothing can sit under a key result
-    out.push([o.id,' '.repeat(depth*3)+(o.kind==='kpi'?'KPI':'L'+okrLevel(o))+' · '+(o.title||'Untitled')+(o.quarterLabel?' ['+o.quarterLabel+']':'')]);
+    if(o.kind==='kr'&&!(mv&&mv.kind==='kpi'&&okrCanHoldKPIs(o)))return; // v4.1: a number key result can take KPIs; nothing else sits under a KR
+    out.push([o.id,' '.repeat(depth*3)+(o.kind==='kpi'?'KPI':o.kind==='kr'?'KR':'L'+okrLevel(o))+' · '+(o.title||'Untitled')+(o.quarterLabel?' ['+o.quarterLabel+']':'')]);
     okrChildren(o.id).forEach(k=>walk(k,depth+1));
   };
   okrVisibleRoots().forEach(r=>walk(r,0));
@@ -1133,7 +1133,7 @@ App._renderOKRMove=()=>{
   const d=_OKRMV;if(!d)return;
   const o=okrById(d.id);if(!o)return;
   const excl=new Set([o.id,...okrDescendants(o.id).map(x=>x.id)]);
-  const opts=_okrMoveOptions(excl);
+  const opts=_okrMoveOptions(excl,o);
   const desc=okrDescendants(o.id);
   const target=d.targetId?okrById(d.targetId):null;
   const newLvl=target?(okrLevel(target)+(o.quarterLabel?0:1)):0; // a quarterly split lands AT the target's level, not below it
@@ -1171,8 +1171,10 @@ App._okrMoveSave=()=>{
     const t=okrById(newParentId);
     if(!t)return toast('That parent no longer exists','err');
     if(newParentId===o.id||okrDescendants(o.id).some(x=>x.id===newParentId))return toast('You can\'t move an objective under its own sub-objective','err');
-    if(t.kind==='kr')return toast('Nothing can sit under a key result','err');
-    if(t.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI — only KPIs and key results can','err');
+    if(t.kind==='kr'&&!(o.kind==='kpi'&&okrCanHoldKPIs(t)))return toast(o.kind==='kpi'?'Only a number key result can hold KPIs':'Only KPIs can sit under a key result','err');
+    if(t.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI','err');
+    if(t.kind==='kpi'&&o.kind==='kr')return toast('A key result sits under an objective, not under a KPI','err');
+    if(okrIsObjective(t)&&o.kind==='kpi')return toast('KPIs link under a key result (use Link KPI on the key result), not directly under an objective','err');
     if(o.kind==='kr'&&(t.isAnnual||t.rollup))return toast('That objective auto-updates (annual / roll-up) — it can’t hold key results','err');
   }else{
     if(o.kind==='kr')return toast('A key result has to sit under an objective — it can’t be top level','err');
@@ -1314,7 +1316,7 @@ function _okrMatchF(o,fDept,fSub,fOwn,fSt,fLvl,fDir){
 /* ── v3.11: summary "number cards" are clickable — list exactly which OKRs make the number,
    each row opens that OKR's Progress & Updates. ── */
 App._okrSummaryList=(key)=>{
-  const vis=okrVisible().filter(o=>o.kind!=='kr'&&o.state!=='draft'); // v4.0: same set the summary cards count
+  const vis=okrVisible().filter(o=>okrIsKPI(o)&&o.state!=='draft'); // v4.1: the KPIs tab counts KPIs only
   const hits=vis.filter(o=>key==='all'?true:okrStatusOf(o)===key);
   // tree order (pre-order walk) so parents come before their children
   const _ord={};let _oi=0;
@@ -1422,22 +1424,23 @@ App._okrProgressModal=(id)=>{
   // includes the matching below-level quarters (L0·Q1 ← every L1·Q1), same panel as the annual's.
   const _vset=new Set(okrVisible().map(x=>x.id));
   const kids=(o.isAnnual?okrChildrenVisible(o.id).filter(k=>k.quarterLabel)
-    :(o.rollup?_okrRollupKids(o).filter(k=>_vset.has(k.id)):okrChildrenVisible(o.id))).filter(k=>k.kind!=='kr'&&!(k.kind==='kpi'&&okrIsObjective(o)&&!o.rollup&&!o.isAnnual)); // v3.19: annual ⇒ quarters always · v4.0: key results have their own block · v4.1: an objective's linked KPIs sit in that block too
+    :(o.rollup?_okrRollupKids(o).filter(k=>_vset.has(k.id)):okrChildrenVisible(o.id))).filter(k=>k.kind!=='kr'&&!(k.kind==='kpi'&&(o.kind==='kr'||(okrIsObjective(o)&&!o.rollup&&!o.isAnnual)))); // v3.19: annual ⇒ quarters always · v4.0: key results have their own block · v4.1: an objective's linked KPIs sit in that block too
   const pct=okrProgress(o),st=okrStatusOf(o);
   modalShell({title:o.kind==='kr'?'Key result':'Progress & Updates',sub:(o.title||'')+(okrNoPct(o)?'':' — '+(pct===null?'no data yet':pct+'%')),size:'max-w-2xl',key:'okr-pm',
     body:`<div id="okr-pm" data-okr="${o.id}" style="margin:-6px -2px 0">${_okrProgressPanel(o,kids,pct,st)}</div>`});
   setTimeout(()=>{try{_drawOKRCharts();}catch(e){}},80);
 };
 function okrPage(){
-  const vis=okrVisible(),canCreate=_okrCanCreate();
-  const today=todayISO();
-  /* v4.0 — two tabs on one route. Scoreboard is the leadership read; Objectives is the working tree
-     (everything that was here before). */
   const tab=okrTab();
+  /* v4.1 — two tabs on one route. OKR (scoreboard) is the leadership read of objectives and key results;
+     KPIs is the working tree exactly as before — KPIs only. A KPI linked under a key result still lives here,
+     listed at the top level with a “linked” chip. */
+  const vis=tab==='scoreboard'?okrVisible():okrVisible().filter(okrIsKPI),canCreate=_okrCanCreate();
+  const today=todayISO();
   const tabs=okrTabsHTML(tab);
   /* v4.1 — the Scoreboard button creates an OKR (objective); the Objectives tab button creates a KPI */
   if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
-  const head=hdr('OKR',_okrV4Ready()?'KPIs & objectives — the working tree; inputs roll up L2 → L1 → L0':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
+  const head=hdr(_okrV4Ready()?'KPIs':'OKR',_okrV4Ready()?'Every number Bridge tracks — inputs roll up L2 → L1 → L0; link a KPI under a key result to put it on the OKR scoreboard':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
   // ── Summary cards — clickable (v3.11): tap a number to see exactly which OKRs it counts ──
   //    v4.0: objectives only — key results live inside their objective, drafts aren't measured yet
   const visObj=vis.filter(o=>o.kind!=='kr'&&o.state!=='draft');
@@ -1445,7 +1448,7 @@ function okrPage(){
   const cnt=x=>sts.filter(s=>s===x).length;
   const scard=(label,n,bg,fg,icon,key)=>`<div role="button" tabindex="0" onclick="App._okrSummaryList('${key}')" onkeydown="if(event.key==='Enter')App._okrSummaryList('${key}')" title="See which OKRs these are" style="flex:1;min-width:108px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:11px;padding:7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--c-text)'" onmouseout="this.style.borderColor='var(--c-border)'"><span style="width:30px;height:30px;border-radius:9px;background:${bg};color:${fg};display:grid;place-items:center;flex-shrink:0">${ic(icon,'w-4 h-4')}</span><span style="min-width:0"><span class="fd" style="display:block;font-size:17px;font-weight:800;line-height:1;color:var(--c-text)">${n}</span><span style="display:block;font-size:10.5px;color:var(--c-text-2);margin-top:2px;white-space:nowrap">${label}</span></span></div>`;
   const summary=`<div class="okr-stats">
-    ${scard('Objectives',visObj.length,'var(--c-brand-soft)','var(--c-brand-ink)','chart','all')}
+    ${scard(_okrV4Ready()?'KPIs':'Objectives',visObj.length,'var(--c-brand-soft)','var(--c-brand-ink)','chart','all')}
     ${scard('Achieved',cnt('Achieved'),'#F0E5CF','#2B5638','check','Achieved')}
     ${scard('On track',cnt('On track'),'#EEE4D5','#463830','approve','On track')}
     ${scard('Off track',cnt('Off track'),'#F9EBE5','#A63528','alert','Off track')}
@@ -1610,9 +1613,10 @@ function okrPage(){
   }else{
     // Annual tree (default) — quarterly splits live in the Quarterly view
     _OKR_SHOWN=vis.filter(o=>!o.quarterLabel&&o.kind!=='kr').map(x=>x.id);
-    const roots=okrVisibleRoots().filter(o=>!o.quarterLabel);
+    const _vk=new Set(vis.map(x=>x.id));
+    const roots=vis.filter(o=>!o.quarterLabel&&(!o.parentId||!_vk.has(o.parentId))).sort((a,b)=>((a.sort||0)-(b.sort||0))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
     tree=roots.length?roots.map(o=>_okrNodeHTML(o,0)).join('')
-      :empty('chart','No OKRs yet',canCreate?'Create your first L0 objective, assign it to a department and an owner, then add L1 / L2 sub-objectives under it.':'No OKRs have been assigned to you yet. Your manager creates them.');
+      :empty('chart',_okrV4Ready()?'No KPIs yet':'No OKRs yet',canCreate?(_okrV4Ready()?'Create your first KPI, assign it to a department and an owner, then add sub-KPIs under it.':'Create your first L0 objective, assign it to a department and an owner, then add L1 / L2 sub-objectives under it.'):'Nothing has been assigned to you yet. Your manager creates them.');
   }
   /* ── v3.13 BULK BAR — appears the moment anything is ticked. Selection survives
      re-renders and filter changes; "Select all" only ever covers what's on screen
@@ -1629,7 +1633,7 @@ function okrPage(){
         ${btn('Bulk edit '+_selCount+' objective'+(_selCount===1?'':'s'),'App._okrBulk()',{variant:'primary',size:'sm',icon:'edit'})}
         <button onclick="App._okrExport()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Download these objectives with every update, revision and activity entry as an Excel workbook">Export to Excel</button>
         <button onclick="App._okrSelClear()" class="ui-btn ui-btn-ghost ui-btn-sm">Clear selection</button>`
-      :`<span class="okr-bulkhint" style="flex:1;min-width:180px;font-size:11.5px;color:var(--c-text-3)">Tick the box on any objective to change several at once — owners, department, dates, targets, schedule, status, close or delete.</span>
+      :`<span class="okr-bulkhint" style="flex:1;min-width:180px;font-size:11.5px;color:var(--c-text-3)">Tick the box on any KPI to change several at once — owners, department, dates, targets, schedule, status, close or delete.</span>
         <button onclick="App._okrExport()" class="ui-btn ui-btn-ghost ui-btn-sm" title="Download every objective you can see — with all updates, revisions and activity — as an Excel workbook">Export to Excel</button>`}
     </div>`:'';
   return `<div class="fade">${head}${tabs}${_howBar('okr')}${summary}${duePanel}${fBar}${bulkBar}<div>${tree}</div></div>`;
@@ -1686,10 +1690,10 @@ function _okrNodeHTML(o,depth){
     <div class="okr-cardpad" style="padding:10px 13px">
       <div class="okr-row" style="display:flex;align-items:flex-start;gap:9px">
         ${selBox}
-        ${kids.length?`<button class="okr-exp" onclick="event.stopPropagation();App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} sub-objectives" style="${icBtn};transform:${exp?'rotate(90deg)':'none'}">${ic('chevR','w-4 h-4')}</button>`:`<span class="okr-exp okr-leaf" style="width:24px;flex-shrink:0;display:grid;place-items:center;height:24px"><span style="width:4px;height:4px;border-radius:50%;background:var(--c-border-2)"></span></span>`}
+        ${kids.length?`<button class="okr-exp" onclick="event.stopPropagation();App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} ${o.kind==='kpi'?'sub-KPIs':'sub-objectives'}" style="${icBtn};transform:${exp?'rotate(90deg)':'none'}">${ic('chevR','w-4 h-4')}</button>`:`<span class="okr-exp okr-leaf" style="width:24px;flex-shrink:0;display:grid;place-items:center;height:24px"><span style="width:4px;height:4px;border-radius:50%;background:var(--c-border-2)"></span></span>`}
         <div class="okr-main" style="flex:1;min-width:140px">
           <div class="okr-titlerow" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;row-gap:4px">
-            ${okrKindChip(o,true)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}${okrBadgesHTML(o)}
+            ${okrKindChip(o,true)}${okrLinkedChip(o)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}${okrBadgesHTML(o)}
             <span class="fd okr-title" style="font-size:13.5px;font-weight:600;color:var(--c-text);line-height:1.35;min-width:0">${esc(o.title||'Untitled')}</span>
             ${okrHasRevision(o)?`<span style="${meta};color:#7C5A26;font-weight:800" title="Target was revised — the original is kept for comparison">${ic('edit','w-3 h-3')}Revised</span>`:''}
           </div>
@@ -1698,7 +1702,7 @@ function _okrNodeHTML(o,depth){
             ${ownersHTML||(o.ownerTbd?`<span style="${meta};color:#7A5A12;font-weight:800">${ic('user','w-3 h-3')}Owner to be decided</span>`:'')}
             ${dept?`<span style="${meta}"${o.departmentId?'':' title="Inherited from the parent objective"'}>${ic('dept','w-3 h-3')}${esc(dept.name)}${subDept?' › '+esc(subDept.name):''}</span>`:''}
             ${o.periodStart||o.periodEnd?`<span style="${meta}">${ic('calendar','w-3 h-3')}${fmtS(o.periodStart)} → ${fmtS(o.periodEnd)}</span>`:''}
-            ${kids.length?`<button class="okr-subtog" onclick="event.stopPropagation();App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} sub-objectives" style="${meta};border:none;background:transparent;cursor:pointer;padding:0;font-weight:700">${ic('tree','w-3 h-3')}${kids.length} sub-objective${kids.length===1?'':'s'}<span style="display:inline-flex;transform:${exp?'rotate(180deg)':'none'};transition:transform .12s">${ic('chevD','w-3 h-3')}</span></button>`:''}
+            ${kids.length?`<button class="okr-subtog" onclick="event.stopPropagation();App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} ${o.kind==='kpi'?'sub-KPIs':'sub-objectives'}" style="${meta};border:none;background:transparent;cursor:pointer;padding:0;font-weight:700">${ic('tree','w-3 h-3')}${kids.length} ${o.kind==='kpi'?'sub-KPI':'sub-objective'}${kids.length===1?'':'s'}<span style="display:inline-flex;transform:${exp?'rotate(180deg)':'none'};transition:transform .12s">${ic('chevD','w-3 h-3')}</span></button>`:''}
           </div>
           ${krs.length?`<div class="okr-krs">${krs.map(k=>okrKRLineHTML(k)).join('')}</div>`:''}
         </div>
@@ -1792,8 +1796,8 @@ function _okrProgressPanel(o,kids,pct,st){
   const _canAddKR=_okrCanCreate()&&o.kind!=='kr'&&!o.isAnnual&&!o.rollup&&!o.closed&&_okrV4Ready();
   const _acts=[
     _canAddKR?actBtn('Add key result',"App.closeModal();App._okrEdit(null,'"+o.id+"','kr')",'flag'):'',
-    (_okrCanCreate()&&o.kind!=='kr')?actBtn(o.kind==='kpi'?'Add sub-KPI':'Add sub-objective',"App.closeModal();App._okrEdit(null,'"+o.id+"')",'plus'):'',
-    (okrIsObjective(o)&&_canEd&&!o.closed&&!o.quarterLabel&&_okrV4Ready())?actBtn('Link KPI',"App._okrLinkKPI('"+o.id+"')",'link'):'',
+    (_okrCanCreate()&&o.kind!=='kr')?actBtn(o.kind==='kpi'?'Add sub-KPI':'Add sub-objective',"App.closeModal();App._okrEdit(null,'"+o.id+"','"+(o.kind==='kpi'?'kpi':'objective')+"')",'plus'):'',
+    (okrCanHoldKPIs(o)&&_canEd&&_okrV4Ready())?actBtn('Link KPI',"App._okrLinkKPI('"+o.id+"')",'link'):'',
     _canEd?actBtn('Edit',"App.closeModal();App._okrEdit('"+o.id+"')",'edit'):'',
     _canEd?actBtn('Move',"App.closeModal();App._okrMove('"+o.id+"')",'move'):'',
     (_canEd&&!o.closed&&o.metricType!=='yesno')?actBtn('Revise target',"App.closeModal();App._okrRevise('"+o.id+"')",'refresh'):'',
@@ -1933,8 +1937,8 @@ App._okrEdit=(id,parentId,kind)=>{
   /* v4.0 \u2014 a new key result inherits its objective's owners, department, period and schedule, so the
      common case ("the same people, the same quarter") is one title and one number away from saved. */
   const _isKR=kind==='kr'&&!!_pk;
-  _OKRED=existing?JSON.parse(JSON.stringify(existing)):{id:uid('okr'),parentId:parentId||null,title:'',description:'',departmentId:null,subDepartmentId:null,ownerId:_isKR?(_pk.ownerId||S.uid):S.uid,owners:_isKR&&okrOwners(_pk).length?okrOwners(_pk).slice():[S.uid],metricType:'number',startValue:0,targetValue:null,unit:_isKR?(_pk.unit||''):'',direction:'up',frequency:_isKR?JSON.parse(JSON.stringify(_pk.frequency||{type:'weekly',day:'Mon'})):{type:'weekly',day:'Mon'},periodStart:_isKR?(_pk.periodStart||null):null,periodEnd:_isKR?(_pk.periodEnd||null):null,statusMode:'auto',statusManual:null,isAnnual:false,quarterLabel:null,sort:okrChildren(parentId||null).length,createdBy:S.uid,createdAt:new Date().toISOString(),
-    kind:_isKR?'kr':(_okrV4Ready()&&kind!=='kpi'&&!(_pk&&_pk.kind==='kpi'))?'objective':'kpi',krKind:_isKR?'metric':null,isNorthStar:false,dueDate:null,doneAt:null,doneBy:null,floorValue:null,items:[],pacing:[],paceTolerance:null,contributesTo:null,targetConfirmed:true,targetBasis:'',leadLag:null,ownerTbd:false,needsDecision:false,decisionNote:'',state:'active',baselineAsOf:null};
+  _OKRED=existing?JSON.parse(JSON.stringify(existing)):{id:uid('okr'),parentId:parentId||null,title:'',description:'',departmentId:null,subDepartmentId:null,ownerId:_isKR?(_pk.ownerId||S.uid):S.uid,owners:_isKR&&okrOwners(_pk).length?okrOwners(_pk).slice():[S.uid],metricType:(!_isKR&&_okrV4Ready()&&kind==='objective')?'krs':'number',startValue:0,targetValue:null,unit:_isKR?(_pk.unit||''):'',direction:'up',frequency:_isKR?JSON.parse(JSON.stringify(_pk.frequency||{type:'weekly',day:'Mon'})):{type:'weekly',day:'Mon'},periodStart:_isKR?(_pk.periodStart||null):null,periodEnd:_isKR?(_pk.periodEnd||null):null,statusMode:'auto',statusManual:null,isAnnual:false,quarterLabel:null,sort:okrChildren(parentId||null).length,createdBy:S.uid,createdAt:new Date().toISOString(),
+    kind:_isKR?'kr':!_okrV4Ready()?'kpi':kind==='kpi'?'kpi':kind==='objective'?'objective':(_pk?(_pk.kind==='kpi'?'kpi':'objective'):(okrTab()==='scoreboard'?'objective':'kpi')),krKind:_isKR?'metric':null,isNorthStar:false,dueDate:null,doneAt:null,doneBy:null,floorValue:null,items:[],pacing:[],paceTolerance:null,contributesTo:null,targetConfirmed:true,targetBasis:'',leadLag:null,ownerTbd:false,needsDecision:false,decisionNote:'',state:'active',baselineAsOf:null};
   if(_OKRED.items===undefined)_OKRED.items=[];if(_OKRED.pacing===undefined)_OKRED.pacing=[];delete _OKRED._draft;delete _OKRED._rampOpen;
   delete _OKRED._qRows;delete _OKRED._qEdit;delete _OKRED._ownQ;
   if(existing&&existing.isAnnual)_OKRED._qEdit=_okrBuildQEdit(existing.id); // live quarter values — edits made on the quarters themselves show up here
@@ -2146,17 +2150,20 @@ App._renderOKREdit=()=>{
   const deptOpts=(topDepts()||[]).map(d=>[d.id,d.name]);
   const subOpts=o.departmentId?(subDepts(o.departmentId)||[]).map(s=>[s.id,s.name]):[];
   const dayChip=d=>`<button type="button" onclick="_OKRED.frequency.day='${d}';App._renderOKREdit()" style="padding:6px 11px;border-radius:9px;border:1.5px solid ${f.day===d?'var(--c-text)':'var(--c-border)'};background:${f.day===d?'var(--c-ink)':'var(--c-surface)'};color:${f.day===d?'#fff':'var(--c-text-2)'};font-size:12px;font-weight:700;cursor:pointer">${d}</button>`;
-  /* v4.0 — what kind of node is being edited decides which sections show */
-  const _kr=o.kind==='kr',_kk=_kr?okrKRKind(o):null;
-  const _hasKRs=!_kr&&o.metricType==='krs';   // measured by its key results — no number of its own
+  /* v4.1 — THREE editors, chosen by what was clicked (never a switch inside the form):
+       KPI        — the editor exactly as it was before v4: number, direction, annual split, roll-up, schedule
+       objective  — part of the OKR tree: own number OR measured by its key results, approved ramp, governance
+       key result — its kind (number / milestone / count / floor+target), own number OR linked KPIs, ramp, governance */
+  const _kr=o.kind==='kr',_kpi=o.kind==='kpi',_obj=!_kr&&!_kpi,_kk=_kr?okrKRKind(o):null;
+  const _hasKRs=o.metricType==='krs';   // measured by what sits under it — no number of its own
   const _showMetric=!_kr||_kk==='metric'||_kk==='range';   // start / target / direction / unit
-  const _title=_kr?((isExisting?'Edit':'New')+' key result'):((isExisting?'Edit':'New')+' L'+lvl+' objective');
-  const _sub=_kr?('Key result of: '+((parent&&parent.title)||'—')):parent?('Under: '+(parent.title||'—')):('Top-level objective — assigned to a department');
+  const _noun=_kr?'key result':_kpi?'KPI':'objective';
+  const _title=(isExisting?'Edit ':'New ')+(_kr?'key result':((_kpi||!_okrV4Ready())?'L'+lvl+' KPI':'L'+lvl+' objective'));
+  const _sub=_kr?('Key result of: '+((parent&&parent.title)||'—')):parent?('Under: '+(parent.title||'—')):('Top-level '+_noun+' — assigned to a department');
   modalShell({title:_title,sub:_sub,size:'max-w-lg',key:'okr-edit',
     body:`<div style="display:flex;flex-direction:column;gap:14px">
-      ${okrEdKindToggle(o,parent,isExisting)}
-      <div><label style="${L}">${_kr?'Key result':'Objective'} title *</label><input type="text" value="${esc(o.title||'')}" oninput="_OKRED.title=this.value" placeholder="${_kr?'e.g. +150 orders/day from 15-minute delivery':'e.g. Bolt — launch and scale 15-minute delivery across Dubai'}" class="ui-input rf"/></div>
-      <div><label style="${L}">${_kr?'Notes':'Why it matters'}</label><textarea rows="2" oninput="_OKRED.description=this.value" placeholder="${_kr?'Anything the owner should know about this number':'…so that [the outcome this objective exists for]. Shown under the title on the scoreboard.'}" class="ui-input rf" style="resize:vertical">${esc(o.description||'')}</textarea></div>
+      <div><label style="${L}">${_kr?'Key result':_kpi?'KPI':'Objective'} title *</label><input type="text" value="${esc(o.title||'')}" oninput="_OKRED.title=this.value" placeholder="${_kr?'e.g. +150 orders/day from 15-minute delivery':_kpi?'e.g. Average order value':'e.g. Bolt — launch and scale 15-minute delivery across Dubai'}" class="ui-input rf"/></div>
+      <div><label style="${L}">${_kr?'Notes':_kpi?'Description':'Why it matters'}</label><textarea rows="2" oninput="_OKRED.description=this.value" placeholder="${_kr?'Anything the owner should know about this number':_kpi?'What this number measures':'…so that [the outcome this objective exists for]. Shown under the title on the scoreboard.'}" class="ui-input rf" style="resize:vertical">${esc(o.description||'')}</textarea></div>
       ${_kr?okrEdKRKindSection(o,L):''}
       ${(()=>{const pEff=parent?okrDeptOf(parent):null;const pDept=(pEff&&pEff.deptId)?(DB.departments||[]).find(x=>x.id===pEff.deptId):null;
       return `<div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -2185,8 +2192,9 @@ App._renderOKREdit=()=>{
         <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">${selOwn.length} selected · scheduled check-ins reach every owner as a <b>group task — any one</b> of them can fill it and it counts for everyone.</div>
       </div>`;})()}
       ${_showMetric?`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Rules & target — how is this measured?</label>
-        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_kr?'':`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results and linked KPIs (their average)</option>`}</select>
-        ${(!_kr&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results and linked KPIs</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results from the panel, or link the KPIs Bridge already tracks (below).</div>`:''}
+        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_obj?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results (their average)</option>`:(_kr&&_kk==='metric')?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its linked KPIs (their average)</option>`:''}</select>
+        ${(_obj&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results from the objective’s panel.</div>`:''}
+        ${(_kr&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of the KPIs linked under it</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Link KPIs from the key result’s panel.</div>`:''}
       </div>`:''}
       ${(_showMetric&&!_hasKRs&&o.metricType!=='yesno')?`<div><label style="${L}">Which way is good?</label>
         <select class="ui-select rf" onchange="App._okrEdSetDir(this.value)">
@@ -2225,12 +2233,12 @@ App._renderOKREdit=()=>{
         <div style="font-size:11px;color:#7C5A26;margin-top:6px">This number is what progress is measured against; the original stays for comparison. Clear it (or set it back to the original) to remove the revision.</div>
       </div>`:''}
       <div><label style="${L}">${o.metricType==='currency'?'Currency':'Unit'} ${o.metricType==='percent'?'(auto: %)':''}</label><input type="text" value="${esc(o.unit||'')}" oninput="_OKRED.unit=this.value" placeholder="${o.metricType==='currency'?'e.g. AED / $':'e.g. orders, hrs'}" class="ui-input rf" ${o.metricType==='percent'?'disabled':''}/></div>`:(_showMetric&&!_hasKRs)?`<div style="font-size:12px;color:var(--c-text-3);background:var(--c-surface-2);border-radius:9px;padding:9px 12px">Yes / No objective — a check-in of "Yes" counts as 100%, "No" as 0%.</div>`:''}
-      ${(_showMetric&&!_hasKRs)?okrEdRampSection(o,L):''}
-      ${(!_kr&&!_hasKRs&&o.metricType!=='yesno')?_okrEdAnnualSection(o,L):''}
-      ${(!_kr&&!_hasKRs&&o.metricType!=='yesno'&&!o.isAnnual)?`<div style="border-top:1px dashed var(--c-border);padding-top:12px">
+      ${(_showMetric&&!_hasKRs&&!_kpi)?okrEdRampSection(o,L):''}
+      ${(_kpi&&!_hasKRs&&o.metricType!=='yesno')?_okrEdAnnualSection(o,L):''}
+      ${(_kpi&&!_hasKRs&&o.metricType!=='yesno'&&!o.isAnnual)?`<div style="border-top:1px dashed var(--c-border);padding-top:12px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
           <div style="min-width:0"><label style="${L}">Auto-update from the level below</label>
-          <div style="font-size:11px;color:var(--c-text-3);margin-top:2px;line-height:1.5">${o.quarterLabel?`This ${esc(o.quarterLabel)} takes its current value from the <b>matching ${esc(o.quarterLabel)} objectives one level below</b> (every L${lvl+1}·${esc(o.quarterLabel)}, plus any sub-objectives created under it) — the owner never enters it by hand.`:`L${lvl} takes its current value from its <b>direct L${lvl+1} sub-objectives only</b> — the owner never enters it by hand.`} Progress is still measured against this objective's own start → target.</div></div>
+          <div style="font-size:11px;color:var(--c-text-3);margin-top:2px;line-height:1.5">${o.quarterLabel?`This ${esc(o.quarterLabel)} takes its current value from the <b>matching ${esc(o.quarterLabel)} objectives one level below</b> (every L${lvl+1}·${esc(o.quarterLabel)}, plus any sub-objectives created under it) — the owner never enters it by hand.`:`L${lvl} takes its current value from its <b>direct L${lvl+1} sub-KPIs only</b> — the owner never enters it by hand.`} Progress is still measured against this objective's own start → target.</div></div>
           <button type="button" role="switch" aria-checked="${o.rollup?'true':'false'}" class="tog ${o.rollup?'on':'off'}" style="margin-top:2px" onclick="_OKRED.rollup=!_OKRED.rollup;App._renderOKREdit()"><span></span></button>
         </div>
         ${o.rollup?`<div style="margin-top:10px"><label style="${L}">How to combine the L${lvl+1} values</label>
@@ -2263,15 +2271,14 @@ App._renderOKREdit=()=>{
         <div><label style="${L}">Period end</label><input type="date" value="${o.periodEnd||''}" oninput="_OKRED.periodEnd=this.value||null" class="ui-input rf"/></div>
       </div>
       <div style="font-size:11px;color:var(--c-text-3)">The period drives the automatic On track / Off track pace and stops check-in reminders after it ends.</div>
-      ${okrEdLinkSection(o,L,isExisting)}
-      ${okrEdGovernanceSection(o,L,parent,isExisting)}
+      ${_kpi?'':okrEdGovernanceSection(o,L,parent,isExisting)}
     </div>`,
-    footer:btnG('Cancel','App.closeModal()')+btnP(isExisting?'Save changes':(_kr?'Create key result':'Create objective'),'App._okrSave()')});
+    footer:btnG('Cancel','App.closeModal()')+btnP(isExisting?'Save changes':('Create '+_noun),'App._okrSave()')});
   if(o._ownQ)setTimeout(()=>{try{App._okrEdOwnQ((_OKRED&&_OKRED._ownQ)||'');}catch(e){}},0); // keep the owner search applied across re-renders
 };
 App._okrSave=()=>{
   const o=_OKRED;if(!o)return;
-  if(!(o.title||'').trim())return toast(o.kind==='kr'?'Give the key result a title':'Add an objective title','err');
+  if(!(o.title||'').trim())return toast(o.kind==='kr'?'Give the key result a title':o.kind==='kpi'?'Add a KPI title':'Add an objective title','err');
   o.owners=okrOwners(o);o.ownerId=o.owners[0]||null; // normalize: owners drives, ownerId mirrors owners[0]
   /* v4.0 — "Owner to be decided" is a legitimate, visible state (the proposal's "?" owners); it is
      flagged on every card and listed under "needs a decision" until someone is named. */
@@ -2290,10 +2297,13 @@ App._okrSave=()=>{
     if(!o.parentId)return toast('A key result has to sit under an objective','err');
     const pk=okrById(o.parentId);
     if(pk&&pk.kind==='kr')return toast('A key result can’t sit under another key result','err');
+    if(pk&&pk.kind==='kpi')return toast('A key result sits under an objective, not under a KPI','err');
     if(pk&&(pk.isAnnual||pk.rollup))return toast('That objective auto-updates (annual / roll-up) — it can’t also hold key results','err');
     o.isAnnual=false;o.rollup=false;o.isNorthStar=false;
     const kk=okrKRKind(o);
-    if(kk==='milestone'){o.metricType='yesno';o.startValue=0;o.targetValue=1;o.floorValue=null;o.direction='up';o.pacing=[];}
+    if(kk!=='metric'&&o.metricType==='krs')o.metricType='number';          // only a number KR reads linked KPIs
+    if(kk==='metric'&&o.metricType==='krs'){o.startValue=0;o.targetValue=null;o.revisedTarget=null;o.direction='up';o.unit='';o.pacing=[];o.paceTolerance=null;o.floorValue=null;o.items=[];}
+    else if(kk==='milestone'){o.metricType='yesno';o.startValue=0;o.targetValue=1;o.floorValue=null;o.direction='up';o.pacing=[];}
     else if(kk==='count'){o.metricType='number';o.startValue=0;const its=(o.items||[]).filter(x=>x&&String(x.name||'').trim());if(!its.length)return toast('Add at least one item to count','err');o.items=its;o.targetValue=its.length;o.floorValue=null;o.direction='up';o.pacing=[];}
     else if(kk==='range'){
       if(o.metricType==='yesno')o.metricType='number';
@@ -2303,10 +2313,13 @@ App._okrSave=()=>{
     }else{o.floorValue=null;o.items=[];}
   }else{
     const pk0=o.parentId?okrById(o.parentId):null;
-    if(pk0&&pk0.kind==='kr')return toast('Nothing can sit under a key result','err');
-    if(pk0&&pk0.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI — make it a KPI, or move it under an objective','err');
+    if(pk0&&pk0.kind==='kr'&&!(o.kind==='kpi'&&okrCanHoldKPIs(pk0)))return toast(o.kind==='kpi'?'Only a number key result can hold KPIs':'Only KPIs can sit under a key result','err');
+    if(pk0&&pk0.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI','err');
+    if(pk0&&okrIsObjective(pk0)&&o.kind==='kpi')return toast('KPIs link under a key result, not directly under an objective','err');
     if(o.kind==='kpi'&&okrChildren(o.id).some(okrIsObjective))return toast('It has objectives under it — it stays an objective','err');
     o.krKind=null;o.floorValue=null;o.items=[];o.leadLag=null;o.dueDate=null;o.doneAt=null;o.doneBy=null;
+    if(o.kind==='kpi'&&o.metricType==='krs')o.metricType='number';           // a KPI always has its own number
+    if(okrIsObjective(o)){o.isAnnual=false;o.rollup=false;delete o._qRows;}  // v4.1: OKRs never split into quarters and never roll up — they read their key results
     if(o.metricType==='krs'){o.isAnnual=false;o.rollup=false;o.startValue=0;o.targetValue=null;o.revisedTarget=null;o.direction='up';o.unit='';o.pacing=[];o.paceTolerance=null;}
     if(o.parentId)o.isNorthStar=false; // only a root can be the North Star
   }
@@ -2314,7 +2327,7 @@ App._okrSave=()=>{
   if(o.paceTolerance!==null&&o.paceTolerance!==undefined&&o.paceTolerance!==''&&!(Number(o.paceTolerance)>=0&&Number(o.paceTolerance)<=100))return toast('Tolerance is a number of percentage points between 0 and 100','err');
   if(o.contributesTo===o.id)o.contributesTo=null;
   const _krNoTgt=o.kind==='kr'&&(okrKRKind(o)==='milestone'||okrKRKind(o)==='count');
-  if(o.metricType!=='yesno'&&o.metricType!=='krs'&&!_krNoTgt&&(o.targetValue===null||o.targetValue===undefined||!isFinite(o.targetValue)))return toast(okrIsThresh(o)?'Set the threshold value':'Set a target value','err');
+  if(o.metricType!=='yesno'&&o.metricType!=='krs'&&!_krNoTgt&&(o.targetValue===null||o.targetValue===undefined||!isFinite(o.targetValue)))return toast(okrIsThresh(o)?'Set the threshold value':('Set a target value'+((o.kind==='kr'&&okrKRKind(o)==='metric')?' — or choose “By its linked KPIs” under Rules & target':okrIsObjective(o)?' — or choose “By its key results” under Rules & target':'')),'err');
   // Threshold modes have no start value — keep the column at 0 so nothing downstream reads a stale one.
   if(okrIsThresh(o))o.startValue=0;
   if(o.metricType==='percent')o.unit='%';

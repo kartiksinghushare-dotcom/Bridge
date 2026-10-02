@@ -1,4 +1,4 @@
-# Bridge v168 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=168`)
+# Bridge v169 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=169`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -7,6 +7,13 @@
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
 4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Round seven — three clear forms, KPIs link under key results, tabs renamed
+- **Tabs**: the OKR page is **OKR** (the scoreboard: objectives + key results) and **KPIs** (the working tree, exactly as before — KPIs only). Objectives and key results never appear on the KPIs tab; a KPI linked under a key result still lists there, at the top level, with a “linked under …” chip.
+- **KPIs link under key results** (number / floor+target key results), not under objectives: Objective → Key results → linked KPIs. A key result with no target of its own reads the average of its linked KPIs; the objective reads the average of its key results. **Link KPI** lives on the key result's panel only (the editor section is gone). On the scoreboard a linked KPI renders as an indented line under its key result. Move/Link refuse: objective under KPI, KPI directly under objective, anything but a KPI under a key result, KPI under a milestone / count key result.
+- **Three editors, no “What is this?” switch** — the kind follows where you clicked: OKR tab → New objective; KPIs tab → New KPI; panel → Add sub-objective / Add sub-KPI / Add key result. **KPI editor** is the pre-v4 editor unchanged (number, direction, annual split + quarters, roll-up, schedule). **Objective editor**: own number or “By its key results” (the default for a new objective), approved ramp, plan & governance — no annual split, no roll-up: **OKRs never split into quarters**. **Key-result editor**: its kind, own number or “By its linked KPIs”, ramp, governance.
+- Seed: “Sessions / conversion rate / cart value / offline revenue” under B2C Growth is now a key result (measured by linked KPIs) — updated in the database and the seed file.
+- Card copy on the KPIs tab says sub-KPI / KPI where it used to say objective. QA harness 77/77, no page errors.
 
 ### Round six — Scoreboard is OKRs only; two create buttons
 - The "KPIs not linked to an objective" section is gone from the Scoreboard. KPIs appear there only as lines under the objective they are linked to; the strip tile is now **Linked KPIs** and "Off track" counts objectives + linked KPIs. Unlinked KPIs live on the Objectives tab, exactly as before.
