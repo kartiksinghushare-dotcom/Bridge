@@ -21,7 +21,6 @@
 --   · Draft objectives           state = 'draft' | 'active'   (closed stays its own flag)
 --   · Baseline date              baseline_as_of
 --   · Weekly owner flag          okr_checkins.flag = 'on_track' | 'at_risk' | 'blocked'
---   · Review log                 okr_reviews (weekly / monthly review sign-offs + notes)
 
 -- ───────────────────────────── 1. okrs — new columns ─────────────────────────────
 alter table public.okrs add column if not exists kind              text        not null default 'kpi';
@@ -85,37 +84,7 @@ do $$ begin
     alter table public.okr_checkins add constraint okr_checkins_flag_chk check (flag is null or flag in ('on_track','at_risk','blocked')) not valid; end if;
 end $$;
 
--- ───────────────────────────── 3. okr_reviews — weekly / monthly review sign-offs ─────────────────────────────
--- One row per review actually held. period_key: weekly 'YYYY-Www' (ISO week) · monthly 'YYYY-MM'.
--- notes: free text per L0 / per item, decisions taken — [{okrId, note, decision}].
-create table if not exists public.okr_reviews (
-  id          text primary key default ('okrv_'||substr(gen_random_uuid()::text,1,12)),
-  kind        text not null,                         -- 'weekly' | 'monthly'
-  period_key  text not null,
-  scope_id    text,                                  -- null = whole company; else a root okrs.id (e.g. the KSA tree)
-  notes       jsonb not null default '[]'::jsonb,
-  summary     text not null default '',
-  held_by     text,                                  -- profiles.id (text, same as okrs.owner_id)
-  held_at     timestamptz not null default now(),
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-  constraint okr_reviews_kind_chk check (kind in ('weekly','monthly')));
-create unique index if not exists okr_reviews_period_idx on public.okr_reviews(kind, period_key, coalesce(scope_id,''));
-alter table public.okr_reviews enable row level security;
--- Same posture as okr_logs: anyone signed in can read; writes are open to the app (the app gates
--- them with the 'okr' permission area — run_review).
-do $$ begin
-  if not exists (select 1 from pg_policy where polname='okr_reviews_select' and polrelid='public.okr_reviews'::regclass) then
-    create policy okr_reviews_select on public.okr_reviews for select to authenticated using (true); end if;
-  if not exists (select 1 from pg_policy where polname='okr_reviews_insert' and polrelid='public.okr_reviews'::regclass) then
-    create policy okr_reviews_insert on public.okr_reviews for insert to authenticated with check (true); end if;
-  if not exists (select 1 from pg_policy where polname='okr_reviews_update' and polrelid='public.okr_reviews'::regclass) then
-    create policy okr_reviews_update on public.okr_reviews for update to authenticated using (true) with check (true); end if;
-  if not exists (select 1 from pg_policy where polname='okr_reviews_delete' and polrelid='public.okr_reviews'::regclass) then
-    create policy okr_reviews_delete on public.okr_reviews for delete to authenticated using (true); end if;
-end $$;
-
--- ───────────────────────────── 4. okr_alerts — what the daily job already told people ─────────────────────────────
+-- ───────────────────────────── 3. okr_alerts — what the daily job already told people ─────────────────────────────
 -- Dedup + history for variance / stale / blocked alerts, so a person is not nagged about the same
 -- condition every morning. One row per (okr, kind, condition fingerprint).
 create table if not exists public.okr_alerts (

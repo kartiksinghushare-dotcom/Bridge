@@ -1,4 +1,4 @@
-# Bridge v165 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=165`)
+# Bridge v166 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=166`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -7,6 +7,17 @@
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
 4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Seed — the Road to 1,000 tree (`supabase/seed/2026-10-02_road_to_1000_okrs.sql`)
+- 63 rows straight from the proposal v1.2: North Star (330 → 1,000, Appendix A ramp, Q4 checkpoint KR, "Engines on schedule" count), 8 engines (each an L1 measured by its KRs, with a "+N orders/day" KR that counts toward the North Star — promised total +670), Bolt's L2 certification, Financial resilience (deck milestone, filings count, cash-runway floor+target, tranches, ESOP tiers dated off the ramp), Organisational evolution (3 → 1 sources, scoreboard milestone, process-load ceiling, orders-per-employee + VDR as drafts), Culture (eNPS 40 → 50, Road Club), Revenue (32M → 40M, brand survey + lift, B2C 27M → 34M with an L2 for the existing KPIs to link under, B2B 1.5M → 2M), NPS 51 → 54, Profit 4% → 8% with gross margin 40% → 43%, KSA SAR 6M.
+- Owners matched by name to Bridge users. No Bridge user for "Sami", "Dee", "Ilayda", "Leadership / People", "?" → saved as **Owner to be decided** with a needs-decision note (12 rows). "Nihad?" → Nihad, flagged to confirm. Every TBD / "???" / proposed number in the document is carried as a needs-decision or proposed-target flag (19 rows), so the "Need a decision" tile lists exactly what the proposal's section 5 asks for.
+- Runs only after the migration (it checks for `okrs.kind` and stops otherwise). Idempotent (`on conflict do nothing`), touches nothing existing. Dry-run on local Postgres: 63 inserted, re-run inserts 0; rendered in the harness with zero errors.
+
+### Round five — Reviews tab removed
+- The Reviews tab (weekly / monthly review pages + sign-off) is **gone**: route `okr` has two tabs, Scoreboard and Objectives. Anything that pointed at it falls back to the Scoreboard. The blocked / at-risk / not-updated / needs-a-decision reads live on the Scoreboard strip.
+- Removed with it: the `okr_reviews` table from the migration (never created — nothing to drop), the **Run reviews** permission action (`review`) and its label, the manager preset's `review` grant, and every `.rv-*` style. A stored custom role that still carries `review` is simply ignored.
+- "Blocked" alerts now go to the owners up the tree plus everyone with **OKR → Manage** (was: Manage or Run reviews). Settings copy updated to match.
+- Note: earlier sections of this entry that mention reviews describe what was built and then removed; the QA harness is down to 76 flows accordingly (76/76, no page errors).
 
 ### Round four — OKRs vs KPIs (v4.1 model)
 - **Everything Bridge tracked before is a KPI** (`okrs.kind = 'kpi'`). The migration marks every existing row as a KPI and the column default is `kpi`, so anything the older production frontend keeps inserting is a KPI too. Objectives (`'objective'`) and key results (`'kr'`) are only ever written by this build. A KPI works exactly as before — own number, check-ins, sub-KPIs, roll-ups, annual splits, Move, bulk edit, export.

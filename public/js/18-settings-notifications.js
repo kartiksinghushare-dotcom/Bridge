@@ -595,7 +595,7 @@ function settingsPage(forceTab){
         ${_nsTogRow('inapp_okr_update_added','OKR update added','Sent to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('inapp_okr_target_revised','OKR target revised','Sent to the owners when a target is revised')}
         ${_nsTogRow('inapp_okr_closed','OKR closed / reopened','Sent to the owners when an objective is closed or reopened')}
-        ${_nsTogRow('inapp_okr_blocked','OKR flagged Blocked','The moment an owner flags an update Blocked — to the owners above it and everyone who runs reviews')}
+        ${_nsTogRow('inapp_okr_blocked','OKR flagged Blocked','The moment an owner flags an update Blocked — to the owners above it and everyone with OKR → Manage')}
         ${_nsTogRow('inapp_okr_variance','OKR behind the approved ramp','Daily (server job): actual below the plan by more than the tolerance for several updates in a row — owner + the objective above')}
         ${_nsTogRow('inapp_okr_stale','OKR not updated','Daily (server job): no update for longer than the check-in cadence allows — owner, then the objective above')}
         <div style="font-size:10px;font-weight:800;color:#A8998A;letter-spacing:.06em;text-transform:uppercase;padding:14px 0 4px">Attendance</div>
@@ -675,7 +675,7 @@ function settingsPage(forceTab){
         ${_nsTogRow('email_okr_update_added','OKR update added','Email to co-owners when someone submits the group\'s check-in')}
         ${_nsTogRow('email_okr_target_revised','OKR target revised','Email to the owners when a target is revised')}
         ${_nsTogRow('email_okr_closed','OKR closed / reopened','Email to the owners when an objective is closed or reopened')}
-        ${_nsTogRow('email_okr_blocked','OKR flagged Blocked','Email the owners above and the reviewers the moment something is flagged Blocked')}
+        ${_nsTogRow('email_okr_blocked','OKR flagged Blocked','Email the owners above and OKR managers the moment something is flagged Blocked')}
         ${_nsTogRow('email_okr_variance','OKR behind the approved ramp (daily)','Server job — email when a number has sat below the ramp for several updates in a row')}
         ${_nsTogRow('email_okr_stale','OKR not updated (daily)','Server job — email when an objective has gone quiet for longer than its cadence allows')}
         ${_nsOkrAlertsCard()}

@@ -135,7 +135,7 @@ const PERM_AREAS=[
   {key:'documentsOrg',label:'Documents (organization)',desc:'Shared dept/location files',actions:['view','create','edit','delete','upload','download','approve'],scoped:true,group:'Content'},
   {key:'documentsPersonal',label:'Personal documents (of others)',desc:'Documents on OTHER people\'s profiles — passport, visa, contract… “Sees” limits whose. Own documents are governed by “My profile”',actions:['view','create','edit','delete','upload','download'],scoped:true,group:'Content'},
   {key:'analytics',label:'Analytics',desc:'Operational analytics dashboard (checklists, compliance, tickets)',actions:['view','export'],scoped:false,group:'Insights'},
-  {key:'okr',label:'OKR',desc:'Hierarchical objectives (L0 → L1 → L2) with key results. “Sees” decides WHOSE objectives they can view — owners always see their own (they have to update them); sub-objectives of anything visible are included. “Run reviews” opens the weekly / monthly review pages and lets the person sign a review off; “Confirm targets” marks a proposed number as agreed and settles “needs a decision” items; “Manage” covers both.',actions:['view','create','edit','checkin','review','confirmTarget','manage','delete'],scoped:true,group:'Insights'},
+  {key:'okr',label:'OKR',desc:'Hierarchical objectives (L0 → L1 → L2) with key results. “Sees” decides WHOSE objectives they can view — owners always see their own (they have to update them); sub-objectives of anything visible are included. “Confirm targets” marks a proposed number as agreed and settles “needs a decision” items; “Manage” covers it.',actions:['view','create','edit','checkin','confirmTarget','manage','delete'],scoped:true,group:'Insights'},
   {key:'locations',label:'Locations',desc:'Offices and GPS boundary',actions:['view','create','edit','manage','delete','manageGeofence'],scoped:false,group:'System'},
   {key:'approvals',label:'Approvals inbox',desc:'The unified approvals page (what they can act on is still per-area)',actions:['view','decide'],scoped:false,group:'System'},
   {key:'audit',label:'Audit / Activity log',desc:'History of actions',actions:['view','export'],scoped:false,group:'System'},
@@ -143,7 +143,7 @@ const PERM_AREAS=[
   {key:'accessControl',label:'Access Control',desc:'The role-profile system itself',actions:['view','manage'],scoped:false,group:'System'},
 ];
 // Plain-language labels used by the Access Control editor + live summary.
-const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',review:'Run reviews',confirmTarget:'Confirm targets',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board',clock:'Clock in / out',send:'Send',viewProfile:'Open profile',viewSensitive:'Sensitive details',editHr:'Edit HR details',manageWfh:'Allow / block WFH',editDetails:'Edit own details',apply:'Apply',applyFor:'Apply for others',adjust:'Adjust balances / year-end',viewCompensation:'View compensation',editCompensation:'Edit compensation',editAvatar:'Change photo',editEmergency:'Emergency contact',uploadDocs:'Upload documents',deleteDocs:'Delete documents'};
+const PERM_ACTION_LABEL={view:'View',create:'Create',edit:'Edit',delete:'Delete',deactivate:'Deactivate',resetPassword:'Reset password',approve:'Approve',decide:'Approve / Reject',download:'Download / Export',export:'Export',import:'Import',duplicate:'Duplicate',checkin:'Check-in / Update',confirmTarget:'Confirm targets',resolve:'Resolve',reopen:'Reopen',close:'Close',comment:'Comment',manage:'Manage',manageSettings:'Manage settings',assign:'Assign',assignRole:'Assign role profile',assignManager:'Assign manager',grant:'Grant / Remove',submit:'Submit',upload:'Upload',manageGeofence:'Manage geofence',issue:'Issue',verify:'Verify',run:'Run',finalize:'Finalize',rollback:'Roll back',rename:'Rename',groups:'People groups',views:'Filtered views',members:'Assign people (board)',hubMembers:'Assign people (channel)',seeAll:'See every channel & board',clock:'Clock in / out',send:'Send',viewProfile:'Open profile',viewSensitive:'Sensitive details',editHr:'Edit HR details',manageWfh:'Allow / block WFH',editDetails:'Edit own details',apply:'Apply',applyFor:'Apply for others',adjust:'Adjust balances / year-end',viewCompensation:'View compensation',editCompensation:'Edit compensation',editAvatar:'Change photo',editEmergency:'Emergency contact',uploadDocs:'Upload documents',deleteDocs:'Delete documents'};
 /* Group order in the editors — Time & People first so the everyday areas are at the top. */
 const PERM_GROUP_ORDER=['System','Time','People & Org','Tasks & Tickets','Content','Insights'];
 const SCOPE_ORDER=['none','self','team','department','location','everyone'];
@@ -172,7 +172,7 @@ function _seedRoleProfiles(){
       crm:A('everyone','view','create','edit','convert','assign','rename','groups','views','members','delete'),
       documentsPersonal:A('self','view','create','download'),
       approvals:A('none','view','decide'),
-      okr:A('team','view','create','edit','checkin','review','confirmTarget','manage'),   // v4.0: managers run the weekly review for their team and can confirm a proposed target
+      okr:A('team','view','create','edit','checkin','confirmTarget','manage'),   // v4.0: managers can confirm a proposed target
       analytics:A('none','view'),
     }},
     hr:{id:'hr',name:'HR',description:'People operations — the only role that adds or corrects attendance by hand, edits HR details, manages WFH and everyone’s documents.',builtin:true,perms:{
@@ -1431,12 +1431,11 @@ App._okrProgressModal=(id)=>{
 function okrPage(){
   const vis=okrVisible(),canCreate=_okrCanCreate();
   const today=todayISO();
-  /* v4.0 — three tabs on one route. Scoreboard is the leadership read; Objectives is the working tree
-     (everything that was here before); Reviews is the weekly / monthly cadence. */
+  /* v4.0 — two tabs on one route. Scoreboard is the leadership read; Objectives is the working tree
+     (everything that was here before). */
   const tab=okrTab();
   const tabs=okrTabsHTML(tab);
-  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',(okrCanReview()?btn('Reviews','App._okrTab(\'reviews\')',{variant:'ghost',icon:'calendar'}):'')+(canCreate?btn('New L0 objective','App._okrEdit(null,null)',{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
-  if(tab==='reviews'){const h=hdr('OKR','Weekly and monthly reviews — what moved, what’s stuck, what needs a decision',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'}));return `<div class="fade">${h}${tabs}${okrReviewsHTML()}</div>`;}
+  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn('New L0 objective','App._okrEdit(null,null)',{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
   const head=hdr('OKR','Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn('New L0 objective','App._okrEdit(null,null)',{variant:'primary',icon:'plus'}):''));
   // ── Summary cards — clickable (v3.11): tap a number to see exactly which OKRs it counts ──
   //    v4.0: objectives only — key results live inside their objective, drafts aren't measured yet

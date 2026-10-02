@@ -12,8 +12,7 @@
      · North Star + engines      okrContributors / okrContribSummary
      · Governance                proposed vs confirmed targets · owner TBD · needs decision · drafts
      · Scoreboard tab            okrScoreboardHTML
-     · Reviews tab               okrReviewsHTML (weekly · monthly) + okr_reviews sign-off
-     · Blocked alert             okrBlockedAlert → owners up the tree + reviewers
+     · Blocked alert             okrBlockedAlert → owners up the tree + OKR managers
 
    Loaded right after 19-okr-roles-acl.js (classic script, shared scope). Nothing here runs at
    load time except constant declarations; every function is called at render / click time.
@@ -195,13 +194,13 @@ function okrFlagPicker(cur,call,sm){
   return OKR_FLAG_ORDER.map(f=>{const m=OKR_FLAGS[f];const on=cur===f;const js=String(call).split('FLAG').join("'"+f+"'");
     return`<button type="button" onclick="${js}" style="display:inline-flex;align-items:center;gap:6px;padding:${sm?'5px 10px':'7px 13px'};border-radius:20px;border:1.5px solid ${on?m.dot:'var(--c-border)'};background:${on?m.bg:'var(--c-surface)'};color:${on?m.fg:'var(--c-text-2)'};font-size:${sm?'11':'12'}px;font-weight:700;cursor:pointer"><span style="width:7px;height:7px;border-radius:50%;background:${on?m.dot:'var(--c-border-2)'}"></span>${m.label}</button>`;}).join('');
 }
-/* Blocked → tell the people who can unblock: owners up the tree, plus everyone who runs reviews. */
+/* Blocked → tell the people who can unblock: owners up the tree, plus everyone with OKR → Manage. */
 function okrBlockedAlert(o,ck){
   try{
     const ids=new Set();
     let cur=o?okrById(o.parentId):null,g=0;
     while(cur&&g++<15){okrOwners(cur).forEach(x=>ids.add(x));cur=cur.parentId?okrById(cur.parentId):null;}
-    (DB.users||[]).forEach(u=>{if(u&&u.status==='Active'&&(canUser(u,'okr','review')||canUser(u,'okr','manage')))ids.add(u.id);});
+    (DB.users||[]).forEach(u=>{if(u&&u.status==='Active'&&canUser(u,'okr','manage'))ids.add(u.id);});
     ids.delete(S.uid);
     const who=fullName(me());
     _okrNotify([...ids],'okr_blocked','⛔ Blocked: "'+(o.title||'')+'" — '+who+(ck&&ck.comment?': '+String(ck.comment).slice(0,120):''),{okr_title:o.title||'',actor:who,comment:(ck&&ck.comment)||'',date:(ck&&ck.date)||todayISO()});
@@ -237,7 +236,7 @@ function okrBadgesHTML(o,opts){
   if(o.state==='draft')out.push(_okrBadge('DRAFT','#F3F0EA','#6B5F55','#E2DBD1','Proposed — not live, not counted'));
   if(o.targetConfirmed===false)out.push(_okrBadge('PROPOSED','#FBF1DC','#7A5A12','#EEDEB5','Target not yet confirmed by leadership'+(o.targetBasis?' — basis: '+o.targetBasis:'')));
   if(o.ownerTbd&&!okrOwners(o).length)out.push(_okrBadge('OWNER TBD','#FBF1DC','#7A5A12','#EEDEB5','Owner still to be decided'));
-  if(o.needsDecision)out.push(_okrBadge('NEEDS DECISION','#F9E7E3','#8E2A1E','#F0CFC8',o.decisionNote||'Flagged for the monthly review'));
+  if(o.needsDecision)out.push(_okrBadge('NEEDS DECISION','#F9E7E3','#8E2A1E','#F0CFC8',o.decisionNote||'Flagged for a decision'));
   if(o.kind==='kr'&&o.leadLag&&!opts.noLead)out.push(_okrBadge(o.leadLag==='leading'?'LEADING':'LAGGING','#EEF2F5','#3F5566','#D8E0E6',o.leadLag==='leading'?'Leading indicator — moves first':'Lagging indicator — the result'));
   return out.join('');
 }
@@ -342,7 +341,7 @@ function okrPanelV4(o,canCk){
   const gov=[];
   if(o.targetConfirmed===false)gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('help','w-3.5 h-3.5')}</span><span><b>Target proposed, not confirmed.</b>${o.targetBasis?' Basis: '+esc(o.targetBasis):''}${okrCanConfirm()?` <button onclick="App._okrConfirmTarget('${o.id}')" style="border:none;background:transparent;color:#7A5A12;font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px;padding:0">Confirm it</button>`:''}</span></div>`);
   if(o.ownerTbd&&!okrOwners(o).length)gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('user','w-3.5 h-3.5')}</span><span><b>Owner to be decided</b> — nobody is asked to update this until someone is named.</span></div>`);
-  if(o.needsDecision)gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('alert','w-3.5 h-3.5')}</span><span><b>Needs a decision:</b> ${esc(o.decisionNote||'flagged for the monthly review')}${okrCanConfirm()?` <button onclick="App._okrDecided('${o.id}')" style="border:none;background:transparent;color:#8E2A1E;font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px;padding:0">Mark decided</button>`:''}</span></div>`);
+  if(o.needsDecision)gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('alert','w-3.5 h-3.5')}</span><span><b>Needs a decision:</b> ${esc(o.decisionNote||'flagged for a decision')}${okrCanConfirm()?` <button onclick="App._okrDecided('${o.id}')" style="border:none;background:transparent;color:#8E2A1E;font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px;padding:0">Mark decided</button>`:''}</span></div>`);
   if(o.state==='draft')gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('doc','w-3.5 h-3.5')}</span><span><b>Draft.</b> Not live yet — excluded from every count, status and alert.${canEd?` <button onclick="App._okrActivate('${o.id}')" style="border:none;background:transparent;color:var(--c-text);font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px;padding:0">Make it live</button>`:''}</span></div>`);
   if(gov.length)out.body+=`<div style="margin-top:10px;background:#FBF7EB;border:1px solid #EEDEC0;border-radius:10px;padding:9px 12px;font-size:12px;color:#5A4A2E;display:flex;flex-direction:column;gap:6px;line-height:1.5">${gov.join('')}</div>`;
   /* key results + linked KPIs under an objective (a KPI's own children are sub-KPIs, listed in the tree, not here) */
@@ -446,7 +445,6 @@ App._okrUnlinkKPI=(kid)=>{
 
 /* ───────────── small actions from the panel ───────────── */
 function okrCanConfirm(){return can('okr','confirmTarget')||_okrCanManage();}
-function okrCanReview(){return can('okr','review')||_okrCanManage();}
 function _okrV4Save(o,action,details){_okrFlagCache={t:0,map:{}};o.updatedAt=new Date().toISOString();okrLog(o.id,action,details||{});_okrPush(o);saveDB();rr();if(typeof _okrPMRefresh==='function')_okrPMRefresh(o.id);}
 App._okrKRDone=(id)=>{const o=okrById(id);if(!o||!(_okrCanCheckin(o)||_okrCanEditNode(o)))return toast('You can’t update this key result','err');if(o.closed)return toast('Closed — reopen it first','warn');o.doneAt=new Date().toISOString();o.doneBy=S.uid;_okrV4Save(o,'Milestone done',{date:todayISO()});toast('Marked done');};
 App._okrKRDoneOn=(id)=>{const o=okrById(id);if(!o||!(_okrCanCheckin(o)||_okrCanEditNode(o)))return;const d=prompt('Done on which date? (YYYY-MM-DD)',todayISO());if(!d)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||isNaN(new Date(d+'T00:00:00')))return toast('Use the format YYYY-MM-DD','err');o.doneAt=d+'T12:00:00.000Z';o.doneBy=S.uid;_okrV4Save(o,'Milestone done',{date:d});toast('Marked done on '+fmtS(d));};
@@ -606,14 +604,14 @@ function okrEdGovernanceSection(o,L,parent,isExisting){
   const roots=(DB.okrs||[]).filter(x=>x.kind!=='kr'&&!x.quarterLabel&&x.id!==o.id&&x.state!=='draft'&&okrCanSee(x)&&(x.isNorthStar||!x.parentId));
   return`<div style="border-top:1px dashed var(--c-border);padding-top:12px">
     <label style="${L}">Plan & governance</label>
-    <div style="font-size:11px;color:var(--c-text-3);margin-bottom:4px;line-height:1.45">Everything here shows on the card and the scoreboard and feeds the monthly review’s “needs a decision” list.</div>
+    <div style="font-size:11px;color:var(--c-text-3);margin-bottom:4px;line-height:1.45">Everything here shows on the card and the scoreboard and feeds the “Need a decision” count at the top of the Scoreboard.</div>
     ${isRoot&&o.kind!=='kr'?row('North Star','The one company number everything else serves. Shown as the hero at the top of the Scoreboard; the engines below declare that they count toward it.'+(canMg?'':' <i>(Manage permission needed)</i>'),tog('isNorthStar',!!o.isNorthStar,!canMg)):''}
     ${row('Target confirmed','Off = <b>proposed</b> — benchmarked but not agreed yet. Shows a PROPOSED tag and sits in “needs a decision” until confirmed.'+(canConf?'':' <i>(Confirm-targets permission needed to switch it on)</i>'),tog('targetConfirmed',o.targetConfirmed!==false,!canConf&&o.targetConfirmed===false))}
     ${o.targetConfirmed===false?`<div style="padding:0 0 9px"><input type="text" value="${esc(o.targetBasis||'')}" oninput="_OKRED.targetBasis=this.value" placeholder="Where the proposed number came from (e.g. standard 3–6 month reserve guidance)" class="ui-input rf" style="font-size:12.5px"/></div>`:''}
     ${o.kind==='kr'?row('Leading or lagging','Leading moves first (engines on schedule, site visits); lagging is the result (orders, revenue). A label, nothing more.',`<select class="ui-select" style="min-width:130px" onchange="_OKRED.leadLag=this.value||null"><option value="" ${!o.leadLag?'selected':''}>—</option><option value="leading" ${o.leadLag==='leading'?'selected':''}>Leading</option><option value="lagging" ${o.leadLag==='lagging'?'selected':''}>Lagging</option></select>`):''}
     ${roots.length?row('Counts toward','Declare that this target is a slice of a bigger number — e.g. an engine’s +150 orders/day counts toward the North Star’s 1,000. The hero then shows promised vs delivered across all contributors.',`<select class="ui-select" style="max-width:220px" onchange="_OKRED.contributesTo=this.value||null"><option value="" ${!o.contributesTo?'selected':''}>— nothing —</option>${roots.map(r=>`<option value="${r.id}" ${o.contributesTo===r.id?'selected':''}>${r.isNorthStar?'★ ':''}${esc((r.title||'').slice(0,60))}</option>`).join('')}</select>`):''}
-    ${row('Owner to be decided','Save without an owner. Flagged on the card and in the review until someone is named; no reminders go out meanwhile.',tog('ownerTbd',!!o.ownerTbd&&!okrOwners(o).length,okrOwners(o).length>0))}
-    ${row('Needs a decision','Put it on the monthly review’s agenda with a note (e.g. “confirm the critical link to the North Star, or remove”).',tog('needsDecision',!!o.needsDecision))}
+    ${row('Owner to be decided','Save without an owner. Flagged on the card and the scoreboard until someone is named; no reminders go out meanwhile.',tog('ownerTbd',!!o.ownerTbd&&!okrOwners(o).length,okrOwners(o).length>0))}
+    ${row('Needs a decision','Flag it for leadership with a note (e.g. “confirm the critical link to the North Star, or remove”). Counted under “Need a decision” on the Scoreboard.',tog('needsDecision',!!o.needsDecision))}
     ${o.needsDecision?`<div style="padding:0 0 9px"><input type="text" value="${esc(o.decisionNote||'')}" oninput="_OKRED.decisionNote=this.value" placeholder="What has to be decided, by whom" class="ui-input rf" style="font-size:12.5px"/></div>`:''}
     ${row('Draft','Not live: excluded from counts, statuses, reminders and alerts. Use it to park 2027 ideas or anything awaiting approval.',tog('_draft',o.state==='draft'))}
     ${row('Baseline as of','The date the start value was measured (e.g. the Q1–Q3 retrospective). Shown with the start value.',`<input type="date" value="${o.baselineAsOf||''}" onchange="_OKRED.baselineAsOf=this.value||null" class="ui-input" style="min-height:34px;padding:4px 8px;font-size:12px"/>`)}
@@ -637,14 +635,13 @@ function okrEdGovernanceSection(o,L,parent,isExisting){
   return r;};})();
 
 /* ═════════════════════════════ 4. TABS ═════════════════════════════ */
-function okrTab(){const t=S.filters.okrTab;if(t==='scoreboard'||t==='objectives'||t==='reviews')return(t==='reviews'&&!okrCanReview())?'objectives':t;return 'scoreboard';}
-App._okrTab=(t)=>{S.filters.okrTab=t;S.filters.okrMSOpen=null;S.filters.okrQtrOpen=false;if(t==='reviews')window._okrRvLoaded=false;rr();};
+function okrTab(){const t=S.filters.okrTab;return(t==='scoreboard'||t==='objectives')?t:'scoreboard';}
+App._okrTab=(t)=>{S.filters.okrTab=t;S.filters.okrMSOpen=null;S.filters.okrQtrOpen=false;rr();};
 function okrTabsHTML(cur){
   const t=(k,label,icon,show)=>show===false?'':`<button class="ui-tab ${cur===k?'on':''}" onclick="App._okrTab('${k}')">${ic(icon,'w-3.5 h-3.5')}${label}</button>`;
-  return`<div class="ui-tabs okr-tabs" style="margin-bottom:12px">${t('scoreboard','Scoreboard','star')}${t('objectives','Objectives','tree')}${t('reviews','Reviews','calendar',okrCanReview())}</div>`;
+  return`<div class="ui-tabs okr-tabs" style="margin-bottom:12px">${t('scoreboard','Scoreboard','star')}${t('objectives','Objectives','tree')}</div>`;
 }
 
-/* ═════════════════════════════ 5. SCOREBOARD · 6. REVIEWS — appended below ═════════════════════════════ */
 
 /* ═════════════════════════════ 5. SCOREBOARD ═════════════════════════════ */
 /* The leadership read: North Star hero(s) with the approved ramp and the engines that count
@@ -827,194 +824,3 @@ App._okrSbList=(key)=>{
     </div>`;}).join('');
   modalShell({title:title,sub:hits.length+' item'+(hits.length===1?'':'s'),size:'max-w-lg',key:'okr-sblist',body:rows||'<div style="color:var(--c-text-3);font-size:13px;padding:10px 0">Nothing here.</div>'});
 };
-
-/* ═════════════════════════════ 6. REVIEWS ═════════════════════════════ */
-/* Weekly: did every owner update, what did they say, who is blocked. Monthly: what moved,
-   what’s stuck, what needs a decision. Each review can be signed off (okr_reviews). */
-function _rvPad(n){return String(n).padStart(2,'0');}
-function _rvISOWeek(dateISO){const d=new Date(dateISO+'T00:00:00Z');const day=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-day+3);const fy=new Date(Date.UTC(d.getUTCFullYear(),0,4));const wk=1+Math.round(((d-fy)/86400000-3+((fy.getUTCDay()+6)%7))/7);return d.getUTCFullYear()+'-W'+_rvPad(wk);}
-function _rvWeekRange(key){const m=key.match(/^(\d{4})-W(\d{2})$/);if(!m)return null;const y=Number(m[1]),w=Number(m[2]);const jan4=new Date(Date.UTC(y,0,4));const mon=new Date(jan4);mon.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+(w-1)*7);const sun=new Date(mon);sun.setUTCDate(mon.getUTCDate()+6);const iso=d=>d.toISOString().slice(0,10);return{from:iso(mon),to:iso(sun)};}
-function _rvMonthRange(key){const m=key.match(/^(\d{4})-(\d{2})$/);if(!m)return null;const y=Number(m[1]),mo=Number(m[2]);return{from:y+'-'+_rvPad(mo)+'-01',to:y+'-'+_rvPad(mo)+'-'+_rvPad(new Date(y,mo,0).getDate())};}
-function okrRvKeyFor(kind,dateISO){return kind==='monthly'?dateISO.slice(0,7):_rvISOWeek(dateISO);}
-function okrRvRange(kind,key){const r=kind==='monthly'?_rvMonthRange(key):_rvWeekRange(key);if(!r)return null;r.label=kind==='monthly'?new Date(r.from+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}):(fmtS(r.from)+' – '+fmtS(r.to));return r;}
-function okrRvShift(kind,key,n){if(kind==='monthly'){const m=key.match(/^(\d{4})-(\d{2})$/);const d=new Date(Number(m[1]),Number(m[2])-1+n,1);return d.getFullYear()+'-'+_rvPad(d.getMonth()+1);}const r=_rvWeekRange(key);const d=new Date(r.from+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+7*n);return _rvISOWeek(d.toISOString().slice(0,10));}
-App._okrRvKind=(k)=>{S.filters.okrRvKind=k;S.filters.okrRvKey=okrRvKeyFor(k,todayISO());rr();};
-App._okrRvNav=(n)=>{const k=S.filters.okrRvKind==='monthly'?'monthly':'weekly';const key=S.filters.okrRvKey||okrRvKeyFor(k,todayISO());S.filters.okrRvKey=n===0?okrRvKeyFor(k,todayISO()):okrRvShift(k,key,n);rr();};
-/* Everything that someone actually updates: not drafts, not closed, not auto (annual / roll-up / reads-from-KRs),
-   and alive inside the review period. */
-/* Status as it stood on a past date. Today (or later) is simply okrStatusOf. For a past date the plain
-   number-vs-plan rule is replayed with the value and the plan of that day; shapes with their own verdict
-   (manual marks, thresholds, allowances, annuals, roll-ups, milestones, counts, read-from-KRs) keep today's. */
-function _okrExpectedPctAt(o,t){
-  if(okrHasPacing(o)){const p=okrPlanPctAt(o,t);if(p!==null)return p;}
-  let ps=o.periodStart,pe=o.periodEnd;
-  if(!ps||!pe){try{const eff=_okrEffPeriod(o);ps=eff.ps;pe=eff.pe;}catch(e){}}
-  if(!ps||!pe)return null;
-  if(t<=ps)return 0;if(t>=pe)return 100;
-  const s=new Date(ps+'T00:00:00').getTime(),e=new Date(pe+'T00:00:00').getTime(),n=new Date(t+'T00:00:00').getTime();
-  return e>s?Math.round(((n-s)/(e-s))*100):100;
-}
-function okrStatusAt(o,date){
-  if(!o||!date||date>=todayISO())return okrStatusOf(o);
-  if(o.closed||o.state==='draft'||(o.statusMode==='manual'&&o.statusManual))return okrStatusOf(o);
-  if(o.kind==='kr'){const kk=okrKRKind(o);if(kk==='milestone'||kk==='count')return okrStatusOf(o);}
-  if(okrReadsFromKRs(o)||okrIsThresh(o)||okrIsLimit(o)||o.isAnnual||o.rollup)return okrStatusOf(o);
-  const pct=_okrLeafPctAt(o,date);if(pct===null)return 'No data';
-  if(pct>=100)return (o.periodEnd&&date<=o.periodEnd)?'On track':'Achieved';
-  if(o.periodEnd&&date>o.periodEnd)return 'Not achieved';
-  const exp=_okrExpectedPctAt(o,date);
-  if(exp===null)return pct>=50?'On track':'Off track';
-  return pct>=exp-okrTol(o)?'On track':'Off track';
-}
-function okrRvTrackables(range){
-  return okrVisible().filter(o=>{
-    if(o.state==='draft'||o.closed||o.isAnnual||o.rollup)return false;
-    if(okrStatusOf(o)==='Achieved')return false;   // done is done — nobody is asked to keep updating it
-    const ps=o.periodStart,pe=o.periodEnd;
-    if(ps&&ps>range.to)return false;if(pe&&pe<range.from)return false;
-    return true;
-  });
-}
-function _rvRootOf(o){const r=okrRootOf(o);return r||o;}
-function _rvGroup(items){const g={};items.forEach(it=>{const r=_rvRootOf(it.o);(g[r.id]=g[r.id]||{root:r,items:[]}).items.push(it);});return Object.values(g).sort((a,b)=>(b.root.isNorthStar?1:0)-(a.root.isNorthStar?1:0)||((a.root.sort||0)-(b.root.sort||0)));}
-function okrRvEnsureLoaded(){
-  if(window._okrRvLoaded)return;window._okrRvLoaded=true;DB.okrReviews=DB.okrReviews||[];
-  if(!_okrV4Ready())return;
-  try{sb.from('okr_reviews').select('*').order('held_at',{ascending:false}).limit(400).then(res=>{if(res&&!res.error&&Array.isArray(res.data)){DB.okrReviews=res.data.map(r=>({id:r.id,kind:r.kind,periodKey:r.period_key,scopeId:r.scope_id||null,notes:Array.isArray(r.notes)?r.notes:[],summary:r.summary||'',heldBy:r.held_by||null,heldAt:r.held_at,createdAt:r.created_at}));if(S.route==='okr'&&okrTab()==='reviews')rr();}}).catch(()=>{});}catch(e){}
-}
-function okrRvFind(kind,key){return(DB.okrReviews||[]).find(r=>r.kind===kind&&r.periodKey===key&&!r.scopeId)||null;}
-App._okrRvSign=(kind,key)=>{
-  if(!okrCanReview())return toast('You need OKR → Run reviews','err');
-  if(!_okrV4Ready())return toast('Database update pending — reviews can’t be saved until the v4 migration runs','err');
-  const ta=document.getElementById('okr-rv-summary');const summary=ta?ta.value.trim():'';
-  const ex=okrRvFind(kind,key);
-  const r=ex||{id:'okrv_'+kind+'_'+String(key).replace(/[^0-9A-Za-z-]/g,''),kind:kind,periodKey:key,scopeId:null,notes:[],summary:'',heldBy:S.uid,heldAt:new Date().toISOString(),createdAt:new Date().toISOString()};
-  r.summary=summary;r.heldBy=S.uid;r.heldAt=new Date().toISOString();
-  if(!ex){DB.okrReviews=DB.okrReviews||[];DB.okrReviews.unshift(r);}
-  sbWrite({table:'okr_reviews',op:'upsert',id:r.id,values:{id:r.id,kind:r.kind,period_key:r.periodKey,scope_id:null,notes:r.notes||[],summary:r.summary,held_by:r.heldBy,held_at:r.heldAt,updated_at:new Date().toISOString()},opts:{onConflict:'id'}},{label:'Review'});
-  saveDB();toast(ex?'Review updated':'Review marked as held');rr();
-};
-function _rvSignCard(kind,key,range){
-  const ex=okrRvFind(kind,key);const who=ex&&ex.heldBy?uById(ex.heldBy):null;
-  return`<div class="rv-sign">
-    <div class="rv-sign-head">${ic(ex?'check':'edit','w-4 h-4')}<div><div class="rv-sign-t">${ex?'Review held':'Sign this review off'}</div><div class="rv-sign-s">${ex?(who?esc(fullName(who))+' · ':'')+esc(new Date(ex.heldAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})):(kind==='weekly'?'Minutes, not a meeting: confirm the week was reviewed and note anything that needs a decision.':'What moved, what’s stuck, what was decided.')}</div></div></div>
-    <textarea id="okr-rv-summary" rows="3" class="ui-input" placeholder="${kind==='weekly'?'e.g. Bolt certification slipped a week — Lee to confirm new date by Friday.':'e.g. Revenue source of truth agreed: OKR sheet. VDR removed from the tree.'}" style="resize:vertical;font-size:13px;margin:10px 0 8px">${esc(ex?ex.summary:'')}</textarea>
-    <div style="display:flex;justify-content:flex-end;gap:8px">${btnP(ex?'Update notes':'Mark review held',"App._okrRvSign('"+kind+"','"+key+"')",'check')}</div>
-  </div>`;
-}
-function _rvItemRow(it,kind){
-  const o=it.o,p=o.parentId?okrById(o.parentId):null;
-  const m=OKR_ST_META[it.st]||OKR_ST_META['No data'];
-  return`<div class="rv-row" onclick="App._okrProgressModal('${o.id}')">
-    <div class="rv-c rv-what">
-      <div class="rv-title">${okrKindChip(o)}<span>${esc(o.title||'Untitled')}</span></div>
-      ${p?`<div class="rv-under">under ${esc(p.title||'')}</div>`:''}
-      ${it.comment?`<div class="rv-note">“${esc(String(it.comment).slice(0,200))}”</div>`:''}
-    </div>
-    <div class="rv-c rv-val">${it.valueHTML}</div>
-    <div class="rv-c rv-own">${_sbOwnerCell(o)}</div>
-    <div class="rv-c rv-st">${okrStatusChip(it.st,true)}${it.flag?okrFlagChip(it.flag,true,it.flagCtx):''}${it.updated===false?'<span class="rv-noupd">not updated</span>':''}</div>
-  </div>`;
-}
-/* Review sections fold like the scoreboard: collapsed by default, remembered with the tab's filters. */
-const _RV_KEYS={weekly:['blocked','risk','notupd','fine'],monthly:['moved','stuck','decisions']};
-function _rvExp(key){const m=S.filters.okrRvExp;return !!(m&&typeof m==='object'&&m[key]);}
-App._okrRvTog=(key)=>{const m=(S.filters.okrRvExp&&typeof S.filters.okrRvExp==='object')?S.filters.okrRvExp:{};if(m[key])delete m[key];else m[key]=true;S.filters.okrRvExp=m;rr();};
-App._okrRvExpandAll=(on)=>{const k=S.filters.okrRvKind==='monthly'?'monthly':'weekly';const m={};if(on)_RV_KEYS[k].forEach(x=>m[x]=true);S.filters.okrRvExp=m;rr();};
-function _rvAnyExp(){const k=S.filters.okrRvKind==='monthly'?'monthly':'weekly';return _RV_KEYS[k].some(_rvExp);}
-function _rvSection(key,title,sub,items,kind,tone){
-  const exp=_rvExp(key);
-  return`<section class="rv-sec ${tone||''}${exp?'':' rv-closed'}">
-    <div class="rv-sec-head" onclick="App._okrRvTog('${key}')" role="button" aria-expanded="${exp?'true':'false'}"><button class="sb-chev${exp?' on':''}" onclick="event.stopPropagation();App._okrRvTog('${key}')" title="${exp?'Collapse':'Expand'}">${ic('chevR','w-3.5 h-3.5')}</button><span class="rv-sec-t">${title}</span><span class="rv-sec-n">${items.length}</span>${sub?`<span class="rv-sec-s">${sub}</span>`:''}</div>
-    ${!exp?'':items.length?`<div class="rv-table"><div class="rv-thead"><span>What</span><span>Number</span><span>Owner</span><span>Status</span></div>${_rvGroup(items).map(g=>`<div class="rv-group">${esc(g.root.title||'')}</div>`+g.items.map(it=>_rvItemRow(it,kind)).join('')).join('')}</div>`:`<div class="rv-none">${ic('check','w-3.5 h-3.5')}Nothing here.</div>`}
-  </section>`;
-}
-function okrReviewsHTML(){
-  if(!okrCanReview())return empty('lock','Reviews are for reviewers','Ask for OKR → Run reviews in Access Control.');
-  okrRvEnsureLoaded();
-  const kind=S.filters.okrRvKind==='monthly'?'monthly':'weekly';
-  const key=S.filters.okrRvKey||okrRvKeyFor(kind,todayISO());
-  const range=okrRvRange(kind,key);if(!range){S.filters.okrRvKey=null;return okrReviewsHTML();}
-  const today=todayISO();const upTo=range.to<today?range.to:today;
-  const items=okrRvTrackables(range);
-  const nowKey=okrRvKeyFor(kind,today);
-  const nav=`<div class="rv-nav">
-      <div class="ui-tabs" style="margin:0"><button class="ui-tab ${kind==='weekly'?'on':''}" onclick="App._okrRvKind('weekly')">Weekly</button><button class="ui-tab ${kind==='monthly'?'on':''}" onclick="App._okrRvKind('monthly')">Monthly</button></div>
-      <div class="rv-period"><button onclick="App._okrRvNav(-1)" aria-label="Previous">‹</button><span class="rv-period-l">${esc(range.label)}${key===nowKey?' <span class="rv-now">current</span>':''}</span><button onclick="App._okrRvNav(1)" aria-label="Next">›</button>${key===nowKey?'':`<button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="App._okrRvNav(0)">${kind==='weekly'?'This week':'This month'}</button>`}</div>
-      <span class="sb-expctl"><button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="App._okrRvExpandAll(${_rvAnyExp()?'false':'true'})">${ic(_rvAnyExp()?'chevR':'chevD','w-3.5 h-3.5')}${_rvAnyExp()?'Collapse all':'Expand all'}</button></span>
-    </div>`;
-  const pending=_okrV4Ready()?'':`<div class="sb-pending">${ic('alert','w-3.5 h-3.5')} Database update pending — review sign-offs will not save until migration <b>2026-10-02_v400_okr_v4.sql</b> has been applied.</div>`;
-  if(kind==='weekly'){
-    const rows=items.map(o=>{
-      const cks=okrCheckinsOf(o.id).filter(c=>c.date>=range.from&&c.date<=range.to);
-      const last=cks.length?cks[cks.length-1]:null;
-      const flag=last?last.flag:null;
-      /* the number and the verdict as they stood at the END of this week (today for the current week) —
-         so stepping back a week shows what that review actually looked at */
-      const cur=okrNoValueCheckin(o)?null:_okrValueAt(o,upTo);
-      let valueHTML;
-      if(okrNoValueCheckin(o))valueHTML=`<span class="rv-v">${okrKRValueText(o)}</span>`;
-      else if(o.metricType==='yesno')valueHTML=`<span class="rv-v">${(cur!==null&&cur>=1)?'Done':'Not done'}</span>`;
-      else valueHTML=`<span class="rv-v">${(cur===null||cur===undefined)?'—':esc(_okrFmtVal(o,cur))}</span><span class="rv-vt">${_okrTargetSign(o)||'/'} ${esc(_okrFmtVal(o,_okrTargetEff(o)))}</span>${last&&last.value!==null&&last.value!==undefined?`<span class="rv-delta rv-flat">reported ${esc(fmtS(last.date))}</span>`:''}`;
-      return{o:o,st:okrStatusAt(o,upTo),flag:flag,flagCtx:last?{flag:flag,date:last.date,comment:last.comment,userId:last.userId}:null,comment:last?last.comment:'',updated:!!cks.length,valueHTML:valueHTML};
-    });
-    const blocked=rows.filter(r=>r.flag==='blocked'),risk=rows.filter(r=>r.flag==='at_risk'),notUpd=rows.filter(r=>!r.updated),fine=rows.filter(r=>r.updated&&r.flag!=='blocked'&&r.flag!=='at_risk');
-    const upd=rows.filter(r=>r.updated).length;
-    const tiles=`<div class="sb-strip">
-      <div class="sb-stat"><span class="sb-stat-n">${rows.length}</span><span class="sb-stat-l">To update</span></div>
-      <div class="sb-stat ${upd===rows.length&&rows.length?'sb-green':''}"><span class="sb-stat-n">${upd}<span style="font-size:13px;color:var(--c-text-3)"> / ${rows.length}</span></span><span class="sb-stat-l">Updated this week</span></div>
-      <div class="sb-stat ${blocked.length?'sb-red':'sb-stat-zero'}"><span class="sb-stat-n">${blocked.length}</span><span class="sb-stat-l">Blocked</span></div>
-      <div class="sb-stat ${risk.length?'sb-amber':'sb-stat-zero'}"><span class="sb-stat-n">${risk.length}</span><span class="sb-stat-l">At risk</span></div>
-      <div class="sb-stat ${notUpd.length?'sb-amber':'sb-stat-zero'}"><span class="sb-stat-n">${notUpd.length}</span><span class="sb-stat-l">Not updated</span></div>
-    </div>`;
-    return`<div class="rv">${pending}${nav}${tiles}
-      ${_rvSection('blocked','Blocked','someone has to unblock these',blocked,kind,'rv-red')}
-      ${_rvSection('risk','At risk','the owner’s call — watch these',risk,kind,'rv-amber')}
-      ${_rvSection('notupd','Not updated this week','no number and no flag from the owner yet',notUpd,kind,'rv-grey')}
-      ${_rvSection('fine','Updated · on track','',fine,kind,'')}
-      ${_rvSignCard(kind,key,range)}
-    </div>`;
-  }
-  /* MONTHLY */
-  const dayBefore=_okrDateAddD(range.from,-1);
-  const rows=items.map(o=>{
-    const kk=o.kind==='kr'?okrKRKind(o):null;
-    const cks=okrCheckinsOf(o.id).filter(c=>c.date>=range.from&&c.date<=upTo);
-    const last=cks.length?cks[cks.length-1]:null;
-    const flag=okrFlagOf(o);
-    let v0=null,v1=null,p0=null,p1=null,moved=null,doneInMonth=0,valueHTML;
-    if(kk==='milestone'){doneInMonth=(o.doneAt&&String(o.doneAt).slice(0,10)>=range.from&&String(o.doneAt).slice(0,10)<=upTo)?1:0;valueHTML=`<span class="rv-v">${okrKRValueText(o)}</span>${doneInMonth?'<span class="rv-delta rv-up">done this month</span>':''}`;moved=doneInMonth;}
-    else if(kk==='count'){const its=okrItems(o);doneInMonth=its.filter(x=>x.doneAt&&String(x.doneAt).slice(0,10)>=range.from&&String(x.doneAt).slice(0,10)<=upTo).length;valueHTML=`<span class="rv-v">${okrKRValueText(o)}</span>${doneInMonth?`<span class="rv-delta rv-up">+${doneInMonth} this month</span>`:''}`;moved=doneInMonth;}
-    else{
-      v0=_okrValueAt(o,dayBefore);v1=_okrValueAt(o,upTo);
-      p0=_okrLeafPctAt(o,dayBefore);p1=_okrLeafPctAt(o,upTo);
-      const d=(v0===null||v1===null)?null:Math.round((v1-v0)*100)/100;
-      const good=d===null?null:(okrDirDown(o)||okrIsLimit(o)||okrDirOf(o)==='lte'?d<=0:d>=0);
-      moved=d===null?(v1!==null&&v0===null?1:0):Math.abs(d)>0?1:0;
-      valueHTML=`<span class="rv-v">${v1===null?'—':esc(_okrFmtVal(o,v1))}</span><span class="rv-vt">${_okrTargetSign(o)||'/'} ${esc(_okrFmtVal(o,_okrTargetEff(o)))}</span>${d===null?(v0===null&&v1!==null?'<span class="rv-delta rv-up">first number</span>':''):`<span class="rv-delta ${d===0?'rv-flat':(good?'rv-up':'rv-down')}">${d>0?'+':''}${esc(_okrFmtVal(o,d))}${(p0!==null&&p1!==null&&!okrNoPct(o))?' · '+(p1-p0>0?'+':'')+Math.round(p1-p0)+' pts':''}</span>`}`;
-    }
-    const stuck=(!moved&&!cks.length)||(flag&&flag.flag==='blocked'&&!flag.inherited);
-    return{o:o,st:okrStatusAt(o,upTo),flag:flag?flag.flag:null,flagCtx:flag,comment:last?last.comment:'',updated:!!cks.length,valueHTML:valueHTML,moved:!!moved,stuck:stuck,absDelta:(p0!==null&&p1!==null)?Math.abs(p1-p0):(moved?1:0)};
-  });
-  const movedRows=rows.filter(r=>r.moved).sort((a,b)=>b.absDelta-a.absDelta);
-  const stuckRows=rows.filter(r=>r.stuck);
-  const blocked=rows.filter(r=>r.flag==='blocked');
-  const all=okrVisible().filter(o=>!o.closed&&!o.quarterLabel);
-  const decisions=all.filter(o=>o.needsDecision||o.targetConfirmed===false||(o.ownerTbd&&!okrOwners(o).length)||o.state==='draft').map(o=>{
-    const why=[];if(o.needsDecision)why.push(o.decisionNote||'flagged for decision');if(o.targetConfirmed===false)why.push('target proposed — confirm or adjust'+(o.targetBasis?' (basis: '+o.targetBasis+')':''));if(o.ownerTbd&&!okrOwners(o).length)why.push('owner to be decided');if(o.state==='draft')why.push('draft — make live or drop');
-    return{o:o,st:okrStatusOf(o),flag:null,flagCtx:null,comment:why.join(' · '),updated:true,valueHTML:`<span class="rv-v">${o.kind==='kr'||o.metricType?okrKRValueText(o):'—'}</span>`};
-  });
-  const tiles=`<div class="sb-strip">
-    <div class="sb-stat"><span class="sb-stat-n">${rows.length}</span><span class="sb-stat-l">Tracked</span></div>
-    <div class="sb-stat ${movedRows.length?'sb-green':''}"><span class="sb-stat-n">${movedRows.length}</span><span class="sb-stat-l">Moved</span></div>
-    <div class="sb-stat ${stuckRows.length?'sb-amber':'sb-stat-zero'}"><span class="sb-stat-n">${stuckRows.length}</span><span class="sb-stat-l">Stuck</span></div>
-    <div class="sb-stat ${blocked.length?'sb-red':'sb-stat-zero'}"><span class="sb-stat-n">${blocked.length}</span><span class="sb-stat-l">Blocked</span></div>
-    <div class="sb-stat ${decisions.length?'sb-amber':'sb-stat-zero'}"><span class="sb-stat-n">${decisions.length}</span><span class="sb-stat-l">Need a decision</span></div>
-  </div>`;
-  return`<div class="rv">${pending}${nav}${tiles}
-    ${_rvSection('moved','What moved','change since '+esc(fmtS(dayBefore))+', biggest first',movedRows,kind,'rv-green')}
-    ${_rvSection('stuck','What’s stuck','no change and no update all month, or blocked',stuckRows,kind,'rv-amber')}
-    ${_rvSection('decisions','Needs a decision','proposed targets · owners to name · drafts · flagged items',decisions,kind,'rv-red')}
-    ${_rvSignCard(kind,key,range)}
-  </div>`;
-}
