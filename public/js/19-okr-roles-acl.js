@@ -978,7 +978,7 @@ function okrVisible(){
   if(sc==='none')return[];
   // 'self' means STRICTLY the objectives they own or co-own: no sub-objective
   // expansion, and creating an OKR for someone else does not grant sight of it.
-  if(sc==='self')return all.filter(o=>okrOwnerIs(o,S.uid));
+  if(sc==='self')return all.filter(o=>okrOwnerIs(o,S.uid)||(o.ownerTbd&&!okrOwners(o).length&&o.createdBy===S.uid));
   const mine=new Set();
   // 1) ownership floor
   all.forEach(o=>{if(okrOwnerIs(o,S.uid)||o.createdBy===S.uid)mine.add(o.id);});
@@ -1007,7 +1007,7 @@ function okrCanSee(o){
   const sc=scopeOf('okr');
   if(sc==='everyone')return true;
   if(sc==='none')return false;
-  if(sc==='self')return okrOwnerIs(o,S.uid);
+  if(sc==='self')return okrOwnerIs(o,S.uid)||(!!o.ownerTbd&&!okrOwners(o).length&&o.createdBy===S.uid);
   return okrVisible().some(v=>v.id===o.id);
 }
 /* Children of a node, narrowed to what this user is allowed to see. */
@@ -1174,7 +1174,7 @@ App._okrMoveSave=()=>{
     if(t.kind==='kr'&&!(o.kind==='kpi'&&okrCanHoldKPIs(t)))return toast(o.kind==='kpi'?'Only a number key result can hold KPIs':'Only KPIs can sit under a key result','err');
     if(t.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI','err');
     if(t.kind==='kpi'&&o.kind==='kr')return toast('A key result sits under an objective, not under a KPI','err');
-    if(okrIsObjective(t)&&o.kind==='kpi')return toast('KPIs link under a key result (use Link KPI on the key result), not directly under an objective','err');
+    if(okrIsObjective(t)&&o.kind==='kpi'&&!okrCanHoldKPIs(t))return toast('That objective auto-updates (annual / roll-up) — it can’t hold KPIs','err');
     if(o.kind==='kr'&&(t.isAnnual||t.rollup))return toast('That objective auto-updates (annual / roll-up) — it can’t hold key results','err');
   }else{
     if(o.kind==='kr')return toast('A key result has to sit under an objective — it can’t be top level','err');
@@ -1439,8 +1439,8 @@ function okrPage(){
   const today=todayISO();
   const tabs=okrTabsHTML(tab);
   /* v4.1 — the Scoreboard button creates an OKR (objective); the Objectives tab button creates a KPI */
-  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
-  const head=hdr(_okrV4Ready()?'KPIs':'OKR',_okrV4Ready()?'Every number Bridge tracks — inputs roll up L2 → L1 → L0; link a KPI under a key result to put it on the OKR scoreboard':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
+  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+((_okrV4Ready()?_okrCanManage():canCreate)?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
+  const head=hdr(_okrV4Ready()?'KPIs':'OKR',_okrV4Ready()?'Every number Bridge tracks — inputs roll up L2 → L1 → L0; link a KPI under an objective or a key result to put it on the OKR scoreboard':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
   // ── Summary cards — clickable (v3.11): tap a number to see exactly which OKRs it counts ──
   //    v4.0: objectives only — key results live inside their objective, drafts aren't measured yet
   const visObj=vis.filter(o=>o.kind!=='kr'&&o.state!=='draft');
@@ -1933,6 +1933,7 @@ App._okrEdit=(id,parentId,kind)=>{
   const existing=id?okrById(id):null;
   if(existing&&(!okrCanSee(existing)||!_okrCanEditNode(existing)))return toast('You can\u2019t edit this OKR','err');
   if(!existing&&!_okrCanCreate())return toast('You can\'t create OKRs','err');
+  if(!existing&&!parentId&&kind==='objective'&&_okrV4Ready()&&!_okrCanManage())return toast('Top-level objectives are created by leadership — you need OKR → Manage','err');
   const _pk=parentId?okrById(parentId):null;
   /* v4.0 \u2014 a new key result inherits its objective's owners, department, period and schedule, so the
      common case ("the same people, the same quarter") is one title and one number away from saved. */
@@ -2192,8 +2193,8 @@ App._renderOKREdit=()=>{
         <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">${selOwn.length} selected · scheduled check-ins reach every owner as a <b>group task — any one</b> of them can fill it and it counts for everyone.</div>
       </div>`;})()}
       ${_showMetric?`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Rules & target — how is this measured?</label>
-        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_obj?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results (their average)</option>`:(_kr&&_kk==='metric')?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its linked KPIs (their average)</option>`:''}</select>
-        ${(_obj&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results from the objective’s panel.</div>`:''}
+        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_obj?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results and linked KPIs (their average)</option>`:(_kr&&_kk==='metric')?`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its linked KPIs (their average)</option>`:''}</select>
+        ${(_obj&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results and linked KPIs</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results and link KPIs from the objective’s panel.</div>`:''}
         ${(_kr&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of the KPIs linked under it</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Link KPIs from the key result’s panel.</div>`:''}
       </div>`:''}
       ${(_showMetric&&!_hasKRs&&o.metricType!=='yesno')?`<div><label style="${L}">Which way is good?</label>
@@ -2285,6 +2286,18 @@ App._okrSave=()=>{
   if(!o.owners.length&&!o.ownerTbd)return toast('Pick at least one owner — or tick "Owner to be decided"','err');
   if(o.owners.length)o.ownerTbd=false;
   if(!o.parentId&&!o.departmentId)return toast('Assign the L0 objective to a department','err');
+  /* v4.2 — leadership-only fields, enforced on save (not just hidden in the form):
+       · a NEW top-level objective (L0) needs OKR → Manage — L0 / L1 framing stays with leadership (proposal §1)
+       · North Star on/off needs Manage · confirming a proposed target or clearing “needs a decision” needs Confirm targets */
+  const _prev=okrById(o.id);
+  if(!_prev&&!_okrCanCreate())return toast('You can’t create OKRs','err');
+  if(_prev&&!_okrCanEditNode(_prev))return toast('You can’t edit this '+okrKindLabel(_prev),'err');
+  if(!_prev&&okrIsObjective(o)&&!o.parentId&&_okrV4Ready()&&!_okrCanManage())return toast('Top-level objectives are created by leadership — you need OKR → Manage','err');
+  if(!_okrCanManage()&&!!o.isNorthStar!==!!(_prev&&_prev.isNorthStar))return toast('Only OKR → Manage can set or clear the North Star','err');
+  if(!okrCanConfirm()){
+    if(_prev&&_prev.targetConfirmed===false&&o.targetConfirmed!==false)return toast('Confirming a proposed target needs OKR → Confirm targets','err');
+    if(_prev&&_prev.needsDecision&&!o.needsDecision)return toast('Clearing “needs a decision” needs OKR → Confirm targets','err');
+  }
   /* v4.0 — before the database has the v4 columns, nothing v4 may be saved: it would land as a plain
      objective and the key-result / draft / ramp information would be silently lost. */
   if(!_okrV4Ready()){
@@ -2315,7 +2328,7 @@ App._okrSave=()=>{
     const pk0=o.parentId?okrById(o.parentId):null;
     if(pk0&&pk0.kind==='kr'&&!(o.kind==='kpi'&&okrCanHoldKPIs(pk0)))return toast(o.kind==='kpi'?'Only a number key result can hold KPIs':'Only KPIs can sit under a key result','err');
     if(pk0&&pk0.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI','err');
-    if(pk0&&okrIsObjective(pk0)&&o.kind==='kpi')return toast('KPIs link under a key result, not directly under an objective','err');
+    if(pk0&&okrIsObjective(pk0)&&o.kind==='kpi'&&!okrCanHoldKPIs(pk0))return toast('That objective auto-updates (annual / roll-up) — it can’t hold KPIs','err');
     if(o.kind==='kpi'&&okrChildren(o.id).some(okrIsObjective))return toast('It has objectives under it — it stays an objective','err');
     o.krKind=null;o.floorValue=null;o.items=[];o.leadLag=null;o.dueDate=null;o.doneAt=null;o.doneBy=null;
     if(o.kind==='kpi'&&o.metricType==='krs')o.metricType='number';           // a KPI always has its own number
@@ -2327,7 +2340,7 @@ App._okrSave=()=>{
   if(o.paceTolerance!==null&&o.paceTolerance!==undefined&&o.paceTolerance!==''&&!(Number(o.paceTolerance)>=0&&Number(o.paceTolerance)<=100))return toast('Tolerance is a number of percentage points between 0 and 100','err');
   if(o.contributesTo===o.id)o.contributesTo=null;
   const _krNoTgt=o.kind==='kr'&&(okrKRKind(o)==='milestone'||okrKRKind(o)==='count');
-  if(o.metricType!=='yesno'&&o.metricType!=='krs'&&!_krNoTgt&&(o.targetValue===null||o.targetValue===undefined||!isFinite(o.targetValue)))return toast(okrIsThresh(o)?'Set the threshold value':('Set a target value'+((o.kind==='kr'&&okrKRKind(o)==='metric')?' — or choose “By its linked KPIs” under Rules & target':okrIsObjective(o)?' — or choose “By its key results” under Rules & target':'')),'err');
+  if(o.metricType!=='yesno'&&o.metricType!=='krs'&&!_krNoTgt&&(o.targetValue===null||o.targetValue===undefined||!isFinite(o.targetValue)))return toast(okrIsThresh(o)?'Set the threshold value':('Set a target value'+((o.kind==='kr'&&okrKRKind(o)==='metric')?' — or choose “By its linked KPIs” under Rules & target':okrIsObjective(o)?' — or choose “By its key results and linked KPIs” under Rules & target':'')),'err');
   // Threshold modes have no start value — keep the column at 0 so nothing downstream reads a stale one.
   if(okrIsThresh(o))o.startValue=0;
   if(o.metricType==='percent')o.unit='%';

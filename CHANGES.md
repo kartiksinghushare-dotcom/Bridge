@@ -1,4 +1,4 @@
-# Bridge v169 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=169`)
+# Bridge v171 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=171`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -7,6 +7,28 @@
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
 4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Round nine — permissions hardened; production database finished (2 Oct 2026, 17:20 Dubai)
+**Permissions, enforced on save and at every entry point (not just hidden in the UI)**
+- **Top-level objectives (L0)** need **OKR → Manage** — leadership frames L0 / L1 (proposal §1). The “New objective” button only shows with Manage; `_okrEdit` and `_okrSave` refuse without it. Sub-objectives and key results need **Create** as before; KPIs unchanged.
+- **North Star** on/off needs Manage. **Confirming a proposed target** and **clearing “needs a decision”** need **Confirm targets** (or Manage) — refused on save even if the toggle were flipped by hand.
+- Every save re-checks Create (new) / Edit-or-own (existing); every link re-checks Edit on the holder plus Edit-or-own on the KPI (or Manage). Check-ins, milestone ticks and item ticks need Check-in or Edit, exactly as before.
+- **Visibility**: a self-scoped user keeps sight of an “owner to be decided” item they created (mirrors the `okrs_select_owner_tbd` policy). Team / department / everyone scopes unchanged. The KPIs tab, the OKR scoreboard, Link KPI candidates and every list go through `okrVisible()` / `okrCanSee()`.
+- Role seed stays at v18 (both frontends share the database). “Confirm targets” is covered by Manage for Super Admin / Administrator / Manager; grant it per custom role in Access Control when needed.
+
+**Production database — done**
+- Migration `v400_okr_v4_one_scoreboard` applied (15:35). Seed applied (15:50): 63 rows, 8 roots, 0 orphans; B2C “Sessions / conversion …” later converted to a key result.
+- Edge function **`okr-reminders` v3 deployed** (daily 05:00 UTC via the existing `okr-daily-reminders` cron, unchanged). Section A reminders unchanged; section B variance / stale alerts now live.
+- **First-run burst prevented**: 211 legacy KPIs had been silent longer than cadence × 2 before alerts existed. Their current silence is recorded in `okr_alerts` as already-told (`details.grandfathered = true`, nothing sent), so the first run does not email the whole company. The next silence after an update alerts normally. Delete those rows to let them fire.
+- **Safety snapshots** taken before anything else: `okrs_backup_2026_10_02` (396 rows), `okr_checkins_backup_2026_10_02` (415), `crm_reads_backup_2026_10_02` (2,079). RLS on, no policies — reachable only from SQL. Drop them when comfortable.
+- Security advisor run after the changes: nothing new attributable to v4 (the listed items pre-date this work; the three backup tables show as “RLS, no policy”, which is intended).
+
+**Go-live for the production frontend**: push this build (v171). No database step remains. After the push both frontends run the same code against the same data.
+
+### Round eight — KPIs link at every level
+- **Any objective (L0, L1, L2 …) and any number key result can hold linked KPIs.** Whatever holds them reads them: an objective measured “by its key results and linked KPIs” averages both (each counts equally); a key result with no target averages its KPIs. Linking something with no target of its own switches it to that mode automatically.
+- Still refused: a KPI under a milestone or count key result, under an annual / roll-up objective, or an objective under a KPI. **Link KPI** appears on every objective and number-KR panel; the objective panel's list is now “Key results & linked KPIs”.
+- Strip tile “Linked KPIs” counts KPIs under objectives or key results. QA 77/77.
 
 ### Round seven — three clear forms, KPIs link under key results, tabs renamed
 - **Tabs**: the OKR page is **OKR** (the scoreboard: objectives + key results) and **KPIs** (the working tree, exactly as before — KPIs only). Objectives and key results never appear on the KPIs tab; a KPI linked under a key result still lists there, at the top level, with a “linked under …” chip.

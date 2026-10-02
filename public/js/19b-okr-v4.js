@@ -62,9 +62,10 @@ function okrKindLabel(o){return o.kind==='kr'?'key result':o.kind==='kpi'?'KPI':
    no migration). Its own number is ignored; progress = the KRs' average. An objective with its own number
    (the North Star's daily orders, say) keeps that number even when key results hang under it. */
 function okrReadsFromKRs(o){if(!o||o.metricType!=='krs')return false;if(o.kind==='kr'){const kk=okrKRKind(o);return kk!=='milestone'&&kk!=='count';}return true;}
-/* Where a KPI can be linked: a key result that is a number (metric or range). Objectives are measured by their KRs. */
-function okrCanHoldKPIs(o){if(!o||o.kind!=='kr'||o.closed||o.quarterLabel)return false;const kk=okrKRKind(o);return kk==='metric'||kk==='range';}
-function okrLinkedChip(o){if(!o||o.kind!=='kpi'||!o.parentId)return'';const p=okrById(o.parentId);if(!p||p.kind==='kpi')return'';const top=okrRootOf(p);return`<span title="Linked under the key result “${esc(p.title||'')}”${top&&top!==p?' · '+esc(top.title||''):''}" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;line-height:1;padding:3px 7px;border-radius:6px;background:#EFE8F3;color:#5B3F73;border:1px solid #DED1E6;letter-spacing:.04em;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ic('link','w-3 h-3')}${esc((p.title||'').slice(0,34))}${(p.title||'').length>34?'…':''}</span>`;}
+/* Where a KPI can be linked: any objective (every level) or a key result that is a number (metric / floor+target).
+   Whatever holds KPIs reads them: an objective averages its key results AND linked KPIs; a key result averages its KPIs. */
+function okrCanHoldKPIs(o){if(!o||o.closed||o.quarterLabel)return false;if(o.kind==='kr'){const kk=okrKRKind(o);return kk==='metric'||kk==='range';}return okrIsObjective(o)&&!o.isAnnual&&!o.rollup;}
+function okrLinkedChip(o){if(!o||o.kind!=='kpi'||!o.parentId)return'';const p=okrById(o.parentId);if(!p||p.kind==='kpi')return'';const top=okrRootOf(p);return`<span title="Linked under the ${p.kind==='kr'?'key result':'objective'} “${esc(p.title||'')}”${top&&top!==p?' · '+esc(top.title||''):''}" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;line-height:1;padding:3px 7px;border-radius:6px;background:#EFE8F3;color:#5B3F73;border:1px solid #DED1E6;letter-spacing:.04em;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ic('link','w-3 h-3')}${esc((p.title||'').slice(0,34))}${(p.title||'').length>34?'…':''}</span>`;}
 /* Key results AND linked KPIs that count toward the objective: live (not draft) and not closed. */
 function okrActiveKRs(o){return okrMeasuresOf(o.id).filter(k=>!k.closed&&k.state!=='draft');}
 /* An objective with key results reads their AVERAGE progress — each KR counts equally, a KR with no
@@ -118,7 +119,7 @@ function okrNoValueCheckin(o){
   const kk=okrKRKind(o);return kk==='milestone'||kk==='count'||okrReadsFromKRs(o);
 }
 function okrNoValueCheckinWhy(o){
-  if(o.kind!=='kr')return 'This objective’s number comes from its <b>key results</b> — this update is your <b>status flag and one-liner</b> for the week.';
+  if(o.kind!=='kr')return 'This objective’s number comes from its <b>key results and linked KPIs</b> — this update is your <b>status flag and one-liner</b> for the week.';
   if(okrReadsFromKRs(o))return 'This key result’s number comes from its <b>linked KPIs</b> — this update is your <b>status flag and one-liner</b> for the week.';
   return okrKRKind(o)==='milestone'?'A milestone is ticked <b>Done</b> from its panel — this update is your <b>status flag and one-liner</b>.':'Items are ticked off from the panel — this update is your <b>status flag and one-liner</b>.';
 }
@@ -321,7 +322,7 @@ function okrPanelV4(o,canCk){
     const fl=ks.map(k=>okrFlagOf(k)).filter(Boolean);
     out.top=`<div style="display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end">
       ${tile('Progress',(p===null?'—':p+'%'),'')}
-      ${tile(o.kind==='kr'?'Linked KPIs':'Key results',ks.length+(okrMeasuresOf(o.id).length>ks.length?' <span style="font-size:12px;color:var(--c-text-3)">+'+(okrMeasuresOf(o.id).length-ks.length)+' closed / draft</span>':''))}
+      ${tile(o.kind==='kr'?'Linked KPIs':'KRs & KPIs',ks.length+(okrMeasuresOf(o.id).length>ks.length?' <span style="font-size:12px;color:var(--c-text-3)">+'+(okrMeasuresOf(o.id).length-ks.length)+' closed / draft</span>':''))}
       ${tile('Blocked',fl.filter(f=>f.flag==='blocked').length,fl.some(f=>f.flag==='blocked')?';color:#A63528':'')}
       ${tile('At risk',fl.filter(f=>f.flag==='at_risk').length,fl.some(f=>f.flag==='at_risk')?';color:#7A5A12':'')}
     </div>`;
@@ -349,14 +350,15 @@ function okrPanelV4(o,canCk){
   if(o.state==='draft')gov.push(`<div style="display:flex;gap:8px;align-items:flex-start"><span>${ic('doc','w-3.5 h-3.5')}</span><span><b>Draft.</b> Not live yet — excluded from every count, status and alert.${canEd?` <button onclick="App._okrActivate('${o.id}')" style="border:none;background:transparent;color:var(--c-text);font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px;padding:0">Make it live</button>`:''}</span></div>`);
   if(gov.length)out.body+=`<div style="margin-top:10px;background:#FBF7EB;border:1px solid #EEDEC0;border-radius:10px;padding:9px 12px;font-size:12px;color:#5A4A2E;display:flex;flex-direction:column;gap:6px;line-height:1.5">${gov.join('')}</div>`;
   const bt='display:inline-flex;align-items:center;gap:5px;border:1px solid var(--c-border);background:var(--c-surface);border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;color:var(--c-text-2);cursor:pointer';
-  /* objective → its key results (each with the KPIs linked beneath it) */
+  /* objective → its key results (each with the KPIs linked beneath it) + the KPIs linked to the objective itself */
   if(okrIsObjective(o)){
-    const krsAll=okrKRsOf(o.id).filter(k=>okrCanSee(k));
+    const krsAll=okrKRsOf(o.id).filter(k=>okrCanSee(k)),kpisAll=okrKPIsOf(o.id).filter(k=>okrCanSee(k));
     const _canAdd=_okrCanCreate()&&!o.isAnnual&&!o.rollup&&!o.closed&&_okrV4Ready();
-    if(krsAll.length||_canAdd){
+    const _canLink=okrCanHoldKPIs(o)&&canEd&&_okrV4Ready();
+    if(krsAll.length||kpisAll.length||_canAdd||_canLink){
       out.krs=`<div style="margin-top:12px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap"><span style="${lab}">Key results${krsAll.length?' — '+(okrReadsFromKRs(o)?'this objective reads their average':'alongside its own number'):''}</span><span style="margin-left:auto;display:inline-flex;gap:6px">${_canAdd?`<button onclick="App.closeModal();App._okrEdit(null,'${o.id}','kr')" style="${bt}">${ic('plus','w-3 h-3')}Add key result</button>`:''}</span></div>
-        ${krsAll.length?`<div class="okr-krs okr-krs-panel">${krsAll.map(k=>okrKRLineHTML(k,{withKPIs:true})).join('')}</div>`:`<div style="font-size:12px;color:var(--c-text-3);padding:6px 0">None yet. Key results are the numbers, dates and counts that prove this objective — then it needs no target of its own. KPIs Bridge already tracks are linked under a key result.</div>`}
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap"><span style="${lab}">Key results & linked KPIs${(krsAll.length+kpisAll.length)?' — '+(okrReadsFromKRs(o)?'this objective reads their average':'alongside its own number'):''}</span><span style="margin-left:auto;display:inline-flex;gap:6px">${_canAdd?`<button onclick="App.closeModal();App._okrEdit(null,'${o.id}','kr')" style="${bt}">${ic('plus','w-3 h-3')}Add key result</button>`:''}${_canLink?`<button onclick="App._okrLinkKPI('${o.id}')" style="${bt}">${ic('link','w-3 h-3')}Link KPI</button>`:''}</span></div>
+        ${(krsAll.length+kpisAll.length)?`<div class="okr-krs okr-krs-panel">${krsAll.map(k=>okrKRLineHTML(k,{withKPIs:true})).join('')}${kpisAll.map(k=>okrKRLineHTML(k,{unlink:_canLink})).join('')}</div>`:`<div style="font-size:12px;color:var(--c-text-3);padding:6px 0">None yet. Add key results (the numbers, dates and counts that prove this objective) or link the KPIs Bridge already tracks — then it needs no target of its own.</div>`}
       </div>`;
     }
   }
@@ -382,7 +384,7 @@ function okrReparent(o,newParentId,action,detail){
   const np=newParentId?okrById(newParentId):null;
   if(newParentId&&!np)return 'That objective no longer exists';
   if(np&&np.kind==='kr'&&!(o.kind==='kpi'&&okrCanHoldKPIs(np)))return o.kind==='kpi'?'Only a number key result can hold KPIs':'Only KPIs can sit under a key result';
-  if(np&&o.kind==='kpi'&&okrIsObjective(np))return 'KPIs link under a key result, not directly under an objective';
+  if(np&&o.kind==='kpi'&&okrIsObjective(np)&&!okrCanHoldKPIs(np))return 'That objective auto-updates (annual / roll-up) — it can’t hold KPIs';
   if(np&&(np.id===o.id||okrDescendants(o.id).some(x=>x.id===np.id)))return 'That would create a loop';
   if(np&&okrIsObjective(o)&&np.kind==='kpi')return 'An objective can’t sit under a KPI';
   if(o.kind==='kr'&&!np)return 'A key result has to sit under an objective';
@@ -401,7 +403,7 @@ function _okrAutoKrs(o){
   if(o.kind==='kr'&&!okrCanHoldKPIs(o))return false;
   if(o.targetValue!==null&&o.targetValue!==undefined&&o.targetValue!==''&&isFinite(o.targetValue))return false;
   o.metricType='krs';o.startValue=0;o.targetValue=null;o.revisedTarget=null;o.direction='up';o.unit='';o.pacing=[];o.paceTolerance=null;
-  okrLog(o.id,o.kind==='kr'?'Measured by linked KPIs':'Measured by key results',{changes:[{field:'Measured by',from:'own number (no target set)',to:o.kind==='kr'?'its linked KPIs':'its key results'}]});
+  okrLog(o.id,o.kind==='kr'?'Measured by linked KPIs':'Measured by key results & KPIs',{changes:[{field:'Measured by',from:'own number (no target set)',to:o.kind==='kr'?'its linked KPIs':'its key results and linked KPIs'}]});
   _okrPush(o);return true;
 }
 function okrLinkCandidates(obj,q){
@@ -426,12 +428,12 @@ function _okrLinkListHTML(o){
 App._okrLinkKPI=(objId)=>{
   const o=okrById(objId);if(!o)return;
   if(!_okrV4Ready())return toast('Database update pending — linking needs the v4 migration','err');
-  if(!okrCanHoldKPIs(o))return toast('KPIs link under a number key result','warn');
-  if(!_okrCanEditNode(o))return toast('You can’t edit this key result','err');
+  if(!okrCanHoldKPIs(o))return toast('KPIs link under an objective or a number key result','warn');
+  if(!_okrCanEditNode(o))return toast('You can’t edit this '+okrKindLabel(o),'err');
   S.filters.okrLinkQ='';
   const linked=okrKPIsOf(o.id).filter(k=>okrCanSee(k));
   modalShell({title:'Link KPIs',sub:o.title||'',size:'max-w-2xl',key:'okr-link',
-    body:`<div style="font-size:12px;color:var(--c-text-2);background:var(--c-surface-2);border-radius:10px;padding:9px 12px;line-height:1.5;margin-bottom:10px">A linked KPI moves under this key result in the tree and shows as a line beneath it on the scoreboard. It keeps its own number, owners, updates and sub-KPIs. ${o.metricType==='krs'?'This key result reads the average of what is linked.':(o.targetValue===null||o.targetValue===undefined)?'This key result has no target of its own, so it will read the average of what you link.':'This key result keeps its own number; linked KPIs show beneath it.'}</div>
+    body:`<div style="font-size:12px;color:var(--c-text-2);background:var(--c-surface-2);border-radius:10px;padding:9px 12px;line-height:1.5;margin-bottom:10px">A linked KPI moves under this ${okrKindLabel(o)} in the tree and shows as a line on the scoreboard. It keeps its own number, owners, updates and sub-KPIs. ${o.metricType==='krs'?'This '+okrKindLabel(o)+' reads the average of what is linked'+(o.kind==='kr'?'.':' (key results and KPIs, each counting equally).'):(o.targetValue===null||o.targetValue===undefined)?'This '+okrKindLabel(o)+' has no target of its own, so it will read the average of what you link.':'This '+okrKindLabel(o)+' keeps its own number; linked KPIs show alongside it.'}</div>
       ${linked.length?`<div style="font-size:11px;color:var(--c-text-3);margin-bottom:8px">Already linked: ${linked.map(k=>'<b>'+esc(k.title||'')+'</b>').join(', ')}</div>`:''}
       <input type="search" class="ui-input" placeholder="Search KPIs by title or owner…" oninput="S.filters.okrLinkQ=this.value;const el=document.getElementById('okr-link-list');if(el)el.innerHTML=_okrLinkListHTML(okrById('${o.id}'))" style="margin-bottom:8px" autofocus/>
       <div id="okr-link-list" class="okr-linklist">${_okrLinkListHTML(o)}</div>`,
@@ -440,12 +442,12 @@ App._okrLinkKPI=(objId)=>{
 };
 App._okrLinkKPIPick=(objId,kid)=>{
   const o=okrById(objId),k=okrById(kid);if(!o||!k)return;
-  if(!_okrCanEditNode(o))return toast('You can’t edit this key result','err');
+  if(!_okrCanEditNode(o))return toast('You can’t edit this '+okrKindLabel(o),'err');
   if(!(_okrCanEditNode(k)||_okrCanManage()))return toast('You can’t move that KPI — ask its owner, or someone with OKR → Manage','err');
   if(k.kind!=='kpi')return toast('Only KPIs can be linked','warn');
-  const err=okrReparent(k,o.id,'Linked to key result',{keyResult:o.title||''});if(err)return toast(err,'err');
+  const err=okrReparent(k,o.id,'Linked to '+okrKindLabel(o),{under:o.title||''});if(err)return toast(err,'err');
   const auto=_okrAutoKrs(o);
-  toast('“'+(k.title||'KPI')+'” linked'+(auto?' — the key result now reads its KPIs’ average':''));
+  toast('“'+(k.title||'KPI')+'” linked'+(auto?' — the '+okrKindLabel(o)+' now reads the average of what is linked':''));
   const el=document.getElementById('okr-link-list');if(el)el.innerHTML=_okrLinkListHTML(o);
   rr();
 };
@@ -453,7 +455,7 @@ App._okrUnlinkKPI=(kid)=>{
   const k=okrById(kid);if(!k||!k.parentId)return;
   const o=okrById(k.parentId);
   if(!(o&&_okrCanEditNode(o))&&!(_okrCanEditNode(k)||_okrCanManage()))return toast('You can’t unlink this KPI','err');
-  const err=okrReparent(k,null,'Unlinked from key result',{keyResult:o?(o.title||''):''});if(err)return toast(err,'err');
+  const err=okrReparent(k,null,'Unlinked from '+(o?okrKindLabel(o):'objective'),{from:o?(o.title||''):''});if(err)return toast(err,'err');
   toast('“'+(k.title||'KPI')+'” unlinked — now a top-level KPI');
   if(o)App._okrProgressModal(o.id);else rr();
 };
@@ -715,7 +717,7 @@ function okrScoreboardHTML(){
   const nss=roots.filter(o=>o.isNorthStar),others=roots.filter(o=>!o.isNorthStar);
   const live=vis.filter(o=>o.state!=='draft'&&!o.closed&&!o.quarterLabel);
   const objs=live.filter(okrIsObjective),krs=live.filter(o=>o.kind==='kr');
-  const kpis=live.filter(o=>okrIsKPI(o)&&o.parentId&&(okrById(o.parentId)||{}).kind==='kr');   // only KPIs linked under a key result belong to the scoreboard
+  const kpis=live.filter(o=>okrIsKPI(o)&&o.parentId&&(okrById(o.parentId)||{}).kind!=='kpi'&&okrById(o.parentId));   // KPIs linked under an objective or a key result
   const flagsOwn=live.map(o=>okrFlagOf(o)).filter(f=>f&&!f.inherited);
   const nBlocked=new Set(flagsOwn.filter(f=>f.flag==='blocked').map(f=>f.okrId)).size,nRisk=new Set(flagsOwn.filter(f=>f.flag==='at_risk').map(f=>f.okrId)).size;
   const nProp=live.filter(o=>o.targetConfirmed===false).length,nDec=live.filter(o=>o.needsDecision||(o.ownerTbd&&!okrOwners(o).length)).length;
@@ -738,7 +740,7 @@ function okrScoreboardHTML(){
   if(!roots.length){
     const pending0=_okrV4Ready()?'':`<div class="sb-pending">${ic('alert','w-3.5 h-3.5')} Database update pending — objectives, key results, ramps, flags and the new fields will not save until migration <b>2026-10-02_v400_okr_v4.sql</b> has been applied.</div>`;
     const nKpi=vis.filter(o=>okrIsKPI(o)&&!o.quarterLabel&&!o.closed).length;
-    return`<div class="sb">${pending0}${strip}${ctl}<div class="sb-empty">${ic('star','w-5 h-5')}<div><b>No objectives yet.</b> ${_okrV4Ready()?(_okrCanCreate()?'Use <b>New objective</b> above to create the first one, mark the North Star in its editor (Plan & governance), then add key results and link KPIs under them.':'Objectives will appear here once leadership creates them.'):'Objectives can be created once the database update has run.'}${nKpi?` The ${nKpi} KPI${nKpi===1?'':'s'} Bridge already tracks live on the <a href="#" onclick="event.preventDefault();App._okrTab('objectives')" style="font-weight:700;text-decoration:underline">Objectives tab</a>.`:''}</div></div></div>`;
+    return`<div class="sb">${pending0}${strip}${ctl}<div class="sb-empty">${ic('star','w-5 h-5')}<div><b>No objectives yet.</b> ${_okrV4Ready()?(_okrCanManage()?'Use <b>New objective</b> above to create the first one, mark the North Star in its editor (Plan & governance), then add key results and link KPIs under it or them.':'Objectives will appear here once leadership (OKR → Manage) creates them.'):'Objectives can be created once the database update has run.'}${nKpi?` The ${nKpi} KPI${nKpi===1?'':'s'} Bridge already tracks live on the <a href="#" onclick="event.preventDefault();App._okrTab('objectives')" style="font-weight:700;text-decoration:underline">Objectives tab</a>.`:''}</div></div></div>`;
   }
   const sections=others.map(r=>{
     const kids=_sbKids(r,showDrafts),exp=_sbExp(r.id);
@@ -760,7 +762,7 @@ App._okrSbList=(key)=>{
   let hits=[],title='';
   if(key==='objectives'){hits=vis.filter(okrIsObjective);title='Objectives';}
   else if(key==='krs'){hits=vis.filter(o=>o.kind==='kr');title='Key results';}
-  else if(key==='kpis'){hits=vis.filter(o=>okrIsKPI(o)&&o.parentId&&(okrById(o.parentId)||{}).kind==='kr');title='KPIs linked under key results';}
+  else if(key==='kpis'){hits=vis.filter(o=>okrIsKPI(o)&&o.parentId&&okrById(o.parentId)&&okrById(o.parentId).kind!=='kpi');title='Linked KPIs';}
   else if(key==='blocked'||key==='at_risk'){hits=vis.filter(o=>{const f=okrFlagOf(o);return f&&!f.inherited&&f.flag===key;});title=key==='blocked'?'Blocked — owner’s call':'At risk — owner’s call';}
   else if(key==='off'){hits=vis.filter(o=>o.kind!=='kr'&&['Off track','Not achieved'].includes(okrStatusOf(o)));title='Off track / not achieved';}
   else if(key==='proposed'){hits=vis.filter(o=>o.targetConfirmed===false);title='Proposed targets — confirm or adjust';}
