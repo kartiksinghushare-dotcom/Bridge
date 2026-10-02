@@ -526,19 +526,26 @@ function okrOwnMetricLine(o){
     ${pct===null?'':`<span class="okr-krpct">${pct}%</span>`}
   </div>`;
 }
-function _sbRow(o,depth,isHead){
+/* Nesting state for the scoreboard: which objectives are open. Collapsed by default; remembered with the
+   tab's other filters (survives reload). */
+function _sbKids(o,showDrafts){return okrSubObjs(o.id).filter(k=>okrCanSee(k)&&!k.quarterLabel&&(showDrafts||k.state!=='draft'));}
+function _sbExp(id){const m=S.filters.okrSbExp;return !!(m&&typeof m==='object'&&m[id]);}
+App._okrSbTog=(id)=>{const m=(S.filters.okrSbExp&&typeof S.filters.okrSbExp==='object')?S.filters.okrSbExp:{};if(m[id])delete m[id];else m[id]=true;S.filters.okrSbExp=m;rr();};
+App._okrSbExpandAll=(on)=>{const m={};if(on){(DB.okrs||[]).forEach(o=>{if(o.kind!=='kr'&&!o.quarterLabel&&okrSubObjs(o.id).length)m[o.id]=true;});}S.filters.okrSbExp=m;rr();};
+function _sbRow(o,depth,isHead,kidsN,exp){
   const st=okrStatusOf(o),f=okrFlagOf(o),pct=okrNoPct(o)?null:okrProgress(o);
   const krs=okrKRsOf(o.id).filter(k=>okrCanSee(k)&&(k.state!=='draft'||S.filters.okrSbDrafts));
   const lvl=okrLevel(o);
+  const chev=kidsN?`<button class="sb-chev${exp?' on':''}" onclick="event.stopPropagation();App._okrSbTog('${o.id}')" title="${exp?'Collapse':'Expand'} ${kidsN} sub-objective${kidsN===1?'':'s'}" aria-expanded="${exp?'true':'false'}">${ic('chevR','w-3.5 h-3.5')}</button>`:`<span class="sb-chev sb-chev-leaf"></span>`;
   /* own number first (unless the objective is measured BY its KRs), then every key result */
   const own=okrReadsFromKRs(o)?'':okrOwnMetricLine(o);
   const krCol=(own+krs.map(k=>okrKRLineHTML(k)).join(''))||'<span style="color:var(--c-text-3);font-size:11.5px">No target or key results yet</span>';
-  return`<div class="sb-row${isHead?' sb-row-head':''}${o.state==='draft'?' sb-draft':''}" onclick="App._okrProgressModal('${o.id}')" title="Open">
-    <div class="sb-c sb-lvl">${_okrLvlChip(lvl)}</div>
-    <div class="sb-c sb-obj" style="${depth>1?'padding-left:'+Math.min(depth-1,4)*14+'px':''}">
+  return`<div class="sb-row sb-d${Math.min(depth,4)}${isHead?' sb-row-head':''}${o.state==='draft'?' sb-draft':''}" onclick="App._okrProgressModal('${o.id}')" title="Open">
+    <div class="sb-c sb-lvl">${chev}${_okrLvlChip(lvl)}</div>
+    <div class="sb-c sb-obj">
       <div class="sb-title">${esc(o.title||'Untitled')}${o.isAnnual?' '+_okrAnnualChip():''}</div>
       ${(o.description||'').trim()?`<div class="sb-why">${esc(o.description)}</div>`:''}
-      ${okrBadgesHTML(o)?`<div class="sb-badges">${okrBadgesHTML(o)}</div>`:''}
+      ${okrBadgesHTML(o)||kidsN?`<div class="sb-badges">${okrBadgesHTML(o)}${kidsN?`<button class="sb-subtog" onclick="event.stopPropagation();App._okrSbTog('${o.id}')">${ic('tree','w-3 h-3')}${kidsN} sub-objective${kidsN===1?'':'s'} <span style="display:inline-flex;transform:${exp?'rotate(180deg)':'none'}">${ic('chevD','w-3 h-3')}</span></button>`:''}</div>`:''}
     </div>
     <div class="sb-c sb-krs"><div class="okr-krs">${krCol}</div></div>
     <div class="sb-c sb-own">${_sbOwnerCell(o)}</div>
@@ -550,7 +557,7 @@ function _sbRow(o,depth,isHead){
 }
 function _sbWalk(o,depth,out,showDrafts){
   if(depth>8)return;
-  okrSubObjs(o.id).filter(k=>okrCanSee(k)&&!k.quarterLabel&&(showDrafts||k.state!=='draft')).forEach(k=>{out.push(_sbRow(k,depth,false));_sbWalk(k,depth+1,out,showDrafts);});
+  _sbKids(o,showDrafts).forEach(k=>{const kk=_sbKids(k,showDrafts);const exp=_sbExp(k.id);out.push(_sbRow(k,depth,false,kk.length,exp));if(exp)_sbWalk(k,depth+1,out,showDrafts);});
 }
 /* "Bolt — launch and scale…" -> "Bolt" for the engines table; the full title stays in the tooltip */
 function _sbShortTitle(t){t=String(t||'');const m=t.match(/^(.{2,40}?)\s[—\u2013:-]\s/);return m?m[1]:(t.length>48?t.slice(0,46)+'…':t);}
@@ -619,6 +626,7 @@ function okrScoreboardHTML(){
     </div>`;
   const ctl=`<div class="sb-ctl">
       <span class="sb-asof">${ic('calendar','w-3.5 h-3.5')}As of ${esc(fmtD(todayISO()))}</span>
+      <span class="sb-expctl"><button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="App._okrSbExpandAll(true)">${ic('chevD','w-3.5 h-3.5')}Expand all</button><button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="App._okrSbExpandAll(false)">${ic('chevR','w-3.5 h-3.5')}Collapse all</button></span>
       <label class="sb-chk"><input type="checkbox" ${showDrafts?'checked':''} onchange="S.filters.okrSbDrafts=this.checked;rr()"/> Show drafts</label>
       <button class="ui-btn ui-btn-ghost ui-btn-sm" onclick="window.print()" title="Print or save as PDF">${ic('print','w-3.5 h-3.5')}Print</button>
     </div>`;
@@ -626,12 +634,13 @@ function okrScoreboardHTML(){
   if(!roots.length&&loneKRs.length)return`<div class="sb">${strip}${ctl}<section class="sb-sec"><div class="sb-thead"><span></span><span>Your key results</span><span>Value</span><span>Owner</span><span>Status</span></div>${loneKRs.map(k=>{const p=k.parentId?okrById(k.parentId):null;return`<div class="sb-row" onclick="App._okrProgressModal('${k.id}')"><div class="sb-c sb-lvl">${okrKRKindChip(k)}</div><div class="sb-c sb-obj"><div class="sb-title">${esc(k.title||'')}</div>${p?`<div class="sb-why">under ${esc(p.title||'')}</div>`:''}</div><div class="sb-c sb-krs"><div class="okr-krs">${okrKRLineHTML(k)}</div></div><div class="sb-c sb-own">${_sbOwnerCell(k)}</div><div class="sb-c sb-st"><div class="sb-stline">${okrStatusChip(okrStatusOf(k),true)}${(f=>f?okrFlagChip(f.flag,true,f):'')(okrFlagOf(k))}</div></div></div>`;}).join('')}</section></div>`;
   if(!roots.length)return strip+ctl+empty('star','Nothing on the scoreboard yet',_okrCanCreate()?'Create an L0 objective, mark one as the North Star in its editor (Plan & governance), and add key results under each objective.':'No objectives are visible to you yet.');
   const sections=others.map(r=>{
-    const rows=[];_sbWalk(r,1,rows,showDrafts);
+    const kids=_sbKids(r,showDrafts),exp=_sbExp(r.id);
+    const rows=[];if(exp)_sbWalk(r,1,rows,showDrafts);
     return`<section class="sb-sec${r.state==='draft'?' sb-draft':''}">
       <div class="sb-table">
         <div class="sb-thead"><span>Lvl</span><span>Objective</span><span>Key results / target</span><span>Owner</span><span>Status</span></div>
-        ${_sbRow(r,0,true)}
-        ${rows.join('')||'<div class="sb-empty">No sub-objectives under this yet.</div>'}
+        ${_sbRow(r,0,true,kids.length,exp)}
+        ${rows.join('')}
       </div>
     </section>`;}).join('');
   setTimeout(()=>{try{_drawOKRCharts();}catch(e){}},60);
