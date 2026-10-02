@@ -1,4 +1,4 @@
-# Bridge v163 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=163`)
+# Bridge v165 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=165`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -6,7 +6,22 @@
 1. **Apply the migration first** (`supabase/migrations/2026-10-02_v400_okr_v4.sql`) in the Supabase SQL editor. It is additive only: new nullable/defaulted columns on `okrs` and `okr_checkins`, two new tables (`okr_reviews`, `okr_alerts`), indexes, RLS. Nothing existing is dropped, renamed or re-typed; it is safe to run twice.
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
-4. Open Access Control once as a Super Admin: built-in roles are re-seeded (seed v19) so Super Admin / Administrator / Manager gain **Run reviews** and **Confirm targets**. Custom roles are untouched — `Manage` already covers both, or switch them on per role.
+4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Round four — OKRs vs KPIs (v4.1 model)
+- **Everything Bridge tracked before is a KPI** (`okrs.kind = 'kpi'`). The migration marks every existing row as a KPI and the column default is `kpi`, so anything the older production frontend keeps inserting is a KPI too. Objectives (`'objective'`) and key results (`'kr'`) are only ever written by this build. A KPI works exactly as before — own number, check-ins, sub-KPIs, roll-ups, annual splits, Move, bulk edit, export.
+- **Link KPIs to an objective** — from the objective's panel (**Link KPI** → searchable picker) or in its editor (**Linked KPIs** section, applied on Save). Linking moves the KPI under the objective in the tree (same mechanics as Move: level map, activity trail, `parent_id` written); it keeps its owners, updates and sub-KPIs. **Unlink** (× on the line) puts it back at the top level with its effective department. Permission: edit on the objective, plus edit on the KPI or OKR → Manage.
+- **Calculation**: an objective's "measured by its key results and linked KPIs" progress is the equal-weight average of its active KRs **and** linked KPIs. An objective saved with no target of its own switches to that mode automatically the moment its first KPI is linked; with a target it keeps its number and the KPIs show alongside. An objective with nothing linked is updated by its owner like before.
+- **Scoreboard**: linked KPIs render as lines inside the objective's "KPIs · key results / target" column (not as nested rows); unlinked KPIs sit in a collapsed **KPIs not linked to an objective** section at the bottom (with their own sub-KPI nesting); strip gains a **KPIs** tile. Pre-migration the scoreboard shows only that section — every row is a KPI until the database has the `kind` column.
+- **Rules**: a KPI's children default to KPIs; an objective can never sit under a KPI (editor, Move and Link all refuse); nothing sits under a key result; a KPI with objectives under it can't be re-labelled; the kind switch (Objective / KPI / Key result) appears for every node once the migration has run. Quarter copies inherit their parent's kind.
+- Fixes: doubled ≤/≥ sign on the own-number line; link-picker rows wrap on mobile; mobile section headers no longer wrap the count onto its own line.
+- QA harness: 84 scripted flows (11 new for KPIs), zero page errors, desktop + mobile. Migration dry-run on local Postgres: fresh install, re-run, and upgrade from the earlier `objective` default all verified.
+
+### Round three (same day)
+- **Reviews tab folds like the scoreboard** — every section (Blocked / At risk / Not updated / Updated; What moved / What's stuck / Needs a decision) is collapsed by default with its count in the header; click the header or the chevron to open it. State is remembered with the tab's filters (`S.filters.okrRvExp`).
+- **One Expand all / Collapse all button** on both the Scoreboard and the Reviews tab (it flips depending on whether anything is open) instead of two.
+- **Weekly review is now as-of the week being looked at**: the number and the status of each row are replayed for the end of that week (`_okrValueAt` / new `okrStatusAt`), so stepping back a week shows what that review actually looked at rather than today's numbers. Rows also show "reported <date>" for the week's check-in. Monthly rows use the same as-of status.
+- **Two-frontend safety**: role seed version held at 18 (above).
 
 ## QA pass (same day) — found by a scripted end-to-end suite (73 flows) + an independent code review, all fixed
 - **Stored XSS**: a key result's `unit` text was concatenated unescaped into KR lines / reviews — now every fragment goes through `esc()`.

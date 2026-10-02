@@ -258,7 +258,7 @@ function _seedRoleProfiles(){
     }},
   };
   const _validAreas=new Set(PERM_AREAS.map(a=>a.key));Object.values(presets).forEach(p=>{Object.keys(p.perms||{}).forEach(k=>{if(!_validAreas.has(k))delete p.perms[k];});});
-  const V='19'; // v19 (Bridge v4.0): OKR gains “Run reviews” + “Confirm targets” (Super Admin / Administrator / Manager re-seeded; custom roles untouched — Manage already covers both). v18 (Bridge v159): Leaves area + Head of People / People Admin / Finance roles (HRMS leave module). v17 (Bridge v133): Attendance gains “Approve” and “Set schedule” (HRMS Phase 1). v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
+  const V='18'; // v4.0 NOTE: kept at 18 on purpose — the production frontend still ships V='18' and both frontends share one database; a different value here would make the two builds re-seed the built-in roles against each other on every load. “Run reviews” / “Confirm targets” are covered by Manage until the version is bumped together with the production build. v18 (Bridge v159): Leaves area + Head of People / People Admin / Finance roles (HRMS leave module). v17 (Bridge v133): Attendance gains “Approve” and “Set schedule” (HRMS Phase 1). v15 (Bridge v132): Attendance (geofenced clock-in), My profile, Direct messages and the new Users actions (Open profile / Sensitive details / Edit HR details / WFH). Built-ins re-seeded; custom roles get the everyday floor once (below) and keep everything else.
   let _upgraded=false;
   Object.values(presets).forEach(p=>{
     const cur=DB.roleProfiles[p.id];
@@ -471,7 +471,7 @@ const countBadge=(n,tone='danger',extra='')=>!n?'':`<span class="ui-count" style
 /* ═══ PORTED: OKR mappers ═══ */
 function _mOKR(rows){if(rows&&rows.length&&Object.prototype.hasOwnProperty.call(rows[0],'kind'))window._OKR_V4=true;return(rows||[]).map(o=>({id:o.id,parentId:o.parent_id||null,title:_unesc(o.title)||'',description:_unesc(o.description)||'',departmentId:o.department_id||null,subDepartmentId:o.sub_department_id||null,ownerId:o.owner_id||null,owners:(Array.isArray(o.owners)&&o.owners.length)?o.owners.filter(Boolean):(o.owner_id?[o.owner_id]:[]),metricType:o.metric_type||'number',startValue:(o.start_value===null||o.start_value===undefined)?0:Number(o.start_value),targetValue:(o.target_value===null||o.target_value===undefined)?null:Number(o.target_value),unit:_unesc(o.unit)||'',direction:o.direction||'up',frequency:(o.frequency&&typeof o.frequency==='object')?o.frequency:{},periodStart:o.period_start||null,periodEnd:o.period_end||null,statusMode:o.status_mode||'auto',statusManual:o.status_manual||null,rollup:!!o.rollup,rollupMode:o.rollup_mode||'sum',isAnnual:!!o.is_annual,quarterLabel:_unesc(o.quarter_label)||null,closed:!!o.closed,closedReason:_unesc(o.closed_reason)||'',closedAt:o.closed_at||null,closedBy:o.closed_by||null,revisedTarget:(o.revised_target===null||o.revised_target===undefined)?null:Number(o.revised_target),revisedNote:_unesc(o.revised_note)||'',revisedAt:o.revised_at||null,revisedBy:o.revised_by||null,deletedAt:o.deleted_at||null,deletedBy:o.deleted_by||null,sort:o.sort||0,createdBy:o.created_by||null,createdAt:o.created_at,updatedAt:o.updated_at||null,
   /* v4.0 — Objective / Key-result model (all columns additive; absent on older rows → safe defaults) */
-  kind:o.kind==='kr'?'kr':'objective',krKind:(o.kr_kind==='milestone'||o.kr_kind==='count'||o.kr_kind==='range')?o.kr_kind:null,isNorthStar:!!o.is_north_star,
+  kind:o.kind==='kr'?'kr':o.kind==='objective'?'objective':'kpi',krKind:(o.kr_kind==='milestone'||o.kr_kind==='count'||o.kr_kind==='range')?o.kr_kind:null,isNorthStar:!!o.is_north_star,
   dueDate:o.due_date||null,doneAt:o.done_at||null,doneBy:o.done_by||null,floorValue:(o.floor_value===null||o.floor_value===undefined)?null:Number(o.floor_value),
   items:Array.isArray(o.items)?o.items:[],pacing:Array.isArray(o.pacing)?o.pacing:[],paceTolerance:(o.pace_tolerance===null||o.pace_tolerance===undefined)?null:Number(o.pace_tolerance),
   contributesTo:o.contributes_to||null,targetConfirmed:o.target_confirmed!==false,targetBasis:_unesc(o.target_basis)||'',leadLag:(o.lead_lag==='leading'||o.lead_lag==='lagging')?o.lead_lag:null,
@@ -491,7 +491,7 @@ function _okrRow(o){return{id:o.id,parent_id:o.parentId||null,title:o.title||'',
      payload naming a column the database doesn't have yet would make PostgREST reject the whole
      upsert, and every OKR save would fail until the migration ran. With the guard, the app works
      unchanged against the old schema and simply switches the new fields on after the migration. */
-  ...(_okrV4Ready()?{kind:o.kind==='kr'?'kr':'objective',kr_kind:o.krKind||null,is_north_star:!!o.isNorthStar,due_date:o.dueDate||null,done_at:o.doneAt||null,done_by:o.doneBy||null,
+  ...(_okrV4Ready()?{kind:o.kind==='kr'?'kr':o.kind==='kpi'?'kpi':'objective',kr_kind:o.krKind||null,is_north_star:!!o.isNorthStar,due_date:o.dueDate||null,done_at:o.doneAt||null,done_by:o.doneBy||null,
   floor_value:(o.floorValue===null||o.floorValue===undefined||o.floorValue==='')?null:o.floorValue,items:Array.isArray(o.items)?o.items:[],pacing:Array.isArray(o.pacing)?o.pacing:[],
   pace_tolerance:(o.paceTolerance===null||o.paceTolerance===undefined||o.paceTolerance==='')?null:o.paceTolerance,contributes_to:o.contributesTo||null,target_confirmed:o.targetConfirmed!==false,
   target_basis:o.targetBasis||'',lead_lag:o.leadLag||null,owner_tbd:!!o.ownerTbd,needs_decision:!!o.needsDecision,decision_note:o.decisionNote||'',state:o.state==='draft'?'draft':'active',baseline_as_of:o.baselineAsOf||null}:{})};}
@@ -1115,7 +1115,7 @@ function _okrMoveOptions(excl){
   const walk=(o,depth)=>{
     if(excl.has(o.id))return;
     if(o.kind==='kr')return; // v4.0: nothing can sit under a key result
-    out.push([o.id,' '.repeat(depth*3)+'L'+okrLevel(o)+' · '+(o.title||'Untitled')+(o.quarterLabel?' ['+o.quarterLabel+']':'')]);
+    out.push([o.id,' '.repeat(depth*3)+(o.kind==='kpi'?'KPI':'L'+okrLevel(o))+' · '+(o.title||'Untitled')+(o.quarterLabel?' ['+o.quarterLabel+']':'')]);
     okrChildren(o.id).forEach(k=>walk(k,depth+1));
   };
   okrVisibleRoots().forEach(r=>walk(r,0));
@@ -1172,6 +1172,7 @@ App._okrMoveSave=()=>{
     if(!t)return toast('That parent no longer exists','err');
     if(newParentId===o.id||okrDescendants(o.id).some(x=>x.id===newParentId))return toast('You can\'t move an objective under its own sub-objective','err');
     if(t.kind==='kr')return toast('Nothing can sit under a key result','err');
+    if(t.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI — only KPIs and key results can','err');
     if(o.kind==='kr'&&(t.isAnnual||t.rollup))return toast('That objective auto-updates (annual / roll-up) — it can’t hold key results','err');
   }else{
     if(o.kind==='kr')return toast('A key result has to sit under an objective — it can’t be top level','err');
@@ -1247,7 +1248,7 @@ App._okrRevise=(id)=>{
   const rows=[o,...okrChildren(o.id)].filter(x=>x.metricType!=='yesno');
   if(!rows.length)return toast('Yes/No objectives can\'t be revised','err');
   const inp=(x)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--c-border)">
-      ${_okrLvlChip(okrLevel(x))}
+      ${okrKindChip(x)}
       <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.title||'Untitled')}</div>
       <div style="font-size:10.5px;color:var(--c-text-3)">Original ${esc(_okrFmtTarget(x,x.targetValue))}${okrHasRevision(x)?' · currently revised to '+esc(_okrFmtTarget(x,x.revisedTarget)):''}</div></div>
       <input type="number" step="any" data-rev-id="${x.id}" value="${okrHasRevision(x)?x.revisedTarget:(x.targetValue!==null&&x.targetValue!==undefined?x.targetValue:'')}" class="ui-input" style="width:128px;min-height:36px;padding:6px 9px;font-size:12.5px;flex-shrink:0"/>
@@ -1325,7 +1326,7 @@ App._okrSummaryList=(key)=>{
     const owners=okrOwners(o).map(uById).filter(Boolean);
     const eff=okrDeptOf(o);const dept=(DB.departments||[]).find(d=>d.id===eff.deptId);
     return `<div onclick="App._okrProgressModal('${o.id}')" style="display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:10px;cursor:pointer" onmouseover="this.style.background='var(--c-surface-2)'" onmouseout="this.style.background='transparent'">
-      ${_okrLvlChip(okrLevel(o))}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}
+      ${okrKindChip(o)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}
       <div style="flex:1;min-width:0">
         <div style="font-size:12.5px;font-weight:700;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.title||'Untitled')}</div>
         <div style="font-size:10.5px;color:var(--c-text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${owners.length?esc(owners.map(fullName).join(', ')):'No owner'}${dept?' · '+esc(dept.name):''}</div>
@@ -1421,7 +1422,7 @@ App._okrProgressModal=(id)=>{
   // includes the matching below-level quarters (L0·Q1 ← every L1·Q1), same panel as the annual's.
   const _vset=new Set(okrVisible().map(x=>x.id));
   const kids=(o.isAnnual?okrChildrenVisible(o.id).filter(k=>k.quarterLabel)
-    :(o.rollup?_okrRollupKids(o).filter(k=>_vset.has(k.id)):okrChildrenVisible(o.id))).filter(k=>k.kind!=='kr'); // v3.19: annual ⇒ quarters always · v4.0: key results have their own block
+    :(o.rollup?_okrRollupKids(o).filter(k=>_vset.has(k.id)):okrChildrenVisible(o.id))).filter(k=>k.kind!=='kr'&&!(k.kind==='kpi'&&okrIsObjective(o)&&!o.rollup&&!o.isAnnual)); // v3.19: annual ⇒ quarters always · v4.0: key results have their own block · v4.1: an objective's linked KPIs sit in that block too
   const pct=okrProgress(o),st=okrStatusOf(o);
   modalShell({title:o.kind==='kr'?'Key result':'Progress & Updates',sub:(o.title||'')+(okrNoPct(o)?'':' — '+(pct===null?'no data yet':pct+'%')),size:'max-w-2xl',key:'okr-pm',
     body:`<div id="okr-pm" data-okr="${o.id}" style="margin:-6px -2px 0">${_okrProgressPanel(o,kids,pct,st)}</div>`});
@@ -1688,7 +1689,7 @@ function _okrNodeHTML(o,depth){
         ${kids.length?`<button class="okr-exp" onclick="event.stopPropagation();App._okrTogExp('${o.id}')" title="${exp?'Collapse':'Expand'} sub-objectives" style="${icBtn};transform:${exp?'rotate(90deg)':'none'}">${ic('chevR','w-4 h-4')}</button>`:`<span class="okr-exp okr-leaf" style="width:24px;flex-shrink:0;display:grid;place-items:center;height:24px"><span style="width:4px;height:4px;border-radius:50%;background:var(--c-border-2)"></span></span>`}
         <div class="okr-main" style="flex:1;min-width:140px">
           <div class="okr-titlerow" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;row-gap:4px">
-            ${o.kind==='kr'?okrKRKindChip(o):_okrLvlChip(lvl)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}${okrBadgesHTML(o)}
+            ${okrKindChip(o,true)}${o.quarterLabel?_okrQtrChip(o.quarterLabel):''}${o.isAnnual?_okrAnnualChip():''}${okrBadgesHTML(o)}
             <span class="fd okr-title" style="font-size:13.5px;font-weight:600;color:var(--c-text);line-height:1.35;min-width:0">${esc(o.title||'Untitled')}</span>
             ${okrHasRevision(o)?`<span style="${meta};color:#7C5A26;font-weight:800" title="Target was revised — the original is kept for comparison">${ic('edit','w-3 h-3')}Revised</span>`:''}
           </div>
@@ -1791,7 +1792,8 @@ function _okrProgressPanel(o,kids,pct,st){
   const _canAddKR=_okrCanCreate()&&o.kind!=='kr'&&!o.isAnnual&&!o.rollup&&!o.closed&&_okrV4Ready();
   const _acts=[
     _canAddKR?actBtn('Add key result',"App.closeModal();App._okrEdit(null,'"+o.id+"','kr')",'flag'):'',
-    (_okrCanCreate()&&o.kind!=='kr')?actBtn('Add sub-objective',"App.closeModal();App._okrEdit(null,'"+o.id+"')",'plus'):'',
+    (_okrCanCreate()&&o.kind!=='kr')?actBtn(o.kind==='kpi'?'Add sub-KPI':'Add sub-objective',"App.closeModal();App._okrEdit(null,'"+o.id+"')",'plus'):'',
+    (okrIsObjective(o)&&_canEd&&!o.closed&&!o.quarterLabel&&_okrV4Ready())?actBtn('Link KPI',"App._okrLinkKPI('"+o.id+"')",'link'):'',
     _canEd?actBtn('Edit',"App.closeModal();App._okrEdit('"+o.id+"')",'edit'):'',
     _canEd?actBtn('Move',"App.closeModal();App._okrMove('"+o.id+"')",'move'):'',
     (_canEd&&!o.closed&&o.metricType!=='yesno')?actBtn('Revise target',"App.closeModal();App._okrRevise('"+o.id+"')",'refresh'):'',
@@ -1874,7 +1876,7 @@ function _okrProgressPanel(o,kids,pct,st){
   const kidRows=kids.length?`<div style="margin-top:12px">
       <div style="${lab};margin-bottom:6px">${o.isAnnual?'Quarterly objectives — feeding this annual (other sub-objectives have their own panels)':o.rollup?((o.quarterLabel?('Below-level '+esc(o.quarterLabel)+' objectives — feeding this quarterly ('):'Sub-objectives — feeding this objective (')+esc(_okrModeLabel(o.rollupMode))+')'):'Sub-objectives (each tracks its own progress)'}</div>
       ${kids.map(k=>{const kp=okrProgress(k),ks=okrStatusOf(k);return`<div style="display:flex;align-items:center;gap:9px;padding:6px 0">
-        ${_okrLvlChip(okrLevel(k))}${k.quarterLabel?_okrQtrChip(k.quarterLabel):''}
+        ${okrKindChip(k)}${k.quarterLabel?_okrQtrChip(k.quarterLabel):''}
         <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.title)}</span>
         ${okrNoPct(k)?'':`<div style="width:90px;height:5px;background:var(--c-border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${kp===null?0:Math.max(0,Math.min(100,kp))}%;background:${_okrBarColor(ks)}"></div></div>`}
         <span style="font-size:10.5px;color:var(--c-text-3);white-space:nowrap">${okrReadsFromKRs(k)?(okrActiveKRs(k).length+' key result'+(okrActiveKRs(k).length===1?'':'s')):k.metricType==='yesno'?((okrLatestCheckin(k.id)||{}).value>=1?'Done':'Not done'):esc(_okrFmtVal(k,_okrOwnCur(k)))+' '+(_okrTargetSign(k)||'/')+' '+esc(_okrFmtVal(k,_okrTargetEff(k)))}</span>${okrNoPct(k)?'':`<span style="font-size:12px;font-weight:800;color:var(--c-text);width:44px;text-align:right">${kp===null?'—':kp+'%'}</span>`}
@@ -1932,7 +1934,7 @@ App._okrEdit=(id,parentId,kind)=>{
      common case ("the same people, the same quarter") is one title and one number away from saved. */
   const _isKR=kind==='kr'&&!!_pk;
   _OKRED=existing?JSON.parse(JSON.stringify(existing)):{id:uid('okr'),parentId:parentId||null,title:'',description:'',departmentId:null,subDepartmentId:null,ownerId:_isKR?(_pk.ownerId||S.uid):S.uid,owners:_isKR&&okrOwners(_pk).length?okrOwners(_pk).slice():[S.uid],metricType:'number',startValue:0,targetValue:null,unit:_isKR?(_pk.unit||''):'',direction:'up',frequency:_isKR?JSON.parse(JSON.stringify(_pk.frequency||{type:'weekly',day:'Mon'})):{type:'weekly',day:'Mon'},periodStart:_isKR?(_pk.periodStart||null):null,periodEnd:_isKR?(_pk.periodEnd||null):null,statusMode:'auto',statusManual:null,isAnnual:false,quarterLabel:null,sort:okrChildren(parentId||null).length,createdBy:S.uid,createdAt:new Date().toISOString(),
-    kind:_isKR?'kr':'objective',krKind:_isKR?'metric':null,isNorthStar:false,dueDate:null,doneAt:null,doneBy:null,floorValue:null,items:[],pacing:[],paceTolerance:null,contributesTo:null,targetConfirmed:true,targetBasis:'',leadLag:null,ownerTbd:false,needsDecision:false,decisionNote:'',state:'active',baselineAsOf:null};
+    kind:_isKR?'kr':(_okrV4Ready()&&kind!=='kpi'&&!(_pk&&_pk.kind==='kpi'))?'objective':'kpi',krKind:_isKR?'metric':null,isNorthStar:false,dueDate:null,doneAt:null,doneBy:null,floorValue:null,items:[],pacing:[],paceTolerance:null,contributesTo:null,targetConfirmed:true,targetBasis:'',leadLag:null,ownerTbd:false,needsDecision:false,decisionNote:'',state:'active',baselineAsOf:null};
   if(_OKRED.items===undefined)_OKRED.items=[];if(_OKRED.pacing===undefined)_OKRED.pacing=[];delete _OKRED._draft;delete _OKRED._rampOpen;
   delete _OKRED._qRows;delete _OKRED._qEdit;delete _OKRED._ownQ;
   if(existing&&existing.isAnnual)_OKRED._qEdit=_okrBuildQEdit(existing.id); // live quarter values — edits made on the quarters themselves show up here
@@ -2183,8 +2185,8 @@ App._renderOKREdit=()=>{
         <div style="font-size:11px;color:var(--c-text-3);margin-top:6px">${selOwn.length} selected · scheduled check-ins reach every owner as a <b>group task — any one</b> of them can fill it and it counts for everyone.</div>
       </div>`;})()}
       ${_showMetric?`<div style="border-top:1px dashed var(--c-border);padding-top:12px"><label style="${L}">Rules & target — how is this measured?</label>
-        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_kr?'':`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results (average of the KRs underneath)</option>`}</select>
-        ${(!_kr&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results from the objective’s panel — the numbers, dates and counts that prove it.</div>`:''}
+        <select class="ui-select rf" onchange="_OKRED.metricType=this.value;App._renderOKREdit()">${OKR_METRICS.filter(m=>!(_kk==='range'&&m[0]==='yesno')).map(m=>`<option value="${m[0]}" ${o.metricType===m[0]?'selected':''}>${m[1]}</option>`).join('')}${_kr?'':`<option value="krs" ${o.metricType==='krs'?'selected':''}>By its key results and linked KPIs (their average)</option>`}</select>
+        ${(!_kr&&o.metricType==='krs')?`<div style="font-size:11px;color:var(--c-text-3);margin-top:6px;line-height:1.5">No number of its own. Progress is the <b>average of its active key results and linked KPIs</b> (each counts equally); the owner’s weekly update is a status flag and a one-liner. Add key results from the panel, or link the KPIs Bridge already tracks (below).</div>`:''}
       </div>`:''}
       ${(_showMetric&&!_hasKRs&&o.metricType!=='yesno')?`<div><label style="${L}">Which way is good?</label>
         <select class="ui-select rf" onchange="App._okrEdSetDir(this.value)">
@@ -2261,6 +2263,7 @@ App._renderOKREdit=()=>{
         <div><label style="${L}">Period end</label><input type="date" value="${o.periodEnd||''}" oninput="_OKRED.periodEnd=this.value||null" class="ui-input rf"/></div>
       </div>
       <div style="font-size:11px;color:var(--c-text-3)">The period drives the automatic On track / Off track pace and stops check-in reminders after it ends.</div>
+      ${okrEdLinkSection(o,L,isExisting)}
       ${okrEdGovernanceSection(o,L,parent,isExisting)}
     </div>`,
     footer:btnG('Cancel','App.closeModal()')+btnP(isExisting?'Save changes':(_kr?'Create key result':'Create objective'),'App._okrSave()')});
@@ -2278,7 +2281,7 @@ App._okrSave=()=>{
   /* v4.0 — before the database has the v4 columns, nothing v4 may be saved: it would land as a plain
      objective and the key-result / draft / ramp information would be silently lost. */
   if(!_okrV4Ready()){
-    const v4=o.kind==='kr'||o.krKind||o.metricType==='krs'||o.isNorthStar||o.state==='draft'||(Array.isArray(o.pacing)&&o.pacing.length)||o.targetConfirmed===false||o.ownerTbd||o.needsDecision||o.contributesTo||o.leadLag||(o.paceTolerance!==null&&o.paceTolerance!==undefined&&o.paceTolerance!=='')||o.baselineAsOf;
+    const v4=o.kind==='kr'||o.kind==='objective'||o.krKind||o.metricType==='krs'||o.isNorthStar||o.state==='draft'||(Array.isArray(o.pacing)&&o.pacing.length)||o.targetConfirmed===false||o.ownerTbd||o.needsDecision||o.contributesTo||o.leadLag||(o.paceTolerance!==null&&o.paceTolerance!==undefined&&o.paceTolerance!=='')||o.baselineAsOf;
     if(v4)return toast('Database update pending — this can’t be saved until migration v400 has been applied','err');
   }
   delete o._draft; // editor-only switch — never stored (state is already mapped); _rampOpen is dropped after validation
@@ -2299,6 +2302,10 @@ App._okrSave=()=>{
       if(okrDirDown(o)?Number(o.floorValue)<Number(o.targetValue):Number(o.floorValue)>Number(o.targetValue))return toast(okrDirDown(o)?'For "lower is better" the ceiling must sit above the target':'The floor must sit below the target','err');
     }else{o.floorValue=null;o.items=[];}
   }else{
+    const pk0=o.parentId?okrById(o.parentId):null;
+    if(pk0&&pk0.kind==='kr')return toast('Nothing can sit under a key result','err');
+    if(pk0&&pk0.kind==='kpi'&&okrIsObjective(o))return toast('An objective can’t sit under a KPI — make it a KPI, or move it under an objective','err');
+    if(o.kind==='kpi'&&okrChildren(o.id).some(okrIsObjective))return toast('It has objectives under it — it stays an objective','err');
     o.krKind=null;o.floorValue=null;o.items=[];o.leadLag=null;o.dueDate=null;o.doneAt=null;o.doneBy=null;
     if(o.metricType==='krs'){o.isAnnual=false;o.rollup=false;o.startValue=0;o.targetValue=null;o.revisedTarget=null;o.direction='up';o.unit='';o.pacing=[];o.paceTolerance=null;}
     if(o.parentId)o.isNorthStar=false; // only a root can be the North Star
@@ -2443,7 +2450,7 @@ App._okrSave=()=>{
   if(qRows&&qRows.length){
     const baseSort=okrChildren(o.id).length;
     qRows.forEach((r,i)=>{
-      const q={id:uid('okr'),parentId:o.id,state:o.state==='draft'?'draft':'active',quarterLabel:String(r.label).trim(),title:(o.title||'').trim()+' — '+String(r.label).trim(),description:o.description||'',departmentId:null,subDepartmentId:null,ownerId:o.ownerId,owners:okrOwners(o),metricType:o.metricType,startValue:Number(r.startVal||0),targetValue:Number(r.target),unit:o.unit||'',direction:o.direction||'up',frequency:JSON.parse(JSON.stringify(o.frequency||{})),periodStart:r.start,periodEnd:r.end,statusMode:'auto',statusManual:null,rollup:false,rollupMode:'sum',isAnnual:false,sort:baseSort+i,createdBy:S.uid,createdAt:new Date().toISOString()};
+      const q={id:uid('okr'),parentId:o.id,kind:o.kind==='kpi'?'kpi':'objective',state:o.state==='draft'?'draft':'active',quarterLabel:String(r.label).trim(),title:(o.title||'').trim()+' — '+String(r.label).trim(),description:o.description||'',departmentId:null,subDepartmentId:null,ownerId:o.ownerId,owners:okrOwners(o),metricType:o.metricType,startValue:Number(r.startVal||0),targetValue:Number(r.target),unit:o.unit||'',direction:o.direction||'up',frequency:JSON.parse(JSON.stringify(o.frequency||{})),periodStart:r.start,periodEnd:r.end,statusMode:'auto',statusManual:null,rollup:false,rollupMode:'sum',isAnnual:false,sort:baseSort+i,createdBy:S.uid,createdAt:new Date().toISOString()};
       DB.okrs.push(q);
       _okrRelevel(q.id);   // a quarter sits AT its annual's level — derive, don't guess
       okrLog(q.id,'Created objective',{level:'L'+okrLevel(q),quarter:q.quarterLabel,from:'annual split of "'+(o.title||'')+'"'});
@@ -3338,7 +3345,7 @@ App._renderOKRCheckinAll=()=>{
     const ynBtn=(v,label)=>`<button type="button" onclick="App._okrCIAllVal(${i},${v})" style="flex:1;padding:8px;border-radius:9px;border:2px solid ${Number(it.value)===v?(v===1?'#58996E':'#C25441'):'var(--c-border)'};background:${Number(it.value)===v?(v===1?'#EEE4D5':'#F9EBE5'):'var(--c-surface)'};color:${Number(it.value)===v?(v===1?'#346A47':'#A63528'):'var(--c-text-2)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`;
     return `<div style="border:1px solid var(--c-border);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--c-surface)">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        ${_okrLvlChip(okrLevel(o))}
+        ${okrKindChip(o)}
         <span style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--c-text)">${esc(o.title)}</span>
         ${done}
         <button type="button" title="Open full form (photos)" onclick="App.closeModal();App._okrCheckin('${o.id}','${A.date}')" style="width:26px;height:26px;display:grid;place-items:center;border-radius:7px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text-3);cursor:pointer">${ic('cam','w-3.5 h-3.5')}</button>

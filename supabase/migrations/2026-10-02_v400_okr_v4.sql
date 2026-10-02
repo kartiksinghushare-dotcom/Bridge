@@ -4,7 +4,10 @@
 -- exactly as before until someone edits them. Safe to run more than once (IF NOT EXISTS everywhere).
 --
 -- What this enables (see CHANGES.md v4.0):
---   · Objective vs Key Result   okrs.kind = 'objective' | 'kr'     (default 'objective' — today's rows)
+--   · Objective / KPI / KR       okrs.kind = 'objective' | 'kpi' | 'kr'
+--                                default 'kpi': every row that exists today is a KPI (what Bridge tracked before the
+--                                OKR tree), and so is anything the older frontend keeps inserting. Objectives and
+--                                key results are only ever written by the v4 frontend, which sets kind explicitly.
 --   · KR kinds                   okrs.kr_kind = null (metric, today's behaviour) | 'milestone' | 'count' | 'range'
 --   · Milestone KRs              due_date + done_at / done_by
 --   · Counted-items KRs          items jsonb  [{id,name,due,doneAt,doneBy}]   → "4 / 6 areas", items visible
@@ -21,7 +24,15 @@
 --   · Review log                 okr_reviews (weekly / monthly review sign-offs + notes)
 
 -- ───────────────────────────── 1. okrs — new columns ─────────────────────────────
-alter table public.okrs add column if not exists kind              text        not null default 'objective';
+alter table public.okrs add column if not exists kind              text        not null default 'kpi';
+-- If the column had already been added with the earlier default, re-point it and re-mark the legacy rows once
+-- (safe: before this migration nothing could have written 'objective' or 'kr' — the v4 frontend refuses until the column exists).
+do $$ begin
+  if (select column_default from information_schema.columns where table_schema='public' and table_name='okrs' and column_name='kind') like '%objective%' then
+    alter table public.okrs alter column kind set default 'kpi';
+    update public.okrs set kind='kpi' where kind='objective';
+  end if;
+end $$;
 alter table public.okrs add column if not exists kr_kind           text;                       -- null = metric (existing start→target)
 alter table public.okrs add column if not exists is_north_star     boolean     not null default false;
 alter table public.okrs add column if not exists due_date          date;                       -- milestone KRs
@@ -44,7 +55,7 @@ alter table public.okrs add column if not exists baseline_as_of    date;
 -- Guard rails (NOT VALID so existing rows are never re-checked; new writes are).
 do $$ begin
   if not exists (select 1 from pg_constraint where conname='okrs_kind_chk') then
-    alter table public.okrs add constraint okrs_kind_chk check (kind in ('objective','kr')) not valid; end if;
+    alter table public.okrs add constraint okrs_kind_chk check (kind in ('objective','kpi','kr')) not valid; end if;
   if not exists (select 1 from pg_constraint where conname='okrs_kr_kind_chk') then
     alter table public.okrs add constraint okrs_kr_kind_chk check (kr_kind is null or kr_kind in ('milestone','count','range')) not valid; end if;
   if not exists (select 1 from pg_constraint where conname='okrs_state_chk') then

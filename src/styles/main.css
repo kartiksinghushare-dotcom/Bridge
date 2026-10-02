@@ -1727,6 +1727,33 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
 .rv-now{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#2B5638;background:#E9F2EC;padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:4px}
 .rv-sec{background:var(--c-surface);border:1px solid var(--c-border);border-radius:16px;overflow:hidden;box-shadow:var(--sh-sm)}
 .rv-sec-head{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--c-border);background:var(--c-surface-2)}
+.rv-sec-head{cursor:pointer;user-select:none}
+/* v4.1 — KPIs: lines under an objective, the unlinked section, the link picker */
+.okr-kpiline .okr-krico{color:#1F5F5A}
+.okr-krsub{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--c-text-3);white-space:nowrap}
+.okr-krunlink{width:20px;height:20px;display:grid;place-items:center;border-radius:6px;border:none;background:transparent;color:var(--c-text-3);cursor:pointer;flex-shrink:0}
+.okr-krunlink:hover{background:#F9E7E3;color:#A63528}
+.sb-sec-head{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--c-border);background:var(--c-surface-2);cursor:pointer;user-select:none;flex-wrap:wrap}
+.sb-sec-t{font-size:13px;font-weight:800;color:var(--c-text)}
+.sb-sec-n{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:var(--c-surface);border:1px solid var(--c-border);color:var(--c-text-2)}
+.sb-sec-s{font-size:11.5px;color:var(--c-text-3)}
+.sb-kpis .sb-sec-head{background:#F1F7F6}
+.sb-kpis.sb-closed .sb-sec-head{border-bottom:none}
+.sb-empty{display:flex;gap:12px;align-items:flex-start;background:var(--c-surface);border:1px dashed var(--c-border-2);border-radius:14px;padding:16px 18px;font-size:13px;color:var(--c-text-2);line-height:1.5}
+.okr-linklist{max-height:52vh;overflow:auto;border:1px solid var(--c-border);border-radius:12px}
+.okr-linkrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--c-border)}
+.okr-linkrow:first-child{border-top:none}
+.okr-linkmain{flex:1;min-width:0}
+.okr-linktitle{font-size:13px;font-weight:600;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.okr-linkchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.okr-linkchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;font-size:12px;font-weight:600;color:#1F5F5A;background:#E6F1F0;border:1px solid #CFE3E0;border-radius:999px;padding:4px 6px 4px 9px}
+.okr-linkchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.okr-linkchip.pend{background:#FBF5E8;color:#7A5A12;border-color:#EEDEB5}
+.okr-linkchip.gone{text-decoration:line-through;opacity:.6}
+.okr-linkchip button{width:18px;height:18px;display:grid;place-items:center;border:none;background:transparent;border-radius:50%;cursor:pointer;color:inherit}
+.okr-linkchip button:hover{background:rgba(0,0,0,.08)}.rv-sec-head:hover .rv-sec-t{text-decoration:underline}
+.rv-sec.rv-closed .rv-sec-head{border-bottom:none}
+.rv-nav .sb-expctl{margin-left:auto}
 .rv-sec-t{font-size:13px;font-weight:800;color:var(--c-text)}
 .rv-sec-n{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:var(--c-surface);border:1px solid var(--c-border);color:var(--c-text-2)}
 .rv-sec-s{font-size:11.5px;color:var(--c-text-3)}
@@ -1780,6 +1807,9 @@ header.topbar,.topbar{-webkit-backdrop-filter:blur(18px) saturate(150%)}
   .sb-row.sb-d1 .sb-lvl{padding-left:8px}.sb-row.sb-d2 .sb-lvl{padding-left:16px}.sb-row.sb-d3 .sb-lvl,.sb-row.sb-d4 .sb-lvl{padding-left:24px}
   .sb-row .sb-lvl::before{display:none}
   .sb-expctl{margin-left:0;width:100%}.sb-expctl .ui-btn{flex:1;justify-content:center}
+  .okr-linkrow{flex-wrap:wrap;gap:8px 10px}.okr-linkrow .okr-linkmain{flex:1 1 calc(100% - 70px)}.okr-linkrow .okr-linktitle{white-space:normal}.okr-linkrow .ui-btn{margin-left:auto}
+  .sb-sec-head{flex-wrap:nowrap;gap:8px}.sb-sec-head .sb-sec-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sb-sec-head .sb-sec-s{display:none}
+  .rv-sec-head{flex-wrap:nowrap;gap:8px}.rv-sec-head .rv-sec-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rv-sec-head .rv-sec-s{display:none}
   .sb-lvl{grid-area:lvl}.sb-obj{grid-area:obj}.sb-krs{grid-area:krs}
   .sb-own{grid-area:own;align-self:center;min-width:0}
   .sb-st{grid-area:st;justify-self:end;align-self:center;max-width:200px}
