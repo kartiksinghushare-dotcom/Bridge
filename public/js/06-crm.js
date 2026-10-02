@@ -2632,8 +2632,9 @@ function _crmTickState(cid,at){
   if(!others.length)return'sent';
   var r=(CRM.readsAll||{})[cid]||{};var allRead=true,allDeliv=true;
   for(var i=0;i<others.length;i++){var x=r[others[i]]||{};
-    if(!(x.seen&&String(x.seen)>=String(at)))allRead=false;
-    if(!((x.seen&&String(x.seen)>=String(at))||(x.deliv&&String(x.deliv)>=String(at))))allDeliv=false;
+    var _at=_crmTs(at),_seen=_crmTs(x.seen),_dl=_crmTs(x.deliv);
+    if(!(_seen&&_seen>=_at))allRead=false;
+    if(!((_seen&&_seen>=_at)||(_dl&&_dl>=_at)))allDeliv=false;
     if(!allRead&&!allDeliv)break;}
   var st=allRead?'read':(allDeliv?'delivered':'sent');
   /* v4.0 — direct messages: one grey tick until the other person has actually opened the chat, then two
@@ -2646,8 +2647,18 @@ function _crmTicks(m,cid){CRM._pend=CRM._pend||{};var pend=CRM._pend[m.id];var s
 function _crmTickFlip(id){try{var el=document.querySelector('[data-tk="'+id+'"]');if(!el)return;var cid=CRM.sel.convoId;var c=cid?_crmConvo(cid):null;var m=c?(c.messages||[]).find(function(x){return x.id===id;}):null;if(m)el.outerHTML=_crmTicks(m,cid);else el.innerHTML=_CRM_TK_ONE;}catch(e){}}
 /* kept for the list row: 'read' only */
 function _crmReadByOthers(cid,at){return _crmTickState(cid,at)==='read';}
-function _crmLoadReadsAll(){if(CRM._readsLoaded)return;CRM._readsLoaded=true;try{sb.from('crm_reads').select('conversation_id,user_id,last_seen_at,last_delivered_at').then(function(res){var rows=(res&&res.data)||[];if(!rows.length)return;CRM.readsAll=CRM.readsAll||{};rows.forEach(function(r){(CRM.readsAll[r.conversation_id]=CRM.readsAll[r.conversation_id]||{})[r.user_id]={seen:r.last_seen_at||null,deliv:r.last_delivered_at||null};});_crmPaintTicks();try{_crmLiveRR();}catch(e){}}).catch?null:null;}catch(e){}}
-function _crmOnReadEvent(p){try{var row=(p&&(p.new||p.record))||{};if(!row.conversation_id||row.user_id===S.uid)return;CRM.readsAll=CRM.readsAll||{};var cur=(CRM.readsAll[row.conversation_id]=CRM.readsAll[row.conversation_id]||{});cur[row.user_id]={seen:row.last_seen_at||(cur[row.user_id]||{}).seen||null,deliv:row.last_delivered_at||(cur[row.user_id]||{}).deliv||null};if(row.conversation_id===CRM.sel.convoId)_crmPaintTicks();else{try{var c=_crmConvo(row.conversation_id);if(c)_crmTouchListRow(c);}catch(e){}}}catch(e){}}
+/* v4.0 fix — crm_reads has more rows than one request returns (PostgREST caps a select at 1,000; the table is
+   past 2,000). Only the first page used to load, so the other person's "seen" was missing for many chats and
+   their ticks stayed single grey after a reload until a live read event happened to arrive. Now paged. */
+function _crmLoadReadsAll(){if(CRM._readsLoaded)return;CRM._readsLoaded=true;
+  var PAGE=1000,from=0,all=[];
+  function done(){if(!all.length)return;CRM.readsAll=CRM.readsAll||{};all.forEach(function(r){var cur=(CRM.readsAll[r.conversation_id]=CRM.readsAll[r.conversation_id]||{});var prev=cur[r.user_id]||{};cur[r.user_id]={seen:_crmTsMax(r.last_seen_at,prev.seen),deliv:_crmTsMax(r.last_delivered_at,prev.deliv)};});_crmPaintTicks();try{_crmLiveRR();}catch(e){}}
+  function page(){try{sb.from('crm_reads').select('conversation_id,user_id,last_seen_at,last_delivered_at').order('conversation_id').order('user_id').range(from,from+PAGE-1).then(function(res){var rows=(res&&res.data)||[];all=all.concat(rows);if(rows.length===PAGE&&from<20000){from+=PAGE;page();}else done();}).catch?null:null;}catch(e){done();}}
+  page();}
+/* timestamps arrive in two shapes ("…Z" from this app, "…+00:00" from Postgres) — compare as time, never as text */
+function _crmTs(x){if(!x)return 0;var n=Date.parse(x);return isFinite(n)?n:0;}
+function _crmTsMax(a,b){return _crmTs(a)>=_crmTs(b)?(a||b||null):(b||a||null);}
+function _crmOnReadEvent(p){try{var row=(p&&(p.new||p.record))||{};if(!row.conversation_id||row.user_id===S.uid)return;CRM.readsAll=CRM.readsAll||{};var cur=(CRM.readsAll[row.conversation_id]=CRM.readsAll[row.conversation_id]||{});var _pv=cur[row.user_id]||{};cur[row.user_id]={seen:_crmTsMax(row.last_seen_at,_pv.seen),deliv:_crmTsMax(row.last_delivered_at,_pv.deliv)};if(row.conversation_id===CRM.sel.convoId)_crmPaintTicks();else{try{var c=_crmConvo(row.conversation_id);if(c)_crmTouchListRow(c);}catch(e){}}}catch(e){}}
 function _crmPaintTicks(){try{var cid=CRM.sel.convoId;if(!cid)return;var c=_crmConvo(cid);if(!c)return;var els=document.querySelectorAll('#crm-thread .crm-ticks,#crm-tthread .crm-ticks');for(var i=0;i<els.length;i++){var el=els[i];var id=el.getAttribute('data-tk');var m=(c.messages||[]).find(function(x){return x.id===id;});if(m)el.outerHTML=_crmTicks(m,cid);}try{_crmTouchListRow(c);}catch(e){}}catch(e){}}
 /* “Delivered” = this client received the conversation's newest message. Stamped once per new
    message batch (throttled), never touches last_seen_at. */

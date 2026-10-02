@@ -1,4 +1,4 @@
-# Bridge v166 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=166`)
+# Bridge v167 — OKR v4.0 "One scoreboard" (Road to 1,000 proposal) + two Workspace fixes (cache-buster `?v=167`)
 
 **Changed** `index.html` · `19-okr-roles-acl.js` · **new** `19b-okr-v4.js` · `18-settings-notifications.js` · `06-crm.js` · `src/styles/main.css` · **new** `supabase/migrations/2026-10-02_v400_okr_v4.sql` · `supabase/functions/okr-reminders/index.ts`.
 
@@ -7,6 +7,15 @@
 2. Then deploy the code (push → Vercel). Until the migration has run the app keeps working exactly as before: the new fields are only written once a loaded `okrs` row carries the `kind` column (`_okrV4Ready()`), and the Scoreboard/Reviews tabs show a "Database update pending" strip.
 3. Deploy the updated edge function: `supabase functions deploy okr-reminders`. Same daily schedule; the new alert section skips itself until the migration has landed. The previous version (v2) is still in the function's version history in the dashboard.
 4. Nothing to do in Access Control. The role seed stays at **v18 on purpose**: the sandbox and the production frontend share one database, and a different seed version in one build would make the two builds re-seed the built-in roles against each other on every page load. **Run reviews** and **Confirm targets** are already covered by `Manage` (Super Admin / Administrator / Manager), and can be switched on per custom role. Bump the seed only when both frontends ship the same build.
+
+### Database — migration APPLIED (2 Oct 2026, 15:35 Dubai)
+- `v400_okr_v4_one_scoreboard` applied to the shared Supabase project. Verified afterwards: 333 rows (316 live) all `kind='kpi'`, `state='active'`; column default `'kpi'`; the four original `okrs` policies untouched plus `okrs_select_owner_tbd`; `okr_alerts` present. Production frontend (old build) unaffected — it ignores the new columns and keeps inserting KPIs by default.
+- Not yet done, on purpose: the Road-to-1,000 seed (waits for production to run v166+), and `supabase functions deploy okr-reminders` (switches on variance / stale alerts for everyone — say when).
+
+### Workspace — DM ticks stayed single grey after a reload (real cause found)
+- `crm_reads` has grown past 2,000 rows and the read-state loader fetched it in one request, which PostgREST caps at 1,000 rows. Whoever's row fell outside the first page had no "seen" time on the sender's side, so their messages showed one grey tick after a reload even though they had read them — until a live read event happened to arrive. The loader now pages through the whole table.
+- Timestamps are now compared as time, not text (`…Z` vs `…+00:00` formats could mis-order within the same second), and a live read event can never overwrite a newer "seen" with an older one.
+- Rule stays: a direct message is one grey tick until the other person opens the chat, then two blue — permanently, online or offline.
 
 ### Seed — the Road to 1,000 tree (`supabase/seed/2026-10-02_road_to_1000_okrs.sql`)
 - 63 rows straight from the proposal v1.2: North Star (330 → 1,000, Appendix A ramp, Q4 checkpoint KR, "Engines on schedule" count), 8 engines (each an L1 measured by its KRs, with a "+N orders/day" KR that counts toward the North Star — promised total +670), Bolt's L2 certification, Financial resilience (deck milestone, filings count, cash-runway floor+target, tranches, ESOP tiers dated off the ramp), Organisational evolution (3 → 1 sources, scoreboard milestone, process-load ceiling, orders-per-employee + VDR as drafts), Culture (eNPS 40 → 50, Road Club), Revenue (32M → 40M, brand survey + lift, B2C 27M → 34M with an L2 for the existing KPIs to link under, B2B 1.5M → 2M), NPS 51 → 54, Profit 4% → 8% with gross margin 40% → 43%, KSA SAR 6M.
