@@ -1439,8 +1439,8 @@ function okrPage(){
   const today=todayISO();
   const tabs=okrTabsHTML(tab);
   /* v4.1 — the Scoreboard button creates an OKR (objective); the Objectives tab button creates a KPI */
-  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+((_okrV4Ready()?_okrCanManage():canCreate)?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
-  const head=hdr(_okrV4Ready()?'KPIs':'OKR',_okrV4Ready()?'Every number Bridge tracks — inputs roll up L2 → L1 → L0; link a KPI under an objective or a key result to put it on the OKR scoreboard':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
+  if(tab==='scoreboard'){const h=hdr('OKR','One company. One scoreboard. One road.',btn('Export','App._okrExportDialog()',{variant:'ghost',icon:'download'})+btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+((_okrV4Ready()?_okrCanManage():canCreate)?btn(_okrV4Ready()?'New objective':'New L0 objective',"App._okrEdit(null,null,'objective')",{variant:'primary',icon:'plus'}):''));return `<div class="fade">${h}${tabs}${okrScoreboardHTML()}</div>`;}
+  const head=hdr(_okrV4Ready()?'KPIs':'OKR',_okrV4Ready()?'Every number Bridge tracks — inputs roll up L2 → L1 → L0; link a KPI under an objective or a key result to put it on the OKR scoreboard':'Objectives & key results — inputs roll up L2 → L1 → L0',btn('Export','App._okrExportDialog()',{variant:'ghost',icon:'download'})+btn('Activity','App._okrActivity()',{variant:'ghost',icon:'audit'})+(canCreate?btn(_okrV4Ready()?'New KPI':'New L0 objective',"App._okrEdit(null,null,'kpi')",{variant:'primary',icon:'plus'}):''));
   // ── Summary cards — clickable (v3.11): tap a number to see exactly which OKRs it counts ──
   //    v4.0: objectives only — key results live inside their objective, drafts aren't measured yet
   const visObj=vis.filter(o=>o.kind!=='kr'&&o.state!=='draft');
@@ -3264,93 +3264,184 @@ function _okrCommentText(t){
     .replace(/\n{3,}/g,'\n\n').trim();
 }
 
-/* Which objectives the extract covers: the ticked ones, else everything on screen. */
-function _okrExportSet(){
+/* ═══════════════ EXPORT (v4.2) — detailed Excel / CSV extract of OKRs & KPIs ═══════════════
+   Which items the extract covers: the ticked ones when scope is "screen" (or unset), else by scope —
+   'okr' = objectives + key results · 'kpi' = KPIs · 'all' = everything visible · 'screen' = this tab.
+   Always limited to what this user can see (okrVisible), and returned in TREE order so the sheet
+   reads like the scoreboard (L0 → its L1s → their L2s / key results / linked KPIs). Read-only. */
+function _okrExportSet(scope){
+  scope=scope||'screen';
   const sel=[..._OKRSEL].map(okrById).filter(Boolean).filter(okrCanSee);
-  if(sel.length)return sel;
-  return okrVisible();
+  let list;
+  if(scope==='screen'&&sel.length)list=sel;
+  else{
+    const vis=okrVisible();
+    if(scope==='okr')list=vis.filter(o=>!okrIsKPI(o));
+    else if(scope==='kpi')list=vis.filter(okrIsKPI);
+    else if(scope==='screen')list=(typeof okrTab==='function'&&okrTab()==='objectives')?vis.filter(okrIsKPI):vis;
+    else list=vis;
+  }
+  const ord={};let i=0;
+  const bySort=(a,b)=>((a.sort||0)-(b.sort||0))||String(a.createdAt||'').localeCompare(String(b.createdAt||''));
+  const walk=o=>{if(ord[o.id]!==undefined)return;ord[o.id]=i++;okrChildren(o.id).slice().sort(bySort).forEach(walk);};
+  (DB.okrs||[]).filter(o=>o&&(!o.parentId||!okrById(o.parentId))).sort(bySort).forEach(walk);
+  return list.slice().sort((a,b)=>((ord[a.id]!==undefined?ord[a.id]:1e9)-(ord[b.id]!==undefined?ord[b.id]:1e9)));
+}
+function _okrTypeLabel(o){const l=okrKindLabel(o);return l==='KPI'?'KPI':l.charAt(0).toUpperCase()+l.slice(1);}
+function _okrSafe(fn,dflt){try{const v=fn();return v===undefined?dflt:v;}catch(e){return dflt;}}
+function _okrCSV(rows){
+  const cell=v=>{let s=v===null||v===undefined?'':String(v);if(/[",\r\n]/.test(s))s='"'+s.replace(/"/g,'""')+'"';return s;};
+  return '﻿'+rows.map(r=>r.map(cell).join(',')).join('\r\n');
+}
+function _okrDownloadText(name,text,mime){
+  const blob=new Blob([text],{type:mime||'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{try{document.body.removeChild(a);URL.revokeObjectURL(url);}catch(e){}},800);
+}
+/* Builds every table once; Excel takes all of them, CSV takes one. */
+function _okrExportTables(list){
+  const oHead=['Type','Level','Title','Description','Key result kind','North Star','Top-level objective','Parent','Linked under',
+    'Owner(s)','Owner to be decided','Department','Sub-department','State',
+    'Metric','Unit','Which way is good?','Scoring','Start','Current','Target','Revised target','Effective target','Target confirmed','Floor / ceiling',
+    'Progress %','Status (computed)','Status set','Owner’s flag','Flag inherited from','Flag comment','Flag date',
+    'Needs a decision','Decision note','Period start','Period end','Quarter','Annual','Rolls up','Roll-up mode','Contributes to',
+    'Due date','Done on','Checklist items done','Checklist items total','Ramp (date: planned value)','Pace tolerance',
+    'Check-in schedule','Updates','Last update','Last value','Last comment',
+    'Closed','Close reason','Closed on','Closed by','Created by','Created on','Last changed','ID','Parent ID'];
+  const oRows=[oHead];
+  list.forEach(o=>{
+    const cks=okrCheckinsOf(o.id),last=cks.length?cks[cks.length-1]:null;
+    const dn=_okrSafe(()=>_okrDeptNames(o),{dept:'',sub:''})||{},par=o.parentId?okrById(o.parentId):null;
+    const top=_okrSafe(()=>okrRootOf(o),null);
+    const isKR=o.kind==='kr',isKPI=okrIsKPI(o);
+    const pct=_okrSafe(()=>isKR?okrKRPct(o):okrProgress(o),null);
+    const f=_okrSafe(()=>okrFlagOf(o),null);
+    const fFrom=f&&f.inherited?((okrById(f.okrId)||{}).title||''):'';
+    const items=_okrSafe(()=>okrItems(o),[])||[];
+    const ramp=(_okrSafe(()=>okrPacingPts(o),[])||[]).map(p=>p.date+': '+p.value).join('; ');
+    const hasTarget=o.targetValue!==null&&o.targetValue!==undefined&&o.targetValue!=='';
+    const metricLabel=_okrSafe(()=>(OKR_METRICS.find(m=>m[0]===o.metricType)||[,o.metricType])[1],o.metricType||'');
+    const scoring=_okrSafe(()=>okrIsPaced(o)?'Not scored — running total vs the daily-split budget':okrIsThresh(o)?'Not scored — pass/fail against the threshold':okrIsLimit(o)?'Not scored — pass/fail against the allowance':'Distance from start to target','');
+    oRows.push([
+      _okrTypeLabel(o),'L'+_okrSafe(()=>okrLevel(o),0),o.title||'',o.description||'',
+      isKR?_okrSafe(()=>OKR_KR_KIND_META[okrKRKind(o)].label,''):'',
+      o.isNorthStar?'Yes':'No',top&&top!==o?(top.title||''):'',par?(par.title||''):'',
+      (isKPI&&par&&par.kind!=='kpi')?(_okrTypeLabel(par)+': '+(par.title||'')):'',
+      okrOwners(o).map(_okrNameOf).filter(Boolean).join(', '),(o.ownerTbd&&!okrOwners(o).length)?'Yes':'No',dn.dept||'',dn.sub||'',
+      o.state==='draft'?'Draft':'Active',
+      metricLabel,o.unit||'',_okrSafe(()=>okrDirLabel(o),''),scoring,
+      _okrPlain(o.startValue),_okrPlain(_okrSafe(()=>_okrOwnCur(o),null)),_okrPlain(o.targetValue),
+      _okrPlain(o.revisedTarget),_okrPlain(_okrSafe(()=>_okrTargetEff(o),null)),
+      hasTarget?(o.targetConfirmed===false?'Proposed':'Confirmed'):'',_okrPlain(o.floorValue),
+      pct===null||pct===undefined?'':pct,_okrSafe(()=>okrStatusOf(o),''),o.statusMode==='manual'?'Manual':'Automatic',
+      f?_okrSafe(()=>okrFlagLabel(f.flag),f.flag):'',fFrom,f?_okrCommentText(f.comment):'',f?(f.date||''):'',
+      (o.needsDecision||(o.ownerTbd&&!okrOwners(o).length))?'Yes':'No',o.decisionNote||'',
+      o.periodStart||'',o.periodEnd||'',o.quarterLabel||'',
+      o.isAnnual?'Yes':'No',o.rollup?'Yes':'No',o.rollup?_okrSafe(()=>_okrModeLabel(o.rollupMode),''):'',
+      o.contributesTo?((okrById(o.contributesTo)||{}).title||''):'',
+      o.dueDate||'',_okrDT(o.doneAt),items.length?items.filter(x=>x.doneAt).length:'',items.length?items.length:'',
+      ramp,ramp?_okrPlain(_okrSafe(()=>okrTol(o),'')):'',
+      _okrSafe(()=>_okrFreqLabel(o),''),cks.length,
+      last?last.date:'',last?_okrPlain(last.value):'',last?_okrCommentText(last.comment):'',
+      o.closed?'Yes':'No',o.closedReason||'',_okrDT(o.closedAt),_okrNameOf(o.closedBy),
+      _okrNameOf(o.createdBy),_okrDT(o.createdAt),_okrDT(o.updatedAt),o.id,o.parentId||''
+    ]);
+  });
+
+  /* every update / check-in, with its comment and flag */
+  const uHead=['Item','Type','Level','Date','Value','Comment','Status marked','Flag','Recorded by','Times edited','Recorded at','Item ID','Update ID'];
+  const uRows=[uHead];
+  list.forEach(o=>okrCheckinsOf(o.id).forEach(c=>{
+    uRows.push([o.title||'',_okrTypeLabel(o),'L'+_okrSafe(()=>okrLevel(o),0),c.date||'',_okrPlain(c.value),_okrCommentText(c.comment),
+      c.statusMark||'',c.flag?_okrSafe(()=>okrFlagLabel(c.flag),c.flag):'',_okrNameOf(c.userId),c.editCount||0,_okrDT(c.createdAt),o.id,c.id]);
+  }));
+  if(uRows.length===1)uRows.push(['No updates recorded for the selected items','','','','','','','','','','','','']);
+
+  /* target revisions */
+  const rHead=['Item','Type','Original target','Revised target','Reason','Revised on','Revised by','Item ID'];
+  const rRows=[rHead];
+  list.filter(okrHasRevision).forEach(o=>{
+    rRows.push([o.title||'',_okrTypeLabel(o),_okrPlain(o.targetValue),_okrPlain(o.revisedTarget),
+      o.revisedNote||'',_okrDT(o.revisedAt),_okrNameOf(o.revisedBy),o.id]);
+  });
+  if(rRows.length===1)rRows.push(['No target revisions','','','','','','','']);
+
+  /* ramp points and checklist items (count key results) */
+  const pHead=['Item','Type','Entry','Date / due','Planned value / item','Done on','Item ID'];
+  const pRows=[pHead];
+  list.forEach(o=>{
+    (_okrSafe(()=>okrPacingPts(o),[])||[]).forEach(p=>pRows.push([o.title||'',_okrTypeLabel(o),'Ramp point',p.date,p.value,'',o.id]));
+    (_okrSafe(()=>okrItems(o),[])||[]).forEach(x=>pRows.push([o.title||'',_okrTypeLabel(o),'Checklist item',x.due||'',x.title||x.label||x.text||'',_okrDT(x.doneAt),o.id]));
+  });
+  if(pRows.length===1)pRows.push(['No ramp points or checklist items','','','','','','']);
+
+  /* activity trail */
+  const ids=new Set(list.map(o=>o.id));
+  const aHead=['Item','Type','Action','Detail','By','When','Item ID'];
+  const aRows=[aHead];
+  (DB.okrLogs||[]).filter(l=>ids.has(l.okrId)).forEach(l=>{
+    const o=okrById(l.okrId);
+    let det='';
+    try{det=Object.entries(l.details||{}).map(([k,v])=>k+': '+(typeof v==='object'?JSON.stringify(v):v)).join(' · ');}catch(e){}
+    aRows.push([o?(o.title||''):'',o?_okrTypeLabel(o):'',l.action||'',det,_okrNameOf(l.actorId),_okrDT(l.createdAt),l.okrId]);
+  });
+  if(aRows.length===1)aRows.push(['No activity recorded','','','','','','']);
+
+  return {oRows,uRows,rRows,pRows,aRows};
 }
 
-App._okrExport=async()=>{
+App._okrExportDialog=()=>{
   if(!can('okr','view'))return toast('You don’t have permission to view objectives','err');
-  const list=_okrExportSet();
+  const vis=okrVisible();
+  const nO=vis.filter(o=>!okrIsKPI(o)).length,nK=vis.filter(okrIsKPI).length;
+  const nSel=[..._OKRSEL].map(okrById).filter(Boolean).filter(okrCanSee).length;
+  const onKpi=typeof okrTab==='function'&&okrTab()==='objectives';
+  const scopes=[['okr','OKRs — objectives & key results ('+nO+')'],['kpi','KPIs ('+nK+')'],['all','Everything I can see ('+vis.length+')']];
+  if(nSel)scopes.unshift(['screen','Ticked items only ('+nSel+')']);
+  const body=`<div style="display:grid;gap:12px">
+    ${selF('What to include','okr-exp-scope',scopes,nSel?'screen':(onKpi?'kpi':'okr'))}
+    ${selF('Format','okr-exp-fmt',[['xlsx','Excel workbook (.xlsx) — items, updates, revisions, ramp & checklist items, activity'],['csv','CSV — detailed table of items (one row per objective / key result / KPI)'],['csv-updates','CSV — every update / check-in']],'xlsx')}
+    <div style="font-size:11.5px;color:var(--c-text-3);line-height:1.5">Every stored field is included — type, level, owners, department, metric, start / current / target, progress, computed status and the owner’s flag, period, ramp, check-in schedule, closure and audit columns. Only items you are allowed to see are exported; nothing is changed.</div>
+  </div>`;
+  modalShell({title:'Export OKRs & KPIs',sub:'Download a detailed sheet',size:'max-w-md',key:'okr-export',body,
+    footer:btnG('Cancel','App.closeModal()')+btnP('Download',"App._okrExport({scope:(document.getElementById('okr-exp-scope')||{}).value,fmt:(document.getElementById('okr-exp-fmt')||{}).value});App.closeModal()",'download')});
+};
+
+App._okrExport=async(opts)=>{
+  opts=opts||{};
+  const scope=opts.scope||'screen',fmt=opts.fmt||'xlsx';
+  if(!can('okr','view'))return toast('You don’t have permission to view objectives','err');
+  const list=_okrExportSet(scope);
   if(!list.length)return toast('Nothing to export','err');
+  const stamp=todayISO(),base='bridge_okrs_kpis_'+(scope==='screen'?'selection':scope)+'_'+stamp;
+  let T;
+  try{T=_okrExportTables(list);}catch(e){return toast(e.message||'Export failed','err');}
+  if(fmt==='csv'||fmt==='csv-updates'){
+    try{
+      const rows=fmt==='csv'?T.oRows:T.uRows;
+      _okrDownloadText(base+(fmt==='csv'?'':'_updates')+'.csv',_okrCSV(rows));
+      toast('Exported '+(rows.length-1)+(fmt==='csv'?' item':' update')+(rows.length===2?'':'s')+' as CSV');
+      try{log(fullName(me()),'Exported OKRs',list.length+' items (CSV)');}catch(e){}
+    }catch(e){toast(e.message||'Export failed','err');}
+    return;
+  }
   let X;
   try{X=await _loadXLSX();}
   catch(e){return toast(e.message||'Couldn’t load the spreadsheet library','err');}
   try{
-    /* ── Sheet 1: Objectives ─────────────────────────────────────────────── */
-    const oHead=['Level','Objective','Description','Parent objective','Owner(s)','Department','Sub-department',
-      'Metric','Unit','Which way is good?','Scoring','Start','Current','Target','Revised target','Effective target',
-      'Progress %','Status','Status set','Period start','Period end','Quarter','Annual','Rolls up','Roll-up mode',
-      'Check-in schedule','Updates','Last update','Last value','Last comment',
-      'Closed','Close reason','Closed on','Closed by','Created by','Created on','Last changed','ID'];
-    const oRows=[oHead];
-    list.forEach(o=>{
-      const cks=okrCheckinsOf(o.id), last=cks.length?cks[cks.length-1]:null;
-      const dn=_okrDeptNames(o), par=o.parentId?okrById(o.parentId):null;
-      const pct=okrProgress(o);
-      oRows.push([
-        'L'+okrLevel(o), o.title||'', o.description||'', par?(par.title||''):'',
-        okrOwners(o).map(_okrNameOf).filter(Boolean).join(', '), dn.dept, dn.sub,
-        (OKR_METRICS.find(m=>m[0]===o.metricType)||[,o.metricType])[1], o.unit||'',
-        okrDirLabel(o), okrIsPaced(o)?'Not scored — running total vs the daily-split budget':okrIsThresh(o)?'Not scored — pass/fail against the threshold':okrIsLimit(o)?'Not scored \u2014 pass/fail against the allowance':'Distance from start to target',
-        _okrPlain(o.startValue), _okrPlain(_okrOwnCur(o)), _okrPlain(o.targetValue),
-        _okrPlain(o.revisedTarget), _okrPlain(_okrTargetEff(o)),
-        pct===null?'':pct, okrStatusOf(o), o.statusMode==='manual'?'Manual':'Automatic',
-        o.periodStart||'', o.periodEnd||'', o.quarterLabel||'',
-        o.isAnnual?'Yes':'No', o.rollup?'Yes':'No', o.rollup?_okrModeLabel(o.rollupMode):'',
-        _okrFreqLabel(o), cks.length,
-        last?last.date:'', last?_okrPlain(last.value):'', last?_okrCommentText(last.comment):'',
-        o.closed?'Yes':'No', o.closedReason||'', _okrDT(o.closedAt), _okrNameOf(o.closedBy),
-        _okrNameOf(o.createdBy), _okrDT(o.createdAt), _okrDT(o.updatedAt), o.id
-      ]);
-    });
-
-    /* ── Sheet 2: every update, with its comment ─────────────────────────── */
-    const uHead=['Objective','Level','Date','Value','Comment','Status marked','Recorded by','Times edited','Recorded at','Objective ID','Update ID'];
-    const uRows=[uHead];
-    list.forEach(o=>okrCheckinsOf(o.id).forEach(c=>{
-      uRows.push([o.title||'','L'+okrLevel(o),c.date||'',_okrPlain(c.value),_okrCommentText(c.comment),
-        c.statusMark||'',_okrNameOf(c.userId),c.editCount||0,_okrDT(c.createdAt),o.id,c.id]);
-    }));
-    if(uRows.length===1)uRows.push(['No updates recorded for the selected objectives','','','','','','','','','','']);
-
-    /* ── Sheet 3: target revisions ──────────────────────────────────────── */
-    const rHead=['Objective','Original target','Revised target','Reason','Revised on','Revised by','Objective ID'];
-    const rRows=[rHead];
-    list.filter(okrHasRevision).forEach(o=>{
-      rRows.push([o.title||'',_okrPlain(o.targetValue),_okrPlain(o.revisedTarget),
-        o.revisedNote||'',_okrDT(o.revisedAt),_okrNameOf(o.revisedBy),o.id]);
-    });
-    if(rRows.length===1)rRows.push(['No target revisions','','','','','','']);
-
-    /* ── Sheet 4: activity trail ────────────────────────────────────────── */
-    const ids=new Set(list.map(o=>o.id));
-    const aHead=['Objective','Action','Detail','By','When','Objective ID'];
-    const aRows=[aHead];
-    (DB.okrLogs||[]).filter(l=>ids.has(l.okrId)).forEach(l=>{
-      const o=okrById(l.okrId);
-      let det='';
-      try{det=Object.entries(l.details||{}).map(([k,v])=>k+': '+(typeof v==='object'?JSON.stringify(v):v)).join(' · ');}catch(e){}
-      aRows.push([o?(o.title||''):'',l.action||'',det,_okrNameOf(l.actorId),_okrDT(l.createdAt),l.okrId]);
-    });
-    if(aRows.length===1)aRows.push(['No activity recorded','','','','','']);
-
     const wb=X.utils.book_new();
-    [['Objectives',oRows,[6,34,44,28,26,18,18,12,10,15,15,10,10,10,13,15,11,13,11,13,13,10,8,9,15,26,9,13,11,50,8,26,17,18,18,17,17,14]],
-     ['Updates',uRows,[34,6,12,10,60,14,20,12,17,14,14]],
-     ['Target revisions',rRows,[34,15,15,44,17,20,14]],
-     ['Activity',aRows,[34,20,52,20,17,14]]]
-    .forEach(([name,rows,cols])=>{
+    [['OKRs & KPIs',T.oRows],['Updates',T.uRows],['Target revisions',T.rRows],['Ramp & items',T.pRows],['Activity',T.aRows]]
+    .forEach(([name,rows])=>{
       const ws=X.utils.aoa_to_sheet(rows);
-      ws['!cols']=cols.map(w=>({wch:w}));
+      ws['!cols']=rows[0].map((h,ci)=>{let w=String(h).length;for(let r=1;r<Math.min(rows.length,400);r++){const v=rows[r][ci];if(v!==null&&v!==undefined)w=Math.max(w,String(v).split('\n')[0].length);}return{wch:Math.min(Math.max(w+2,8),60)};});
       ws['!freeze']={xSplit:0,ySplit:1};
+      ws['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length-1,1),c:rows[0].length-1}})};
       X.utils.book_append_sheet(wb,ws,name);
     });
-    X.writeFile(wb,'bridge_okrs_'+todayISO()+'.xlsx');
-    toast('Exported '+list.length+' objective'+(list.length===1?'':'s')+' · '+(uRows.length-1)+' update'+(uRows.length===2?'':'s'));
-    try{log(fullName(me()),'Exported OKRs',list.length+' objectives');}catch(e){}
+    X.writeFile(wb,base+'.xlsx');
+    toast('Exported '+list.length+' item'+(list.length===1?'':'s')+' · '+(T.uRows.length-1)+' update'+(T.uRows.length===2?'':'s'));
+    try{log(fullName(me()),'Exported OKRs',list.length+' items');}catch(e){}
   }catch(e){toast(e.message||'Export failed','err');}
 };
 
